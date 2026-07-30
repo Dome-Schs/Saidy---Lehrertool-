@@ -502,13 +502,19 @@ function TendencyMeter({ value }) {
 /* ---------- Hauptkomponente ---------- */
 
 /* WebUntis Fehlzeiten-CSV importieren */
-function WebUntisImportModal({ students, onImport, onClose }) {
+function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) {
   const [rows, setRows] = useState(null);     // parsed CSV rows
   const [headers, setHeaders] = useState([]); // CSV headers
   const [cols, setCols] = useState(null);     // detected column indices
   const [preview, setPreview] = useState([]); // matched preview rows
   const [error, setError] = useState("");
   const fileRef = useRef(null);
+
+  const existingFingerprints = useMemo(() => {
+    const set = new Set();
+    (existingAbsences || []).forEach((a) => set.add(`${a.studentId}|${a.date}|${a.excuseStatus}|${a.reason || ""}`));
+    return set;
+  }, [existingAbsences]);
 
   function handleFile(file) {
     if (!file) return;
@@ -544,6 +550,7 @@ function WebUntisImportModal({ students, onImport, onClose }) {
   function doImport() {
     if (!rows || !cols) return;
     const newAbsences = [];
+    let skipped = 0;
     rows.forEach((r) => {
       const name = cols.studentName >= 0 ? r[cols.studentName] : "";
       const dateRaw = cols.date >= 0 ? r[cols.date] : "";
@@ -553,12 +560,34 @@ function WebUntisImportModal({ students, onImport, onClose }) {
       if (!studentId) return;
       const date = parseUntisDate(dateRaw);
       if (!date) return;
-      newAbsences.push({ id: uid(), studentId, date, excuseStatus: parseUntisExcused(excusedRaw), reason: reason || null, source: "webuntis" });
+      const excuseStatus = parseUntisExcused(excusedRaw);
+      const fingerprint = `${studentId}|${date}|${excuseStatus}|${reason || ""}`;
+      if (existingFingerprints.has(fingerprint)) { skipped++; return; }
+      newAbsences.push({ id: uid(), studentId, date, excuseStatus, reason: reason || null, source: "webuntis" });
     });
-    onImport(newAbsences);
+    onImport(newAbsences, skipped);
   }
 
   const matched = preview.filter((p) => p.studentId).length;
+
+  const { newCount, dupCount } = useMemo(() => {
+    if (!rows || !cols) return { newCount: 0, dupCount: 0 };
+    let newC = 0, dupC = 0;
+    rows.forEach((r) => {
+      const name = cols.studentName >= 0 ? r[cols.studentName] : "";
+      const dateRaw = cols.date >= 0 ? r[cols.date] : "";
+      const excusedRaw = cols.excused >= 0 ? r[cols.excused] : "";
+      const reason = cols.reason >= 0 ? r[cols.reason] : "";
+      const studentId = matchStudentByName(name, students);
+      if (!studentId) return;
+      const date = parseUntisDate(dateRaw);
+      if (!date) return;
+      const excuseStatus = parseUntisExcused(excusedRaw);
+      const fp = `${studentId}|${date}|${excuseStatus}|${reason || ""}`;
+      if (existingFingerprints.has(fp)) dupC++; else newC++;
+    });
+    return { newCount: newC, dupCount: dupC };
+  }, [rows, cols, students, existingFingerprints]);
 
   return (
     <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={onClose}>
@@ -636,9 +665,18 @@ function WebUntisImportModal({ students, onImport, onClose }) {
                 </div>
               )}
 
+              {dupCount > 0 && (
+                <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                  {dupCount === rows.length
+                    ? "Alle Einträge sind bereits vorhanden – es gibt nichts Neues zu importieren."
+                    : `${dupCount} bereits vorhandene Einträge werden übersprungen.`}
+                </p>
+              )}
               <div className="flex gap-2 pt-2">
                 <Button variant="ghost" onClick={() => { setRows(null); setPreview([]); }} className="flex-1 justify-center">Andere Datei</Button>
-                <Button onClick={doImport} disabled={matched === 0} className="flex-1 justify-center"><Upload size={15} /> {rows.length} Einträge importieren</Button>
+                <Button onClick={doImport} disabled={newCount === 0} className="flex-1 justify-center">
+                  <Upload size={15} /> {newCount > 0 ? `${newCount} neue Einträge importieren` : "Nichts Neues"}
+                </Button>
               </div>
             </>
           )}
@@ -1550,13 +1588,16 @@ export default function App() {
           {showUntisImport && (
             <WebUntisImportModal
               students={data.students}
+              existingAbsences={data.absences || []}
               onImport={(newAbsences) => {
-                update((d) => {
-                  if (!d.absences) d.absences = [];
-                  d.absences.push(...newAbsences);
-                  d.settings = { ...(d.settings || {}), fehlzeitenLastImport: isoDate(new Date()) };
-                  return d;
-                });
+                if (newAbsences.length > 0) {
+                  update((d) => {
+                    if (!d.absences) d.absences = [];
+                    d.absences.push(...newAbsences);
+                    d.settings = { ...(d.settings || {}), fehlzeitenLastImport: isoDate(new Date()) };
+                    return d;
+                  });
+                }
                 setShowUntisImport(false);
               }}
               onClose={() => setShowUntisImport(false)}
