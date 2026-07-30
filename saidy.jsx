@@ -2022,6 +2022,13 @@ function Dashboard({ data, update, onNavigate, halbjahr, setCaptureLesson, pendi
     .sort((a, b) => a.info.tage - b.info.tage)
     .slice(0, 4);
 
+  const lastImport = data.settings?.fehlzeitenLastImport;
+  const importInterval = data.settings?.fehlzeitenImportInterval ?? 7;
+  const daysSinceLast = lastImport
+    ? Math.floor((Date.now() - new Date(lastImport).getTime()) / 86400000)
+    : null;
+  const showImportReminder = daysSinceLast === null || daysSinceLast >= importInterval;
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
@@ -2032,6 +2039,16 @@ function Dashboard({ data, update, onNavigate, halbjahr, setCaptureLesson, pendi
           </p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
+          {showImportReminder && (
+            <button
+              onClick={() => onNavigate?.("einstellungen")}
+              className="relative w-9 h-9 rounded-full bg-stone-100 text-stone-400 hover:bg-stone-200 flex items-center justify-center shrink-0"
+              title={daysSinceLast === null ? "WebUntis-Fehlzeiten noch nie importiert" : `WebUntis-Import fällig (vor ${daysSinceLast} Tagen)`}
+            >
+              <Upload size={16} />
+              <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-amber-500 border-2 border-white" />
+            </button>
+          )}
           {isToday && (
             <button
               onClick={() => setShowPending((v) => !v)}
@@ -2362,38 +2379,13 @@ function Dashboard({ data, update, onNavigate, halbjahr, setCaptureLesson, pendi
             );
           })(),
         };
-        // WebUntis-Erinnerungs-Chip
-        const lastImport = data.settings?.fehlzeitenLastImport;
-        const interval = data.settings?.fehlzeitenImportInterval ?? 7;
-        const daysSinceLast = lastImport
-          ? Math.floor((Date.now() - new Date(lastImport).getTime()) / 86400000)
-          : null;
-        const showReminder = daysSinceLast === null || daysSinceLast >= interval;
-
         const gespeichert = data.settings?.dashboardOrder || Object.keys(sections);
         // Neu hinzugekommene Karten anhängen, falls die gespeicherte Reihenfolge sie noch nicht kennt
         const order = [...gespeichert, ...Object.keys(sections).filter((k) => !gespeichert.includes(k))].filter((k) => sections[k]);
         return (
-          <>
-            {showReminder && (
-              <button
-                onClick={() => onNavigate?.("einstellungen")}
-                className="w-full flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-left hover:bg-amber-100 transition-colors"
-              >
-                <Upload size={16} className="text-amber-600 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-amber-800">WebUntis-Fehlzeiten importieren</div>
-                  <div className="text-xs text-amber-600">
-                    {daysSinceLast === null ? "Noch kein Import vorhanden" : `Letzter Import vor ${daysSinceLast} Tag${daysSinceLast === 1 ? "" : "en"}`}
-                  </div>
-                </div>
-                <ChevronRight size={15} className="text-amber-400 shrink-0" />
-              </button>
-            )}
-            <div className="grid md:grid-cols-2 gap-3">
-              {order.map((key) => sections[key] ? <div key={key}>{sections[key]}</div> : null)}
-            </div>
-          </>
+          <div className="grid md:grid-cols-2 gap-3">
+            {order.map((key) => sections[key] ? <div key={key}>{sections[key]}</div> : null)}
+          </div>
         );
       })()}
 
