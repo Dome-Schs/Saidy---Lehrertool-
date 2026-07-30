@@ -208,6 +208,24 @@ function uid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
+function SaidyLogoMark({ size = 32, className = "" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
+      <circle cx="50" cy="50" r="50" fill="#4F5844" />
+      {/* S-Buchstabe: endet unten-links, wo das Häkchen beginnt */}
+      <path
+        d="M 64 31 C 69 22 62 14 50 14 C 37 14 27 23 27 34 C 27 43 35 48 50 51 C 65 54 73 59 73 68 C 73 78 63 85 50 85 C 38 85 30 78 30 70"
+        stroke="white" strokeWidth="9" strokeLinecap="round" fill="none"
+      />
+      {/* Häkchen, das nahtlos aus dem S weiterführt */}
+      <path
+        d="M 30 70 L 43 82 L 69 55"
+        stroke="white" strokeWidth="9" strokeLinecap="round" strokeLinejoin="round" fill="none"
+      />
+    </svg>
+  );
+}
+
 // Klassennamen hochzählen: "5c" → "6c", "10a" → "11a"; führende Zahl +1, Rest bleibt
 function promotedName(name) {
   const m = String(name).match(/^(\d+)(.*)$/);
@@ -1279,7 +1297,12 @@ function OnboardingModal({ onApply, onSkip }) {
   return (
     <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[60]">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
-        <div className="font-semibold text-stone-800 text-lg mb-1">Willkommen 👋</div>
+        <div className="flex flex-col items-center mb-5">
+          <SaidyLogoMark size={56} className="mb-3" />
+          <div className="text-xl font-semibold tracking-widest text-stone-800 uppercase">Saidy</div>
+          <div className="text-xs text-stone-400 tracking-widest uppercase mt-0.5">Noten. Notizen. Organisiert.</div>
+        </div>
+        <div className="font-semibold text-stone-800 mb-1">Willkommen!</div>
         <p className="text-sm text-stone-500 mb-4">
           Wähle dein Bundesland, dann kann ich die offiziellen Schulferien direkt in deinen Kalender eintragen.
         </p>
@@ -1571,8 +1594,9 @@ export default function App() {
 
   if (!loaded) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-stone-50 text-stone-400 text-sm">
-        Lade Daten …
+      <div className="min-h-screen flex flex-col items-center justify-center app-bg gap-4">
+        <SaidyLogoMark size={72} />
+        <div className="text-stone-400 text-sm">Lade Daten …</div>
       </div>
     );
   }
@@ -1623,9 +1647,9 @@ export default function App() {
           {/* App-Kopf */}
           <div className="px-4 py-4 border-b border-stone-100">
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl akzent-flaeche flex items-center justify-center font-bold text-sm shrink-0 select-none">S</div>
+              <SaidyLogoMark size={34} className="shrink-0" />
               <div>
-                <div className="text-sm font-semibold text-stone-800 leading-tight">Saidy</div>
+                <div className="text-sm font-semibold text-stone-800 leading-tight tracking-wide">Saidy</div>
                 <div className="text-[10px] text-stone-400 leading-none mt-0.5">
                   {saveState === "saving" ? "Speichert …" : "Gespeichert"}
                 </div>
