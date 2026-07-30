@@ -40,7 +40,7 @@ const QUICK_SYMBOLS = [
   { symbol: "– –", value: 5, color: "#B91C1C" },
 ];
 
-const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true } };
+const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null } };
 
 const DASHBOARD_SECTIONS = {
   unterricht: "Unterricht",
@@ -48,7 +48,100 @@ const DASHBOARD_SECTIONS = {
   kalender: "Kalendereinträge",
   geburtstage: "Geburtstage",
   dienste: "Dienste",
+  fehlzeiten: "Offene Entschuldigungen",
 };
+
+const IMPORT_INTERVALS = [
+  { label: "Täglich", days: 1 },
+  { label: "2× pro Woche", days: 3 },
+  { label: "Wöchentlich", days: 7 },
+  { label: "2-wöchentlich", days: 14 },
+  { label: "Monatlich", days: 30 },
+];
+
+const EXCUSE_STATUS = {
+  ausstehend: { label: "Ausstehend", color: "#B45309" },
+  eingereicht: { label: "Eingereicht", color: "#1D4ED8" },
+  entschuldigt: { label: "Entschuldigt", color: "#15803D" },
+  unentschuldigt: { label: "Unentschuldigt", color: "#B91C1C" },
+};
+
+// Erkennt WebUntis-CSV-Spalten anhand typischer Bezeichnungen
+const UNTIS_COL_KEYS = {
+  studentName: ["name", "schüler", "schüler/in", "schülername", "student", "nachname"],
+  date: ["datum", "date", "tag"],
+  excused: ["entschuldigt", "status", "excused", "entsch.", "entschuldigung"],
+  reason: ["grund", "art", "text", "kommentar", "nachweis", "reason", "type"],
+};
+
+function detectUntisColumns(headers) {
+  const lower = headers.map((h) => (h || "").toLowerCase().trim());
+  const find = (patterns) => {
+    for (const p of patterns) {
+      const idx = lower.findIndex((h) => h.includes(p));
+      if (idx !== -1) return idx;
+    }
+    return -1;
+  };
+  return {
+    studentName: find(UNTIS_COL_KEYS.studentName),
+    date: find(UNTIS_COL_KEYS.date),
+    excused: find(UNTIS_COL_KEYS.excused),
+    reason: find(UNTIS_COL_KEYS.reason),
+  };
+}
+
+function parseUntisExcused(val) {
+  if (!val) return "ausstehend";
+  const v = val.trim().toLowerCase();
+  if (["j", "ja", "1", "yes", "entschuldigt", "excused"].includes(v)) return "entschuldigt";
+  if (["n", "nein", "0", "no", "unentschuldigt"].includes(v)) return "unentschuldigt";
+  if (["ausstehend", "offen", "pending"].includes(v)) return "ausstehend";
+  return "ausstehend";
+}
+
+function parseUntisDate(val) {
+  if (!val) return null;
+  const v = val.trim();
+  // ISO-Format: 2026-10-04
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return v;
+  // Deutsches Format: 04.10.2026 oder 04.10.26
+  const dm = v.match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);
+  if (dm) {
+    const year = dm[3].length === 2 ? `20${dm[3]}` : dm[3];
+    return `${year}-${dm[2].padStart(2, "0")}-${dm[1].padStart(2, "0")}`;
+  }
+  // Format mit Wochentag: "Mo, 04.10" → ergänze aktuelles Jahr
+  const wm = v.match(/\d{1,2}\.\d{1,2}$/);
+  if (wm) {
+    const parts = wm[0].split(".");
+    const year = new Date().getFullYear();
+    return `${year}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`;
+  }
+  return null;
+}
+
+function matchStudentByName(name, students) {
+  if (!name) return null;
+  const n = name.trim().toLowerCase();
+  // Exakter Treffer
+  let found = students.find((s) => s.name.toLowerCase() === n);
+  if (found) return found.id;
+  // "Nachname, Vorname" → "Vorname Nachname"
+  if (n.includes(",")) {
+    const [last, first] = n.split(",").map((p) => p.trim());
+    found = students.find((s) => {
+      const sl = s.name.toLowerCase();
+      return sl === `${first} ${last}` || sl.includes(last);
+    });
+    if (found) return found.id;
+  }
+  // Nachname-Teilübereinstimmung (letztes Wort)
+  const nameParts = n.split(/\s+/);
+  const lastName = nameParts[nameParts.length - 1];
+  found = students.find((s) => s.name.toLowerCase().endsWith(lastName));
+  return found?.id ?? null;
+}
 
 // Bundesländer für die Ferienauswahl
 const BUNDESLAENDER = [
@@ -408,6 +501,153 @@ function TendencyMeter({ value }) {
 
 /* ---------- Hauptkomponente ---------- */
 
+/* WebUntis Fehlzeiten-CSV importieren */
+function WebUntisImportModal({ students, onImport, onClose }) {
+  const [rows, setRows] = useState(null);     // parsed CSV rows
+  const [headers, setHeaders] = useState([]); // CSV headers
+  const [cols, setCols] = useState(null);     // detected column indices
+  const [preview, setPreview] = useState([]); // matched preview rows
+  const [error, setError] = useState("");
+  const fileRef = useRef(null);
+
+  function handleFile(file) {
+    if (!file) return;
+    setError("");
+    Papa.parse(file, {
+      header: false,
+      skipEmptyLines: true,
+      complete: (res) => {
+        const data = res.data;
+        if (!data.length) { setError("Die Datei enthält keine Daten."); return; }
+        const hdrs = data[0].map((h) => String(h));
+        const detected = detectUntisColumns(hdrs);
+        setHeaders(hdrs);
+        setCols(detected);
+        const dataRows = data.slice(1);
+        setRows(dataRows);
+        // Vorschau: erste 5 gematchte Zeilen
+        const prev = dataRows.slice(0, 8).map((r) => {
+          const name = detected.studentName >= 0 ? r[detected.studentName] : "";
+          const date = detected.date >= 0 ? r[detected.date] : "";
+          const excusedRaw = detected.excused >= 0 ? r[detected.excused] : "";
+          const reason = detected.reason >= 0 ? r[detected.reason] : "";
+          const studentId = matchStudentByName(name, students);
+          const student = students.find((s) => s.id === studentId);
+          return { name, date: parseUntisDate(date) || date, excusedRaw, excuseStatus: parseUntisExcused(excusedRaw), reason, studentId, studentName: student?.name };
+        });
+        setPreview(prev);
+      },
+      error: () => setError("Die Datei konnte nicht gelesen werden. Bitte CSV-Format prüfen."),
+    });
+  }
+
+  function doImport() {
+    if (!rows || !cols) return;
+    const newAbsences = [];
+    rows.forEach((r) => {
+      const name = cols.studentName >= 0 ? r[cols.studentName] : "";
+      const dateRaw = cols.date >= 0 ? r[cols.date] : "";
+      const excusedRaw = cols.excused >= 0 ? r[cols.excused] : "";
+      const reason = cols.reason >= 0 ? r[cols.reason] : "";
+      const studentId = matchStudentByName(name, students);
+      if (!studentId) return;
+      const date = parseUntisDate(dateRaw);
+      if (!date) return;
+      newAbsences.push({ id: uid(), studentId, date, excuseStatus: parseUntisExcused(excusedRaw), reason: reason || null, source: "webuntis" });
+    });
+    onImport(newAbsences);
+  }
+
+  const matched = preview.filter((p) => p.studentId).length;
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={onClose}>
+      <div className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
+          <div>
+            <div className="font-semibold text-stone-800">WebUntis Fehlzeiten importieren</div>
+            <div className="text-xs text-stone-400">CSV-Export aus WebUntis hochladen</div>
+          </div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
+        </div>
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
+          <div className="bg-stone-50 rounded-xl p-3 text-xs text-stone-600 space-y-1">
+            <p className="font-medium text-stone-700">So geht's in WebUntis:</p>
+            <p>1. Klassenbuch → Fehlzeiten → Zeitraum wählen</p>
+            <p>2. Export als CSV herunterladen</p>
+            <p>3. Hier hochladen</p>
+          </div>
+
+          {!rows && (
+            <button
+              onClick={() => fileRef.current?.click()}
+              className="w-full border-2 border-dashed border-stone-200 rounded-xl py-8 text-center hover:border-stone-400 transition-colors"
+            >
+              <Upload size={24} className="mx-auto mb-2 text-stone-300" />
+              <div className="text-sm text-stone-500">CSV-Datei auswählen</div>
+              <div className="text-xs text-stone-400 mt-0.5">WebUntis → Export als CSV</div>
+            </button>
+          )}
+          <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
+          {error && <p className="text-sm text-red-600">{error}</p>}
+
+          {rows && cols && (
+            <>
+              <div className="bg-stone-50 rounded-xl p-3 space-y-1.5 text-xs">
+                <div className="font-medium text-stone-600 mb-2">Erkannte Spalten:</div>
+                {[
+                  { key: "studentName", label: "Schüler:in" },
+                  { key: "date", label: "Datum" },
+                  { key: "excused", label: "Entschuldigt" },
+                  { key: "reason", label: "Grund" },
+                ].map(({ key, label }) => (
+                  <div key={key} className="flex items-center justify-between">
+                    <span className="text-stone-500">{label}</span>
+                    {cols[key] >= 0
+                      ? <span className="font-medium text-stone-700">„{headers[cols[key]]}"</span>
+                      : <span className="text-amber-600">nicht erkannt</span>
+                    }
+                  </div>
+                ))}
+              </div>
+
+              {preview.length > 0 && (
+                <div>
+                  <div className="text-[11px] font-medium text-stone-400 uppercase tracking-wide mb-2">
+                    Vorschau ({matched} von {preview.length} Zeilen zugeordnet)
+                  </div>
+                  <ul className="space-y-1.5">
+                    {preview.map((p, i) => (
+                      <li key={i} className={`text-xs rounded-lg px-3 py-2 flex items-center gap-2 ${p.studentId ? "bg-stone-50" : "bg-red-50"}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${p.studentId ? "bg-green-500" : "bg-red-400"}`} />
+                        <span className="flex-1 text-stone-700 truncate">
+                          {p.studentName || <span className="text-red-500">{p.name} (nicht gefunden)</span>}
+                        </span>
+                        <span className="text-stone-400 shrink-0">{p.date}</span>
+                        <span className="shrink-0" style={{ color: EXCUSE_STATUS[p.excuseStatus]?.color }}>
+                          {EXCUSE_STATUS[p.excuseStatus]?.label}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                  {matched === 0 && (
+                    <p className="text-xs text-red-600 mt-2">Keine Schüler:innen konnten zugeordnet werden. Bitte prüfe, ob die Namen in Saidy und WebUntis übereinstimmen.</p>
+                  )}
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button variant="ghost" onClick={() => { setRows(null); setPreview([]); }} className="flex-1 justify-center">Andere Datei</Button>
+                <Button onClick={doImport} disabled={matched === 0} className="flex-1 justify-center"><Upload size={15} /> {rows.length} Einträge importieren</Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* Einstellungen: Reihenfolge der Dashboard-Karten per Pfeiltasten anpassen */
 function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onImport, onClose }) {
   const gespeicherteReihenfolge = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
@@ -420,6 +660,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
   const [importMsg, setImportMsg] = useState(null); // { ok, msg }
   const [confirmImport, setConfirmImport] = useState(null); // File
   const [showPromote, setShowPromote] = useState(false);
+  const [showUntisImport, setShowUntisImport] = useState(false);
 
   function promoteClasses(ids) {
     update((d) => {
@@ -583,6 +824,33 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           </p>
         </div>
 
+        <div className="pt-5 border-t border-stone-100">
+          <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">WebUntis / Fehlzeiten</div>
+          <div className="text-xs font-medium text-stone-500 mb-1.5">Erinnerungsintervall für Import</div>
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {IMPORT_INTERVALS.map((iv) => {
+              const active = (data.settings?.fehlzeitenImportInterval ?? 7) === iv.days;
+              return (
+                <button
+                  key={iv.days}
+                  onClick={() => setSetting("fehlzeitenImportInterval", iv.days)}
+                  className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${active ? "akzent-flaeche akzent-rand" : "border-stone-200 text-stone-600 hover:bg-stone-50"}`}
+                >
+                  {iv.label}
+                </button>
+              );
+            })}
+          </div>
+          {data.settings?.fehlzeitenLastImport && (
+            <p className="text-xs text-stone-400 mb-2">
+              Letzter Import: {new Date(data.settings.fehlzeitenLastImport).toLocaleDateString("de-DE")}
+            </p>
+          )}
+          <Button variant="subtle" onClick={() => setShowUntisImport(true)} className="w-full justify-center">
+            <Upload size={15} /> WebUntis CSV importieren
+          </Button>
+        </div>
+
         <Button onClick={onClose} className="w-full justify-center mt-5">Schließen</Button>
         </div>
 
@@ -592,6 +860,22 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             promotedName={promotedName}
             onPromote={promoteClasses}
             onClose={() => setShowPromote(false)}
+          />
+        )}
+
+        {showUntisImport && (
+          <WebUntisImportModal
+            students={data.students}
+            onImport={(newAbsences) => {
+              update((d) => {
+                if (!d.absences) d.absences = [];
+                d.absences.push(...newAbsences);
+                d.settings = { ...(d.settings || {}), fehlzeitenLastImport: isoDate(new Date()) };
+                return d;
+              });
+              setShowUntisImport(false);
+            }}
+            onClose={() => setShowUntisImport(false)}
           />
         )}
 
@@ -2037,14 +2321,79 @@ function Dashboard({ data, update, onNavigate, halbjahr, setCaptureLesson, pendi
 
             </Card>
           ),
+          fehlzeiten: (() => {
+            const absences = (data.absences || []);
+            const ausstehend = absences.filter((a) => a.excuseStatus === "ausstehend" || a.excuseStatus === "eingereicht");
+            if (!absences.length) return null;
+            const byStudent = {};
+            ausstehend.forEach((a) => {
+              if (!byStudent[a.studentId]) byStudent[a.studentId] = [];
+              byStudent[a.studentId].push(a);
+            });
+            const studentEntries = Object.entries(byStudent).map(([sid, as]) => ({
+              student: data.students.find((s) => s.id === sid),
+              absences: as.sort((a, b) => b.date.localeCompare(a.date)),
+            })).filter((e) => e.student).sort((a, b) => a.student.name.localeCompare(b.student.name, "de"));
+            return (
+              <Card className="p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2 text-stone-800 font-medium text-sm">
+                    <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#FEF3C7", color: "#B45309" }}><AlertTriangle size={14} /></span>
+                    Offene Entschuldigungen
+                    {ausstehend.length > 0 && <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
+                  </div>
+                </div>
+                {!studentEntries.length
+                  ? <p className="text-xs text-stone-300">Alle Entschuldigungen erledigt 👍</p>
+                  : (
+                    <ul className="divide-y divide-stone-100">
+                      {studentEntries.slice(0, 5).map(({ student, absences: sa }) => (
+                        <li key={student.id} className="py-2 flex items-center gap-2 text-sm">
+                          <StudentAvatar student={student} size={22} />
+                          <span className="flex-1 text-stone-700 truncate">{student.name}</span>
+                          <span className="text-xs text-amber-700 font-medium shrink-0">{sa.length}×</span>
+                          <span className="text-xs text-stone-400 shrink-0">{new Date(sa[0].date).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}</span>
+                        </li>
+                      ))}
+                      {studentEntries.length > 5 && <li className="pt-1.5 text-xs text-stone-400">… und {studentEntries.length - 5} weitere</li>}
+                    </ul>
+                  )}
+              </Card>
+            );
+          })(),
         };
+        // WebUntis-Erinnerungs-Chip
+        const lastImport = data.settings?.fehlzeitenLastImport;
+        const interval = data.settings?.fehlzeitenImportInterval ?? 7;
+        const daysSinceLast = lastImport
+          ? Math.floor((Date.now() - new Date(lastImport).getTime()) / 86400000)
+          : null;
+        const showReminder = daysSinceLast === null || daysSinceLast >= interval;
+
         const gespeichert = data.settings?.dashboardOrder || Object.keys(sections);
         // Neu hinzugekommene Karten anhängen, falls die gespeicherte Reihenfolge sie noch nicht kennt
         const order = [...gespeichert, ...Object.keys(sections).filter((k) => !gespeichert.includes(k))].filter((k) => sections[k]);
         return (
-          <div className="grid md:grid-cols-2 gap-3">
-            {order.map((key) => <div key={key}>{sections[key]}</div>)}
-          </div>
+          <>
+            {showReminder && (
+              <button
+                onClick={() => onNavigate?.("einstellungen")}
+                className="w-full flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-left hover:bg-amber-100 transition-colors"
+              >
+                <Upload size={16} className="text-amber-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-amber-800">WebUntis-Fehlzeiten importieren</div>
+                  <div className="text-xs text-amber-600">
+                    {daysSinceLast === null ? "Noch kein Import vorhanden" : `Letzter Import vor ${daysSinceLast} Tag${daysSinceLast === 1 ? "" : "en"}`}
+                  </div>
+                </div>
+                <ChevronRight size={15} className="text-amber-400 shrink-0" />
+              </button>
+            )}
+            <div className="grid md:grid-cols-2 gap-3">
+              {order.map((key) => sections[key] ? <div key={key}>{sections[key]}</div> : null)}
+            </div>
+          </>
         );
       })()}
 
@@ -5196,6 +5545,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
   const tendency = tendencyInfo(overall);
   const studentNotes = data.notes.filter((n) => n.studentId === selectedStudent && n.type !== "gespraech").sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
   const studentGespraeche = data.notes.filter((n) => n.studentId === selectedStudent && n.type === "gespraech").sort((a, b) => b.date.localeCompare(a.date));
+  const studentAbsences = (data.absences || []).filter((a) => a.studentId === selectedStudent).sort((a, b) => b.date.localeCompare(a.date));
   const finalGrade = (data.finalGrades || []).find((f) => f.studentId === selectedStudent && f.fachId === selectedFach && f.halbjahr === halbjahr);
 
   function setFinalGrade(value) {
@@ -5266,6 +5616,14 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
         lines.push(`${icon} ${new Date(g.date).toLocaleDateString("de-DE")}: ${g.text}`);
       });
     }
+    if (studentAbsences.length) {
+      const unentsch = studentAbsences.filter((a) => a.excuseStatus === "unentschuldigt");
+      const ausstehend = studentAbsences.filter((a) => a.excuseStatus === "ausstehend");
+      lines.push("");
+      lines.push(`Fehlzeiten gesamt: ${studentAbsences.length} Einträge`);
+      if (unentsch.length) lines.push(`– Unentschuldigt: ${unentsch.length}×`);
+      if (ausstehend.length) lines.push(`– Entschuldigung noch ausstehend: ${ausstehend.length}×`);
+    }
     if (sprechtagNotiz.trim()) {
       lines.push("");
       lines.push("Eigene Notizen fürs Gespräch:");
@@ -5274,7 +5632,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
     lines.push("");
     lines.push("Diese Angaben sind eine rechnerische Grundlage und ersetzen nicht die pädagogische Gesamteinschätzung.");
     return lines.join("\n");
-  }, [student, cls, fach, halbjahr, overall, byCat, tendency, studentGrades, studentNotes, studentGespraeche, sprechtagNotiz]);
+  }, [student, cls, fach, halbjahr, overall, byCat, tendency, studentGrades, studentNotes, studentGespraeche, studentAbsences, sprechtagNotiz]);
 
   function copySprechtag() {
     navigator.clipboard?.writeText(sprechtagText);
@@ -5701,6 +6059,32 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                             onChange={(e) => setSprechtagNotiz(e.target.value)}
                           />
                         </div>
+                        {studentAbsences.length > 0 && (
+                          <div>
+                            <div className="text-[11px] font-medium uppercase tracking-wide text-stone-400 mb-2">Fehlzeiten</div>
+                            <div className="flex flex-wrap gap-2">
+                              {Object.entries(
+                                studentAbsences.reduce((acc, a) => { acc[a.excuseStatus] = (acc[a.excuseStatus] || 0) + 1; return acc; }, {})
+                              ).map(([status, count]) => (
+                                <span key={status} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium bg-stone-100" style={{ color: EXCUSE_STATUS[status]?.color ?? "#555" }}>
+                                  {EXCUSE_STATUS[status]?.label ?? status}: {count}×
+                                </span>
+                              ))}
+                            </div>
+                            {studentAbsences.slice(0, 4).length > 0 && (
+                              <ul className="mt-2 space-y-1">
+                                {studentAbsences.slice(0, 4).map((a) => (
+                                  <li key={a.id} className="flex items-center gap-2 text-xs text-stone-600">
+                                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: EXCUSE_STATUS[a.excuseStatus]?.color ?? "#aaa" }} />
+                                    <span className="text-stone-400 shrink-0">{new Date(a.date).toLocaleDateString("de-DE")}</span>
+                                    <span>{a.reason || "—"}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+
                         {studentGespraeche.length > 0 && (
                           <div>
                             <div className="text-[11px] font-medium uppercase tracking-wide text-stone-400 mb-2">Kindgespräche</div>
