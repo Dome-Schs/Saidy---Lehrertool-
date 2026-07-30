@@ -888,6 +888,61 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           </Button>
         </div>
 
+        {(() => {
+          const deletedStudents = (data.students || []).filter((s) => s.deletedAt);
+          const deletedClasses = (data.classes || []).filter((c) => c.deletedAt);
+          const total = deletedStudents.length + deletedClasses.length;
+          if (total === 0) return null;
+          function restoreStudent(id) {
+            update((d) => {
+              const s = d.students.find((s) => s.id === id);
+              if (s) { delete s.deletedAt; }
+              return d;
+            });
+          }
+          function restoreClass(id) {
+            update((d) => {
+              const c = d.classes.find((c) => c.id === id);
+              if (c) { delete c.deletedAt; }
+              d.students.filter((s) => s.classId === id && s.deletedAt).forEach((s) => { delete s.deletedAt; });
+              return d;
+            });
+          }
+          return (
+            <div className="pt-5 border-t border-stone-100">
+              <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Papierkorb</div>
+              <p className="text-xs text-stone-500 mb-3">Gelöschte Einträge bleiben 30 Tage wiederherstellbar, dann werden sie endgültig entfernt.</p>
+              <ul className="space-y-1.5">
+                {deletedClasses.map((c) => (
+                  <li key={c.id} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
+                    <span className="flex-1 text-sm text-stone-600 truncate">Klasse: {c.name}</span>
+                    <button
+                      onClick={() => restoreClass(c.id)}
+                      className="text-xs text-green-700 font-medium hover:underline shrink-0"
+                    >
+                      Wiederherstellen
+                    </button>
+                  </li>
+                ))}
+                {deletedStudents.map((s) => {
+                  const cls = (data.classes || []).find((c) => c.id === s.classId);
+                  return (
+                    <li key={s.id} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
+                      <span className="flex-1 text-sm text-stone-600 truncate">{s.name}{cls ? ` (${cls.name})` : ""}</span>
+                      <button
+                        onClick={() => restoreStudent(s.id)}
+                        className="text-xs text-green-700 font-medium hover:underline shrink-0"
+                      >
+                        Wiederherstellen
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })()}
+
         <Button onClick={onClose} className="w-full justify-center mt-5">Schließen</Button>
         </div>
 
@@ -1399,6 +1454,41 @@ export default function App() {
 
   const update = useCallback((fn) => setData((prev) => fn(structuredClone(prev))), []);
 
+  // Gefilterte Sicht: gelöschte Elemente ausblenden (noch innerhalb der 30-Tage-Frist)
+  const activeData = useMemo(() => ({
+    ...data,
+    classes: data.classes.filter((c) => !c.deletedAt),
+    students: data.students.filter((s) => !s.deletedAt),
+    notes: data.notes.filter((n) => !n.deletedAt),
+  }), [data]);
+
+  // Beim Start: Elemente endgültig entfernen, die älter als 30 Tage im Papierkorb sind
+  useEffect(() => {
+    if (!loaded) return;
+    const DAYS = 30;
+    const cutoff = Date.now() - DAYS * 86400000;
+    const hasStaleDeletions =
+      data.students.some((s) => s.deletedAt && new Date(s.deletedAt).getTime() < cutoff) ||
+      data.classes.some((c) => c.deletedAt && new Date(c.deletedAt).getTime() < cutoff) ||
+      data.notes.some((n) => n.deletedAt && new Date(n.deletedAt).getTime() < cutoff);
+    if (!hasStaleDeletions) return;
+    update((d) => {
+      const expiredStudentIds = d.students.filter((s) => s.deletedAt && new Date(s.deletedAt).getTime() < cutoff).map((s) => s.id);
+      const expiredClassIds = d.classes.filter((c) => c.deletedAt && new Date(c.deletedAt).getTime() < cutoff).map((c) => c.id);
+      d.students = d.students.filter((s) => !s.deletedAt || new Date(s.deletedAt).getTime() >= cutoff);
+      d.classes = d.classes.filter((c) => !c.deletedAt || new Date(c.deletedAt).getTime() >= cutoff);
+      d.notes = d.notes.filter((n) => {
+        if (expiredStudentIds.includes(n.studentId)) return false;
+        return !n.deletedAt || new Date(n.deletedAt).getTime() >= cutoff;
+      });
+      d.grades = d.grades.filter((g) => !expiredStudentIds.includes(g.studentId) && !expiredClassIds.includes(g.classId));
+      d.incidents = (d.incidents || []).filter((i) => !expiredStudentIds.includes(i.studentId));
+      d.absences = (d.absences || []).filter((a) => !expiredStudentIds.includes(a.studentId));
+      d.finalGrades = (d.finalGrades || []).filter((fg) => !expiredStudentIds.includes(fg.studentId));
+      return d;
+    });
+  }, [loaded]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function applyBundesland(code, addFerien) {
     update((d) => {
       d.settings = { ...(d.settings || {}), bundesland: code };
@@ -1564,12 +1654,12 @@ export default function App() {
 
         {/* Inhalt */}
         <main className="flex-1 md:ml-56 px-4 py-5 md:px-8 md:py-8 max-w-5xl pb-24 md:pb-8">
-          {tab === "dashboard" && <Dashboard data={data} update={update} onNavigate={goTo} onOpenUntisImport={() => setShowUntisImport(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
-          {tab === "klassen" && <KlassenTab data={data} update={update} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} />}
-          {tab === "stundenplan" && <StundenplanTab data={data} update={update} />}
-          {tab === "kalender" && <KalenderTab data={data} update={update} />}
-          {tab === "aufgaben" && <AufgabenTab data={data} update={update} />}
-          {tab === "noten" && <NotenTab data={data} update={update} halbjahr={halbjahr} initialFachId={notenFachId} onConsumeInitial={() => setNotenFachId(null)} />}
+          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenUntisImport={() => setShowUntisImport(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
+          {tab === "klassen" && <KlassenTab data={activeData} update={update} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} />}
+          {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
+          {tab === "kalender" && <KalenderTab data={activeData} update={update} />}
+          {tab === "aufgaben" && <AufgabenTab data={activeData} update={update} />}
+          {tab === "noten" && <NotenTab data={activeData} update={update} halbjahr={halbjahr} initialFachId={notenFachId} onConsumeInitial={() => setNotenFachId(null)} />}
 
           {showSettings && (
             <SettingsModal
@@ -3662,15 +3752,11 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach }) {
   }
 
   function deleteClass(id) {
+    const ts = isoDate(new Date());
     update((d) => {
-      d.classes = d.classes.filter((c) => c.id !== id);
-      const studentIds = d.students.filter((s) => s.classId === id).map((s) => s.id);
-      d.students = d.students.filter((s) => s.classId !== id);
-      d.notes = d.notes.filter((n) => !studentIds.includes(n.studentId));
-      d.grades = d.grades.filter((g) => g.classId !== id);
-      const removedFachIds = d.faecher.filter((f) => f.classId === id).map((f) => f.id);
-      d.faecher = d.faecher.filter((f) => f.classId !== id);
-      d.timetable = d.timetable.filter((t) => !removedFachIds.includes(t.fachId));
+      const cls = d.classes.find((c) => c.id === id);
+      if (cls) cls.deletedAt = ts;
+      d.students.filter((s) => s.classId === id).forEach((s) => { s.deletedAt = ts; });
       return d;
     });
     if (selectedClass === id) setSelectedClass(null);
@@ -3686,9 +3772,8 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach }) {
 
   function deleteStudent(id) {
     update((d) => {
-      d.students = d.students.filter((s) => s.id !== id);
-      d.notes = d.notes.filter((n) => n.studentId !== id);
-      d.grades = d.grades.filter((g) => g.studentId !== id);
+      const s = d.students.find((s) => s.id === id);
+      if (s) s.deletedAt = isoDate(new Date());
       return d;
     });
     if (selectedStudent === id) setSelectedStudent(null);
@@ -3736,7 +3821,8 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach }) {
 
   function deleteNote(noteId) {
     update((d) => {
-      d.notes = d.notes.filter((n) => n.id !== noteId);
+      const n = d.notes.find((n) => n.id === noteId);
+      if (n) n.deletedAt = isoDate(new Date());
       return d;
     });
   }

@@ -5,6 +5,13 @@ Format: Nutzersicht, auf Deutsch, für Lehrerinnen und Lehrer.
 
 ---
 
+## [0.5] – 30.07.2026
+
+### Neu
+- **30-Tage-Papierkorb**: Gelöschte Klassen und Schülerinnen/Schüler werden nicht sofort endgültig entfernt, sondern landen zunächst im Papierkorb. Dort bleiben sie 30 Tage lang erhalten und können mit einem Klick auf „Wiederherstellen" vollständig zurückgeholt werden. In den Einstellungen gibt es dafür einen neuen Abschnitt „Papierkorb" mit einer Übersicht aller gelöschten Einträge. Nach 30 Tagen werden sie automatisch und endgültig gelöscht.
+
+---
+
 ## [0.4] – 30.07.2026
 
 ### Verbessert
