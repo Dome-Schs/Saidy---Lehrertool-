@@ -649,7 +649,7 @@ function WebUntisImportModal({ students, onImport, onClose }) {
 }
 
 /* Einstellungen: Reihenfolge der Dashboard-Karten per Pfeiltasten anpassen */
-function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onImport, onClose }) {
+function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onImport, onClose, onOpenUntisImport }) {
   const gespeicherteReihenfolge = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
   const order = [
     ...gespeicherteReihenfolge.filter((k) => DASHBOARD_SECTIONS[k]),
@@ -660,7 +660,6 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
   const [importMsg, setImportMsg] = useState(null); // { ok, msg }
   const [confirmImport, setConfirmImport] = useState(null); // File
   const [showPromote, setShowPromote] = useState(false);
-  const [showUntisImport, setShowUntisImport] = useState(false);
 
   function promoteClasses(ids) {
     update((d) => {
@@ -846,7 +845,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
               Letzter Import: {new Date(data.settings.fehlzeitenLastImport).toLocaleDateString("de-DE")}
             </p>
           )}
-          <Button variant="subtle" onClick={() => setShowUntisImport(true)} className="w-full justify-center">
+          <Button variant="subtle" onClick={() => onOpenUntisImport?.()} className="w-full justify-center">
             <Upload size={15} /> WebUntis CSV importieren
           </Button>
         </div>
@@ -860,22 +859,6 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             promotedName={promotedName}
             onPromote={promoteClasses}
             onClose={() => setShowPromote(false)}
-          />
-        )}
-
-        {showUntisImport && (
-          <WebUntisImportModal
-            students={data.students}
-            onImport={(newAbsences) => {
-              update((d) => {
-                if (!d.absences) d.absences = [];
-                d.absences.push(...newAbsences);
-                d.settings = { ...(d.settings || {}), fehlzeitenLastImport: isoDate(new Date()) };
-                return d;
-              });
-              setShowUntisImport(false);
-            }}
-            onClose={() => setShowUntisImport(false)}
           />
         )}
 
@@ -1241,6 +1224,7 @@ export default function App() {
   const [saveState, setSaveState] = useState("idle"); // idle | saving | saved
   const [halbjahr, setHalbjahr] = useState(currentHalbjahr());
   const [showSettings, setShowSettings] = useState(false);
+  const [showUntisImport, setShowUntisImport] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [klassenSubTab, setKlassenSubTab] = useState("klassen");
@@ -1542,7 +1526,7 @@ export default function App() {
 
         {/* Inhalt */}
         <main className="flex-1 md:ml-56 px-4 py-5 md:px-8 md:py-8 max-w-5xl pb-24 md:pb-8">
-          {tab === "dashboard" && <Dashboard data={data} update={update} onNavigate={goTo} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
+          {tab === "dashboard" && <Dashboard data={data} update={update} onNavigate={goTo} onOpenUntisImport={() => setShowUntisImport(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
           {tab === "klassen" && <KlassenTab data={data} update={update} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} />}
           {tab === "stundenplan" && <StundenplanTab data={data} update={update} />}
           {tab === "kalender" && <KalenderTab data={data} update={update} />}
@@ -1559,6 +1543,23 @@ export default function App() {
               onShare={shareBackup}
               onImport={importBackup}
               onClose={() => setShowSettings(false)}
+              onOpenUntisImport={() => { setShowSettings(false); setShowUntisImport(true); }}
+            />
+          )}
+
+          {showUntisImport && (
+            <WebUntisImportModal
+              students={data.students}
+              onImport={(newAbsences) => {
+                update((d) => {
+                  if (!d.absences) d.absences = [];
+                  d.absences.push(...newAbsences);
+                  d.settings = { ...(d.settings || {}), fehlzeitenLastImport: isoDate(new Date()) };
+                  return d;
+                });
+                setShowUntisImport(false);
+              }}
+              onClose={() => setShowUntisImport(false)}
             />
           )}
 
@@ -1968,7 +1969,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
   );
 }
 
-function Dashboard({ data, update, onNavigate, halbjahr, setCaptureLesson, pendingLessons, now }) {
+function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setCaptureLesson, pendingLessons, now }) {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showPending, setShowPending] = useState(false);
   const todayStr = isoDate(new Date());
@@ -2041,7 +2042,7 @@ function Dashboard({ data, update, onNavigate, halbjahr, setCaptureLesson, pendi
         <div className="flex items-center gap-2 shrink-0">
           {showImportReminder && (
             <button
-              onClick={() => onNavigate?.("einstellungen")}
+              onClick={() => onOpenUntisImport?.()}
               className="relative w-9 h-9 rounded-full bg-stone-100 text-stone-400 hover:bg-stone-200 flex items-center justify-center shrink-0"
               title={daysSinceLast === null ? "WebUntis-Fehlzeiten noch nie importiert" : `WebUntis-Import fällig (vor ${daysSinceLast} Tagen)`}
             >
