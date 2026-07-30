@@ -2415,8 +2415,14 @@ function ImportCsvModal({ className, onImport, onClose }) {
   );
 }
 
+const MOOD_OPTIONS = [
+  { key: "gut", emoji: "😊", label: "Gut" },
+  { key: "ok", emoji: "😐", label: "Ok" },
+  { key: "schlecht", emoji: "😟", label: "Nicht so gut" },
+];
+
 /* Eigenständiges Fenster für die Schülerliste einer Klasse – bewusst getrennt von der Klassenübersicht */
-function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, onOpenAdd, onClose }) {
+function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onOpenAdd, onClose }) {
   const [photoError, setPhotoError] = useState("");
 
   async function handlePhoto(studentId, file) {
@@ -2444,7 +2450,8 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
         <ul className="divide-y divide-stone-100">
           {students.map((s) => {
             const open = selectedStudent === s.id;
-            const studentNotes = notes.filter((n) => n.studentId === s.id).sort((a, b) => b.date.localeCompare(a.date));
+            const studentNotes = notes.filter((n) => n.studentId === s.id && n.type !== "gespraech").sort((a, b) => b.date.localeCompare(a.date));
+            const studentGespraeche = notes.filter((n) => n.studentId === s.id && n.type === "gespraech").sort((a, b) => b.date.localeCompare(a.date));
             return (
               <li key={s.id} className="py-2">
                 <div className="flex items-center justify-between gap-2">
@@ -2552,10 +2559,61 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                         {studentNotes.map((n) => (
                           <li key={n.id} className="text-sm bg-stone-50 rounded-lg px-3 py-2 flex justify-between gap-3">
                             <span className="text-stone-700">{n.text}</span>
-                            <span className="text-stone-400 text-xs whitespace-nowrap">{new Date(n.date).toLocaleDateString("de-DE")}</span>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-stone-400 text-xs whitespace-nowrap">{new Date(n.date).toLocaleDateString("de-DE")}</span>
+                              <button onClick={() => onDeleteNote(n.id)} className="text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
+                            </div>
                           </li>
                         ))}
                         {!studentNotes.length && <li className="text-sm text-stone-400">Noch keine Notizen.</li>}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <MessageSquare size={15} className="text-stone-400" />
+                        <div className="font-medium text-stone-800 text-sm">Kindgespräche</div>
+                        <span className="text-[10px] text-stone-400 font-normal">Unabhängig vom Unterricht</span>
+                      </div>
+                      <div className="space-y-2 mb-2">
+                        <div className="flex gap-1.5">
+                          {MOOD_OPTIONS.map((m) => (
+                            <button
+                              key={m.key}
+                              onClick={() => setGespraechDraft((d) => ({ ...d, mood: m.key }))}
+                              title={m.label}
+                              className={`flex-1 py-1.5 rounded-lg border text-base transition-colors ${gespraechDraft.mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-stone-50"}`}
+                            >
+                              {m.emoji}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex gap-2">
+                          <input
+                            className={inputCls}
+                            placeholder="Was bewegt das Kind, wie geht es ihm/ihr …"
+                            value={gespraechDraft.text}
+                            onChange={(e) => setGespraechDraft((d) => ({ ...d, text: e.target.value }))}
+                            onKeyDown={(e) => e.key === "Enter" && onAddGespraech(s.id)}
+                          />
+                          <Button onClick={() => onAddGespraech(s.id)}><Plus size={15} /></Button>
+                        </div>
+                      </div>
+                      <ul className="space-y-1.5">
+                        {studentGespraeche.map((g) => {
+                          const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
+                          return (
+                            <li key={g.id} className="text-sm bg-stone-50 rounded-lg px-3 py-2 flex items-start gap-2">
+                              <span className="text-base shrink-0 leading-snug">{mood?.emoji ?? "💬"}</span>
+                              <span className="flex-1 text-stone-700">{g.text}</span>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-stone-400 text-xs whitespace-nowrap">{new Date(g.date).toLocaleDateString("de-DE")}</span>
+                                <button onClick={() => onDeleteNote(g.id)} className="text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                        {!studentGespraeche.length && <li className="text-sm text-stone-400">Noch keine Gespräche erfasst.</li>}
                       </ul>
                     </div>
                   </div>
@@ -3166,6 +3224,7 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach }) {
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [newNote, setNewNote] = useState("");
+  const [gespraechDraft, setGespraechDraft] = useState({ text: "", mood: "ok" });
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
@@ -3259,6 +3318,22 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach }) {
       return d;
     });
     setNewNote("");
+  }
+
+  function addGespraech(studentId) {
+    if (!gespraechDraft.text.trim() || !studentId) return;
+    update((d) => {
+      d.notes.push({ id: uid(), studentId, date: isoDate(new Date()), text: gespraechDraft.text.trim(), type: "gespraech", mood: gespraechDraft.mood });
+      return d;
+    });
+    setGespraechDraft({ text: "", mood: "ok" });
+  }
+
+  function deleteNote(noteId) {
+    update((d) => {
+      d.notes = d.notes.filter((n) => n.id !== noteId);
+      return d;
+    });
   }
 
   return (
@@ -3431,6 +3506,10 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach }) {
           onAddNote={addNote}
           newNote={newNote}
           setNewNote={setNewNote}
+          gespraechDraft={gespraechDraft}
+          setGespraechDraft={setGespraechDraft}
+          onAddGespraech={addGespraech}
+          onDeleteNote={deleteNote}
           onOpenAdd={() => setShowAddModal(true)}
           onClose={() => { setShowStudentsModal(false); setSelectedStudent(null); }}
         />
@@ -5115,7 +5194,8 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
   const studentGrades = data.grades.filter((g) => g.studentId === selectedStudent && g.fachId === selectedFach && g.halbjahr === halbjahr);
   const { overall, byCat } = calcOverall(studentGrades, weights);
   const tendency = tendencyInfo(overall);
-  const studentNotes = data.notes.filter((n) => n.studentId === selectedStudent).sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  const studentNotes = data.notes.filter((n) => n.studentId === selectedStudent && n.type !== "gespraech").sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5);
+  const studentGespraeche = data.notes.filter((n) => n.studentId === selectedStudent && n.type === "gespraech").sort((a, b) => b.date.localeCompare(a.date));
   const finalGrade = (data.finalGrades || []).find((f) => f.studentId === selectedStudent && f.fachId === selectedFach && f.halbjahr === halbjahr);
 
   function setFinalGrade(value) {
@@ -5177,6 +5257,15 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
       lines.push("Zuletzt notierte Beobachtungen:");
       studentNotes.forEach((n) => lines.push(`– ${n.text} (${new Date(n.date).toLocaleDateString("de-DE")})`));
     }
+    if (studentGespraeche.length) {
+      lines.push("");
+      lines.push("Kindgespräche (was das Kind bewegt):");
+      const moodLabel = { gut: "😊", ok: "😐", schlecht: "😟" };
+      studentGespraeche.slice(0, 5).forEach((g) => {
+        const icon = moodLabel[g.mood] ?? "💬";
+        lines.push(`${icon} ${new Date(g.date).toLocaleDateString("de-DE")}: ${g.text}`);
+      });
+    }
     if (sprechtagNotiz.trim()) {
       lines.push("");
       lines.push("Eigene Notizen fürs Gespräch:");
@@ -5185,7 +5274,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
     lines.push("");
     lines.push("Diese Angaben sind eine rechnerische Grundlage und ersetzen nicht die pädagogische Gesamteinschätzung.");
     return lines.join("\n");
-  }, [student, cls, fach, halbjahr, overall, byCat, tendency, studentGrades, studentNotes, sprechtagNotiz]);
+  }, [student, cls, fach, halbjahr, overall, byCat, tendency, studentGrades, studentNotes, studentGespraeche, sprechtagNotiz]);
 
   function copySprechtag() {
     navigator.clipboard?.writeText(sprechtagText);
@@ -5612,6 +5701,23 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                             onChange={(e) => setSprechtagNotiz(e.target.value)}
                           />
                         </div>
+                        {studentGespraeche.length > 0 && (
+                          <div>
+                            <div className="text-[11px] font-medium uppercase tracking-wide text-stone-400 mb-2">Kindgespräche</div>
+                            <ul className="space-y-1.5">
+                              {studentGespraeche.slice(0, 5).map((g) => {
+                                const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
+                                return (
+                                  <li key={g.id} className="flex items-start gap-2 bg-stone-50 rounded-xl px-3 py-2 text-sm">
+                                    <span className="text-base shrink-0 leading-snug">{mood?.emoji ?? "💬"}</span>
+                                    <span className="flex-1 text-stone-700">{g.text}</span>
+                                    <span className="text-stone-400 text-xs whitespace-nowrap shrink-0">{new Date(g.date).toLocaleDateString("de-DE")}</span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                        )}
                         <div className="rounded-xl bg-stone-50 border border-stone-200 p-4">
                           <div className="flex items-center justify-between mb-2">
                             <div className="text-xs font-medium text-stone-500">Gesprächsgrundlage</div>
