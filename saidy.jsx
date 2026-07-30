@@ -60,7 +60,7 @@ const IMPORT_INTERVALS = [
 ];
 
 const EXCUSE_STATUS = {
-  ausstehend: { label: "Ausstehend", color: "#B45309" },
+  ausstehend: { label: "Entschuldigung fehlt noch", color: "#B45309" },
   eingereicht: { label: "Eingereicht", color: "#1D4ED8" },
   entschuldigt: { label: "Entschuldigt", color: "#15803D" },
   unentschuldigt: { label: "Unentschuldigt", color: "#B91C1C" },
@@ -613,8 +613,8 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
               className="w-full border-2 border-dashed border-stone-200 rounded-xl py-8 text-center hover:border-stone-400 transition-colors"
             >
               <Upload size={24} className="mx-auto mb-2 text-stone-300" />
-              <div className="text-sm text-stone-500">CSV-Datei auswählen</div>
-              <div className="text-xs text-stone-400 mt-0.5">WebUntis → Export als CSV</div>
+              <div className="text-sm text-stone-500">WebUntis-Datei hochladen</div>
+              <div className="text-xs text-stone-400 mt-0.5">Klassenbuch → Fehlzeiten → Als Datei exportieren</div>
             </button>
           )}
           <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => handleFile(e.target.files?.[0])} />
@@ -634,7 +634,7 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
                     <span className="text-stone-500">{label}</span>
                     {cols[key] >= 0
                       ? <span className="font-medium text-stone-700">„{headers[cols[key]]}"</span>
-                      : <span className="text-amber-600">nicht erkannt</span>
+                      : <span className="text-stone-400">nicht gefunden – wird übersprungen</span>
                     }
                   </div>
                 ))}
@@ -847,7 +847,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             <Button variant="subtle" onClick={onExport} className="flex-1 justify-center"><Download size={15} /> Sichern</Button>
             <Button variant="subtle" onClick={onShare} className="flex-1 justify-center">Teilen</Button>
           </div>
-          <Button variant="ghost" onClick={() => importInputRef.current?.click()} className="w-full justify-center"><Upload size={15} /> Backup importieren</Button>
+          <Button variant="ghost" onClick={() => importInputRef.current?.click()} className="w-full justify-center"><Upload size={15} /> Gesichertes wiederherstellen</Button>
           <input
             ref={importInputRef} type="file" accept="application/json,.json" className="hidden"
             onChange={(e) => { const f = e.target.files?.[0]; if (f) setConfirmImport(f); e.target.value = ""; }}
@@ -903,9 +903,9 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
         {confirmImport && (
           <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setConfirmImport(null)}>
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
-              <div className="font-semibold text-stone-800 mb-2">Backup importieren?</div>
+              <div className="font-semibold text-stone-800 mb-2">Datensicherung wiederherstellen?</div>
               <p className="text-sm text-stone-600 mb-4">
-                Alle aktuell in der App gespeicherten Daten werden durch das Backup <strong>ersetzt</strong>. Am besten vorher einmal „Sichern".
+                Alle aktuell in der App gespeicherten Daten werden durch die Datensicherung <strong>ersetzt</strong>. Am besten vorher einmal „Sichern".
               </p>
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={() => setConfirmImport(null)} className="flex-1 justify-center">Abbrechen</Button>
@@ -1451,7 +1451,7 @@ export default function App() {
         const parsed = JSON.parse(String(reader.result));
         const imported = parsed?.data && (parsed?.app === "saidy" || parsed?.app === "lehrertool") ? parsed.data : parsed;
         if (!imported || !Array.isArray(imported.classes)) {
-          onResult?.({ ok: false, msg: "Diese Datei ist kein gültiges Saidy-Backup." });
+          onResult?.({ ok: false, msg: "Diese Datei konnte nicht eingelesen werden. Bitte stelle sicher, dass du die Datei direkt aus Saidy gesichert hast (Einstellungen → Sichern)." });
           return;
         }
         const merged = { ...EMPTY_DATA, ...imported };
@@ -1622,7 +1622,7 @@ export default function App() {
       {/* Feste untere Navigation (nur mobil) */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]">
         <div className="flex items-stretch justify-around px-2 pt-2 pb-1.5">
-          {[tabs[0], tabs[1], tabs[2], tabs[5]].map((t) => {
+          {[tabs[0], tabs[1], tabs[3], tabs[5]].map((t) => {
             const Icon = t.icon;
             const active = tab === t.key;
             return (
@@ -1644,10 +1644,10 @@ export default function App() {
             onClick={() => setShowMore(true)}
             className="flex-1 flex flex-col items-center gap-1"
           >
-            <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${["kalender", "aufgaben"].includes(tab) ? "akzent-ton" : ""}`}>
-              <MoreHorizontal size={20} strokeWidth={2.2} className={["kalender", "aufgaben"].includes(tab) ? "akzent-text" : "text-stone-400"} />
+            <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${["stundenplan", "aufgaben"].includes(tab) ? "akzent-ton" : ""}`}>
+              <MoreHorizontal size={20} strokeWidth={2.2} className={["stundenplan", "aufgaben"].includes(tab) ? "akzent-text" : "text-stone-400"} />
             </span>
-            <span className={`text-[10px] leading-none ${["kalender", "aufgaben"].includes(tab) ? "akzent-text font-semibold" : "text-stone-400"}`}>Mehr</span>
+            <span className={`text-[10px] leading-none ${["stundenplan", "aufgaben"].includes(tab) ? "akzent-text font-semibold" : "text-stone-400"}`}>Mehr</span>
           </button>
         </div>
       </nav>
@@ -1658,7 +1658,7 @@ export default function App() {
           <div className="bg-white rounded-t-3xl w-full p-4 pb-8" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
             <div className="grid grid-cols-3 gap-3">
-              {[tabs[3], tabs[4]].map((t) => {
+              {[tabs[2], tabs[4]].map((t) => {
                 const Icon = t.icon;
                 const active = tab === t.key;
                 return (
@@ -1939,15 +1939,18 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                     >
                       <StickyNote size={16} />
                     </button>
-                    <button
-                      onClick={() => toggleIncident(s.id)}
-                      className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border ${
-                        fehlt ? "bg-red-600 border-red-600 text-white" : "border-stone-200 text-stone-400"
-                      }`}
-                      aria-label={`${incidentLabel} vergessen`}
-                    >
-                      <AlertTriangle size={16} />
-                    </button>
+                    <div className="flex flex-col items-center gap-0.5">
+                      <button
+                        onClick={() => toggleIncident(s.id)}
+                        className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border ${
+                          fehlt ? "bg-red-600 border-red-600 text-white" : "border-stone-200 text-stone-400"
+                        }`}
+                        aria-label={`${incidentLabel} vergessen`}
+                      >
+                        <AlertTriangle size={16} />
+                      </button>
+                      {fehlt && autoGrade && <span className="text-[9px] leading-none text-red-600 font-medium">Note 5</span>}
+                    </div>
                   </div>
 
                   {fehlt && (
@@ -2080,34 +2083,42 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
             {selectedDate.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
           </p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-end gap-2 shrink-0">
           {showImportReminder && (
-            <button
-              onClick={() => onOpenUntisImport?.()}
-              className="relative w-9 h-9 rounded-full bg-stone-100 text-stone-400 hover:bg-stone-200 flex items-center justify-center shrink-0"
-              title={daysSinceLast === null ? "WebUntis-Fehlzeiten noch nie importiert" : `WebUntis-Import fällig (vor ${daysSinceLast} Tagen)`}
-            >
-              <Upload size={16} />
-              <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-amber-500 border-2 border-white" />
-            </button>
+            <div className="flex flex-col items-center gap-0.5">
+              <button
+                onClick={() => onOpenUntisImport?.()}
+                className="relative w-9 h-9 rounded-full bg-stone-100 text-stone-400 hover:bg-stone-200 flex items-center justify-center shrink-0"
+                title={daysSinceLast === null ? "WebUntis-Fehlzeiten noch nie importiert" : `WebUntis-Import fällig (vor ${daysSinceLast} Tagen)`}
+              >
+                <Upload size={16} />
+                <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-amber-500 border-2 border-white" />
+              </button>
+              <span className="text-[9px] leading-none text-amber-600 font-medium">Fehlzeiten</span>
+            </div>
           )}
           {isToday && (
-            <button
-              onClick={() => setShowPending((v) => !v)}
-              className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0 ${
-                (pendingLessons || []).length
-                  ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                  : "bg-stone-100 text-stone-300 hover:bg-stone-200"
-              }`}
-              title={(pendingLessons || []).length ? "Stunden nachtragen" : "Alle Stunden erfasst"}
-            >
-              <ClipboardCheck size={17} />
-              {!!(pendingLessons || []).length && (
-                <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-amber-600 text-white text-[10px] font-semibold flex items-center justify-center">
-                  {pendingLessons.length}
-                </span>
-              )}
-            </button>
+            <div className="flex flex-col items-center gap-0.5">
+              <button
+                onClick={() => setShowPending((v) => !v)}
+                className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0 ${
+                  (pendingLessons || []).length
+                    ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
+                    : "bg-stone-100 text-stone-300 hover:bg-stone-200"
+                }`}
+                title={(pendingLessons || []).length ? "Unterricht erfassen" : "Alle Stunden erfasst"}
+              >
+                <ClipboardCheck size={17} />
+                {!!(pendingLessons || []).length && (
+                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-amber-600 text-white text-[10px] font-semibold flex items-center justify-center">
+                    {pendingLessons.length}
+                  </span>
+                )}
+              </button>
+              <span className={`text-[9px] leading-none ${(pendingLessons || []).length ? "text-amber-600 font-medium" : "text-stone-400"}`}>
+                {(pendingLessons || []).length ? "Nachtragen" : "Erfasst"}
+              </span>
+            </div>
           )}
         {data.settings?.showFerienCountdown && (() => {
           const cd = nextFerienCountdown(data.events, data.settings?.countdownSchooldaysOnly);
@@ -2724,7 +2735,7 @@ function ImportCsvModal({ className, onImport, onClose }) {
               onClick={() => fileInputRef.current?.click()}
               className="w-full border-2 border-dashed border-stone-300 rounded-xl py-8 text-center text-sm text-stone-500 hover:akzent-rand hover:akzent-text"
             >
-              CSV-Datei auswählen
+              Klassenliste hochladen
             </button>
             <input
               ref={fileInputRef} type="file" accept=".csv,text/csv" className="hidden"
@@ -2807,6 +2818,7 @@ const MOOD_OPTIONS = [
 /* Eigenständiges Fenster für die Schülerliste einer Klasse – bewusst getrennt von der Klassenübersicht */
 function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onOpenAdd, onClose }) {
   const [photoError, setPhotoError] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   async function handlePhoto(studentId, file) {
     if (!file) return;
@@ -2820,6 +2832,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
   }
 
   return (
+    <>
     <div className="fixed inset-0 bg-stone-900/40 flex items-center justify-center p-4 z-50" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5 overflow-y-auto dialog" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
@@ -2847,7 +2860,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                     {s.name}
                     {s.medicalInfo && <AlertCircle size={13} className="text-amber-500 shrink-0" />}
                   </button>
-                  <button onClick={() => onDeleteStudent(s.id)} className="text-stone-300 hover:text-red-500 p-1 shrink-0">
+                  <button onClick={() => setConfirmDeleteId(s.id)} className="text-stone-300 hover:text-red-500 p-1 shrink-0">
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -3008,6 +3021,15 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
         </ul>
       </div>
     </div>
+    <ConfirmDialog
+      open={!!confirmDeleteId}
+      title="Kind wirklich löschen?"
+      message="Alle Noten, Notizen und Kindgespräche dieses Kindes werden mitgelöscht. Das lässt sich nicht rückgängig machen."
+      confirmLabel="Löschen"
+      onConfirm={() => { onDeleteStudent(confirmDeleteId); setConfirmDeleteId(null); }}
+      onCancel={() => setConfirmDeleteId(null)}
+    />
+    </>
   );
 }
 
@@ -5876,7 +5898,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
           {!!students.length && (
             <div className="flex gap-2 flex-wrap">
               <Button variant="subtle" onClick={() => setShowBulkModal(true)}>Sammelbewertung</Button>
-              <Button variant="subtle" onClick={() => setShowIncidents(true)}><AlertTriangle size={15} /> Vergessen</Button>
+              <Button variant="subtle" onClick={() => setShowIncidents(true)}><AlertTriangle size={15} /> Material vergessen</Button>
               <Button variant="subtle" onClick={() => setPrintMode({ type: "class" })}><Printer size={15} /> PDF</Button>
             </div>
           )}
@@ -5987,7 +6009,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
 
                   {/* Zeugnisnote: darf vom rechnerischen Wert abweichen */}
                   <div className="border-t border-stone-100 pt-3 flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-medium text-stone-700">Zeugnisnote ({halbjahr}. HJ)</span>
+                    <span className="text-sm font-medium text-stone-700">Zeugnisnote ({halbjahr}. Halbjahr)</span>
                     <select
                       className="text-sm rounded-lg border border-stone-300 px-2 py-1.5 w-20"
                       value={finalGrade?.value ?? ""}
