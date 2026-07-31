@@ -40,7 +40,7 @@ const QUICK_SYMBOLS = [
   { symbol: "– –", value: 5, color: "#B91C1C" },
 ];
 
-const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], deletedSnapshot: null, settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null } };
+const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], deletedSnapshot: null, settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null, notenfarben: true } };
 
 const DASHBOARD_SECTIONS = {
   unterricht: "Unterricht",
@@ -258,7 +258,8 @@ function gradeWord(n) {
   return "ungenügend";
 }
 
-function gradeColor(n) {
+function gradeColor(n, colored = true) {
+  if (!colored) return "text-stone-700";
   if (n <= 2.5) return "text-emerald-600";
   if (n <= 3.5) return "text-amber-600";
   return "text-red-600";
@@ -503,15 +504,14 @@ function ColorPicker({ value, onChange }) {
 }
 
 /* Tendenz-Meter: horizontaler Streifen 1–6 mit Marker, das Signature-Element */
-function TendencyMeter({ value }) {
+function TendencyMeter({ value, colored = true }) {
   if (value == null) return null;
   const pct = Math.min(100, Math.max(0, ((value - 1) / 5) * 100));
   return (
     <div className="w-full">
-      {/* Positions-Pfeil in der Farbe der Note */}
       <div className="relative h-3.5">
         <span
-          className={`absolute -translate-x-1/2 text-sm leading-none font-bold ${gradeColor(value)}`}
+          className={`absolute -translate-x-1/2 text-sm leading-none font-bold ${gradeColor(value, colored)}`}
           style={{ left: `${pct}%`, top: 0 }}
         >
           ▼
@@ -853,6 +853,11 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             <input type="checkbox" checked={!!data.settings?.countdownSchooldaysOnly} onChange={(e) => setSetting("countdownSchooldaysOnly", e.target.checked)} className="w-4 h-4" />
           </label>
         )}
+
+        <label className="flex items-center justify-between gap-2 mb-4 cursor-pointer">
+          <span className="text-xs text-stone-500">Notenfarben anzeigen (grün / gelb / rot)</span>
+          <input type="checkbox" checked={data.settings?.notenfarben !== false} onChange={(e) => setSetting("notenfarben", e.target.checked)} className="w-4 h-4" />
+        </label>
 
         <div className="text-xs font-medium text-stone-500 mb-2">Reihenfolge der Karten</div>
         <ul className="space-y-1.5 mb-2">
@@ -5676,6 +5681,7 @@ function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
 /* Klassenübersicht: alle Kinder eines Fachs auf einen Blick, mit Foto und farbcodierten Noten */
 function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStudent, onSelect }) {
   const weights = fach?.weights || DEFAULT_WEIGHTS;
+  const colored = data.settings?.notenfarben !== false;
   const [tendencyPopup, setTendencyPopup] = useState(null); // { name, tendency, overall }
   const [sortDir, setSortDir] = useState("az"); // "az" | "za"
   const [nameOrder, setNameOrder] = useState("vorname"); // "vorname" | "nachname"
@@ -5766,7 +5772,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
                   </div>
                 </td>
                 <td className="text-center tnum">
-                  {byCat.muendlich ? <span className={`font-semibold ${gradeColor(byCat.muendlich.avg)}`}>{gradeLabel(byCat.muendlich.avg)}</span> : <span className="text-stone-300">—</span>}
+                  {byCat.muendlich ? <span className={`font-semibold ${gradeColor(byCat.muendlich.avg, colored)}`}>{gradeLabel(byCat.muendlich.avg)}</span> : <span className="text-stone-300">—</span>}
                 </td>
                 <td className="text-center tnum">
                   {istSport ? (
@@ -5785,13 +5791,13 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
                       );
                     })()
                   ) : (
-                    byCat.schriftlich ? <span className={`font-semibold ${gradeColor(byCat.schriftlich.avg)}`}>{gradeLabel(byCat.schriftlich.avg)}</span> : <span className="text-stone-300">—</span>
+                    byCat.schriftlich ? <span className={`font-semibold ${gradeColor(byCat.schriftlich.avg, colored)}`}>{gradeLabel(byCat.schriftlich.avg)}</span> : <span className="text-stone-300">—</span>
                   )}
                 </td>
                 <td className="text-center">
                   {overall != null ? (
                     <span className="inline-flex flex-col items-center leading-none">
-                      <span className={`text-base font-semibold tnum ${gradeColor(overall)}`}>{gradeLabel(overall)}</span>
+                      <span className={`text-base font-semibold tnum ${gradeColor(overall, colored)}`}>{gradeLabel(overall)}</span>
                       {tendency && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setTendencyPopup({ name: s.name, tendency, overall }); }}
@@ -5916,6 +5922,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
 }
 
 function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
+  const colored = data.settings?.notenfarben !== false;
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedFach, setSelectedFach] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -6215,7 +6222,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                   <div className="text-right shrink-0">
                     {klassenschnitt != null ? (
                       <>
-                        <div className={`text-xl font-bold ${gradeColor(klassenschnitt)}`}>{gradeLabel(klassenschnitt)}</div>
+                        <div className={`text-xl font-bold ${gradeColor(klassenschnitt, colored)}`}>{gradeLabel(klassenschnitt)}</div>
                         <div className="text-[10px] text-stone-400">Schnitt</div>
                       </>
                     ) : (
@@ -6306,7 +6313,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                   {overall != null ? (
                     <div className="mb-4">
                       <div className="flex items-end gap-2 mb-2">
-                        <span className={`text-4xl font-semibold tracking-tight tnum ${gradeColor(overall)}`}>{gradeLabel(overall)}</span>
+                        <span className={`text-4xl font-semibold tracking-tight tnum ${gradeColor(overall, colored)}`}>{gradeLabel(overall)}</span>
                         <span className="text-sm text-stone-400 mb-1">{gradeWord(overall)}</span>
                       </div>
 
@@ -6315,7 +6322,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                         {weights.muendlich > 0 && (
                           <span className="bg-stone-100 rounded-lg px-2.5 py-1 whitespace-nowrap">
                             <span className="text-stone-400 text-xs">Mündl. {weights.muendlich} %</span>{" "}
-                            <span className={`font-semibold ${byCat.muendlich ? gradeColor(byCat.muendlich.avg) : "text-stone-300"}`}>
+                            <span className={`font-semibold ${byCat.muendlich ? gradeColor(byCat.muendlich.avg, colored) : "text-stone-300"}`}>
                               {byCat.muendlich ? gradeLabel(byCat.muendlich.avg) : "—"}
                             </span>
                             {byCat.muendlich && <span className="text-stone-400 text-xs"> ({byCat.muendlich.count})</span>}
@@ -6325,17 +6332,17 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                         {weights.schriftlich > 0 && (
                           <span className="bg-stone-100 rounded-lg px-2.5 py-1 whitespace-nowrap">
                             <span className="text-stone-400 text-xs">Schr. {weights.schriftlich} %</span>{" "}
-                            <span className={`font-semibold ${byCat.schriftlich ? gradeColor(byCat.schriftlich.avg) : "text-stone-300"}`}>
+                            <span className={`font-semibold ${byCat.schriftlich ? gradeColor(byCat.schriftlich.avg, colored) : "text-stone-300"}`}>
                               {byCat.schriftlich ? gradeLabel(byCat.schriftlich.avg) : "—"}
                             </span>
                             {byCat.schriftlich && <span className="text-stone-400 text-xs"> ({byCat.schriftlich.count})</span>}
                           </span>
                         )}
                         <span className="text-stone-300">=</span>
-                        <span className={`font-semibold ${gradeColor(overall)}`}>{gradeLabel(overall)}</span>
+                        <span className={`font-semibold ${gradeColor(overall, colored)}`}>{gradeLabel(overall)}</span>
                       </div>
 
-                      <TendencyMeter value={overall} />
+                      <TendencyMeter value={overall} colored={colored} />
                       {tendency && (
                         <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-sm text-amber-800">
                           <AlertCircle size={15} className="shrink-0 mt-0.5" />
@@ -6415,7 +6422,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                                 title={g.auto ? "Automatische Note – nur löschbar" : "Antippen zum Bearbeiten"}
                               >
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className={`font-semibold ${g.auto ? "text-amber-700" : gradeColor(g.value)}`}>
+                                  <span className={`font-semibold ${g.auto ? "text-amber-700" : gradeColor(g.value, colored)}`}>
                                     {GRADE_OPTIONS.find((o) => o.value === g.value)?.label}
                                   </span>
                                   <span className="text-xs text-stone-400">
@@ -6432,7 +6439,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                                 </div>
                                 {runningOverall != null && (
                                   <div className="text-xs text-stone-400 mt-0.5 flex items-center gap-1">
-                                    Stand danach: <span className={`font-medium ${gradeColor(runningOverall)}`}>{gradeLabel(runningOverall)}</span>
+                                    Stand danach: <span className={`font-medium ${gradeColor(runningOverall, colored)}`}>{gradeLabel(runningOverall)}</span>
                                     {better && <TrendingUp size={11} className="text-emerald-600" />}
                                     {worse && <TrendingDown size={11} className="text-red-500" />}
                                   </div>
@@ -6599,7 +6606,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                                   <AlertTriangle size={11} /> {GRADE_OPTIONS.find((o) => o.value === g.value)?.label}
                                 </span>
                               ) : (
-                                <span className={`font-semibold w-8 shrink-0 tnum ${gradeColor(g.value)}`}>{GRADE_OPTIONS.find((o) => o.value === g.value)?.label}</span>
+                                <span className={`font-semibold w-8 shrink-0 tnum ${gradeColor(g.value, colored)}`}>{GRADE_OPTIONS.find((o) => o.value === g.value)?.label}</span>
                               )}
                               <span className="text-xs text-stone-400 w-16 shrink-0">{CATS.find((c) => c.key === g.category)?.label}</span>
                               <span className="flex-1 text-stone-700 truncate flex items-center gap-1.5">
