@@ -1766,6 +1766,7 @@ export default function App() {
         }
         const merged = { ...EMPTY_DATA, ...imported };
         setData(merged);
+        recordBackup();
         onResult?.({ ok: true, msg: "Backup erfolgreich geladen." });
       } catch (e) {
         onResult?.({ ok: false, msg: "Die Datei konnte nicht gelesen werden." });
