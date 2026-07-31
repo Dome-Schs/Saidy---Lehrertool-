@@ -5828,6 +5828,13 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
         </tbody>
       </table>
 
+      {rows.some((r) => r.tendency) && (
+        <p className="text-[10px] text-stone-400 mt-2 flex items-center gap-3 px-1">
+          <span className="flex items-center gap-1"><TrendingUp size={9} className="text-emerald-600" /> Tendenz zur besseren Note</span>
+          <span className="flex items-center gap-1"><TrendingDown size={9} className="text-red-500" /> Tendenz zur schlechteren Note</span>
+        </p>
+      )}
+
       {sportzeugDetail && (() => {
         const s = students.find((x) => x.id === sportzeugDetail);
         const eintraege = (data.incidents || [])
