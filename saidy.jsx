@@ -3192,6 +3192,10 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                             Entfernen
                           </button>
                         )}
+                        <p className="text-[10px] text-stone-400 mt-1 flex items-center gap-1">
+                          <ShieldCheck size={10} className="shrink-0" />
+                          Nur mit schriftlicher Einwilligung der Erziehungsberechtigten speichern.
+                        </p>
                       </div>
                     </div>
 
