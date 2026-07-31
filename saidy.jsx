@@ -715,6 +715,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
   const [confirmBackupAction, setConfirmBackupAction] = useState(null); // 'export' | 'share'
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetInput, setResetInput] = useState("");
+  const [confirmDeleteSnapshot, setConfirmDeleteSnapshot] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPromote, setShowPromote] = useState(false);
 
@@ -972,7 +973,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
                       <button onClick={restoreAllData} className="text-xs text-green-700 font-medium hover:underline shrink-0">Wiederherstellen</button>
                     </div>
                     <button
-                      onClick={() => update((d) => { d.deletedSnapshot = null; return d; })}
+                      onClick={() => setConfirmDeleteSnapshot(true)}
                       className="text-[11px] text-red-500 hover:underline mt-1"
                     >
                       Jetzt endgültig löschen (auch Gesundheitsdaten & Fotos)
@@ -1089,6 +1090,23 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
               <div className="flex gap-2 mt-3">
                 <Button variant="ghost" onClick={() => setConfirmReset(false)} className="flex-1 justify-center">Abbrechen</Button>
                 <Button variant="danger" disabled={resetInput !== "LÖSCHEN"} onClick={() => { onReset(); setConfirmReset(false); }} className="flex-1 justify-center">Löschen</Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {confirmDeleteSnapshot && (
+          <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setConfirmDeleteSnapshot(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="font-semibold text-stone-800 mb-2">Endgültig löschen?</div>
+              <div className="bg-red-50 border border-red-100 rounded-xl p-3 mb-3">
+                <p className="text-[11px] text-red-800 leading-relaxed">
+                  <strong>Diese Aktion kann nicht rückgängig gemacht werden.</strong> Alle Daten – einschließlich Gesundheitsdaten und Fotos – werden unwiederbringlich gelöscht. Es gibt keine Wiederherstellung.
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => setConfirmDeleteSnapshot(false)} className="flex-1 justify-center">Abbrechen</Button>
+                <Button variant="danger" onClick={() => { update((d) => { d.deletedSnapshot = null; return d; }); setConfirmDeleteSnapshot(false); }} className="flex-1 justify-center">Endgültig löschen</Button>
               </div>
             </div>
           </div>
