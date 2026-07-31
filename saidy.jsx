@@ -5922,6 +5922,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
   const [showSprechtag, setShowSprechtag] = useState(false);
   const [sprechtagNotiz, setSprechtagNotiz] = useState("");
   const [copied, setCopied] = useState(false);
+  const [confirmCopySprechtag, setConfirmCopySprechtag] = useState(false);
   const [printMode, setPrintMode] = useState(null); // { type: "class" } | { type: "student", studentId }
   const [showIncidents, setShowIncidents] = useState(false);
   const [showGradesList, setShowGradesList] = useState(false);
@@ -6497,7 +6498,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                         <div className="rounded-xl bg-stone-50 border border-stone-200 p-4">
                           <div className="flex items-center justify-between mb-2">
                             <div className="text-xs font-medium text-stone-500">Gesprächsgrundlage</div>
-                            <Button variant="subtle" onClick={copySprechtag}>
+                            <Button variant="subtle" onClick={() => copied ? null : setConfirmCopySprechtag(true)}>
                               {copied ? <><CheckCircle2 size={15} /> Kopiert</> : <><Copy size={15} /> Kopieren</>}
                             </Button>
                           </div>
@@ -6505,6 +6506,23 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                         </div>
                       </div>
                     </div>
+
+                    {confirmCopySprechtag && (
+                      <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setConfirmCopySprechtag(false)}>
+                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
+                          <div className="font-semibold text-stone-800 mb-2">Text kopieren</div>
+                          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-3">
+                            <p className="text-[11px] text-amber-800 leading-relaxed">
+                              <strong>Datenschutzhinweis:</strong> Dieser Text enthält personenbezogene Schülerdaten. Nur über sichere, schulisch genehmigte Kanäle weitergeben – keine privaten Messenger oder Cloud-Dienste.
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button variant="ghost" onClick={() => setConfirmCopySprechtag(false)} className="flex-1 justify-center">Abbrechen</Button>
+                            <Button onClick={() => { setConfirmCopySprechtag(false); copySprechtag(); }} className="flex-1 justify-center">Verstanden, kopieren</Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 
