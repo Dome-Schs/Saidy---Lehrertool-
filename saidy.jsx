@@ -2026,7 +2026,7 @@ export default function App() {
       {/* Mehr-Menü (mobil) */}
       {showMore && (
         <div className="md:hidden fixed inset-0 bg-stone-900/40 z-50 flex items-end" onClick={() => setShowMore(false)}>
-          <div className="bg-white rounded-t-3xl w-full p-4 pb-8" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-t-3xl w-full p-4 pb-[max(2rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
             <div className="grid grid-cols-3 gap-3">
               {[tabs[2], tabs[4]].map((t) => {
