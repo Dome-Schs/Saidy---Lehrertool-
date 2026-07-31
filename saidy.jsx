@@ -1500,49 +1500,49 @@ const HELP_DATA = [
   {
     category: "Erste Schritte",
     items: [
-      { q: "Wie lege ich eine neue Klasse an?", a: "Tippe auf „Klassen" in der Navigation, dann oben rechts auf „+". Gib den Klassennamen ein und bestätige mit „Anlegen"." },
-      { q: "Wie füge ich Schüler:innen hinzu?", a: "Öffne eine Klasse und tippe auf „+ Schüler:in". Namen können einzeln oder als Liste eingegeben werden." },
-      { q: "Wie stelle ich mein Bundesland ein?", a: "Gehe zu „Mehr" → „Einstellungen" und wähle dein Bundesland. Danach kannst du die offiziellen Schulferien automatisch eintragen lassen." },
+      { q: "Wie lege ich eine neue Klasse an?", a: `Tippe auf „Klassen“ in der Navigation, dann oben rechts auf „+“. Gib den Klassennamen ein und bestätige mit „Anlegen“.` },
+      { q: "Wie füge ich Schüler:innen hinzu?", a: `Öffne eine Klasse und tippe auf „+ Schüler:in“. Namen können einzeln oder als Liste eingegeben werden.` },
+      { q: "Wie stelle ich mein Bundesland ein?", a: `Gehe zu „Mehr“ → „Einstellungen“ und wähle dein Bundesland. Danach kannst du die offiziellen Schulferien automatisch eintragen lassen.` },
     ],
   },
   {
     category: "Klassen & Schüler:innen",
     items: [
-      { q: "Wie bearbeite ich eine:n Schüler:in?", a: "Tippe in der Klassenliste auf den Namen. Im Profil kannst du Name, Foto und weitere Angaben bearbeiten." },
-      { q: "Wie lösche ich eine Klasse?", a: "Öffne die Klasse, tippe auf das Bearbeiten-Symbol und wähle „Klasse löschen". Achtung: alle Daten dieser Klasse werden unwiderruflich entfernt." },
-      { q: "Was sind Dienste?", a: "Dienste sind Aufgaben, die Saidy Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste", mit einem Tippen weiter zum nächsten Kind." },
-      { q: "Wie erfasse ich Fehlzeiten?", a: "Gehe zu Klasse → „Fehlzeiten" → „+ Fehlzeit". Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist." },
+      { q: "Wie bearbeite ich eine:n Schüler:in?", a: `Tippe in der Klassenliste auf den Namen. Im Profil kannst du Name, Foto und weitere Angaben bearbeiten.` },
+      { q: "Wie lösche ich eine Klasse?", a: `Öffne die Klasse, tippe auf das Bearbeiten-Symbol und wähle „Klasse löschen“. Achtung: alle Daten dieser Klasse werden unwiderruflich entfernt.` },
+      { q: "Was sind Dienste?", a: `Dienste sind Aufgaben, die Saidy Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste“, mit einem Tippen weiter zum nächsten Kind.` },
+      { q: "Wie erfasse ich Fehlzeiten?", a: `Gehe zu Klasse → „Fehlzeiten“ → „+ Fehlzeit“. Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist.` },
     ],
   },
   {
     category: "Noten",
     items: [
-      { q: "Wie trage ich eine Note ein?", a: "Gehe zu „Noten", wähle Klasse und Fach. Tippe auf eine:n Schüler:in und dann auf „+ Note". Du kannst Art, Gewichtung und Datum angeben." },
-      { q: "Wie berechnet sich die Zeugnisnote?", a: "Saidy bildet den gewichteten Durchschnitt aller Noten. Schriftliche Noten werden standardmäßig doppelt gewichtet. Die berechnete Note erscheint in der Notenübersicht." },
-      { q: "Was ist der Schnellerfassungs-Modus?", a: "Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst." },
+      { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten“, wähle Klasse und Fach. Tippe auf eine:n Schüler:in und dann auf „+ Note“. Du kannst Art, Gewichtung und Datum angeben.` },
+      { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aller Noten. Schriftliche Noten werden standardmäßig doppelt gewichtet. Die berechnete Note erscheint in der Notenübersicht.` },
+      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst.` },
     ],
   },
   {
     category: "Kalender & Termine",
     items: [
-      { q: "Wie lege ich einen Termin an?", a: "Gehe zu „Kalender" und tippe auf „+ Neuen Termin anlegen". Gib Titel, Datum, Uhrzeit und Art ein." },
-      { q: "Wie trage ich Schulferien ein?", a: "Stelle zuerst dein Bundesland in den Einstellungen ein. Dann erscheint dort „Schulferien eintragen" – Saidy übernimmt alle Ferien automatisch." },
-      { q: "Wie erledige ich einen Termin?", a: "Tippe auf den Kreis links neben dem Termin. Er wandert in den „Erledigt"-Bereich ganz unten." },
+      { q: "Wie lege ich einen Termin an?", a: `Gehe zu „Kalender“ und tippe auf „+ Neuen Termin anlegen“. Gib Titel, Datum, Uhrzeit und Art ein.` },
+      { q: "Wie trage ich Schulferien ein?", a: `Stelle zuerst dein Bundesland in den Einstellungen ein. Dann erscheint dort „Schulferien eintragen“ – Saidy übernimmt alle Ferien automatisch.` },
+      { q: "Wie erledige ich einen Termin?", a: `Tippe auf den Kreis links neben dem Termin. Er wandert in den „Erledigt“-Bereich ganz unten.` },
     ],
   },
   {
     category: "Backup & Daten",
     items: [
-      { q: "Wie erstelle ich ein Backup?", a: "Gehe zu „Mehr" → „Einstellungen" → „Backup" → „Backup exportieren" (Datei speichern) oder „Backup teilen" (z. B. per AirDrop)." },
-      { q: "Wie stelle ich ein Backup wieder her?", a: "Gehe zu „Mehr" → „Einstellungen" → „Backup" → „Backup importieren" und wähle deine Backup-Datei." },
-      { q: "Wo werden meine Daten gespeichert?", a: "Alle Daten bleiben ausschließlich auf deinem Gerät (lokaler Browser-Speicher). Es werden keine Daten an Server übertragen." },
-      { q: "Warum bekomme ich eine Backup-Erinnerung?", a: "Saidy erinnert nach 7 Tagen ohne Backup. Da die Daten nur lokal gespeichert sind, schützt ein regelmäßiges Backup vor Datenverlust." },
+      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr“ → „Einstellungen“ → „Backup“ → „Backup exportieren“ (Datei speichern) oder „Backup teilen“ (z. B. per AirDrop).` },
+      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr“ → „Einstellungen“ → „Backup“ → „Backup importieren“ und wähle deine Backup-Datei.` },
+      { q: "Wo werden meine Daten gespeichert?", a: `Alle Daten bleiben ausschließlich auf deinem Gerät (lokaler Browser-Speicher). Es werden keine Daten an Server übertragen.` },
+      { q: "Warum bekomme ich eine Backup-Erinnerung?", a: `Saidy erinnert nach 7 Tagen ohne Backup. Da die Daten nur lokal gespeichert sind, schützt ein regelmäßiges Backup vor Datenverlust.` },
     ],
   },
   {
     category: "Import",
     items: [
-      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: "Gehe zu „Mehr" → „WebUntis-Import". Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Saidy übernimmt sie automatisch in die passenden Klassen." },
+      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: `Gehe zu „Mehr“ → „WebUntis-Import“. Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Saidy übernimmt sie automatisch in die passenden Klassen.` },
     ],
   },
 ];
