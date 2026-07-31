@@ -6394,6 +6394,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
               (f) => f.halbjahr === halbjahr && cFaecher.some((fa) => fa.id === f.fachId)
             ).length;
             const offen = Math.max(0, zeugnisSoll - zeugnisIst);
+            const zeugnisphase = [1, 2, 6, 7].includes(new Date().getMonth() + 1);
             return (
               <button
                 key={c.id}
@@ -6406,7 +6407,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-stone-500">{cStudents.length} Schüler:innen</div>
-                    {!!cFaecher.length && (
+                    {zeugnisphase && !!cFaecher.length && (
                       <div className="text-xs text-stone-400">
                         {offen === 0 ? "Zeugnisnoten vollständig" : `${offen} Zeugnisnote${offen === 1 ? "" : "n"} offen`}
                       </div>
