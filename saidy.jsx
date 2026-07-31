@@ -1504,7 +1504,9 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [klassenSubTab, setKlassenSubTab] = useState("klassen");
-  const [showBackupReminder, setShowBackupReminder] = useState(false);
+  const [backupReminderDays, setBackupReminderDays] = useState(null); // null=kein Banner, 0=nie gesichert, >0=Tage seit letztem Backup
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
   const [notenFachId, setNotenFachId] = useState(null); // Vorauswahl für den Noten-Tab
 
   // Wechselt den Bereich und optional den Unterreiter (z. B. direkt zu den Diensten)
@@ -1611,10 +1613,10 @@ export default function App() {
           if ((parsed.classes || []).length > 0) {
             const lastBackup = localStorage.getItem("last_backup_at");
             if (!lastBackup) {
-              setShowBackupReminder(true);
+              setBackupReminderDays(0);
             } else {
-              const daysSince = (Date.now() - new Date(lastBackup).getTime()) / (1000 * 60 * 60 * 24);
-              if (daysSince >= 7) setShowBackupReminder(true);
+              const daysSince = Math.floor((Date.now() - new Date(lastBackup).getTime()) / (1000 * 60 * 60 * 24));
+              if (daysSince >= 7) setBackupReminderDays(daysSince);
             }
           }
         } else {
@@ -1699,9 +1701,15 @@ export default function App() {
     setShowOnboarding(false);
   }
 
+  function showToast(msg) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast(msg);
+    toastTimer.current = setTimeout(() => setToast(null), 3500);
+  }
+
   function recordBackup() {
     localStorage.setItem("last_backup_at", new Date().toISOString());
-    setShowBackupReminder(false);
+    setBackupReminderDays(null);
   }
 
   function exportBackup() {
@@ -1758,6 +1766,7 @@ export default function App() {
         }
         const merged = { ...EMPTY_DATA, ...imported };
         setData(merged);
+        recordBackup();
         onResult?.({ ok: true, msg: "Backup erfolgreich geladen." });
       } catch (e) {
         onResult?.({ ok: false, msg: "Die Datei konnte nicht gelesen werden." });
@@ -1904,17 +1913,21 @@ export default function App() {
 
         {/* Inhalt */}
         <main className="flex-1 md:ml-56 px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-24 md:px-8 md:pt-8 md:pb-8 max-w-5xl">
-          {showBackupReminder && (
+          {backupReminderDays !== null && (
             <div className="mb-5 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm">
               <Download size={16} className="text-amber-600 shrink-0" />
-              <span className="flex-1 text-stone-700">Noch kein Backup gespeichert – sichere deine Daten kurz.</span>
+              <span className="flex-1 text-stone-700">
+                {backupReminderDays === 0
+                  ? "Noch kein Backup gespeichert – sichere deine Daten kurz."
+                  : `Letztes Backup vor ${backupReminderDays} Tagen – Zeit für ein neues.`}
+              </span>
               <button
-                onClick={() => { setShowSettings(true); setShowBackupReminder(false); }}
+                onClick={() => { setShowSettings(true); setBackupReminderDays(null); }}
                 className="text-xs font-medium text-amber-700 hover:text-amber-900 underline underline-offset-2 shrink-0"
               >
                 Jetzt sichern
               </button>
-              <button onClick={() => setShowBackupReminder(false)} className="text-stone-400 hover:text-stone-600 shrink-0">
+              <button onClick={() => setBackupReminderDays(null)} className="text-stone-400 hover:text-stone-600 shrink-0">
                 <X size={15} />
               </button>
             </div>
@@ -1943,7 +1956,7 @@ export default function App() {
 
           {showUntisImport && (
             <WebUntisImportModal
-              students={data.students}
+              students={activeData.students}
               existingAbsences={data.absences || []}
               onImport={(newAbsences) => {
                 if (newAbsences.length > 0) {
@@ -1953,6 +1966,9 @@ export default function App() {
                     d.settings = { ...(d.settings || {}), fehlzeitenLastImport: isoDate(new Date()) };
                     return d;
                   });
+                  showToast(`${newAbsences.length} Fehlzeit${newAbsences.length === 1 ? "" : "en"} importiert.`);
+                } else {
+                  showToast("Keine neuen Fehlzeiten gefunden.");
                 }
                 setShowUntisImport(false);
               }}
@@ -2011,7 +2027,7 @@ export default function App() {
       {/* Mehr-Menü (mobil) */}
       {showMore && (
         <div className="md:hidden fixed inset-0 bg-stone-900/40 z-50 flex items-end" onClick={() => setShowMore(false)}>
-          <div className="bg-white rounded-t-3xl w-full p-4 pb-8" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-t-3xl w-full p-4 pb-[max(2rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
             <div className="grid grid-cols-3 gap-3">
               {[tabs[2], tabs[4]].map((t) => {
@@ -2037,6 +2053,13 @@ export default function App() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast-Meldung */}
+      {toast && (
+        <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-stone-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg pointer-events-none">
+          {toast}
         </div>
       )}
     </div>
