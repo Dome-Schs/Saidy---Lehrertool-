@@ -4591,6 +4591,7 @@ function KalenderTab({ data, update }) {
   const [type, setType] = useState("termin");
   const [color, setColor] = useState(TASK_COLORS[0]);
   const [showForm, setShowForm] = useState(false);
+  const [showAllFerien, setShowAllFerien] = useState(false);
 
   const typeLabels = { termin: "Termin", erinnerung: "Erinnerung", ferien: "Ferien" };
   const typeColors = { termin: "bg-amber-100 text-amber-700", erinnerung: "bg-red-100 text-red-700", ferien: "bg-emerald-100 text-emerald-700" };
@@ -4697,45 +4698,63 @@ function KalenderTab({ data, update }) {
 
       <Card className="p-5">
         <div className="font-medium text-stone-800 mb-3">Termine & Erinnerungen</div>
-        <ul className="space-y-1.5">
+        <ul className="space-y-3">
           {open.filter((e) => e.type !== "ferien").map((e) => (
-            <li key={e.id} className="flex items-center gap-2.5 text-sm">
-              <button onClick={() => toggleDone(e.id)} className="w-5 h-5 rounded-full border-2 border-stone-300 hover:akzent-rand shrink-0" />
-              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: e.color || "#c9702f" }} />
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium w-16 text-center shrink-0 ${typeColors[e.type]}`}>{typeLabels[e.type]}</span>
-              <span className="flex-1 text-stone-700 truncate">{e.title}</span>
-              <span className="text-stone-400 text-xs whitespace-nowrap shrink-0">
-                {new Date(e.date).toLocaleDateString("de-DE")}{e.time ? `, ${e.time}` : ""}
-              </span>
-              <button onClick={() => remove(e.id)} className="text-stone-300 hover:text-red-500 shrink-0"><Trash2 size={14} /></button>
+            <li key={e.id} className="flex items-start gap-2.5 text-sm">
+              <button onClick={() => toggleDone(e.id)} className="w-5 h-5 rounded-full border-2 border-stone-300 hover:akzent-rand shrink-0 mt-0.5" />
+              <span className="w-2.5 h-2.5 rounded-full shrink-0 mt-1" style={{ backgroundColor: e.color || "#c9702f" }} />
+              <div className="flex-1 min-w-0">
+                <div className="text-stone-800 leading-snug">{e.title}</div>
+                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${typeColors[e.type]}`}>{typeLabels[e.type]}</span>
+                  <span className="text-stone-400 text-xs">
+                    {new Date(e.date).toLocaleDateString("de-DE")}{e.time ? `, ${e.time}` : ""}
+                  </span>
+                </div>
+              </div>
+              <button onClick={() => remove(e.id)} className="text-stone-300 hover:text-red-500 shrink-0 mt-0.5"><Trash2 size={14} /></button>
             </li>
           ))}
           {!open.filter((e) => e.type !== "ferien").length && <li className="text-sm text-stone-400">Keine offenen Termine.</li>}
         </ul>
       </Card>
 
-      {!!open.filter((e) => e.type === "ferien").length && (
-        <Card className="p-5">
-          <div className="font-medium text-stone-800 mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" /> Schulferien
-          </div>
-          <ul className="space-y-1.5">
-            {open.filter((e) => e.type === "ferien").map((e) => {
-              const von = new Date(e.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
-              const bis = e.endDate ? new Date(e.endDate).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
-              return (
-                <li key={e.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 text-sm">
-                  <span className="text-stone-700 truncate">{e.title}</span>
-                  <span className="text-stone-400 text-xs tnum whitespace-nowrap text-right">
-                    {von}{bis ? <span className="text-stone-300"> – </span> : ""}{bis}
-                  </span>
-                  <button onClick={() => remove(e.id)} className="text-stone-300 hover:text-red-600 shrink-0 justify-self-end"><Trash2 size={14} /></button>
-                </li>
-              );
-            })}
-          </ul>
-        </Card>
-      )}
+      {(() => {
+        const ferienList = open.filter((e) => e.type === "ferien");
+        if (!ferienList.length) return null;
+        const visible = showAllFerien ? ferienList : ferienList.slice(0, 3);
+        return (
+          <Card className="p-5">
+            <div className="font-medium text-stone-800 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Schulferien
+            </div>
+            <ul className="space-y-1.5">
+              {visible.map((e) => {
+                const von = new Date(e.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+                const bis = e.endDate ? new Date(e.endDate).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
+                return (
+                  <li key={e.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 text-sm">
+                    <span className="text-stone-700">{e.title}</span>
+                    <span className="text-stone-400 text-xs tnum whitespace-nowrap text-right">
+                      {von}{bis ? <span className="text-stone-300"> – </span> : ""}{bis}
+                    </span>
+                    <button onClick={() => remove(e.id)} className="text-stone-300 hover:text-red-600 shrink-0 justify-self-end"><Trash2 size={14} /></button>
+                  </li>
+                );
+              })}
+            </ul>
+            {ferienList.length > 3 && (
+              <button
+                onClick={() => setShowAllFerien(!showAllFerien)}
+                className="mt-3 text-xs text-stone-400 hover:text-stone-600 flex items-center gap-1"
+              >
+                <ChevronDown size={14} className={showAllFerien ? "rotate-180" : ""} />
+                {showAllFerien ? "Weniger anzeigen" : `${ferienList.length - 3} weitere Ferien`}
+              </button>
+            )}
+          </Card>
+        );
+      })()}
 
       {!!done.length && (
         <Card className="p-5">
