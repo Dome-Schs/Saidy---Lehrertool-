@@ -736,6 +736,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
   const [resetInput, setResetInput] = useState("");
   const [confirmDeleteSnapshot, setConfirmDeleteSnapshot] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [showICloudSteps, setShowICloudSteps] = useState(false);
   const [showPromote, setShowPromote] = useState(false);
 
   function promoteClasses(ids) {
@@ -917,15 +918,26 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
               Die Speicherung von Schülerdaten in privaten Cloud-Diensten (iCloud, Google Drive, Dropbox) entspricht in der Regel nicht den datenschutzrechtlichen Anforderungen an Schulen in Deutschland (DSGVO Art. 32; landesrechtliche Schulgesetze). Die Nutzung dieser Option erfolgt ausschließlich auf eigene Verantwortung der jeweiligen Lehrkraft. Der Anbieter dieser App übernimmt keine Haftung für datenschutzrechtliche Verstöße, die sich aus der Ablage in nicht genehmigten Diensten ergeben.
             </p>
           </div>
-          <p className="text-xs text-stone-500 mb-2">So nutzt du iCloud Drive zur manuellen Synchronisation:</p>
-          <ol className="text-xs text-stone-500 space-y-1 mb-3 pl-4 list-decimal">
-            <li>„Sichern" → Datei in <strong>iCloud Drive → Saidy</strong> ablegen</li>
-            <li>Auf dem anderen Gerät: „Gesichertes wiederherstellen" → Datei aus iCloud Drive wählen</li>
-          </ol>
-          <div className="flex gap-2">
-            <Button variant="subtle" onClick={() => setConfirmBackupAction("export")} className="flex-1 justify-center"><Download size={14} /> Sichern</Button>
-            <Button variant="subtle" onClick={() => importInputRef.current?.click()} className="flex-1 justify-center"><Upload size={14} /> Laden</Button>
-          </div>
+          {!showICloudSteps ? (
+            <button
+              onClick={() => setShowICloudSteps(true)}
+              className="w-full text-xs text-stone-400 hover:text-stone-600 border border-dashed border-stone-200 rounded-xl py-2.5 transition-colors"
+            >
+              Trotzdem nutzen – auf eigene Verantwortung
+            </button>
+          ) : (
+            <>
+              <p className="text-xs text-stone-500 mb-2">So nutzt du iCloud Drive zur manuellen Synchronisation:</p>
+              <ol className="text-xs text-stone-500 space-y-1 mb-3 pl-4 list-decimal">
+                <li>„Sichern" → Datei in <strong>iCloud Drive → Saidy</strong> ablegen</li>
+                <li>Auf dem anderen Gerät: „Gesichertes wiederherstellen" → Datei aus iCloud Drive wählen</li>
+              </ol>
+              <div className="flex gap-2">
+                <Button variant="subtle" onClick={() => setConfirmBackupAction("export")} className="flex-1 justify-center"><Download size={14} /> Sichern</Button>
+                <Button variant="subtle" onClick={() => importInputRef.current?.click()} className="flex-1 justify-center"><Upload size={14} /> Laden</Button>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="pt-5 border-t border-stone-100">
