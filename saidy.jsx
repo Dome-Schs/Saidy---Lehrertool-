@@ -1504,6 +1504,7 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [klassenSubTab, setKlassenSubTab] = useState("klassen");
+  const [showBackupReminder, setShowBackupReminder] = useState(false);
   const [notenFachId, setNotenFachId] = useState(null); // Vorauswahl für den Noten-Tab
 
   // Wechselt den Bereich und optional den Unterreiter (z. B. direkt zu den Diensten)
@@ -1607,6 +1608,15 @@ export default function App() {
           }
           setData(parsed);
           if (!parsed.settings?.bundesland) setShowOnboarding(true);
+          if ((parsed.classes || []).length > 0) {
+            const lastBackup = localStorage.getItem("last_backup_at");
+            if (!lastBackup) {
+              setShowBackupReminder(true);
+            } else {
+              const daysSince = (Date.now() - new Date(lastBackup).getTime()) / (1000 * 60 * 60 * 24);
+              if (daysSince >= 7) setShowBackupReminder(true);
+            }
+          }
         } else {
           setData(demoData());
           setShowOnboarding(true);
@@ -1689,6 +1699,11 @@ export default function App() {
     setShowOnboarding(false);
   }
 
+  function recordBackup() {
+    localStorage.setItem("last_backup_at", new Date().toISOString());
+    setShowBackupReminder(false);
+  }
+
   function exportBackup() {
     const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data };
     const json = JSON.stringify(payload, null, 2);
@@ -1703,6 +1718,7 @@ export default function App() {
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 5000);
+    recordBackup();
   }
 
   async function shareBackup() {
@@ -1714,6 +1730,7 @@ export default function App() {
       const file = new File([json], fileName, { type: "application/json" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
         await navigator.share({ files: [file], title: "Saidy-Backup" });
+        recordBackup();
         return;
       }
     } catch (e) {
@@ -1887,6 +1904,21 @@ export default function App() {
 
         {/* Inhalt */}
         <main className="flex-1 md:ml-56 px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-24 md:px-8 md:pt-8 md:pb-8 max-w-5xl">
+          {showBackupReminder && (
+            <div className="mb-5 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm">
+              <Download size={16} className="text-amber-600 shrink-0" />
+              <span className="flex-1 text-stone-700">Noch kein Backup gespeichert – sichere deine Daten kurz.</span>
+              <button
+                onClick={() => { setShowSettings(true); setShowBackupReminder(false); }}
+                className="text-xs font-medium text-amber-700 hover:text-amber-900 underline underline-offset-2 shrink-0"
+              >
+                Jetzt sichern
+              </button>
+              <button onClick={() => setShowBackupReminder(false)} className="text-stone-400 hover:text-stone-600 shrink-0">
+                <X size={15} />
+              </button>
+            </div>
+          )}
           {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenUntisImport={() => setShowUntisImport(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
           {tab === "klassen" && <KlassenTab data={activeData} update={update} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
