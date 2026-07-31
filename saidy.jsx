@@ -4535,6 +4535,7 @@ function KalenderTab({ data, update }) {
   const [time, setTime] = useState("");
   const [type, setType] = useState("termin");
   const [color, setColor] = useState(TASK_COLORS[0]);
+  const [showForm, setShowForm] = useState(false);
 
   const typeLabels = { termin: "Termin", erinnerung: "Erinnerung", ferien: "Ferien" };
   const typeColors = { termin: "bg-amber-100 text-amber-700", erinnerung: "bg-red-100 text-red-700", ferien: "bg-emerald-100 text-emerald-700" };
@@ -4640,41 +4641,6 @@ function KalenderTab({ data, update }) {
       )}
 
       <Card className="p-5">
-        <Field label="Titel">
-          <input className={inputCls} placeholder="z. B. Elternabend" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addEvent()} />
-        </Field>
-        <div className="grid grid-cols-2 gap-2 mt-3">
-          <Field label="Datum">
-            <input className={inputCls} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </Field>
-          <Field label="Uhrzeit (optional)">
-            <input className={inputCls} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
-          </Field>
-        </div>
-        <div className="grid grid-cols-2 gap-2 mt-3">
-          <Field label="Art">
-            <select className={inputCls} value={type} onChange={(e) => setType(e.target.value)}>
-              <option value="termin">Termin</option>
-              <option value="erinnerung">Erinnerung</option>
-            </select>
-          </Field>
-          <Field label="Farbe">
-            <div className="flex gap-2 items-center h-full">
-              {TASK_COLORS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setColor(c)}
-                  className="w-7 h-7 rounded-full shrink-0"
-                  style={{ backgroundColor: c, boxShadow: c === color ? "0 0 0 2px white, 0 0 0 3.5px #292524" : "0 0 0 2px white" }}
-                />
-              ))}
-            </div>
-          </Field>
-        </div>
-        <Button onClick={addEvent} className="w-full justify-center mt-3"><Plus size={15} /> Anlegen</Button>
-      </Card>
-
-      <Card className="p-5">
         <div className="font-medium text-stone-800 mb-3">Termine & Erinnerungen</div>
         <ul className="space-y-1.5">
           {open.filter((e) => e.type !== "ferien").map((e) => (
@@ -4730,6 +4696,54 @@ function KalenderTab({ data, update }) {
               </li>
             ))}
           </ul>
+        </Card>
+      )}
+
+      {!showForm ? (
+        <button
+          onClick={() => setShowForm(true)}
+          className="w-full flex items-center justify-center gap-2 py-3 text-sm text-stone-400 hover:text-stone-600 border border-dashed border-stone-200 rounded-xl transition-colors"
+        >
+          <Plus size={15} /> Neuen Termin anlegen
+        </button>
+      ) : (
+        <Card className="p-5">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-medium text-stone-800">Neuer Termin</div>
+            <button onClick={() => setShowForm(false)} className="text-stone-400 hover:text-stone-600"><X size={16} /></button>
+          </div>
+          <Field label="Titel">
+            <input className={inputCls} placeholder="z. B. Elternabend" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addEvent()} autoFocus />
+          </Field>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <Field label="Datum">
+              <input className={inputCls} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </Field>
+            <Field label="Uhrzeit (optional)">
+              <input className={inputCls} type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            <Field label="Art">
+              <select className={inputCls} value={type} onChange={(e) => setType(e.target.value)}>
+                <option value="termin">Termin</option>
+                <option value="erinnerung">Erinnerung</option>
+              </select>
+            </Field>
+            <Field label="Farbe">
+              <div className="flex gap-2 items-center h-full">
+                {TASK_COLORS.map((c) => (
+                  <button
+                    key={c}
+                    onClick={() => setColor(c)}
+                    className="w-7 h-7 rounded-full shrink-0"
+                    style={{ backgroundColor: c, boxShadow: c === color ? "0 0 0 2px white, 0 0 0 3.5px #292524" : "0 0 0 2px white" }}
+                  />
+                ))}
+              </div>
+            </Field>
+          </div>
+          <Button onClick={() => { addEvent(); setShowForm(false); }} className="w-full justify-center mt-3"><Plus size={15} /> Anlegen</Button>
         </Card>
       )}
     </div>
