@@ -862,6 +862,12 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           <p className="text-xs text-stone-500 mb-3">
             Deine Daten liegen auf diesem Gerät. Sichere sie regelmäßig als Datei, damit bei Geräteverlust oder App-Neuinstallation nichts verloren geht.
           </p>
+          <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 mb-3 flex items-start gap-2">
+            <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
+            <p className="text-[11px] text-stone-600 leading-relaxed">
+              <strong>Geteilte Schulcomputer:</strong> Saidy speichert Daten im Browser. Wenn mehrere Lehrkräfte dasselbe Browser-Profil nutzen, können alle auf diese Daten zugreifen. Nutze Saidy nur in deinem <strong>eigenen, privaten Browser-Profil</strong>.
+            </p>
+          </div>
           <div className="flex gap-2 mb-2">
             <Button variant="subtle" onClick={() => setConfirmBackupAction("export")} className="flex-1 justify-center"><Download size={15} /> Sichern</Button>
             <Button variant="subtle" onClick={() => setConfirmBackupAction("share")} className="flex-1 justify-center">Teilen</Button>
@@ -959,10 +965,18 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
               <p className="text-xs text-stone-500 mb-3">Gelöschte Einträge bleiben 30 Tage wiederherstellbar, dann werden sie endgültig entfernt.</p>
               <ul className="space-y-1.5">
                 {snapshotValid && (
-                  <li className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                    <span className="flex-1 text-sm text-stone-700 truncate">Alle Daten (Reset vom {new Date(snapshot.deletedAt).toLocaleDateString("de-DE")})</span>
-                    <span className="text-[11px] text-stone-400 shrink-0">{daysLeftSnapshot}T</span>
-                    <button onClick={restoreAllData} className="text-xs text-green-700 font-medium hover:underline shrink-0">Wiederherstellen</button>
+                  <li className="flex-col gap-1.5 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2.5">
+                    <div className="flex items-center gap-2">
+                      <span className="flex-1 text-sm text-stone-700 truncate">Alle Daten (Reset vom {new Date(snapshot.deletedAt).toLocaleDateString("de-DE")})</span>
+                      <span className="text-[11px] text-stone-400 shrink-0">{daysLeftSnapshot}T</span>
+                      <button onClick={restoreAllData} className="text-xs text-green-700 font-medium hover:underline shrink-0">Wiederherstellen</button>
+                    </div>
+                    <button
+                      onClick={() => update((d) => { d.deletedSnapshot = null; return d; })}
+                      className="text-[11px] text-red-500 hover:underline mt-1"
+                    >
+                      Jetzt endgültig löschen (auch Gesundheitsdaten & Fotos)
+                    </button>
                   </li>
                 )}
                 {deletedClasses.map((c) => (
@@ -3286,7 +3300,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
     <ConfirmDialog
       open={!!confirmDeleteId}
       title="Kind wirklich löschen?"
-      message="Alle Noten, Notizen und Kindgespräche dieses Kindes werden mitgelöscht. Das lässt sich nicht rückgängig machen."
+      message="Das Kind wird in den Papierkorb verschoben und kann dort 30 Tage wiederhergestellt werden (Einstellungen → Papierkorb). Alle zugehörigen Noten und Notizen kommen mit."
       confirmLabel="Löschen"
       onConfirm={() => { onDeleteStudent(confirmDeleteId); setConfirmDeleteId(null); }}
       onCancel={() => setConfirmDeleteId(null)}
@@ -4137,7 +4151,7 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach }) {
                 setRenamingClass(null);
                 setConfirmState({
                   title: `Klasse ${name} löschen?`,
-                  message: "Alle Schüler:innen, Noten, Dienste und Notizen dieser Klasse werden mitgelöscht. Das lässt sich nicht rückgängig machen.",
+                  message: "Die Klasse wird in den Papierkorb verschoben und kann dort 30 Tage wiederhergestellt werden (Einstellungen → Papierkorb). Alle Schüler:innen, Noten und Notizen kommen mit.",
                   onConfirm: () => { deleteClass(id); setConfirmState(null); },
                 });
               }}
@@ -5260,6 +5274,7 @@ function IncidentsOverview({ data, update, fach, cls, students, halbjahr }) {
 function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
   const weights = fach?.weights || DEFAULT_WEIGHTS;
   const today = new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const [confirmPdfShare, setConfirmPdfShare] = useState(false);
 
   function studentRow(s) {
     const grades = data.grades.filter((g) => g.studentId === s.id && g.fachId === fach.id && g.halbjahr === halbjahr);
@@ -5468,7 +5483,7 @@ function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
       <div className="print-hide sticky top-0 bg-white border-b border-stone-200 px-5 py-3 flex items-center justify-between gap-2">
         <Button variant="ghost" onClick={onClose}><X size={15} /> Schließen</Button>
         <div className="flex gap-2">
-          <Button variant="subtle" onClick={sharePdf}>Teilen</Button>
+          <Button variant="subtle" onClick={() => setConfirmPdfShare(true)}>Teilen</Button>
           <Button onClick={downloadPdf}><Printer size={15} /> Als PDF herunterladen</Button>
         </div>
       </div>
@@ -5577,6 +5592,23 @@ function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
           );
         })()}
       </div>
+
+      {confirmPdfShare && (
+        <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setConfirmPdfShare(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-semibold text-stone-800 mb-2">PDF teilen</div>
+            <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-3">
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                <strong>Datenschutzhinweis:</strong> Diese PDF enthält personenbezogene Schülerdaten. Teile sie nur über sichere, schulisch genehmigte Kanäle. Keine privaten Messenger oder Cloud-Dienste (iCloud, WhatsApp, Google Drive).
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setConfirmPdfShare(false)} className="flex-1 justify-center">Abbrechen</Button>
+              <Button onClick={() => { setConfirmPdfShare(false); sharePdf(); }} className="flex-1 justify-center">Verstanden, teilen</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
