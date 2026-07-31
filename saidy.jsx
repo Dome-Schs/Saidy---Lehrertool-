@@ -5276,6 +5276,7 @@ function IncidentsOverview({ data, update, fach, cls, students, halbjahr }) {
               </tr>
             </thead>
             <tbody>
+              {!students.length && <tr><td className="py-3 text-stone-400 text-sm">Keine Schüler:innen in dieser Klasse.</td></tr>}
               {students.map((s) => {
                 const st = streak(s.id);
                 return (
@@ -5566,6 +5567,7 @@ function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
               </tr>
             </thead>
             <tbody>
+              {!rows.length && <tr><td colSpan={5} className="py-3 text-stone-400 text-sm">Keine Schüler:innen in dieser Klasse.</td></tr>}
               {rows.map(({ s, overall, byCat, tendency, forgotten }) => (
                 <tr key={s.id} className="border-b border-stone-200 align-top">
                   <td className="py-1.5 pr-2">{s.name}</td>
