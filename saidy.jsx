@@ -1125,7 +1125,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
               />
               <div className="flex gap-2 mt-3">
                 <Button variant="ghost" onClick={() => setConfirmReset(false)} className="flex-1 justify-center">Abbrechen</Button>
-                <Button variant="danger" disabled={resetInput !== "LÖSCHEN"} onClick={() => { onReset(); setConfirmReset(false); }} className="flex-1 justify-center">Löschen</Button>
+                <Button variant="danger" disabled={resetInput.trim().toUpperCase() !== "LÖSCHEN"} onClick={() => { onReset(); setConfirmReset(false); }} className="flex-1 justify-center">Löschen</Button>
               </div>
             </div>
           </div>
