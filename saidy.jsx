@@ -1493,6 +1493,141 @@ function OnboardingModal({ onApply, onSkip }) {
   );
 }
 
+/* ---------- Hilfe-Inhalte ----------
+   WICHTIG: Wird ein neues Feature eingebaut oder ein bestehender Workflow geändert,
+   muss HELP_DATA hier entsprechend aktualisiert werden. */
+const HELP_DATA = [
+  {
+    category: "Erste Schritte",
+    items: [
+      { q: "Wie lege ich eine neue Klasse an?", a: "Tippe auf „Klassen" in der Navigation, dann oben rechts auf „+". Gib den Klassennamen ein und bestätige mit „Anlegen"." },
+      { q: "Wie füge ich Schüler:innen hinzu?", a: "Öffne eine Klasse und tippe auf „+ Schüler:in". Namen können einzeln oder als Liste eingegeben werden." },
+      { q: "Wie stelle ich mein Bundesland ein?", a: "Gehe zu „Mehr" → „Einstellungen" und wähle dein Bundesland. Danach kannst du die offiziellen Schulferien automatisch eintragen lassen." },
+    ],
+  },
+  {
+    category: "Klassen & Schüler:innen",
+    items: [
+      { q: "Wie bearbeite ich eine:n Schüler:in?", a: "Tippe in der Klassenliste auf den Namen. Im Profil kannst du Name, Foto und weitere Angaben bearbeiten." },
+      { q: "Wie lösche ich eine Klasse?", a: "Öffne die Klasse, tippe auf das Bearbeiten-Symbol und wähle „Klasse löschen". Achtung: alle Daten dieser Klasse werden unwiderruflich entfernt." },
+      { q: "Was sind Dienste?", a: "Dienste sind Aufgaben, die Saidy Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste", mit einem Tippen weiter zum nächsten Kind." },
+      { q: "Wie erfasse ich Fehlzeiten?", a: "Gehe zu Klasse → „Fehlzeiten" → „+ Fehlzeit". Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist." },
+    ],
+  },
+  {
+    category: "Noten",
+    items: [
+      { q: "Wie trage ich eine Note ein?", a: "Gehe zu „Noten", wähle Klasse und Fach. Tippe auf eine:n Schüler:in und dann auf „+ Note". Du kannst Art, Gewichtung und Datum angeben." },
+      { q: "Wie berechnet sich die Zeugnisnote?", a: "Saidy bildet den gewichteten Durchschnitt aller Noten. Schriftliche Noten werden standardmäßig doppelt gewichtet. Die berechnete Note erscheint in der Notenübersicht." },
+      { q: "Was ist der Schnellerfassungs-Modus?", a: "Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst." },
+    ],
+  },
+  {
+    category: "Kalender & Termine",
+    items: [
+      { q: "Wie lege ich einen Termin an?", a: "Gehe zu „Kalender" und tippe auf „+ Neuen Termin anlegen". Gib Titel, Datum, Uhrzeit und Art ein." },
+      { q: "Wie trage ich Schulferien ein?", a: "Stelle zuerst dein Bundesland in den Einstellungen ein. Dann erscheint dort „Schulferien eintragen" – Saidy übernimmt alle Ferien automatisch." },
+      { q: "Wie erledige ich einen Termin?", a: "Tippe auf den Kreis links neben dem Termin. Er wandert in den „Erledigt"-Bereich ganz unten." },
+    ],
+  },
+  {
+    category: "Backup & Daten",
+    items: [
+      { q: "Wie erstelle ich ein Backup?", a: "Gehe zu „Mehr" → „Einstellungen" → „Backup" → „Backup exportieren" (Datei speichern) oder „Backup teilen" (z. B. per AirDrop)." },
+      { q: "Wie stelle ich ein Backup wieder her?", a: "Gehe zu „Mehr" → „Einstellungen" → „Backup" → „Backup importieren" und wähle deine Backup-Datei." },
+      { q: "Wo werden meine Daten gespeichert?", a: "Alle Daten bleiben ausschließlich auf deinem Gerät (lokaler Browser-Speicher). Es werden keine Daten an Server übertragen." },
+      { q: "Warum bekomme ich eine Backup-Erinnerung?", a: "Saidy erinnert nach 7 Tagen ohne Backup. Da die Daten nur lokal gespeichert sind, schützt ein regelmäßiges Backup vor Datenverlust." },
+    ],
+  },
+  {
+    category: "Import",
+    items: [
+      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: "Gehe zu „Mehr" → „WebUntis-Import". Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Saidy übernimmt sie automatisch in die passenden Klassen." },
+    ],
+  },
+];
+
+function HilfeSheet({ onClose }) {
+  const [search, setSearch] = useState("");
+  const q = search.toLowerCase().trim();
+  const results = q
+    ? HELP_DATA.flatMap((cat) =>
+        cat.items
+          .filter((it) => it.q.toLowerCase().includes(q) || it.a.toLowerCase().includes(q))
+          .map((it) => ({ ...it, category: cat.category }))
+      )
+    : null;
+  const [open, setOpen] = useState(null);
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 z-50 flex items-end" onClick={onClose}>
+      <div
+        className="bg-white rounded-t-3xl w-full p-4 pb-[max(2rem,env(safe-area-inset-bottom))] max-h-[88vh] flex flex-col sheet"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4 shrink-0" />
+        <div className="flex items-center justify-between mb-3 shrink-0">
+          <div className="font-semibold text-stone-800">Hilfe</div>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600"><X size={18} /></button>
+        </div>
+        <div className="relative mb-4 shrink-0">
+          <input
+            className="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 outline-none"
+            placeholder="Suche, z. B. „Backup" oder „Note eintragen""
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); setOpen(null); }}
+            autoFocus
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400">
+              <X size={14} />
+            </button>
+          )}
+        </div>
+        <div className="overflow-y-auto flex-1 space-y-1">
+          {results !== null ? (
+            results.length === 0 ? (
+              <p className="text-sm text-stone-400 text-center py-8">Keine Treffer für „{search}"</p>
+            ) : (
+              results.map((it, i) => (
+                <HilfeItem key={i} item={it} open={open === `s${i}`} toggle={() => setOpen(open === `s${i}` ? null : `s${i}`)} showCategory />
+              ))
+            )
+          ) : (
+            HELP_DATA.map((cat) => (
+              <div key={cat.category} className="mb-3">
+                <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide px-1 mb-1">{cat.category}</div>
+                {cat.items.map((it, i) => {
+                  const key = `${cat.category}${i}`;
+                  return <HilfeItem key={key} item={it} open={open === key} toggle={() => setOpen(open === key ? null : key)} />;
+                })}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HilfeItem({ item, open, toggle, showCategory }) {
+  return (
+    <button
+      onClick={toggle}
+      className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-stone-50 transition-colors"
+    >
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1 min-w-0">
+          {showCategory && <div className="text-[10px] text-stone-400 mb-0.5">{item.category}</div>}
+          <div className="text-sm font-medium text-stone-800 leading-snug">{item.q}</div>
+          {open && <div className="text-sm text-stone-600 mt-1.5 leading-relaxed">{item.a}</div>}
+        </div>
+        <ChevronDown size={15} className={`text-stone-400 shrink-0 mt-0.5 transition-transform ${open ? "rotate-180" : ""}`} />
+      </div>
+    </button>
+  );
+}
+
 export default function App() {
   const [data, setData] = useState(EMPTY_DATA);
   const [loaded, setLoaded] = useState(false);
@@ -1503,6 +1638,7 @@ export default function App() {
   const [showUntisImport, setShowUntisImport] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
   const [klassenSubTab, setKlassenSubTab] = useState("klassen");
   const [backupReminderDays, setBackupReminderDays] = useState(null); // null=kein Banner, 0=nie gesichert, >0=Tage seit letztem Backup
   const [toast, setToast] = useState(null);
@@ -2029,7 +2165,7 @@ export default function App() {
         <div className="md:hidden fixed inset-0 bg-stone-900/40 z-50 flex items-end" onClick={() => setShowMore(false)}>
           <div className="bg-white rounded-t-3xl w-full p-4 pb-[max(2rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-2 gap-3">
               {[tabs[2], tabs[4]].map((t) => {
                 const Icon = t.icon;
                 const active = tab === t.key;
@@ -2051,10 +2187,19 @@ export default function App() {
                 <Settings2 size={22} className="text-stone-500" />
                 <span className="text-xs text-stone-600">Einstellungen</span>
               </button>
+              <button
+                onClick={() => { setShowHelp(true); setShowMore(false); }}
+                className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-stone-200"
+              >
+                <MessageSquare size={22} className="text-stone-500" />
+                <span className="text-xs text-stone-600">Hilfe</span>
+              </button>
             </div>
           </div>
         </div>
       )}
+
+      {showHelp && <HilfeSheet onClose={() => setShowHelp(false)} />}
 
       {/* Toast-Meldung */}
       {toast && (
@@ -4591,6 +4736,7 @@ function KalenderTab({ data, update }) {
   const [type, setType] = useState("termin");
   const [color, setColor] = useState(TASK_COLORS[0]);
   const [showForm, setShowForm] = useState(false);
+  const [showAllFerien, setShowAllFerien] = useState(false);
 
   const typeLabels = { termin: "Termin", erinnerung: "Erinnerung", ferien: "Ferien" };
   const typeColors = { termin: "bg-amber-100 text-amber-700", erinnerung: "bg-red-100 text-red-700", ferien: "bg-emerald-100 text-emerald-700" };
@@ -4697,45 +4843,63 @@ function KalenderTab({ data, update }) {
 
       <Card className="p-5">
         <div className="font-medium text-stone-800 mb-3">Termine & Erinnerungen</div>
-        <ul className="space-y-1.5">
+        <ul className="space-y-3">
           {open.filter((e) => e.type !== "ferien").map((e) => (
-            <li key={e.id} className="flex items-center gap-2.5 text-sm">
-              <button onClick={() => toggleDone(e.id)} className="w-5 h-5 rounded-full border-2 border-stone-300 hover:akzent-rand shrink-0" />
-              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: e.color || "#c9702f" }} />
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium w-16 text-center shrink-0 ${typeColors[e.type]}`}>{typeLabels[e.type]}</span>
-              <span className="flex-1 text-stone-700 truncate">{e.title}</span>
-              <span className="text-stone-400 text-xs whitespace-nowrap shrink-0">
-                {new Date(e.date).toLocaleDateString("de-DE")}{e.time ? `, ${e.time}` : ""}
-              </span>
-              <button onClick={() => remove(e.id)} className="text-stone-300 hover:text-red-500 shrink-0"><Trash2 size={14} /></button>
+            <li key={e.id} className="flex items-start gap-2.5 text-sm">
+              <button onClick={() => toggleDone(e.id)} className="w-5 h-5 rounded-full border-2 border-stone-300 hover:akzent-rand shrink-0 mt-0.5" />
+              <span className="w-2.5 h-2.5 rounded-full shrink-0 mt-1" style={{ backgroundColor: e.color || "#c9702f" }} />
+              <div className="flex-1 min-w-0">
+                <div className="text-stone-800 leading-snug">{e.title}</div>
+                <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${typeColors[e.type]}`}>{typeLabels[e.type]}</span>
+                  <span className="text-stone-400 text-xs">
+                    {new Date(e.date).toLocaleDateString("de-DE")}{e.time ? `, ${e.time}` : ""}
+                  </span>
+                </div>
+              </div>
+              <button onClick={() => remove(e.id)} className="text-stone-300 hover:text-red-500 shrink-0 mt-0.5"><Trash2 size={14} /></button>
             </li>
           ))}
           {!open.filter((e) => e.type !== "ferien").length && <li className="text-sm text-stone-400">Keine offenen Termine.</li>}
         </ul>
       </Card>
 
-      {!!open.filter((e) => e.type === "ferien").length && (
-        <Card className="p-5">
-          <div className="font-medium text-stone-800 mb-3 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500" /> Schulferien
-          </div>
-          <ul className="space-y-1.5">
-            {open.filter((e) => e.type === "ferien").map((e) => {
-              const von = new Date(e.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
-              const bis = e.endDate ? new Date(e.endDate).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
-              return (
-                <li key={e.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 text-sm">
-                  <span className="text-stone-700 truncate">{e.title}</span>
-                  <span className="text-stone-400 text-xs tnum whitespace-nowrap text-right">
-                    {von}{bis ? <span className="text-stone-300"> – </span> : ""}{bis}
-                  </span>
-                  <button onClick={() => remove(e.id)} className="text-stone-300 hover:text-red-600 shrink-0 justify-self-end"><Trash2 size={14} /></button>
-                </li>
-              );
-            })}
-          </ul>
-        </Card>
-      )}
+      {(() => {
+        const ferienList = open.filter((e) => e.type === "ferien");
+        if (!ferienList.length) return null;
+        const visible = showAllFerien ? ferienList : ferienList.slice(0, 1);
+        return (
+          <Card className="p-5">
+            <div className="font-medium text-stone-800 mb-3 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Schulferien
+            </div>
+            <ul className="space-y-1.5">
+              {visible.map((e) => {
+                const von = new Date(e.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+                const bis = e.endDate ? new Date(e.endDate).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
+                return (
+                  <li key={e.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 text-sm">
+                    <span className="text-stone-700">{e.title}</span>
+                    <span className="text-stone-400 text-xs tnum whitespace-nowrap text-right">
+                      {von}{bis ? <span className="text-stone-300"> – </span> : ""}{bis}
+                    </span>
+                    <button onClick={() => remove(e.id)} className="text-stone-300 hover:text-red-600 shrink-0 justify-self-end"><Trash2 size={14} /></button>
+                  </li>
+                );
+              })}
+            </ul>
+            {ferienList.length > 3 && (
+              <button
+                onClick={() => setShowAllFerien(!showAllFerien)}
+                className="mt-3 text-xs text-stone-400 hover:text-stone-600 flex items-center gap-1"
+              >
+                <ChevronDown size={14} className={showAllFerien ? "rotate-180" : ""} />
+                {showAllFerien ? "Weniger anzeigen" : `${ferienList.length - 1} weitere Ferien`}
+              </button>
+            )}
+          </Card>
+        );
+      })()}
 
       {!!done.length && (
         <Card className="p-5">
