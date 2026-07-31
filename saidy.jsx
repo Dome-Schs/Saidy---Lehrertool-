@@ -3147,13 +3147,15 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                         {studentGespraeche.map((g) => {
                           const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
                           return (
-                            <li key={g.id} className="text-sm bg-stone-50 rounded-lg px-3 py-2 flex items-start gap-2">
-                              <span className="text-base shrink-0 leading-snug">{mood?.emoji ?? "💬"}</span>
-                              <span className="flex-1 text-stone-700">{g.text}</span>
-                              <div className="flex items-center gap-2 shrink-0">
-                                <span className="text-stone-400 text-xs whitespace-nowrap">{new Date(g.date).toLocaleDateString("de-DE")}</span>
+                            <li key={g.id} className="text-sm bg-stone-50 rounded-lg px-3 py-2.5">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-sm leading-none">{mood?.emoji ?? "💬"}</span>
+                                  <span className="text-[11px] font-medium text-stone-500">{new Date(g.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+                                </div>
                                 <button onClick={() => onDeleteNote(g.id)} className="text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
                               </div>
+                              <p className="text-stone-700 leading-snug">{g.text}</p>
                             </li>
                           );
                         })}
