@@ -3239,6 +3239,11 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                       />
                     </Field>
 
+                    <p className="text-[10px] text-stone-400 flex items-center gap-1 -mt-1">
+                      <ShieldCheck size={10} className="shrink-0" />
+                      Kontaktdaten sind personenbezogen (DSGVO) – nur auf diesem Gerät gespeichert, nicht weitergeben.
+                    </p>
+
                     <Field label="Besonderheiten / Vorerkrankungen">
                       <textarea
                         placeholder="z. B. Nussallergie, Asthma-Spray in der Tasche …"
