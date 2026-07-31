@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from "react"
 import Papa from "papaparse";
 import {
   LayoutGrid, Users, CalendarDays, GraduationCap,
-  Plus, X, Trash2, ChevronLeft, ChevronRight, Settings2, Check,
+  Plus, X, Trash2, ChevronLeft, ChevronRight, ChevronDown, Settings2, Check,
   Clock, StickyNote, ClipboardCheck, Copy, CheckCircle2, AlertCircle, AlertTriangle,
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
@@ -40,7 +40,7 @@ const QUICK_SYMBOLS = [
   { symbol: "– –", value: 5, color: "#B91C1C" },
 ];
 
-const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null } };
+const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], deletedSnapshot: null, settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null } };
 
 const DASHBOARD_SECTIONS = {
   unterricht: "Unterricht",
@@ -714,6 +714,8 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
   const [confirmImport, setConfirmImport] = useState(null); // File
   const [confirmBackupAction, setConfirmBackupAction] = useState(null); // 'export' | 'share'
   const [confirmReset, setConfirmReset] = useState(false);
+  const [resetInput, setResetInput] = useState("");
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const [showPromote, setShowPromote] = useState(false);
 
   function promoteClasses(ids) {
@@ -879,6 +881,28 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
         </div>
 
         <div className="pt-5 border-t border-stone-100">
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide">iCloud / Geräteübergreifend</div>
+            <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Nicht DSGVO-konform</span>
+          </div>
+          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-3">
+            <p className="text-[11px] font-semibold text-amber-800 mb-1">Rechtlicher Hinweis</p>
+            <p className="text-[11px] text-amber-700 leading-relaxed">
+              Die Speicherung von Schülerdaten in privaten Cloud-Diensten (iCloud, Google Drive, Dropbox) entspricht in der Regel nicht den datenschutzrechtlichen Anforderungen an Schulen in Deutschland (DSGVO Art. 32; landesrechtliche Schulgesetze). Die Nutzung dieser Option erfolgt ausschließlich auf eigene Verantwortung der jeweiligen Lehrkraft. Der Anbieter dieser App übernimmt keine Haftung für datenschutzrechtliche Verstöße, die sich aus der Ablage in nicht genehmigten Diensten ergeben.
+            </p>
+          </div>
+          <p className="text-xs text-stone-500 mb-2">So nutzt du iCloud Drive zur manuellen Synchronisation:</p>
+          <ol className="text-xs text-stone-500 space-y-1 mb-3 pl-4 list-decimal">
+            <li>„Sichern" → Datei in <strong>iCloud Drive → Saidy</strong> ablegen</li>
+            <li>Auf dem anderen Gerät: „Gesichertes wiederherstellen" → Datei aus iCloud Drive wählen</li>
+          </ol>
+          <div className="flex gap-2">
+            <Button variant="subtle" onClick={() => setConfirmBackupAction("export")} className="flex-1 justify-center"><Download size={14} /> Sichern</Button>
+            <Button variant="subtle" onClick={() => importInputRef.current?.click()} className="flex-1 justify-center"><Upload size={14} /> Laden</Button>
+          </div>
+        </div>
+
+        <div className="pt-5 border-t border-stone-100">
           <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">WebUntis / Fehlzeiten</div>
           <div className="text-xs font-medium text-stone-500 mb-1.5">Erinnerungsintervall für Import</div>
           <div className="flex flex-wrap gap-1.5 mb-3">
@@ -908,37 +932,43 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
         {(() => {
           const deletedStudents = (data.students || []).filter((s) => s.deletedAt);
           const deletedClasses = (data.classes || []).filter((c) => c.deletedAt);
-          const total = deletedStudents.length + deletedClasses.length;
+          const snapshot = data.deletedSnapshot;
+          const snapshotValid = snapshot && (Date.now() - new Date(snapshot.deletedAt).getTime()) < 30 * 86400000;
+          const daysLeftSnapshot = snapshotValid
+            ? Math.max(1, 30 - Math.floor((Date.now() - new Date(snapshot.deletedAt).getTime()) / 86400000))
+            : 0;
+          const total = deletedStudents.length + deletedClasses.length + (snapshotValid ? 1 : 0);
           if (total === 0) return null;
           function restoreStudent(id) {
-            update((d) => {
-              const s = d.students.find((s) => s.id === id);
-              if (s) { delete s.deletedAt; }
-              return d;
-            });
+            update((d) => { const s = d.students.find((s) => s.id === id); if (s) delete s.deletedAt; return d; });
           }
           function restoreClass(id) {
             update((d) => {
               const c = d.classes.find((c) => c.id === id);
-              if (c) { delete c.deletedAt; }
+              if (c) delete c.deletedAt;
               d.students.filter((s) => s.classId === id && s.deletedAt).forEach((s) => { delete s.deletedAt; });
               return d;
             });
+          }
+          function restoreAllData() {
+            update((d) => { const saved = d.deletedSnapshot?.data; return saved ? { ...saved, deletedSnapshot: null } : d; });
           }
           return (
             <div className="pt-5 border-t border-stone-100">
               <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Papierkorb</div>
               <p className="text-xs text-stone-500 mb-3">Gelöschte Einträge bleiben 30 Tage wiederherstellbar, dann werden sie endgültig entfernt.</p>
               <ul className="space-y-1.5">
+                {snapshotValid && (
+                  <li className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                    <span className="flex-1 text-sm text-stone-700 truncate">Alle Daten (Reset vom {new Date(snapshot.deletedAt).toLocaleDateString("de-DE")})</span>
+                    <span className="text-[11px] text-stone-400 shrink-0">{daysLeftSnapshot}T</span>
+                    <button onClick={restoreAllData} className="text-xs text-green-700 font-medium hover:underline shrink-0">Wiederherstellen</button>
+                  </li>
+                )}
                 {deletedClasses.map((c) => (
                   <li key={c.id} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
                     <span className="flex-1 text-sm text-stone-600 truncate">Klasse: {c.name}</span>
-                    <button
-                      onClick={() => restoreClass(c.id)}
-                      className="text-xs text-green-700 font-medium hover:underline shrink-0"
-                    >
-                      Wiederherstellen
-                    </button>
+                    <button onClick={() => restoreClass(c.id)} className="text-xs text-green-700 font-medium hover:underline shrink-0">Wiederherstellen</button>
                   </li>
                 ))}
                 {deletedStudents.map((s) => {
@@ -946,12 +976,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
                   return (
                     <li key={s.id} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
                       <span className="flex-1 text-sm text-stone-600 truncate">{s.name}{cls ? ` (${cls.name})` : ""}</span>
-                      <button
-                        onClick={() => restoreStudent(s.id)}
-                        className="text-xs text-green-700 font-medium hover:underline shrink-0"
-                      >
-                        Wiederherstellen
-                      </button>
+                      <button onClick={() => restoreStudent(s.id)} className="text-xs text-green-700 font-medium hover:underline shrink-0">Wiederherstellen</button>
                     </li>
                   );
                 })}
@@ -960,14 +985,24 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           );
         })()}
 
-        <div className="pt-5 border-t border-red-100">
-          <div className="text-xs font-semibold text-red-400 uppercase tracking-wide mb-2">Gefahrenzone</div>
-          <p className="text-xs text-stone-500 mb-3">
-            Löscht alle Daten dieser App unwiderruflich. Sichere deine Daten vorher über „Sichern".
-          </p>
-          <Button variant="danger" onClick={() => setConfirmReset(true)} className="w-full justify-center">
-            Alle Daten löschen
-          </Button>
+        <div className="pt-5 border-t border-stone-100">
+          <button
+            onClick={() => setShowAdvanced(!showAdvanced)}
+            className="w-full flex items-center justify-between text-xs font-semibold text-stone-400 uppercase tracking-wide"
+          >
+            <span>Erweiterte Einstellungen</span>
+            <ChevronDown size={14} className={`transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`} />
+          </button>
+          {showAdvanced && (
+            <div className="mt-3 space-y-2">
+              <p className="text-xs text-stone-500">
+                Alle Klassen, Schüler, Noten und Notizen werden gelöscht. Die Daten landen für 30 Tage im Papierkorb und können dort wiederhergestellt werden.
+              </p>
+              <Button variant="danger" onClick={() => { setResetInput(""); setConfirmReset(true); }} className="w-full justify-center">
+                Alle Daten löschen
+              </Button>
+            </div>
+          )}
         </div>
 
         <Button onClick={onClose} className="w-full justify-center mt-5">Schließen</Button>
@@ -1025,13 +1060,21 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
         {confirmReset && (
           <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setConfirmReset(false)}>
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
-              <div className="font-semibold text-stone-800 mb-2">Alle Daten unwiderruflich löschen?</div>
-              <p className="text-sm text-stone-600 mb-4">
-                Klassen, Schüler, Noten, Notizen – alles wird gelöscht. Diese Aktion kann <strong>nicht rückgängig</strong> gemacht werden. Bitte vorher sichern.
+              <div className="font-semibold text-stone-800 mb-2">Alle Daten löschen?</div>
+              <p className="text-sm text-stone-600 mb-3">
+                Alle Daten werden für <strong>30 Tage in den Papierkorb</strong> verschoben und können dort wiederhergestellt werden. Danach ist die Löschung endgültig.
               </p>
-              <div className="flex gap-2">
+              <p className="text-xs text-stone-400 mb-1.5">Tippe <strong>LÖSCHEN</strong> zur Bestätigung:</p>
+              <input
+                className={inputCls}
+                value={resetInput}
+                onChange={(e) => setResetInput(e.target.value)}
+                placeholder="LÖSCHEN"
+                autoFocus
+              />
+              <div className="flex gap-2 mt-3">
                 <Button variant="ghost" onClick={() => setConfirmReset(false)} className="flex-1 justify-center">Abbrechen</Button>
-                <Button variant="danger" onClick={() => { onReset(); setConfirmReset(false); onClose(); }} className="flex-1 justify-center">Alles löschen</Button>
+                <Button variant="danger" disabled={resetInput !== "LÖSCHEN"} onClick={() => { onReset(); setConfirmReset(false); }} className="flex-1 justify-center">Löschen</Button>
               </div>
             </div>
           </div>
@@ -1539,12 +1582,17 @@ export default function App() {
     if (!loaded) return;
     const DAYS = 30;
     const cutoff = Date.now() - DAYS * 86400000;
+    const snapshotExpired = data.deletedSnapshot && new Date(data.deletedSnapshot.deletedAt).getTime() < cutoff;
     const hasStaleDeletions =
+      snapshotExpired ||
       data.students.some((s) => s.deletedAt && new Date(s.deletedAt).getTime() < cutoff) ||
       data.classes.some((c) => c.deletedAt && new Date(c.deletedAt).getTime() < cutoff) ||
       data.notes.some((n) => n.deletedAt && new Date(n.deletedAt).getTime() < cutoff);
     if (!hasStaleDeletions) return;
     update((d) => {
+      if (d.deletedSnapshot && new Date(d.deletedSnapshot.deletedAt).getTime() < cutoff) {
+        d.deletedSnapshot = null;
+      }
       const expiredStudentIds = d.students.filter((s) => s.deletedAt && new Date(s.deletedAt).getTime() < cutoff).map((s) => s.id);
       const expiredClassIds = d.classes.filter((c) => c.deletedAt && new Date(c.deletedAt).getTime() < cutoff).map((c) => c.id);
       d.students = d.students.filter((s) => !s.deletedAt || new Date(s.deletedAt).getTime() >= cutoff);
@@ -1607,7 +1655,10 @@ export default function App() {
   }
 
   function resetAllData() {
-    setData(EMPTY_DATA);
+    update((d) => {
+      const snapshot = { deletedAt: new Date().toISOString(), data: { ...d, deletedSnapshot: null } };
+      return { ...EMPTY_DATA, deletedSnapshot: snapshot };
+    });
   }
 
   function importBackup(file, onResult) {
