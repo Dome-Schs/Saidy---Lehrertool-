@@ -1505,6 +1505,8 @@ export default function App() {
   const [showMore, setShowMore] = useState(false);
   const [klassenSubTab, setKlassenSubTab] = useState("klassen");
   const [backupReminderDays, setBackupReminderDays] = useState(null); // null=kein Banner, 0=nie gesichert, >0=Tage seit letztem Backup
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
   const [notenFachId, setNotenFachId] = useState(null); // Vorauswahl für den Noten-Tab
 
   // Wechselt den Bereich und optional den Unterreiter (z. B. direkt zu den Diensten)
@@ -1697,6 +1699,12 @@ export default function App() {
       return d;
     });
     setShowOnboarding(false);
+  }
+
+  function showToast(msg) {
+    if (toastTimer.current) clearTimeout(toastTimer.current);
+    setToast(msg);
+    toastTimer.current = setTimeout(() => setToast(null), 3500);
   }
 
   function recordBackup() {
@@ -1957,6 +1965,9 @@ export default function App() {
                     d.settings = { ...(d.settings || {}), fehlzeitenLastImport: isoDate(new Date()) };
                     return d;
                   });
+                  showToast(`${newAbsences.length} Fehlzeit${newAbsences.length === 1 ? "" : "en"} importiert.`);
+                } else {
+                  showToast("Keine neuen Fehlzeiten gefunden.");
                 }
                 setShowUntisImport(false);
               }}
@@ -2041,6 +2052,13 @@ export default function App() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Toast-Meldung */}
+      {toast && (
+        <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-stone-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg pointer-events-none">
+          {toast}
         </div>
       )}
     </div>
