@@ -4722,7 +4722,7 @@ function KalenderTab({ data, update }) {
       {(() => {
         const ferienList = open.filter((e) => e.type === "ferien");
         if (!ferienList.length) return null;
-        const visible = showAllFerien ? ferienList : ferienList.slice(0, 3);
+        const visible = showAllFerien ? ferienList : ferienList.slice(0, 1);
         return (
           <Card className="p-5">
             <div className="font-medium text-stone-800 mb-3 flex items-center gap-2">
@@ -4749,7 +4749,7 @@ function KalenderTab({ data, update }) {
                 className="mt-3 text-xs text-stone-400 hover:text-stone-600 flex items-center gap-1"
               >
                 <ChevronDown size={14} className={showAllFerien ? "rotate-180" : ""} />
-                {showAllFerien ? "Weniger anzeigen" : `${ferienList.length - 3} weitere Ferien`}
+                {showAllFerien ? "Weniger anzeigen" : `${ferienList.length - 1} weitere Ferien`}
               </button>
             )}
           </Card>
