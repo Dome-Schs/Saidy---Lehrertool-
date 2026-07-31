@@ -440,6 +440,25 @@ function Button({ children, onClick, variant = "primary", className = "", type =
   );
 }
 
+function Abbr({ short, long }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <span className="relative inline-block">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="underline decoration-dotted decoration-green-500 underline-offset-2 cursor-help font-[inherit] text-[inherit]"
+      >
+        {short}
+      </button>
+      {open && (
+        <span className="absolute left-0 top-full mt-1 z-50 text-[10px] text-green-700 bg-green-50 border border-green-200 rounded-lg px-2 py-1 whitespace-nowrap shadow-sm">
+          {long}
+        </span>
+      )}
+    </span>
+  );
+}
+
 function Field({ label, children }) {
   return (
     <label className="block">
@@ -610,7 +629,7 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
         <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
           <div>
             <div className="font-semibold text-stone-800">WebUntis Fehlzeiten importieren</div>
-            <div className="text-xs text-stone-400">CSV-Export aus WebUntis hochladen</div>
+            <div className="text-xs text-stone-400"><Abbr short="CSV" long="Komma-getrennte Tabellendatei, aus WebUntis exportierbar" />-Export aus WebUntis hochladen</div>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
         </div>
@@ -618,7 +637,7 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
           <div className="bg-stone-50 rounded-xl p-3 text-xs text-stone-600 space-y-1">
             <p className="font-medium text-stone-700">So geht's in WebUntis:</p>
             <p>1. Klassenbuch → Fehlzeiten → Zeitraum wählen</p>
-            <p>2. Export als CSV herunterladen</p>
+            <p>2. Export als <Abbr short="CSV" long="Komma-getrennte Tabellendatei" /> herunterladen</p>
             <p>3. Hier hochladen</p>
           </div>
 
@@ -932,7 +951,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             </p>
           )}
           <Button variant="subtle" onClick={() => onOpenUntisImport?.()} className="w-full justify-center">
-            <Upload size={15} /> WebUntis CSV importieren
+            <Upload size={15} /> Fehlzeiten aus WebUntis importieren
           </Button>
         </div>
 
@@ -2938,7 +2957,7 @@ function AddStudentModal({ className, onAddOne, onOpenCsv, onClose }) {
           <div className="h-px bg-stone-100 flex-1" />
         </div>
 
-        <Button variant="subtle" onClick={onOpenCsv} className="w-full justify-center">CSV importieren</Button>
+        <Button variant="subtle" onClick={onOpenCsv} className="w-full justify-center">Klassenliste importieren</Button>
 
         <div className="mt-5">
           <Button variant="ghost" onClick={onClose} className="w-full justify-center">Fertig</Button>
@@ -3606,7 +3625,7 @@ function DiensteTab({ data, update }) {
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-stone-800">Dienste</span>
                     <span className="inline-flex flex-col items-center leading-tight akzent-text akzent-ton px-2.5 py-1 rounded-lg">
-                      <span className="text-[11px] font-semibold">KW {currentSchoolWeek().kw}</span>
+                      <span className="text-[11px] font-semibold"><Abbr short={`KW ${currentSchoolWeek().kw}`} long="Kalenderwoche" /></span>
                       <span className="text-[10px] opacity-80 tnum">{currentSchoolWeek().range}</span>
                     </span>
                   </div>
@@ -3642,9 +3661,9 @@ function DiensteTab({ data, update }) {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-medium text-stone-800">{duty.name}</span>
-                            <span className="text-xs text-stone-400">{fertig}/{gesamt} · Runde {duty.round || 1}</span>
+                            <span className="text-xs text-stone-400">{fertig}/{gesamt} · <Abbr short={`Runde ${duty.round || 1}`} long="Wie oft alle Kinder schon an der Reihe waren" /></span>
                             {hatWiederholung && (
-                              <span className="text-[10px] text-red-700 bg-red-50 px-1.5 py-0.5 rounded-full">Wdh.</span>
+                              <span className="text-[10px] text-red-700 bg-red-50 px-1.5 py-0.5 rounded-full"><Abbr short="Wdh." long="Wiederholung – Kind war schon einmal dran" /></span>
                             )}
                           </div>
 
