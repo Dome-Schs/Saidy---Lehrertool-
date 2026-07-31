@@ -1886,7 +1886,7 @@ export default function App() {
         </aside>
 
         {/* Inhalt */}
-        <main className="flex-1 md:ml-56 px-4 py-5 md:px-8 md:py-8 max-w-5xl pb-24 md:pb-8">
+        <main className="flex-1 md:ml-56 px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-24 md:px-8 md:pt-8 md:pb-8 max-w-5xl">
           {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenUntisImport={() => setShowUntisImport(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
           {tab === "klassen" && <KlassenTab data={activeData} update={update} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
