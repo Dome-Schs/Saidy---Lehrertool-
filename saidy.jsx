@@ -2763,11 +2763,11 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
 
       <div className="grid grid-cols-2 gap-2">
         <button onClick={() => onNavigate?.("klassen")} className="bg-white rounded-xl border border-stone-200 py-2 text-center hover:akzent-rand transition-colors">
-          <div className="text-base font-semibold akzent-text leading-tight">{data.classes.length}</div>
+          <div className="text-base font-semibold text-stone-800 leading-tight">{data.classes.length}</div>
           <div className="text-[10px] text-stone-400">Klassen</div>
         </button>
         <button onClick={() => onNavigate?.("klassen")} className="bg-white rounded-xl border border-stone-200 py-2 text-center hover:akzent-rand transition-colors">
-          <div className="text-base font-semibold akzent-text leading-tight">{data.students.length}</div>
+          <div className="text-base font-semibold text-stone-800 leading-tight">{data.students.length}</div>
           <div className="text-[10px] text-stone-400">Schüler:innen</div>
         </button>
       </div>
@@ -3195,7 +3195,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                         />
                         <label
                           htmlFor={`photo-${s.id}`}
-                          className="cursor-pointer text-xs font-medium akzent-text akzent-ton hover:opacity-90 px-2.5 py-1.5 rounded-lg inline-block"
+                          className="cursor-pointer text-xs font-medium text-stone-500 hover:text-stone-800 underline underline-offset-2 inline-block"
                         >
                           Foto {s.photo ? "ändern" : "hinzufügen"}
                         </label>
