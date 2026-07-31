@@ -702,7 +702,7 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
 }
 
 /* Einstellungen: Reihenfolge der Dashboard-Karten per Pfeiltasten anpassen */
-function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onImport, onClose, onOpenUntisImport }) {
+function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onImport, onReset, onClose, onOpenUntisImport }) {
   const gespeicherteReihenfolge = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
   const order = [
     ...gespeicherteReihenfolge.filter((k) => DASHBOARD_SECTIONS[k]),
@@ -712,6 +712,8 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
   const importInputRef = useRef(null);
   const [importMsg, setImportMsg] = useState(null); // { ok, msg }
   const [confirmImport, setConfirmImport] = useState(null); // File
+  const [confirmBackupAction, setConfirmBackupAction] = useState(null); // 'export' | 'share'
+  const [confirmReset, setConfirmReset] = useState(false);
   const [showPromote, setShowPromote] = useState(false);
 
   function promoteClasses(ids) {
@@ -859,8 +861,8 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             Deine Daten liegen auf diesem Gerät. Sichere sie regelmäßig als Datei, damit bei Geräteverlust oder App-Neuinstallation nichts verloren geht.
           </p>
           <div className="flex gap-2 mb-2">
-            <Button variant="subtle" onClick={onExport} className="flex-1 justify-center"><Download size={15} /> Sichern</Button>
-            <Button variant="subtle" onClick={onShare} className="flex-1 justify-center">Teilen</Button>
+            <Button variant="subtle" onClick={() => setConfirmBackupAction("export")} className="flex-1 justify-center"><Download size={15} /> Sichern</Button>
+            <Button variant="subtle" onClick={() => setConfirmBackupAction("share")} className="flex-1 justify-center">Teilen</Button>
           </div>
           <Button variant="ghost" onClick={() => importInputRef.current?.click()} className="w-full justify-center"><Upload size={15} /> Gesichertes wiederherstellen</Button>
           <input
@@ -872,7 +874,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           )}
           <p className="text-xs text-stone-400 mt-3 flex items-start gap-1.5">
             <ShieldCheck size={13} className="shrink-0 mt-0.5" />
-            Bewahre Backups sicher auf – sie enthalten alle Schülerdaten im Klartext.
+            Backup-Dateien enthalten alle Schülerdaten im Klartext – <strong>nicht</strong> in privaten Cloud-Diensten (Google Drive, Dropbox, iCloud) speichern.
           </p>
         </div>
 
@@ -958,6 +960,16 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           );
         })()}
 
+        <div className="pt-5 border-t border-red-100">
+          <div className="text-xs font-semibold text-red-400 uppercase tracking-wide mb-2">Gefahrenzone</div>
+          <p className="text-xs text-stone-500 mb-3">
+            Löscht alle Daten dieser App unwiderruflich. Sichere deine Daten vorher über „Sichern".
+          </p>
+          <Button variant="danger" onClick={() => setConfirmReset(true)} className="w-full justify-center">
+            Alle Daten löschen
+          </Button>
+        </div>
+
         <Button onClick={onClose} className="w-full justify-center mt-5">Schließen</Button>
         </div>
 
@@ -980,6 +992,46 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
               <div className="flex gap-2">
                 <Button variant="ghost" onClick={() => setConfirmImport(null)} className="flex-1 justify-center">Abbrechen</Button>
                 <Button variant="danger" onClick={() => { onImport(confirmImport, (r) => setImportMsg(r)); setConfirmImport(null); }} className="flex-1 justify-center">Ersetzen</Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {confirmBackupAction && (
+          <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setConfirmBackupAction(null)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start gap-2.5 mb-3">
+                <span className="w-9 h-9 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center shrink-0"><ShieldCheck size={17} /></span>
+                <div>
+                  <div className="font-semibold text-stone-800">Datenschutz-Hinweis</div>
+                  <p className="text-sm text-stone-500 mt-0.5">Das Backup enthält alle Schülerdaten im Klartext.</p>
+                </div>
+              </div>
+              <ul className="text-xs text-stone-600 space-y-1.5 mb-4 pl-1">
+                <li className="flex items-start gap-1.5"><span className="text-red-500 font-bold shrink-0">✕</span> Nicht in Google Drive, Dropbox oder iCloud speichern</li>
+                <li className="flex items-start gap-1.5"><span className="text-red-500 font-bold shrink-0">✕</span> Nicht per E-Mail oder Messenger versenden</li>
+                <li className="flex items-start gap-1.5"><span className="akzent-text font-bold shrink-0">✓</span> Nur auf dem eigenen Gerät oder Schul-Server ablegen</li>
+              </ul>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => setConfirmBackupAction(null)} className="flex-1 justify-center">Abbrechen</Button>
+                <Button onClick={() => { confirmBackupAction === "share" ? onShare() : onExport(); setConfirmBackupAction(null); }} className="flex-1 justify-center">
+                  {confirmBackupAction === "share" ? "Teilen" : "Herunterladen"}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {confirmReset && (
+          <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setConfirmReset(false)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
+              <div className="font-semibold text-stone-800 mb-2">Alle Daten unwiderruflich löschen?</div>
+              <p className="text-sm text-stone-600 mb-4">
+                Klassen, Schüler, Noten, Notizen – alles wird gelöscht. Diese Aktion kann <strong>nicht rückgängig</strong> gemacht werden. Bitte vorher sichern.
+              </p>
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => setConfirmReset(false)} className="flex-1 justify-center">Abbrechen</Button>
+                <Button variant="danger" onClick={() => { onReset(); setConfirmReset(false); onClose(); }} className="flex-1 justify-center">Alles löschen</Button>
               </div>
             </div>
           </div>
@@ -1554,6 +1606,10 @@ export default function App() {
     exportBackup();
   }
 
+  function resetAllData() {
+    setData(EMPTY_DATA);
+  }
+
   function importBackup(file, onResult) {
     const reader = new FileReader();
     reader.onload = () => {
@@ -1728,6 +1784,7 @@ export default function App() {
               onExport={exportBackup}
               onShare={shareBackup}
               onImport={importBackup}
+              onReset={resetAllData}
               onClose={() => setShowSettings(false)}
               onOpenUntisImport={() => { setShowSettings(false); setShowUntisImport(true); }}
             />
@@ -3084,6 +3141,10 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                         rows={2}
                         className={`${inputCls} resize-none`}
                       />
+                      <p className="text-[11px] text-amber-600 mt-1 flex items-start gap-1">
+                        <ShieldCheck size={11} className="shrink-0 mt-0.5" />
+                        Gesundheitsdaten (Art. 9 DSGVO) – nur mit schriftlicher Einwilligung der Erziehungsberechtigten speichern.
+                      </p>
                     </Field>
 
                     <div>
