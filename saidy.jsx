@@ -843,20 +843,20 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
 
         <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Übersicht (Startseite)</div>
 
-        <label className="flex items-center justify-between gap-2 mb-1 cursor-pointer">
+        <label className="flex items-center justify-between gap-2 py-2 cursor-pointer">
           <span className="text-sm text-stone-700">Ferien-Countdown anzeigen</span>
-          <input type="checkbox" checked={!!data.settings?.showFerienCountdown} onChange={(e) => setSetting("showFerienCountdown", e.target.checked)} className="w-4 h-4" />
+          <input type="checkbox" checked={!!data.settings?.showFerienCountdown} onChange={(e) => setSetting("showFerienCountdown", e.target.checked)} className="w-5 h-5" />
         </label>
         {data.settings?.showFerienCountdown && (
-          <label className="flex items-center justify-between gap-2 mb-4 pl-3 cursor-pointer">
+          <label className="flex items-center justify-between gap-2 py-2 pl-3 mb-2 cursor-pointer">
             <span className="text-xs text-stone-500">Nur Schultage zählen (Mo–Fr)</span>
-            <input type="checkbox" checked={!!data.settings?.countdownSchooldaysOnly} onChange={(e) => setSetting("countdownSchooldaysOnly", e.target.checked)} className="w-4 h-4" />
+            <input type="checkbox" checked={!!data.settings?.countdownSchooldaysOnly} onChange={(e) => setSetting("countdownSchooldaysOnly", e.target.checked)} className="w-5 h-5" />
           </label>
         )}
 
-        <label className="flex items-center justify-between gap-2 mb-4 cursor-pointer">
+        <label className="flex items-center justify-between gap-2 py-2 mb-2 cursor-pointer">
           <span className="text-xs text-stone-500">Notenfarben anzeigen (grün / gelb / rot)</span>
-          <input type="checkbox" checked={data.settings?.notenfarben !== false} onChange={(e) => setSetting("notenfarben", e.target.checked)} className="w-4 h-4" />
+          <input type="checkbox" checked={data.settings?.notenfarben !== false} onChange={(e) => setSetting("notenfarben", e.target.checked)} className="w-5 h-5" />
         </label>
 
         <div className="text-xs font-medium text-stone-500 mb-2">Reihenfolge der Karten</div>
@@ -5165,8 +5165,8 @@ function IncidentModal({ cls, students, defaultLabel, onSave, onClose }) {
         </div>
 
         <div className="rounded-xl border border-stone-200 p-3 mb-4">
-          <label className="flex items-center gap-2 text-sm text-stone-700 mb-2">
-            <input type="checkbox" checked={autoGrade} onChange={(e) => setAutoGrade(e.target.checked)} />
+          <label className="flex items-center gap-2 text-sm text-stone-700 py-2 cursor-pointer">
+            <input type="checkbox" className="w-5 h-5 shrink-0" checked={autoGrade} onChange={(e) => setAutoGrade(e.target.checked)} />
             Automatisch eine mündliche Note vergeben
           </label>
           {autoGrade && (
@@ -6584,10 +6584,10 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                                 )}
                               </div>
                               {/* Vergessen-Vermerk: markiert die Note als Folge von vergessenem Material */}
-                              <label className="flex items-center gap-2 text-sm text-stone-600 pt-1">
+                              <label className="flex items-center gap-2 text-sm text-stone-600 py-2 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  className="w-4 h-4 rounded accent-current akzent-text"
+                                  className="w-5 h-5 shrink-0 rounded accent-current akzent-text"
                                   checked={!!g.reason}
                                   onChange={(e) => updateGrade(g.id, { reason: e.target.checked ? "Sportzeug" : undefined })}
                                 />
