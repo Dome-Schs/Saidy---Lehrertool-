@@ -1947,7 +1947,7 @@ export default function App() {
 
           {showUntisImport && (
             <WebUntisImportModal
-              students={data.students}
+              students={activeData.students}
               existingAbsences={data.absences || []}
               onImport={(newAbsences) => {
                 if (newAbsences.length > 0) {
