@@ -2501,22 +2501,28 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
           </div>
 
           {/* Frage zum Mitbringen – nur bei Sport-Fächern sichtbar */}
-          {istSport && <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
-            <div className="flex items-center gap-2 flex-wrap text-sm text-amber-900">
-              <span>Haben alle ihr</span>
-              <input
-                className="text-sm rounded-lg border border-amber-300 bg-white px-2 py-1 w-32"
-                value={incidentLabel}
-                onChange={(e) => setIncidentLabel(e.target.value)}
-                placeholder="Sportzeug"
-              />
-              <span>dabei?</span>
-            </div>
-            <p className="text-xs text-amber-700 mt-1.5">
-              Fehlt es, beim Kind auf <AlertTriangle size={11} className="inline -mt-0.5" /> tippen
-              {autoGrade ? " – trägt automatisch eine mündliche 5 mit Vermerk ein." : "."}
-            </p>
-          </div>}
+          {istSport && (() => {
+            const anyFehlt = students.some((s) => incidentActive(s.id));
+            return (
+              <div className={`mb-4 rounded-xl px-3 py-2.5 border ${anyFehlt ? "bg-amber-50 border-amber-200" : "bg-stone-50 border-stone-200"}`}>
+                <div className={`flex items-center gap-2 flex-wrap text-sm ${anyFehlt ? "text-amber-900" : "text-stone-700"}`}>
+                  <span>Haben alle ihr</span>
+                  <input
+                    className={`text-sm rounded-lg px-2 py-1 w-32 ${anyFehlt ? "border border-amber-300 bg-white" : "border border-stone-300 bg-white"}`}
+                    value={incidentLabel}
+                    onChange={(e) => setIncidentLabel(e.target.value)}
+                    placeholder="Sportzeug"
+                    maxLength={50}
+                  />
+                  <span>dabei?</span>
+                </div>
+                <p className={`text-xs mt-1.5 ${anyFehlt ? "text-amber-700" : "text-stone-500"}`}>
+                  Fehlt es, beim Kind auf <AlertTriangle size={11} className="inline -mt-0.5" /> tippen
+                  {autoGrade ? " – trägt automatisch eine mündliche 5 mit Vermerk ein." : "."}
+                </p>
+              </div>
+            );
+          })()}
 
           <ul className="divide-y divide-stone-100">
             {students.map((s) => {
@@ -2564,6 +2570,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                     <input
                       className="w-full text-xs rounded-lg border border-red-200 bg-red-50/50 px-2.5 py-2 mb-2"
                       placeholder={`Vermerk, z. B. nur Schuhe vergessen`}
+                      maxLength={200}
                       value={incidentNoteFor(s.id)}
                       onChange={(e) => setIncidentNote(s.id, e.target.value)}
                     />
@@ -2601,6 +2608,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                       autoFocus
                       className="w-full mt-2 text-sm rounded-lg border border-stone-300 px-2.5 py-2"
                       placeholder="Beobachtung notieren …"
+                      maxLength={500}
                       value={noteFor(s.id)}
                       onChange={(e) => setNoteDrafts((d) => ({ ...d, [s.id]: e.target.value }))}
                       onKeyDown={(e) => { if (e.key === "Enter") { saveNote(s.id); setExpanded(null); } }}
@@ -2628,6 +2636,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                           autoFocus
                           className="flex-1 text-sm rounded-lg border border-stone-300 px-2.5 py-1.5"
                           placeholder="Was bewegt das Kind …"
+                          maxLength={500}
                           value={gesprTexts[s.id] || ""}
                           onChange={(e) => setGesprTexts((d) => ({ ...d, [s.id]: e.target.value }))}
                           onKeyDown={(e) => { if (e.key === "Enter") saveGespraech(s.id); }}
@@ -2877,13 +2886,13 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
                       {fach && cls && (
                         <button
                           onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
-                          className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                          className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
                             offen ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : "bg-stone-100 text-stone-400 hover:akzent-ton hover:akzent-text"
                           }`}
                           aria-label="Stunde erfassen"
                           title="Stunde erfassen"
                         >
-                          <ClipboardCheck size={15} />
+                          <ClipboardCheck size={17} />
                         </button>
                       )}
                     </li>
@@ -3111,7 +3120,7 @@ function NewClassModal({ onSave, onClose }) {
         </div>
         <Field label="Klasse">
           <input
-            className={inputCls} placeholder="z. B. 7c" value={name} autoFocus
+            className={inputCls} placeholder="z. B. 7c" value={name} autoFocus maxLength={30}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && save()}
           />
@@ -3209,7 +3218,7 @@ function FachModal({ data, initial, onSave, onClose }) {
           </Field>
 
           <Field label="Raum (optional)">
-            <input className={inputCls} placeholder="z. B. 0.107" value={room} onChange={(e) => setRoom(e.target.value)} />
+            <input className={inputCls} placeholder="z. B. 0.107" maxLength={20} value={room} onChange={(e) => setRoom(e.target.value)} />
           </Field>
 
           <Field label="Gewichtung der Noten">
@@ -4253,7 +4262,7 @@ function DutyModal({ onSave, onClose }) {
 
         <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4">
           <Field label="Bezeichnung">
-            <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Tafeldienst" autoFocus />
+            <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Tafeldienst" autoFocus maxLength={50} />
           </Field>
 
           <div className="flex flex-wrap gap-1.5">
@@ -4922,6 +4931,11 @@ function KalenderTab({ data, update }) {
   const open = sorted.filter((e) => !e.done);
   const done = sorted.filter((e) => e.done && e.type !== "ferien");
 
+  const tasksDue = [...(data.tasks || [])]
+    .filter((t) => t.dueDate && !t.done)
+    .filter((t) => !filterDate || t.dueDate.slice(0, 10) === filterDate)
+    .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+
   // Monatsraster: 6 Wochen à 7 Tage (Mo–So), führt/schließt Nachbarmonate mit
   const monthWeeks = useMemo(() => {
     const first = new Date(monthCursor);
@@ -4962,6 +4976,7 @@ function KalenderTab({ data, update }) {
               const inMonth = d.getMonth() === monthCursor.getMonth();
               const isToday = ds === todayStr;
               const dayHasEvents = data.events.filter((e) => (e.endDate ? e.date <= ds && ds <= e.endDate : e.date === ds));
+              const dayHasTasks = (data.tasks || []).filter((t) => t.dueDate && t.dueDate.slice(0, 10) === ds && !t.done);
               const active = filterDate === ds;
               return (
                 <button
@@ -4972,13 +4987,20 @@ function KalenderTab({ data, update }) {
                   }`}
                 >
                   <span className={isToday && !active ? "text-red-500 font-medium" : ""}>{d.getDate()}</span>
-                  {!!dayHasEvents.length && (
+                  {!!(dayHasEvents.length + dayHasTasks.length) && (
                     <span className="flex gap-0.5">
-                      {dayHasEvents.slice(0, 3).map((e) => (
+                      {dayHasEvents.slice(0, 2).map((e) => (
                         <span
                           key={e.id}
                           className="w-1 h-1 rounded-full"
                           style={{ backgroundColor: active ? "#ffffff" : e.type === "ferien" ? "#10b981" : (e.color || "#c9702f") }}
+                        />
+                      ))}
+                      {dayHasTasks.slice(0, 1).map((t) => (
+                        <span
+                          key={t.id}
+                          className="w-1 h-1 rounded-full"
+                          style={{ backgroundColor: active ? "#ffffff" : (t.color || "#4F5844") }}
                         />
                       ))}
                     </span>
@@ -5017,6 +5039,34 @@ function KalenderTab({ data, update }) {
           {!open.filter((e) => e.type !== "ferien").length && <li className="text-sm text-stone-400">Keine offenen Termine.</li>}
         </ul>
       </Card>
+
+      {!!tasksDue.length && (
+        <Card className="p-5">
+          <div className="font-medium text-stone-800 mb-3">Fällige Aufgaben</div>
+          <ul className="space-y-3">
+            {tasksDue.map((t) => (
+              <li key={t.id} className="flex items-start gap-2.5 text-sm">
+                <button
+                  onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
+                  className="w-5 h-5 rounded-full border-2 shrink-0 mt-0.5 flex items-center justify-center"
+                  style={{ borderColor: t.color }}
+                  aria-label="Erledigt"
+                />
+                <span className="w-2.5 h-2.5 rounded-full shrink-0 mt-1" style={{ backgroundColor: t.color }} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-stone-800 leading-snug">{t.title}</div>
+                  <div className="mt-1">
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${new Date(t.dueDate) < new Date() ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-600"}`}>
+                      {new Date(t.dueDate).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}
+                      {t.dueDate.length > 10 ? `, ${t.dueDate.slice(11, 16)}` : ""}
+                    </span>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       {(() => {
         const ferienList = open.filter((e) => e.type === "ferien");
@@ -5533,7 +5583,7 @@ function IncidentModal({ cls, students, defaultLabel, onSave, onClose }) {
         </div>
 
         <div className="grid grid-cols-2 gap-2 mb-4">
-          <input className={inputCls} placeholder="z. B. Sportzeug" value={label} onChange={(e) => setLabel(e.target.value)} />
+          <input className={inputCls} placeholder="z. B. Sportzeug" maxLength={50} value={label} onChange={(e) => setLabel(e.target.value)} />
           <input className={inputCls} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
 
@@ -5553,7 +5603,7 @@ function IncidentModal({ cls, students, defaultLabel, onSave, onClose }) {
 
         <div className="rounded-xl border border-stone-200 p-3 mb-4">
           <label className="flex items-center gap-2 text-sm text-stone-700 py-2 cursor-pointer">
-            <input type="checkbox" className="w-5 h-5 shrink-0" checked={autoGrade} onChange={(e) => setAutoGrade(e.target.checked)} />
+            <input type="checkbox" className="w-5 h-5 shrink-0" style={{ accentColor: "#4F5844" }} checked={autoGrade} onChange={(e) => setAutoGrade(e.target.checked)} />
             Automatisch eine mündliche Note vergeben
           </label>
           {autoGrade && (
@@ -6686,7 +6736,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
 
           {!student && <Card className="p-5 text-sm text-stone-400">Tippe in der Übersicht auf ein Kind, um Noten, Verlauf und Zeugnisnote zu sehen.</Card>}
           {student && (
-              <div className="fixed inset-0 bg-stone-900/40 z-50 flex items-end md:items-center md:justify-center" onClick={() => setSelectedStudent(null)}>
+              <div className="fixed inset-0 bg-stone-900/40 z-[55] flex items-end md:items-center md:justify-center" onClick={() => setSelectedStudent(null)}>
                 <div className="bg-white w-full md:max-w-lg md:rounded-2xl rounded-t-3xl overflow-y-auto sheet " onClick={(e) => e.stopPropagation()}>
                   <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-200 px-4 py-3 flex items-center gap-2.5 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)]">
                     <StudentAvatar student={student} size={34} />
@@ -6993,7 +7043,8 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                               <label className="flex items-center gap-2 text-sm text-stone-600 py-2 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  className="w-5 h-5 shrink-0 rounded accent-current akzent-text"
+                                  className="w-5 h-5 shrink-0 rounded"
+                                  style={{ accentColor: "#4F5844" }}
                                   checked={!!g.reason}
                                   onChange={(e) => updateGrade(g.id, { reason: e.target.checked ? "Sportzeug" : undefined })}
                                 />
