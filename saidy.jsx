@@ -205,7 +205,7 @@ function subjectColor(subjectColors, name) {
 }
 
 function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 }
 
 const SAIDY_LOGO = "data:image/png;base64,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";
@@ -399,6 +399,20 @@ function StudentAvatar({ student, size = 32 }) {
 }
 
 /* ---------- Kleine UI-Bausteine ---------- */
+
+function Toggle({ checked, onChange }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex w-10 h-[22px] rounded-full transition-colors shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[color:var(--oliv)] ${checked ? "akzent-flaeche" : "bg-stone-200"}`}
+    >
+      <span className={`absolute top-[3px] left-[3px] w-4 h-4 bg-white rounded-full shadow-sm transition-transform ${checked ? "translate-x-[18px]" : "translate-x-0"}`} />
+    </button>
+  );
+}
 
 function Card({ children, className = "" }) {
   return <div className={`karte rounded-xl ${className}`}>{children}</div>;
@@ -633,7 +647,7 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
         </div>
-        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
+        <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4">
           <div className="bg-stone-50 rounded-xl p-3 text-xs text-stone-600 space-y-1">
             <p className="font-medium text-stone-700">So geht's in WebUntis:</p>
             <p>1. Klassenbuch → Fehlzeiten → Zeitraum wählen</p>
@@ -674,6 +688,12 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
                 ))}
               </div>
 
+              {cols.reason >= 0 && (
+                <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 text-xs text-amber-800">
+                  <ShieldCheck size={14} className="text-amber-600 mt-0.5 shrink-0" />
+                  <span>Diese Datei enthält Begründungen (z. B. Krankheit) – das sind besondere Daten nach <strong>Art. 9 DSGVO</strong>. Nur importieren, wenn eine schriftliche Einwilligung der Erziehungsberechtigten vorliegt.</span>
+                </div>
+              )}
               {preview.length > 0 && (
                 <div>
                   <div className="text-[11px] font-medium text-stone-400 uppercase tracking-wide mb-2">
@@ -737,6 +757,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
   const [confirmDeleteSnapshot, setConfirmDeleteSnapshot] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showICloudSteps, setShowICloudSteps] = useState(false);
+  const [confirmICloud, setConfirmICloud] = useState(false);
   const [showPromote, setShowPromote] = useState(false);
 
   function promoteClasses(ids) {
@@ -802,7 +823,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center"><X size={16} /></button>
         </div>
 
-        <div className="p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+        <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))]">
         <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Schuljahr</div>
         <div className="text-xs font-medium text-stone-500 mb-2">Bundesland & Schulferien</div>
         <select className={`${inputCls} mb-2`} value={currentBundesland} onChange={(e) => setBundesland(e.target.value)}>
@@ -843,21 +864,21 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
 
         <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Übersicht (Startseite)</div>
 
-        <label className="flex items-center justify-between gap-2 py-2 cursor-pointer">
+        <div className="flex items-center justify-between gap-2 py-2">
           <span className="text-sm text-stone-700">Ferien-Countdown anzeigen</span>
-          <input type="checkbox" checked={!!data.settings?.showFerienCountdown} onChange={(e) => setSetting("showFerienCountdown", e.target.checked)} className="w-5 h-5" />
-        </label>
+          <Toggle checked={!!data.settings?.showFerienCountdown} onChange={(v) => setSetting("showFerienCountdown", v)} />
+        </div>
         {data.settings?.showFerienCountdown && (
-          <label className="flex items-center justify-between gap-2 py-2 pl-3 mb-2 cursor-pointer">
+          <div className="flex items-center justify-between gap-2 py-2 pl-3 mb-2">
             <span className="text-xs text-stone-500">Nur Schultage zählen (Mo–Fr)</span>
-            <input type="checkbox" checked={!!data.settings?.countdownSchooldaysOnly} onChange={(e) => setSetting("countdownSchooldaysOnly", e.target.checked)} className="w-5 h-5" />
-          </label>
+            <Toggle checked={!!data.settings?.countdownSchooldaysOnly} onChange={(v) => setSetting("countdownSchooldaysOnly", v)} />
+          </div>
         )}
 
-        <label className="flex items-center justify-between gap-2 py-2 mb-2 cursor-pointer">
+        <div className="flex items-center justify-between gap-2 py-2 mb-2">
           <span className="text-xs text-stone-500">Notenfarben anzeigen (grün / gelb / rot)</span>
-          <input type="checkbox" checked={data.settings?.notenfarben !== false} onChange={(e) => setSetting("notenfarben", e.target.checked)} className="w-5 h-5" />
-        </label>
+          <Toggle checked={data.settings?.notenfarben !== false} onChange={(v) => setSetting("notenfarben", v)} />
+        </div>
 
         <div className="text-xs font-medium text-stone-500 mb-2">Reihenfolge der Karten</div>
         <ul className="space-y-1.5 mb-2">
@@ -908,7 +929,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           )}
           <p className="text-xs text-stone-400 mt-3 flex items-start gap-1.5">
             <ShieldCheck size={13} className="shrink-0 mt-0.5" />
-            Backup-Dateien enthalten alle Schülerdaten im Klartext – <strong>nicht</strong> in privaten Cloud-Diensten (Google Drive, Dropbox, iCloud) speichern.
+            Backup sicher aufbewahren (nur eigenes Gerät oder Schul-Server). Nicht mehr benötigte Backups löschen.
           </p>
         </div>
 
@@ -923,9 +944,23 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
               Die Speicherung von Schülerdaten in privaten Cloud-Diensten (iCloud, Google Drive, Dropbox) entspricht in der Regel nicht den datenschutzrechtlichen Anforderungen an Schulen in Deutschland (DSGVO Art. 32; landesrechtliche Schulgesetze). Die Nutzung dieser Option erfolgt ausschließlich auf eigene Verantwortung der jeweiligen Lehrkraft. Der Anbieter dieser App übernimmt keine Haftung für datenschutzrechtliche Verstöße, die sich aus der Ablage in nicht genehmigten Diensten ergeben.
             </p>
           </div>
+          {confirmICloud && (
+            <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setConfirmICloud(false)}>
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
+                <div className="font-semibold text-stone-800 mb-2">Auf eigene Verantwortung?</div>
+                <p className="text-sm text-stone-600 mb-4">
+                  Du bist dir bewusst, dass die Nutzung von iCloud für Schülerdaten in Deutschland <strong>nicht DSGVO-konform</strong> ist und in deiner eigenen Verantwortung liegt?
+                </p>
+                <div className="flex gap-2">
+                  <Button variant="ghost" onClick={() => setConfirmICloud(false)} className="flex-1 justify-center">Abbrechen</Button>
+                  <Button variant="danger" onClick={() => { setShowICloudSteps(true); setConfirmICloud(false); }} className="flex-1 justify-center">Ja, ich übernehme die Verantwortung</Button>
+                </div>
+              </div>
+            </div>
+          )}
           {!showICloudSteps ? (
             <button
-              onClick={() => setShowICloudSteps(true)}
+              onClick={() => setConfirmICloud(true)}
               className="w-full text-xs text-stone-400 hover:text-stone-600 border border-dashed border-stone-200 rounded-xl py-2.5 transition-colors"
             >
               Trotzdem nutzen – auf eigene Verantwortung
@@ -1486,7 +1521,7 @@ function OnboardingModal({ onApply, onSkip }) {
           <Button variant="ghost" onClick={() => onApply(code, false)} className="w-full justify-center">
             Nur speichern, keine Ferien
           </Button>
-          <button onClick={onSkip} className="text-xs text-stone-400 hover:text-stone-600 mt-1">Später einrichten</button>
+          <button onClick={onSkip} className="text-xs text-stone-400 hover:text-stone-600 mt-1 py-2 px-3">Später einrichten</button>
         </div>
       </div>
     </div>
@@ -1525,9 +1560,16 @@ const HELP_DATA = [
   {
     category: "Kalender & Termine",
     items: [
-      { q: "Wie lege ich einen Termin an?", a: `Gehe zu „Kalender“ und tippe auf „+ Neuen Termin anlegen“. Gib Titel, Datum, Uhrzeit und Art ein.` },
-      { q: "Wie trage ich Schulferien ein?", a: `Stelle zuerst dein Bundesland in den Einstellungen ein. Dann erscheint dort „Schulferien eintragen“ – Saidy übernimmt alle Ferien automatisch.` },
-      { q: "Wie erledige ich einen Termin?", a: `Tippe auf den Kreis links neben dem Termin. Er wandert in den „Erledigt“-Bereich ganz unten.` },
+      { q: "Wie lege ich einen Termin an?", a: `Tippe auf „Mehr” in der Navigation und dann auf „Kalender”. Tippe dort auf „+ Neuen Termin anlegen” und gib Titel, Datum, Uhrzeit und Art ein.` },
+      { q: "Wie trage ich Schulferien ein?", a: `Stelle zuerst dein Bundesland in den Einstellungen ein. Dann erscheint dort „Schulferien eintragen” – Saidy übernimmt alle Ferien automatisch.` },
+      { q: "Wie erledige ich einen Termin?", a: `Tippe auf den Kreis links neben dem Termin. Er wandert in den „Erledigt”-Bereich ganz unten.` },
+    ],
+  },
+  {
+    category: "Aufgaben",
+    items: [
+      { q: "Wie lege ich eine Aufgabe an?", a: `Tippe auf „Aufgaben” in der unteren Navigation. Wähle eine Liste und tippe auf „Aufgabe hinzufügen”. Du kannst Titel, Farbe und ein Fälligkeitsdatum vergeben.` },
+      { q: "Wie erstelle ich eine neue Aufgabenliste?", a: `Im Aufgaben-Tab tippe oben auf das „+”-Symbol, um eine neue Liste anzulegen und ihr eine Farbe oder ein Icon zu geben.` },
     ],
   },
   {
@@ -1777,7 +1819,7 @@ export default function App() {
         await window.storage.set("app_data", JSON.stringify(data));
         setSaveState("saved");
       } catch (e) {
-        setSaveState("idle");
+        setSaveState("error");
       }
     }, 500);
     return () => clearTimeout(saveTimer.current);
@@ -1849,7 +1891,7 @@ export default function App() {
   }
 
   function exportBackup() {
-    const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data };
+    const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data: { ...data, deletedSnapshot: null } };
     const json = JSON.stringify(payload, null, 2);
     const stamp = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
     const fileName = `Saidy-Backup-${stamp}.json`;
@@ -1866,7 +1908,7 @@ export default function App() {
   }
 
   async function shareBackup() {
-    const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data };
+    const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data: { ...data, deletedSnapshot: null } };
     const json = JSON.stringify(payload, null, 2);
     const stamp = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
     const fileName = `Saidy-Backup-${stamp}.json`;
@@ -1901,6 +1943,13 @@ export default function App() {
           return;
         }
         const merged = { ...EMPTY_DATA, ...imported };
+        // Sanitize: photo URLs must be data URIs; reject http/blob/other schemes
+        if (Array.isArray(merged.students)) {
+          merged.students = merged.students.map((s) => ({
+            ...s,
+            photo: typeof s.photo === "string" && s.photo.startsWith("data:image/") ? s.photo : "",
+          }));
+        }
         setData(merged);
         recordBackup();
         onResult?.({ ok: true, msg: "Backup erfolgreich geladen." });
@@ -1985,7 +2034,7 @@ export default function App() {
               <div>
                 <div className="text-sm font-semibold text-stone-800 leading-tight tracking-wide">Saidy</div>
                 <div className="text-[10px] text-stone-400 leading-none mt-0.5">
-                  {saveState === "saving" ? "Speichert …" : "Gespeichert"}
+                  {saveState === "saving" ? "Speichert …" : saveState === "error" ? "⚠ Kein Speicherplatz" : "Gespeichert"}
                 </div>
               </div>
             </div>
@@ -2049,6 +2098,13 @@ export default function App() {
 
         {/* Inhalt */}
         <main className="flex-1 md:ml-56 px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-24 md:px-8 md:pt-8 md:pb-8 max-w-5xl">
+          {saveState === "error" && (
+            <div className="mb-5 flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm">
+              <span className="text-red-600 shrink-0">⚠</span>
+              <span className="flex-1 text-red-800">Kein Speicherplatz mehr – Daten konnten nicht gespeichert werden. Bitte ein Backup erstellen und Browser-Speicher freigeben.</span>
+              <button onClick={() => setShowSettings(true)} className="text-xs font-medium text-red-700 hover:text-red-900 underline underline-offset-2 shrink-0">Backup erstellen</button>
+            </div>
+          )}
           {backupReminderDays !== null && (
             <div className="mb-5 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm">
               <Download size={16} className="text-amber-600 shrink-0" />
@@ -2130,7 +2186,7 @@ export default function App() {
       {/* Feste untere Navigation (nur mobil) */}
       <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]">
         <div className="flex items-stretch justify-around px-2 pt-2 pb-1.5">
-          {[tabs[0], tabs[1], tabs[3], tabs[5]].map((t) => {
+          {[tabs[0], tabs[1], tabs[4], tabs[5]].map((t) => {
             const Icon = t.icon;
             const active = tab === t.key;
             return (
@@ -2152,10 +2208,10 @@ export default function App() {
             onClick={() => setShowMore(true)}
             className="flex-1 flex flex-col items-center gap-1"
           >
-            <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${["stundenplan", "aufgaben"].includes(tab) ? "akzent-ton" : ""}`}>
-              <MoreHorizontal size={20} strokeWidth={2.2} className={["stundenplan", "aufgaben"].includes(tab) ? "akzent-text" : "text-stone-400"} />
+            <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${["stundenplan", "kalender"].includes(tab) ? "akzent-ton" : ""}`}>
+              <MoreHorizontal size={20} strokeWidth={2.2} className={["stundenplan", "kalender"].includes(tab) ? "akzent-text" : "text-stone-400"} />
             </span>
-            <span className={`text-[10px] leading-none ${["stundenplan", "aufgaben"].includes(tab) ? "akzent-text font-semibold" : "text-stone-400"}`}>Mehr</span>
+            <span className={`text-[10px] leading-none ${["stundenplan", "kalender"].includes(tab) ? "akzent-text font-semibold" : "text-stone-400"}`}>Mehr</span>
           </button>
         </div>
       </nav>
@@ -2166,7 +2222,7 @@ export default function App() {
           <div className="bg-white rounded-t-3xl w-full p-4 pb-[max(2rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
             <div className="grid grid-cols-2 gap-3">
-              {[tabs[2], tabs[4]].map((t) => {
+              {[tabs[2], tabs[3]].map((t) => {
                 const Icon = t.icon;
                 const active = tab === t.key;
                 return (
@@ -2283,6 +2339,7 @@ function nextFerienCountdown(events, schooldaysOnly) {
 
 /* Schnellerfassung nach der Stunde: Note, Notiz und Auffälligkeit pro Schüler:in in einer kompakten Liste */
 function QuickCaptureModal({ data, update, fach, cls, students, date: initialDate, halbjahr, onClose }) {
+  const istSport = /sport/i.test(fach?.subject || "");
   const [date, setDate] = useState(initialDate || isoDate(new Date()));
   const [category, setCategory] = useState("muendlich");
   const [incidentLabel, setIncidentLabel] = useState("Sportzeug");
@@ -2388,7 +2445,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
           </button>
         </div>
 
-        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
 
           {/* Datum und Kategorie */}
           <div className="flex items-center gap-2 flex-wrap mb-3">
@@ -2421,13 +2478,14 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
             <input
               className={inputCls}
               placeholder="Thema der Stunde (optional) – z. B. Bruchrechnung einführen"
+              maxLength={200}
               value={topic}
               onChange={(e) => saveTopic(e.target.value)}
             />
           </div>
 
-          {/* Frage zum Mitbringen – mit direkt änderbarem Begriff */}
-          <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+          {/* Frage zum Mitbringen – nur bei Sport-Fächern sichtbar */}
+          {istSport && <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
             <div className="flex items-center gap-2 flex-wrap text-sm text-amber-900">
               <span>Haben alle ihr</span>
               <input
@@ -2442,7 +2500,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
               Fehlt es, beim Kind auf <AlertTriangle size={11} className="inline -mt-0.5" /> tippen
               {autoGrade ? " – trägt automatisch eine mündliche 5 mit Vermerk ein." : "."}
             </p>
-          </div>
+          </div>}
 
           <ul className="divide-y divide-stone-100">
             {students.map((s) => {
@@ -2473,7 +2531,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                       >
                         <AlertTriangle size={16} />
                       </button>
-                      {fehlt && autoGrade && <span className="text-[9px] leading-none text-red-600 font-medium">Note 5</span>}
+                      {fehlt && autoGrade && <span className="text-[11px] leading-none text-red-600 font-medium">Note 5</span>}
                     </div>
                   </div>
 
@@ -2618,31 +2676,27 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
                 <Upload size={16} />
                 <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-amber-500 border-2 border-white" />
               </button>
-              <span className="text-[9px] leading-none text-amber-600 font-medium">Fehlzeiten</span>
+              <span className="text-[11px] leading-none text-amber-600 font-medium">Fehlzeiten</span>
             </div>
           )}
           {isToday && (
-            <div className="flex flex-col items-center gap-0.5">
+            !!(pendingLessons || []).length ? (
               <button
                 onClick={() => setShowPending((v) => !v)}
-                className={`relative w-9 h-9 rounded-full flex items-center justify-center transition-colors shrink-0 ${
-                  (pendingLessons || []).length
-                    ? "bg-amber-100 text-amber-700 hover:bg-amber-200"
-                    : "bg-stone-100 text-stone-300 hover:bg-stone-200"
-                }`}
-                title={(pendingLessons || []).length ? "Unterricht erfassen" : "Alle Stunden erfasst"}
+                className="flex items-center gap-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors shrink-0"
+                title="Unterricht erfassen"
               >
-                <ClipboardCheck size={17} />
-                {!!(pendingLessons || []).length && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-4 px-1 rounded-full bg-amber-600 text-white text-[10px] font-semibold flex items-center justify-center">
-                    {pendingLessons.length}
-                  </span>
-                )}
+                <ClipboardCheck size={14} />
+                {pendingLessons.length} {pendingLessons.length === 1 ? "Stunde" : "Stunden"} nachtragen
               </button>
-              <span className={`text-[9px] leading-none ${(pendingLessons || []).length ? "text-amber-600 font-medium" : "text-stone-400"}`}>
-                {(pendingLessons || []).length ? "Nachtragen" : "Erfasst"}
-              </span>
-            </div>
+            ) : (
+              <div className="flex flex-col items-center gap-0.5">
+                <div className="relative w-9 h-9 rounded-full bg-stone-100 text-stone-300 flex items-center justify-center shrink-0">
+                  <ClipboardCheck size={17} />
+                </div>
+                <span className="text-[11px] leading-none text-stone-400">Erfasst</span>
+              </div>
+            )
           )}
         {data.settings?.showFerienCountdown && (() => {
           const cd = nextFerienCountdown(data.events, data.settings?.countdownSchooldaysOnly);
@@ -2966,16 +3020,6 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
         );
       })()}
 
-      <div className="grid grid-cols-2 gap-2">
-        <button onClick={() => onNavigate?.("klassen")} className="bg-white rounded-xl border border-stone-200 py-2 text-center hover:akzent-rand transition-colors">
-          <div className="text-base font-semibold text-stone-800 leading-tight">{data.classes.length}</div>
-          <div className="text-[10px] text-stone-400">Klassen</div>
-        </button>
-        <button onClick={() => onNavigate?.("klassen")} className="bg-white rounded-xl border border-stone-200 py-2 text-center hover:akzent-rand transition-colors">
-          <div className="text-base font-semibold text-stone-800 leading-tight">{data.students.length}</div>
-          <div className="text-[10px] text-stone-400">Schüler:innen</div>
-        </button>
-      </div>
     </div>
   );
 }
@@ -3057,7 +3101,7 @@ function FachModal({ data, initial, onSave, onClose }) {
             {classId === "__new__" && (
               <input
                 className={`${inputCls} mt-2`} placeholder="Neuen Klassennamen eingeben" value={newClassName}
-                onChange={(e) => setNewClassName(e.target.value)} autoFocus
+                onChange={(e) => setNewClassName(e.target.value)} autoFocus maxLength={50}
               />
             )}
           </Field>
@@ -3078,7 +3122,7 @@ function FachModal({ data, initial, onSave, onClose }) {
             )}
             <input
               className={inputCls} placeholder="Neue Fachbezeichnung eingeben" value={customSubject ? subject : ""}
-              onFocus={() => setCustomSubject(true)}
+              onFocus={() => setCustomSubject(true)} maxLength={80}
               onChange={(e) => { setCustomSubject(true); setSubject(e.target.value); }}
             />
           </Field>
@@ -3150,7 +3194,7 @@ function AddStudentModal({ className, onAddOne, onOpenCsv, onClose }) {
         <Field label="Name">
           <div className="flex gap-2">
             <input
-              className={inputCls} placeholder="Name eingeben" value={name} autoFocus
+              className={inputCls} placeholder="Name eingeben" value={name} autoFocus maxLength={100}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && submit()}
             />
@@ -3343,6 +3387,7 @@ const MOOD_OPTIONS = [
 function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onOpenAdd, onClose }) {
   const [photoError, setPhotoError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [showMedicalConsent, setShowMedicalConsent] = useState(false);
 
   async function handlePhoto(studentId, file) {
     if (!file) return;
@@ -3357,6 +3402,21 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
 
   return (
     <>
+    {showMedicalConsent && (
+      <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setShowMedicalConsent(false)}>
+        <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+          <div className="flex items-center gap-2 mb-3">
+            <ShieldCheck size={20} className="text-amber-600 shrink-0" />
+            <div className="font-semibold text-stone-800">Gesundheitsdaten (Art. 9 DSGVO)</div>
+          </div>
+          <p className="text-sm text-stone-600 mb-4">Gesundheitsinformationen sind besonders geschützte Daten. Sie dürfen nur mit <strong>schriftlicher Einwilligung</strong> der Erziehungsberechtigten gespeichert werden.</p>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={() => setShowMedicalConsent(false)} className="flex-1 justify-center">Abbrechen</Button>
+            <Button onClick={() => { localStorage.setItem("saidy_medical_consent", "1"); setShowMedicalConsent(false); }} className="flex-1 justify-center">Verstanden</Button>
+          </div>
+        </div>
+      </div>
+    )}
     <div className="fixed inset-0 bg-stone-900/40 flex items-center justify-center p-4 z-50" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5 overflow-y-auto dialog" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
@@ -3411,7 +3471,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                         )}
                         <p className="text-[10px] text-stone-400 mt-1 flex items-center gap-1">
                           <ShieldCheck size={10} className="shrink-0" />
-                          Nur mit schriftlicher Einwilligung der Erziehungsberechtigten speichern.
+                          Nur mit schriftl. Einwilligung speichern. Nicht auf geteilten Schulgeräten nutzen.
                         </p>
                       </div>
                     </div>
@@ -3431,6 +3491,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                             type="tel"
                             placeholder="0176 …"
                             value={s.parentPhone || ""}
+                            maxLength={30}
                             onChange={(e) => onUpdateField(s.id, "parentPhone", e.target.value)}
                             className={inputCls}
                           />
@@ -3451,6 +3512,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                       <input
                         placeholder="z. B. Frau Mustermann"
                         value={s.parentName || ""}
+                        maxLength={100}
                         onChange={(e) => onUpdateField(s.id, "parentName", e.target.value)}
                         className={inputCls}
                       />
@@ -3461,19 +3523,32 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                       Kontaktdaten sind personenbezogen (DSGVO) – nur auf diesem Gerät gespeichert, nicht weitergeben.
                     </p>
 
-                    <Field label="Besonderheiten / Vorerkrankungen">
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-medium text-stone-500">Besonderheiten / Vorerkrankungen</label>
+                        {s.medicalInfo && (
+                          <button
+                            onClick={() => onUpdateField(s.id, "medicalInfo", "")}
+                            className="text-[11px] text-red-400 hover:text-red-600"
+                          >
+                            Löschen
+                          </button>
+                        )}
+                      </div>
                       <textarea
                         placeholder="z. B. Nussallergie, Asthma-Spray in der Tasche …"
                         value={s.medicalInfo || ""}
                         onChange={(e) => onUpdateField(s.id, "medicalInfo", e.target.value)}
+                        onFocus={() => { if (!localStorage.getItem("saidy_medical_consent") && !s.medicalInfo) setShowMedicalConsent(true); }}
                         rows={2}
+                        maxLength={2000}
                         className={`${inputCls} resize-none`}
                       />
                       <p className="text-[11px] text-amber-600 mt-1 flex items-start gap-1">
                         <ShieldCheck size={11} className="shrink-0 mt-0.5" />
                         Gesundheitsdaten (Art. 9 DSGVO) – nur mit schriftlicher Einwilligung der Erziehungsberechtigten speichern.
                       </p>
-                    </Field>
+                    </div>
 
                     <div>
                       <div className="flex items-center gap-2 mb-2">
@@ -3482,7 +3557,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                       </div>
                       <div className="flex gap-2 mb-2">
                         <input
-                          className={inputCls} placeholder="Beobachtung, Info, Elterngespräch …" value={newNote}
+                          className={inputCls} placeholder="Beobachtung, Info, Elterngespräch …" value={newNote} maxLength={1000}
                           onChange={(e) => setNewNote(e.target.value)}
                           onKeyDown={(e) => e.key === "Enter" && onAddNote(s.id)}
                         />
@@ -3526,6 +3601,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                             className={inputCls}
                             placeholder="Was bewegt das Kind, wie geht es ihm/ihr …"
                             value={gespraechDraft.text}
+                            maxLength={1000}
                             onChange={(e) => setGespraechDraft((d) => ({ ...d, text: e.target.value }))}
                             onKeyDown={(e) => e.key === "Enter" && onAddGespraech(s.id)}
                           />
@@ -3588,7 +3664,7 @@ function PromoteModal({ classes, promotedName, onPromote, onClose }) {
     <div className="fixed inset-0 bg-stone-900/40 flex items-center justify-center p-4 z-50" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5 overflow-y-auto dialog" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-1">
-          <div className="font-semibold text-stone-800">Klassen versetzen</div>
+          <div className="font-semibold text-stone-800">Schuljahreswechsel: Klassen versetzen</div>
           <button onClick={onClose} className="text-stone-400 hover:text-stone-600"><X size={18} /></button>
         </div>
         <p className="text-xs text-stone-400 mb-4">Zum neuen Schuljahr: Die führende Zahl im Klassennamen wird um eins erhöht. Schüler:innen, Fächer und Noten bleiben erhalten.</p>
@@ -4107,7 +4183,7 @@ function DutyModal({ onSave, onClose }) {
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center"><X size={16} /></button>
         </div>
 
-        <div className="p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] space-y-4">
+        <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4">
           <Field label="Bezeichnung">
             <input className={inputCls} value={name} onChange={(e) => setName(e.target.value)} placeholder="z. B. Tafeldienst" autoFocus />
           </Field>
@@ -4398,7 +4474,7 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach }) {
             </div>
             <Field label="Klassenname">
               <input
-                className={inputCls} value={renameValue} autoFocus
+                className={inputCls} value={renameValue} autoFocus maxLength={50}
                 onChange={(e) => setRenameValue(e.target.value)}
                 onKeyDown={(e) => { if (e.key === "Enter" && renameValue.trim()) { renameClass(renamingClass, renameValue.trim()); setRenamingClass(null); } }}
               />
@@ -4869,9 +4945,9 @@ function KalenderTab({ data, update }) {
         if (!ferienList.length) return null;
         const visible = showAllFerien ? ferienList : ferienList.slice(0, 1);
         return (
-          <Card className="p-5">
-            <div className="font-medium text-stone-800 mb-3 flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500" /> Schulferien
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5">
+            <div className="font-medium text-emerald-900 mb-3 flex items-center gap-2">
+              <span className="text-base leading-none">🌴</span> Schulferien
             </div>
             <ul className="space-y-1.5">
               {visible.map((e) => {
@@ -4879,11 +4955,11 @@ function KalenderTab({ data, update }) {
                 const bis = e.endDate ? new Date(e.endDate).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
                 return (
                   <li key={e.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 text-sm">
-                    <span className="text-stone-700">{e.title}</span>
-                    <span className="text-stone-400 text-xs tnum whitespace-nowrap text-right">
-                      {von}{bis ? <span className="text-stone-300"> – </span> : ""}{bis}
+                    <span className="text-emerald-900">{e.title}</span>
+                    <span className="text-emerald-600 text-xs tnum whitespace-nowrap text-right">
+                      {von}{bis ? <span className="text-emerald-300"> – </span> : ""}{bis}
                     </span>
-                    <button onClick={() => remove(e.id)} className="text-stone-300 hover:text-red-600 shrink-0 justify-self-end"><Trash2 size={14} /></button>
+                    <button onClick={() => remove(e.id)} className="text-emerald-300 hover:text-red-600 shrink-0 justify-self-end"><Trash2 size={14} /></button>
                   </li>
                 );
               })}
@@ -4891,13 +4967,13 @@ function KalenderTab({ data, update }) {
             {ferienList.length > 1 && (
               <button
                 onClick={() => setShowAllFerien(!showAllFerien)}
-                className="mt-3 text-xs text-stone-400 hover:text-stone-600 flex items-center gap-1"
+                className="mt-3 text-xs text-emerald-600 hover:text-emerald-800 flex items-center gap-1"
               >
                 <ChevronDown size={14} className={showAllFerien ? "rotate-180" : ""} />
                 {showAllFerien ? "Weniger anzeigen" : `${ferienList.length - 1} weitere Ferien`}
               </button>
             )}
-          </Card>
+          </div>
         );
       })()}
 
@@ -4932,7 +5008,7 @@ function KalenderTab({ data, update }) {
             <button onClick={() => setShowForm(false)} className="text-stone-400 hover:text-stone-600"><X size={16} /></button>
           </div>
           <Field label="Titel">
-            <input className={inputCls} placeholder="z. B. Elternabend" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addEvent()} autoFocus />
+            <input className={inputCls} placeholder="z. B. Elternabend" value={title} onChange={(e) => setTitle(e.target.value)} onKeyDown={(e) => e.key === "Enter" && addEvent()} autoFocus maxLength={200} />
           </Field>
           <div className="grid grid-cols-2 gap-2 mt-3">
             <Field label="Datum">
@@ -5003,7 +5079,7 @@ function TaskModal({ data, initial, defaultListId, onSave, onClose }) {
 
         <div className="space-y-4">
           <Field label="Aufgabenname">
-            <input className={inputCls} placeholder="Aufgabenname eingeben" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus />
+            <input className={inputCls} placeholder="Aufgabenname eingeben" value={title} onChange={(e) => setTitle(e.target.value)} autoFocus maxLength={200} />
           </Field>
 
           <Field label="Farbe">
@@ -5032,7 +5108,7 @@ function TaskModal({ data, initial, defaultListId, onSave, onClose }) {
               </select>
             ) : (
               <div className="space-y-2">
-                <input className={inputCls} placeholder="Listenname eingeben" value={newListName} onChange={(e) => setNewListName(e.target.value)} autoFocus />
+                <input className={inputCls} placeholder="Listenname eingeben" value={newListName} onChange={(e) => setNewListName(e.target.value)} autoFocus maxLength={100} />
                 <button onClick={() => setCreatingList(false)} className="text-xs text-stone-400 hover:text-stone-600">Abbrechen</button>
               </div>
             )}
@@ -5202,8 +5278,8 @@ function AufgabenTab({ data, update }) {
                     {list && <div className="text-xs text-stone-400">{list.name}</div>}
                   </button>
                   {t.dueDate && (
-                    <span className="text-xs bg-stone-900 text-white rounded-full px-2.5 py-1 shrink-0">
-                      {new Date(t.dueDate).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}, {t.dueDate.slice(11, 16)}
+                    <span className={`text-xs rounded-full px-2.5 py-1 shrink-0 ${!t.done && new Date(t.dueDate) < new Date() ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-600"}`}>
+                      {new Date(t.dueDate).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}{t.dueDate.length > 10 ? `, ${t.dueDate.slice(11, 16)}` : ""}
                     </span>
                   )}
                   <button onClick={() => removeTask(t.id)} className="text-stone-300 hover:text-red-500 shrink-0"><Trash2 size={14} /></button>
@@ -5572,6 +5648,7 @@ function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
   const weights = fach?.weights || DEFAULT_WEIGHTS;
   const today = new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
   const [confirmPdfShare, setConfirmPdfShare] = useState(false);
+  const [confirmPdfDownload, setConfirmPdfDownload] = useState(false);
 
   function studentRow(s) {
     const grades = data.grades.filter((g) => g.studentId === s.id && g.fachId === fach.id && g.halbjahr === halbjahr);
@@ -5781,7 +5858,7 @@ function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
         <Button variant="ghost" onClick={onClose}><X size={15} /> Schließen</Button>
         <div className="flex gap-2">
           <Button variant="subtle" onClick={() => setConfirmPdfShare(true)}>Teilen</Button>
-          <Button onClick={downloadPdf}><Printer size={15} /> Als PDF herunterladen</Button>
+          <Button onClick={() => setConfirmPdfDownload(true)}><Printer size={15} /> Als PDF herunterladen</Button>
         </div>
       </div>
 
@@ -5907,6 +5984,22 @@ function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
           </div>
         </div>
       )}
+      {confirmPdfDownload && (
+        <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setConfirmPdfDownload(false)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-semibold text-stone-800 mb-2">PDF herunterladen</div>
+            <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-3">
+              <p className="text-[11px] text-amber-800 leading-relaxed">
+                <strong>Datenschutzhinweis:</strong> Diese PDF enthält personenbezogene Schülerdaten. Speichere sie nur auf schulisch genehmigten Geräten und lösche sie nach Verwendung.
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setConfirmPdfDownload(false)} className="flex-1 justify-center">Abbrechen</Button>
+              <Button onClick={() => { setConfirmPdfDownload(false); downloadPdf(); }} className="flex-1 justify-center">Verstanden, herunterladen</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -5983,10 +6076,10 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
         <thead>
           <tr className="text-[10px] text-stone-400 uppercase tracking-wide">
             <th className="text-left font-semibold px-2 pb-1 sticky left-0 z-[2] bg-karte">Name</th>
-            <th className="font-semibold pb-1">Mündl.</th>
-            <th className="font-semibold pb-1">{istSport ? "Sportz." : "Schr."}</th>
-            <th className="font-semibold pb-1">Ges.</th>
-            <th className="font-semibold pb-1">Zeugn.</th>
+            <th className="font-semibold pb-1" title={`Mündlicher Schnitt (${weights.muendlich ?? 50} %)`}>Mündl.</th>
+            <th className="font-semibold pb-1" title={istSport ? "Sportzeug vergessen (Anzahl)" : `Schriftlicher Schnitt (${weights.schriftlich ?? 50} %)`}>{istSport ? "Sportz." : "Schr."}</th>
+            <th className="font-semibold pb-1" title="Gewichteter Gesamtdurchschnitt">Ges.</th>
+            <th className="font-semibold pb-1" title="Manuell eingetragene Zeugnisnote">Zeugn.</th>
           </tr>
         </thead>
         <tbody>
@@ -6093,7 +6186,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
                 </div>
                 <button onClick={() => setSportzeugDetail(null)} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
               </div>
-              <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+              <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
                 <div className="flex items-center justify-between mb-3">
                   <span className="text-sm text-stone-500">Insgesamt</span>
                   <span className="text-2xl font-semibold tnum text-amber-700">{eintraege.length}<span className="text-xs font-normal text-stone-400 ml-1">×</span></span>
@@ -6516,7 +6609,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
           {!student && <Card className="p-5 text-sm text-stone-400">Tippe in der Übersicht auf ein Kind, um Noten, Verlauf und Zeugnisnote zu sehen.</Card>}
           {student && (
               <div className="fixed inset-0 bg-stone-900/40 z-50 flex items-end md:items-center md:justify-center" onClick={() => setSelectedStudent(null)}>
-                <div className="bg-stone-50 w-full md:max-w-lg md:rounded-2xl rounded-t-3xl overflow-y-auto sheet " onClick={(e) => e.stopPropagation()}>
+                <div className="bg-white w-full md:max-w-lg md:rounded-2xl rounded-t-3xl overflow-y-auto sheet " onClick={(e) => e.stopPropagation()}>
                   <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-200 px-4 py-3 flex items-center gap-2.5 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)]">
                     <StudentAvatar student={student} size={34} />
                     <div className="flex-1 min-w-0">
@@ -6526,20 +6619,20 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                     <button onClick={() => setSelectedStudent(null)} className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
                   </div>
 
-                  <div className="p-4 pt-3 space-y-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                  <div className="p-4 pt-3 space-y-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
                 <Card className="p-5">
                   <div className="flex items-center justify-between mb-3">
                     <div className="font-medium text-stone-800">Neue Note</div>
                     <Button variant="subtle" onClick={() => setShowGradesList(true)}>Einzelnoten ({studentGrades.length})</Button>
                   </div>
-                  <div className="grid md:grid-cols-[130px_90px_1fr_140px_auto] gap-2">
+                  <div className="grid grid-cols-2 md:grid-cols-[130px_90px_1fr_140px_auto] gap-2">
                     <select className={inputCls} value={category} onChange={(e) => setCategory(e.target.value)}>
                       {CATS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
                     </select>
                     <select className={inputCls} value={value} onChange={(e) => setValue(Number(e.target.value))}>
                       {GRADE_OPTIONS.map((g) => <option key={g.label} value={g.value}>{g.label}</option>)}
                     </select>
-                    <input className={inputCls} placeholder="Bezeichnung, z. B. Stundenbeteiligung" value={gradeTitle} onChange={(e) => setGradeTitle(e.target.value)} />
+                    <input className={`${inputCls} col-span-2 md:col-span-1`} placeholder="Bezeichnung, z. B. Stundenbeteiligung" value={gradeTitle} onChange={(e) => setGradeTitle(e.target.value)} maxLength={200} />
                     <input className={inputCls} type="date" value={gdate} onChange={(e) => setGdate(e.target.value)} />
                     <Button onClick={addGrade} className="justify-center"><Plus size={15} /></Button>
                   </div>
@@ -6653,7 +6746,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                             <li key={g.id} className="flex gap-3">
                               {/* Zeitstrahl */}
                               <div className="flex flex-col items-center shrink-0">
-                                <span className={`w-2.5 h-2.5 rounded-full mt-1.5 ${g.auto ? "bg-amber-400" : g.category === "schriftlich" ? "bg-stone-700" : "akzent-ton0"}`} />
+                                <span className={`w-2.5 h-2.5 rounded-full mt-1.5 ${g.auto ? "bg-amber-400" : g.category === "schriftlich" ? "bg-stone-700" : "akzent-ton"}`} />
                                 {i < sorted.length - 1 && <span className="w-px flex-1 bg-stone-200 my-1" />}
                               </div>
                               <button
@@ -6695,7 +6788,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                 )}
 
                 {showSprechtag && (
-                  <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={() => setShowSprechtag(false)}>
+                  <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={() => setShowSprechtag(false)}>
                     <div className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
                       <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
                         <div className="min-w-0">
@@ -6704,12 +6797,13 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                         </div>
                         <button onClick={() => setShowSprechtag(false)} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
                       </div>
-                      <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] space-y-4">
+                      <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4">
                         <div>
                           <div className="text-[11px] font-medium uppercase tracking-wide text-stone-400 mb-1.5">Eigene Notizen fürs Gespräch</div>
                           <textarea
                             className={inputCls + " min-h-[80px] resize-none"}
                             placeholder="z. B. Gesprächsthemen, Absprachen, Beobachtungen …"
+                            maxLength={2000}
                             value={sprechtagNotiz}
                             onChange={(e) => setSprechtagNotiz(e.target.value)}
                           />
@@ -6789,13 +6883,13 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                 )}
 
                 {showGradesList && (
-                  <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={() => { setShowGradesList(false); setEditingGrade(null); }}>
+                  <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={() => { setShowGradesList(false); setEditingGrade(null); }}>
                     <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
                       <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
                         <div className="font-semibold text-stone-800">Einzelnoten – {student.name}</div>
                         <button onClick={() => { setShowGradesList(false); setEditingGrade(null); }} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
                       </div>
-                      <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                      <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
                       <ul className="divide-y divide-stone-100">
                         {[...studentGrades].sort((a, b) => b.date.localeCompare(a.date)).map((g) => (
                           editingGrade === g.id ? (
