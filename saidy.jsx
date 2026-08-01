@@ -1654,44 +1654,90 @@ function demoData() {
 }
 
 /* Erststart: Bundesland wählen, um Schulferien in den Kalender zu übernehmen */
-function OnboardingModal({ onApply, onSkip }) {
+function OnboardingModal({ onSave, onDone, onSkip }) {
+  const [step, setStep] = useState(1);
   const [code, setCode] = useState("NW");
-  const available = !!FERIEN[code];
+  const [withFerien, setWithFerien] = useState(true);
+  const [className, setClassName] = useState("");
+
+  function handleStep1() {
+    onSave(code, withFerien);
+    setStep(2);
+  }
 
   return (
     <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[60]">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
-        <div className="flex flex-col items-center mb-5">
+        <div className="flex flex-col items-center mb-4">
           <SaidyLogoMark size={56} className="mb-3" />
           <div className="text-xl font-semibold tracking-widest text-stone-800 uppercase">Saidy</div>
           <div className="text-xs text-stone-400 tracking-widest uppercase mt-0.5">Noten. Notizen. Organisiert.</div>
         </div>
-        <div className="font-semibold text-stone-800 mb-1">Willkommen!</div>
-        <p className="text-sm text-stone-500 mb-4">
-          Wähle dein Bundesland, dann kann ich die offiziellen Schulferien direkt in deinen Kalender eintragen.
-        </p>
 
-        <Field label="Bundesland">
-          <select className={inputCls} value={code} onChange={(e) => setCode(e.target.value)}>
-            {BUNDESLAENDER.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
-          </select>
-        </Field>
+        <div className="flex justify-center gap-1.5 mb-5">
+          <span className={`w-2 h-2 rounded-full transition-colors ${step === 1 ? "bg-stone-800" : "bg-stone-300"}`} />
+          <span className={`w-2 h-2 rounded-full transition-colors ${step === 2 ? "bg-stone-800" : "bg-stone-300"}`} />
+        </div>
 
-        {!available && (
-          <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-3">
-            Für dieses Bundesland sind die Ferientermine noch nicht hinterlegt. Du kannst es trotzdem auswählen und Ferien später manuell eintragen.
-          </p>
+        {step === 1 && (
+          <>
+            <div className="font-semibold text-stone-800 mb-1">Willkommen!</div>
+            <p className="text-sm text-stone-500 mb-4">
+              Damit ich die Schulferien deines Bundeslandes direkt in den Kalender einzutragen kann, wähle kurz deinen Standort.
+            </p>
+            <Field label="Bundesland">
+              <select className={inputCls} value={code} onChange={(e) => setCode(e.target.value)}>
+                {BUNDESLAENDER.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
+              </select>
+            </Field>
+            <label className="flex items-center gap-2.5 mt-3 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                className="w-4 h-4 shrink-0"
+                style={{ accentColor: "#4F5844" }}
+                checked={withFerien}
+                onChange={(e) => setWithFerien(e.target.checked)}
+              />
+              <span className="text-sm text-stone-600">Schulferien automatisch eintragen</span>
+            </label>
+            <div className="flex flex-col gap-2 mt-5">
+              <Button onClick={handleStep1} className="w-full justify-center">
+                Weiter <ChevronRight size={15} />
+              </Button>
+              <button onClick={onSkip} className="text-sm text-stone-400 hover:text-stone-600 py-2 px-3">
+                Später einrichten
+              </button>
+            </div>
+          </>
         )}
 
-        <div className="flex flex-col gap-2 mt-5">
-          <Button onClick={() => onApply(code, true)} disabled={!available} className="w-full justify-center">
-            Bundesland speichern & Ferien eintragen
-          </Button>
-          <Button variant="ghost" onClick={() => onApply(code, false)} className="w-full justify-center">
-            Nur speichern, keine Ferien
-          </Button>
-          <button onClick={onSkip} className="text-sm text-stone-400 hover:text-stone-600 mt-1 py-2 px-3">Später einrichten</button>
-        </div>
+        {step === 2 && (
+          <>
+            <div className="font-semibold text-stone-800 mb-1">Erste Klasse anlegen</div>
+            <p className="text-sm text-stone-500 mb-4">
+              Wie heißt deine Klasse? Du kannst jederzeit weitere Klassen hinzufügen.
+            </p>
+            <Field label="Klassenname">
+              <input
+                className={inputCls}
+                placeholder="z. B. 3b oder 4a"
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+                maxLength={30}
+                autoFocus
+                onKeyDown={(e) => { if (e.key === "Enter" && className.trim()) onDone(className.trim()); }}
+              />
+            </Field>
+            <div className="flex flex-col gap-2 mt-5">
+              <Button onClick={() => onDone(className.trim())} disabled={!className.trim()} className="w-full justify-center">
+                Los geht's!
+              </Button>
+              <button onClick={() => onDone("")} className="text-sm text-stone-400 hover:text-stone-600 py-2 px-3">
+                Ohne Klasse starten
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -1706,7 +1752,8 @@ const HELP_DATA = [
     items: [
       { q: "Wie lege ich eine neue Klasse an?", a: `Tippe auf „Klassen“ in der Navigation, dann oben rechts auf „+“. Gib den Klassennamen ein und bestätige mit „Anlegen“.` },
       { q: "Wie füge ich Schüler:innen hinzu?", a: `Öffne eine Klasse und tippe auf „+ Schüler:in“. Namen können einzeln oder als Liste eingegeben werden.` },
-      { q: "Wie stelle ich mein Bundesland ein?", a: `Gehe zu „Mehr“ → „Einstellungen“ und wähle dein Bundesland. Danach kannst du die offiziellen Schulferien automatisch eintragen lassen.` },
+      { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Saidy automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr” → „Einstellungen” → Bundesland wählen → „Schulferien eintragen”.` },
+      { q: "Was passiert beim ersten Start?", a: `Saidy führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
     ],
   },
   {
@@ -2045,6 +2092,13 @@ export default function App() {
       }
       return d;
     });
+  }
+
+  function handleOnboardingDone(className) {
+    if (className) {
+      update((d) => { d.classes.push({ id: uid(), name: className }); return d; });
+      setTab("klassen");
+    }
     setShowOnboarding(false);
   }
 
@@ -2191,7 +2245,7 @@ export default function App() {
         }
       `}</style>
       {showOnboarding && (
-        <OnboardingModal onApply={applyBundesland} onSkip={() => setShowOnboarding(false)} />
+        <OnboardingModal onSave={applyBundesland} onDone={handleOnboardingDone} onSkip={() => setShowOnboarding(false)} />
       )}
       <div className="md:flex">
         {/* Seitenleiste (Desktop) */}
