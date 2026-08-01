@@ -4888,7 +4888,7 @@ function KalenderTab({ data, update }) {
                 );
               })}
             </ul>
-            {ferienList.length > 3 && (
+            {ferienList.length > 1 && (
               <button
                 onClick={() => setShowAllFerien(!showAllFerien)}
                 className="mt-3 text-xs text-stone-400 hover:text-stone-600 flex items-center gap-1"
