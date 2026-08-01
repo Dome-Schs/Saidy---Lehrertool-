@@ -1573,7 +1573,7 @@ function HilfeSheet({ onClose }) {
         <div className="relative mb-4 shrink-0">
           <input
             className="w-full bg-stone-100 rounded-xl px-3 py-2.5 text-sm placeholder-stone-400 outline-none"
-            placeholder="Suche, z. B. „Backup" oder „Note eintragen""
+            placeholder='Suche, z. B. „Backup" oder „Note eintragen"'
             value={search}
             onChange={(e) => { setSearch(e.target.value); setOpen(null); }}
             autoFocus
