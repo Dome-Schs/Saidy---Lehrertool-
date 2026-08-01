@@ -6920,16 +6920,20 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                     <div className="font-medium text-stone-800">Neue Note</div>
                     <Button variant="subtle" onClick={() => setShowGradesList(true)}>Einzelnoten ({studentGrades.length})</Button>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-[130px_90px_1fr_140px_auto] gap-2">
-                    <select className={inputCls} value={category} onChange={(e) => setCategory(e.target.value)}>
-                      {CATS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
-                    </select>
-                    <select className={inputCls} value={value} onChange={(e) => setValue(Number(e.target.value))}>
-                      {GRADE_OPTIONS.map((g) => <option key={g.label} value={g.value}>{g.label}</option>)}
-                    </select>
-                    <input className={`${inputCls} col-span-2 md:col-span-1`} placeholder="Bezeichnung, z. B. Stundenbeteiligung" value={gradeTitle} onChange={(e) => setGradeTitle(e.target.value)} maxLength={200} />
-                    <input className={inputCls} type="date" value={gdate} onChange={(e) => setGdate(e.target.value)} />
-                    <Button onClick={addGrade} className="justify-center"><Plus size={15} /></Button>
+                  <div className="space-y-2 md:space-y-0 md:grid md:grid-cols-[130px_90px_1fr_140px_auto] md:gap-2">
+                    <div className="flex gap-2 md:contents">
+                      <select className={`${inputCls} flex-1`} value={category} onChange={(e) => setCategory(e.target.value)}>
+                        {CATS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
+                      </select>
+                      <select className="rounded-lg border border-stone-300 px-2 py-2 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-400 w-20 shrink-0" value={value} onChange={(e) => setValue(Number(e.target.value))}>
+                        {GRADE_OPTIONS.map((g) => <option key={g.label} value={g.value}>{g.label}</option>)}
+                      </select>
+                    </div>
+                    <input className={inputCls} placeholder="Bezeichnung, z. B. Stundenbeteiligung" value={gradeTitle} onChange={(e) => setGradeTitle(e.target.value)} maxLength={200} />
+                    <div className="flex gap-2 md:contents">
+                      <input className={`${inputCls} flex-1`} type="date" value={gdate} onChange={(e) => setGdate(e.target.value)} />
+                      <Button onClick={addGrade} className="justify-center shrink-0"><Plus size={15} /></Button>
+                    </div>
                   </div>
                 </Card>
 
