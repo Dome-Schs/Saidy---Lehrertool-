@@ -841,6 +841,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           )}
         </div>
 
+        <div className="border-t border-stone-100 pt-3 mt-1" />
         <div className="text-xs font-medium text-stone-500 mb-2">Halbjahr</div>
         <div className="flex gap-1.5 mb-4">
           {[1, 2].map((h) => (
@@ -856,9 +857,10 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           ))}
         </div>
 
+        <div className="border-t border-stone-100 pt-3 mt-1" />
         <div className="text-xs font-medium text-stone-500 mb-1">Neues Schuljahr</div>
         <Button variant="subtle" onClick={() => setShowPromote(true)} disabled={!data.classes.length} className="w-full justify-center mb-5 pb-2">
-          <ChevronRight size={15} className="-rotate-90" /> Klassen versetzen (z. B. 5c → 6c)
+          <ChevronRight size={15} className="-rotate-90" /> Schuljahreswechsel: Klassen versetzen
         </Button>
         <div className="border-b border-stone-100 mb-5" />
 
@@ -1521,7 +1523,7 @@ function OnboardingModal({ onApply, onSkip }) {
           <Button variant="ghost" onClick={() => onApply(code, false)} className="w-full justify-center">
             Nur speichern, keine Ferien
           </Button>
-          <button onClick={onSkip} className="text-xs text-stone-400 hover:text-stone-600 mt-1 py-2 px-3">Später einrichten</button>
+          <button onClick={onSkip} className="text-sm text-stone-400 hover:text-stone-600 mt-1 py-2 px-3">Später einrichten</button>
         </div>
       </div>
     </div>
@@ -1554,7 +1556,7 @@ const HELP_DATA = [
     items: [
       { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten“, wähle Klasse und Fach. Tippe auf eine:n Schüler:in und dann auf „+ Note“. Du kannst Art, Gewichtung und Datum angeben.` },
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aller Noten. Schriftliche Noten werden standardmäßig doppelt gewichtet. Die berechnete Note erscheint in der Notenübersicht.` },
-      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst.` },
+      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst. Das 💬-Symbol neben einem Kind öffnet direkt ein Kindgespräch mit Stimmungswahl.` },
     ],
   },
   {
@@ -1584,7 +1586,7 @@ const HELP_DATA = [
   {
     category: "Import",
     items: [
-      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: `Gehe zu „Mehr“ → „WebUntis-Import“. Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Saidy übernimmt sie automatisch in die passenden Klassen.` },
+      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: `Öffne den „Klassen”-Tab und tippe oben rechts auf „Fehlzeiten”. Alternativ: „Mehr” → „Einstellungen” → „WebUntis-Import”. Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Saidy übernimmt sie automatisch in die passenden Klassen.` },
     ],
   },
 ];
@@ -2125,7 +2127,7 @@ export default function App() {
             </div>
           )}
           {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenUntisImport={() => setShowUntisImport(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
-          {tab === "klassen" && <KlassenTab data={activeData} update={update} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} />}
+          {tab === "klassen" && <KlassenTab data={activeData} update={update} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
           {tab === "kalender" && <KalenderTab data={activeData} update={update} />}
           {tab === "aufgaben" && <AufgabenTab data={activeData} update={update} />}
@@ -2346,6 +2348,9 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
   const [autoGrade, setAutoGrade] = useState(true);
   const [expanded, setExpanded] = useState(null); // studentId, dessen Notizfeld offen ist
   const [noteDrafts, setNoteDrafts] = useState({});
+  const [gesprExpanded, setGesprExpanded] = useState(null);
+  const [gesprMood, setGesprMood] = useState("ok");
+  const [gesprTexts, setGesprTexts] = useState({});
 
   // Optionales Stundenthema für genau diese Stunde (Fach + Datum)
   const topicId = `${fach.id}-${date}`;
@@ -2428,6 +2433,17 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
       if (i) i.note = text;
       return d;
     });
+  }
+
+  function saveGespraech(studentId) {
+    const text = (gesprTexts[studentId] || "").trim();
+    if (!text) return;
+    update((d) => {
+      d.notes.push({ id: uid(), studentId, date, text, type: "gespraech", mood: gesprMood });
+      return d;
+    });
+    setGesprTexts((d) => ({ ...d, [studentId]: "" }));
+    setGesprExpanded(null);
   }
 
   return (
@@ -2521,6 +2537,15 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                     >
                       <StickyNote size={16} />
                     </button>
+                    <button
+                      onClick={() => { setGesprExpanded((cur) => (cur === s.id ? null : s.id)); setGesprMood("ok"); }}
+                      className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border ${
+                        gesprExpanded === s.id ? "akzent-ton akzent-rand" : "border-stone-200 text-stone-400"
+                      }`}
+                      aria-label="Kindgespräch"
+                    >
+                      <MessageSquare size={16} />
+                    </button>
                     <div className="flex flex-col items-center gap-0.5">
                       <button
                         onClick={() => toggleIncident(s.id)}
@@ -2581,6 +2606,42 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                       onKeyDown={(e) => { if (e.key === "Enter") { saveNote(s.id); setExpanded(null); } }}
                       onBlur={() => saveNote(s.id)}
                     />
+                  )}
+
+                  {gesprExpanded === s.id && (
+                    <div className="mt-2 bg-stone-50 border border-stone-200 rounded-xl p-2.5">
+                      <div className="text-[11px] font-medium text-stone-500 mb-1.5">Kindgespräch</div>
+                      <div className="flex gap-1 mb-1.5">
+                        {MOOD_OPTIONS.map((m) => (
+                          <button
+                            key={m.key}
+                            type="button"
+                            onClick={() => setGesprMood(m.key)}
+                            className={`flex-1 py-1 rounded-lg border text-base transition-colors ${gesprMood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-white"}`}
+                          >
+                            {m.emoji}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-1.5">
+                        <input
+                          autoFocus
+                          className="flex-1 text-sm rounded-lg border border-stone-300 px-2.5 py-1.5"
+                          placeholder="Was bewegt das Kind …"
+                          value={gesprTexts[s.id] || ""}
+                          onChange={(e) => setGesprTexts((d) => ({ ...d, [s.id]: e.target.value }))}
+                          onKeyDown={(e) => { if (e.key === "Enter") saveGespraech(s.id); }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => saveGespraech(s.id)}
+                          disabled={!(gesprTexts[s.id] || "").trim()}
+                          className="shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium akzent-flaeche text-white disabled:opacity-40"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </li>
               );
@@ -2842,11 +2903,18 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
                 <button onClick={() => onNavigate?.("aufgaben")} className="text-xs text-stone-400 hover:akzent-text shrink-0">+</button>
               </div>
               {openTasks.length ? (
-                <ul className="space-y-1.5">
+                <ul className="space-y-0.5">
                   {openTasks.map((t) => (
-                    <li key={t.id} className="text-sm flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
-                      <span className="text-stone-700 truncate">{t.title}</span>
+                    <li key={t.id} className="flex items-center gap-2 py-0.5">
+                      <button
+                        onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
+                        className="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors"
+                        style={{ borderColor: t.color, backgroundColor: "transparent" }}
+                        aria-label="Erledigt"
+                      >
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color, opacity: 0.3 }} />
+                      </button>
+                      <span className="text-sm text-stone-700 truncate">{t.title}</span>
                     </li>
                   ))}
                 </ul>
@@ -4239,7 +4307,7 @@ function DutyModal({ onSave, onClose }) {
   );
 }
 
-function KlassenTab({ data, update, subTab, setSubTab, onOpenFach }) {
+function KlassenTab({ data, update, subTab, setSubTab, onOpenFach, onOpenUntisImport }) {
   const [selectedClass, setSelectedClass] = useState(data.classes[0]?.id ?? null);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -4356,6 +4424,15 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">Klassen & Schüler</h1>
+        <div className="flex items-center gap-2">
+          {!!data.classes.length && (
+            <button
+              onClick={() => onOpenUntisImport?.()}
+              className="text-xs text-stone-400 hover:text-stone-600 flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-stone-100 transition-colors"
+            >
+              <Upload size={12} /> Fehlzeiten
+            </button>
+          )}
         <div className="inline-flex bg-stone-100 rounded-xl p-1">
           <button
             onClick={() => setSubTab("klassen")}
@@ -4375,6 +4452,7 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach }) {
           >
             Dienste
           </button>
+        </div>
         </div>
       </div>
 
@@ -5265,10 +5343,10 @@ function AufgabenTab({ data, update }) {
             {visibleTasks.map((t) => {
               const list = lists.find((l) => l.id === t.listId);
               return (
-                <li key={t.id} className="py-2.5 flex items-center gap-3">
+                <li key={t.id} className="py-2.5 flex items-start gap-3">
                   <button
                     onClick={() => toggleDone(t.id)}
-                    className="w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center"
+                    className="mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center"
                     style={{ borderColor: t.color, backgroundColor: t.done ? t.color : "transparent" }}
                   >
                     {t.done && <Check size={12} className="text-white" />}
