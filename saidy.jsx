@@ -1905,7 +1905,7 @@ const HELP_DATA = [
     category: "Aufgaben",
     items: [
       { q: "Wie lege ich eine Aufgabe an?", a: `Tippe auf „Aufgaben” in der unteren Navigation. Wähle eine Liste und tippe auf „Aufgabe hinzufügen”. Du kannst Titel, Farbe und ein Fälligkeitsdatum vergeben.` },
-      { q: "Wie erstelle ich eine neue Aufgabenliste?", a: `Im Aufgaben-Tab tippe oben auf das „+”-Symbol, um eine neue Liste anzulegen und ihr eine Farbe oder ein Icon zu geben.` },
+      { q: "Wie erstelle ich eine neue Aufgabenliste?", a: `Im Aufgaben-Tab tippe auf „Aufgabe hinzufügen". Im Dialog findest du unten ein Dropdown für die Liste – dort gibt es den Eintrag „+ Neue Liste erstellen", mit dem du eine neue Liste anlegen und ihr ein Icon geben kannst.` },
     ],
   },
   {
@@ -2251,9 +2251,11 @@ export default function App() {
           setShowOnboarding(true);
         }
       } catch (e) {
-        // noch keine Daten vorhanden – Standard bleibt
         setData(demoData());
         setShowOnboarding(true);
+        if (e instanceof SyntaxError) {
+          setTimeout(() => setToast("⚠ Gespeicherte Daten beschädigt – Demodaten werden angezeigt. Bitte ein Backup einspielen."), 800);
+        }
       }
       setLoaded(true);
     })();
@@ -2382,6 +2384,8 @@ export default function App() {
   }
 
   function resetAllData() {
+    localStorage.removeItem("saidy_medical_consent");
+    localStorage.removeItem("last_backup_at");
     update((d) => {
       const snapshot = { deletedAt: new Date().toISOString(), data: { ...d, deletedSnapshot: null } };
       return { ...EMPTY_DATA, deletedSnapshot: snapshot };
@@ -2460,6 +2464,12 @@ export default function App() {
         .akzent-text { color: var(--oliv); }
         .akzent-ton { background: var(--oliv-hell); color: var(--oliv); }
         .akzent-rand { border-color: var(--oliv); }
+        .hover\:akzent-rand:hover { border-color: var(--oliv); }
+        .hover\:akzent-text:hover { color: var(--oliv); }
+        .hover\:akzent-ton:hover  { background: var(--oliv-hell); color: var(--oliv); }
+        /* Chip-Scrollleiste ausblenden (Firefox + WebKit) */
+        .chip-scroll { scrollbar-width: none; }
+        .chip-scroll::-webkit-scrollbar { display: none; }
         /* Ziffern laufen exakt untereinander wie in einer Notenliste */
         .tnum { font-variant-numeric: tabular-nums; }
         /* Bottom-Sheets: nie hinter den App-Balken; immer Sicherheitsabstand oben und unten */
@@ -6037,7 +6047,7 @@ function AufgabenTab({ data, update }) {
       <h1 className="text-2xl font-semibold tracking-tight">Aufgaben</h1>
 
       {/* Horizontale Tab-Leiste für Listen */}
-      <div className="flex gap-2 overflow-x-auto pb-1 -mx-0.5 px-0.5" style={{ scrollbarWidth: "none" }}>
+      <div className="chip-scroll flex gap-2 overflow-x-auto pb-1 -mx-0.5 px-0.5">
         <button
           onClick={() => setSelected("alle")}
           className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors ${selected === "alle" ? "akzent-ton akzent-rand akzent-text font-medium" : "bg-white border-stone-200 text-stone-600"}`}
@@ -6057,7 +6067,9 @@ function AufgabenTab({ data, update }) {
                 <Icon size={13} /> {l.name}
                 <span className="text-xs opacity-60">{count}</span>
               </button>
-              <button onClick={() => removeList(l.id)} className="w-5 h-5 flex items-center justify-center text-stone-300 hover:text-red-500 rounded-full shrink-0"><Trash2 size={11} /></button>
+              {selected === l.id && (
+                <button onClick={() => removeList(l.id)} className="w-5 h-5 flex items-center justify-center text-stone-300 hover:text-red-500 rounded-full shrink-0"><Trash2 size={11} /></button>
+              )}
             </div>
           );
         })}
@@ -6096,7 +6108,20 @@ function AufgabenTab({ data, update }) {
               </li>
             );
           })}
-          {!visibleTasks.length && <li className="py-6 text-sm text-stone-400 text-center">Keine Aufgaben hier.</li>}
+          {!visibleTasks.length && (
+            <li className="py-8 flex flex-col items-center gap-3 text-center">
+              <ListChecks size={28} className="text-stone-200" />
+              <span className="text-sm text-stone-400">{selected === "erledigt" ? "Noch nichts erledigt." : "Keine offenen Aufgaben."}</span>
+              {selected !== "erledigt" && (
+                <button
+                  onClick={() => { setEditingTask(null); setShowModal(true); }}
+                  className="text-xs px-3 py-1.5 rounded-lg akzent-ton akzent-text font-medium"
+                >
+                  Erste Aufgabe anlegen
+                </button>
+              )}
+            </li>
+          )}
         </ul>
 
         {selected !== "erledigt" && (
@@ -6882,8 +6907,9 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
         <button
           onClick={() => setShowZeugnis((v) => !v)}
           className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs transition-colors ${showZeugnis ? "akzent-ton akzent-rand akzent-text" : "bg-white border-stone-200 text-stone-500"}`}
+          title={showZeugnis ? "Zeugnisnoten-Spalte ausblenden" : "Zeugnisnoten-Spalte einblenden"}
         >
-          Zeugnis
+          <GraduationCap size={12} /> Zeugnisnote
         </button>
         {istSport && <span className="text-[11px] text-stone-400 ml-auto self-center">Tipp auf „Sportz." erfasst vergessenes Sportzeug für heute</span>}
       </div>
