@@ -10,9 +10,10 @@ https://claude.ai/code/artifact/1a678b08-f9f5-4556-bdba-a1beeaa82106
 
 Nach Änderungen an `saidy.jsx` oder Agents: Artifact mit demselben Dateipfad neu publizieren (gleiche URL).
 
-## Entwicklungs-Branch
+## Deployment
 
-Alle Änderungen auf Branch `claude/bitte-beachten-nix4oc` committen und pushen.
+Alle Änderungen direkt auf `main` committen und pushen — kein Feature-Branch, kein PR.
+GitHub Actions deployed `main` automatisch auf GitHub Pages.
 
 ## Wichtige Regeln
 
