@@ -6909,19 +6909,19 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
       <div className="flex items-center gap-2 px-1 text-xs">
         <button
           onClick={() => setSortDir((d) => (d === "az" ? "za" : "az"))}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-stone-600 whitespace-nowrap shrink-0"
+          className="inline-flex items-center justify-center gap-1 h-8 px-2.5 rounded-lg bg-white border border-stone-200 text-stone-600 whitespace-nowrap shrink-0"
         >
           {sortDir === "az" ? "A → Z" : "Z → A"}
         </button>
         <button
           onClick={() => setNameOrder((o) => (o === "vorname" ? "nachname" : "vorname"))}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-stone-600"
+          className="inline-flex items-center justify-center gap-1 h-8 px-2.5 rounded-lg bg-white border border-stone-200 text-stone-600 whitespace-nowrap shrink-0"
         >
           {nameOrder === "vorname" ? "Vorname zuerst" : "Nachname zuerst"}
         </button>
         <button
           onClick={() => setShowZeugnis((v) => !v)}
-          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs transition-colors ${showZeugnis ? "akzent-ton akzent-rand akzent-text" : "bg-white border-stone-200 text-stone-500"}`}
+          className={`inline-flex items-center justify-center gap-1 h-8 px-2.5 rounded-lg border text-xs transition-colors whitespace-nowrap shrink-0 ${showZeugnis ? "akzent-ton akzent-rand akzent-text" : "bg-white border-stone-200 text-stone-500"}`}
           title={showZeugnis ? "Zeugnisnoten-Spalte ausblenden" : "Zeugnisnoten-Spalte einblenden"}
         >
           <GraduationCap size={12} /> Zeugnisnote
