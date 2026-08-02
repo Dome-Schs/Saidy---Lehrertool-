@@ -1884,9 +1884,9 @@ const HELP_DATA = [
     ],
   },
   {
-    category: "Noten",
+    category: "Noten & Berichte",
     items: [
-      { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten", wähle Klasse und Fach. Tippe auf eine:n Schüler:in und dann auf „+ Note". Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
+      { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten & Berichte", wähle Klasse und Fach. Tippe auf eine:n Schüler:in und dann auf „+ Note". Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aller Noten. Schriftliche Noten werden standardmäßig doppelt gewichtet. Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst. Das 💬-Symbol neben einem Kind öffnet direkt ein Gespräch mit Typ-Wahl (Schüler/Eltern/Förder) und Stimmungsskala.` },
@@ -2434,7 +2434,7 @@ export default function App() {
     { key: "stundenplan", label: "Stundenplan", icon: Clock },
     { key: "kalender", label: "Kalender", icon: CalendarDays },
     { key: "aufgaben", label: "Aufgaben", icon: ListChecks },
-    { key: "noten", label: "Noten", icon: GraduationCap },
+    { key: "noten", label: "Noten & Berichte", icon: GraduationCap },
   ];
 
   if (!loaded) {
