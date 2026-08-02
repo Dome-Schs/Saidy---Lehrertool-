@@ -40,7 +40,7 @@ const QUICK_SYMBOLS = [
   { symbol: "– –", value: 5, color: "#B91C1C" },
 ];
 
-const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], deletedSnapshot: null, settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null, notenfarben: true, colorMode: false } };
+const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], sitzplaene: {}, deletedSnapshot: null, settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null, notenfarben: true, colorMode: false } };
 
 const DASHBOARD_SECTIONS = {
   unterricht: "Unterricht",
@@ -1866,9 +1866,9 @@ const HELP_DATA = [
   {
     category: "Erste Schritte",
     items: [
-      { q: "Wie lege ich eine neue Klasse an?", a: `Tippe auf „Klassen“ in der Navigation, dann oben rechts auf „+“. Gib den Klassennamen ein und bestätige mit „Anlegen“.` },
-      { q: "Wie füge ich Schüler:innen hinzu?", a: `Öffne eine Klasse und tippe auf „+ Schüler:in“. Namen können einzeln oder als Liste eingegeben werden.` },
-      { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Saidy automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr” → „Einstellungen” → Bundesland wählen → „Schulferien eintragen”.` },
+      { q: "Wie lege ich eine neue Klasse an?", a: `Tippe auf „Klassen" in der Navigation, dann oben rechts auf „+". Gib den Klassennamen ein und bestätige mit „Anlegen".` },
+      { q: "Wie füge ich Schüler:innen hinzu?", a: `Öffne eine Klasse und tippe auf „+ Schüler:in". Namen können einzeln oder als Liste eingegeben werden.` },
+      { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Saidy automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr" → „Einstellungen" → Bundesland wählen → „Schulferien eintragen".` },
       { q: "Was passiert beim ersten Start?", a: `Saidy führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
       { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus.` },
     ],
@@ -1878,9 +1878,10 @@ const HELP_DATA = [
     items: [
       { q: "Wie finde ich schnell ein bestimmtes Kind?", a: `Tippe auf „Suchen" – in der Seitenleiste (Desktop) oder im „Mehr"-Menü (Mobil). Du kannst nach Namen oder Notiztext suchen. Ein Tipp auf ein Ergebnis öffnet direkt das Schülerprofil.` },
       { q: "Wie bearbeite ich eine:n Schüler:in?", a: `Tippe in der Klassenliste auf den Namen. Im Profil kannst du Name, Foto und weitere Angaben bearbeiten.` },
-      { q: "Wie lösche ich eine Klasse?", a: `Öffne die Klasse, tippe auf das Bearbeiten-Symbol und wähle „Klasse löschen“. Achtung: alle Daten dieser Klasse werden unwiderruflich entfernt.` },
-      { q: "Was sind Dienste?", a: `Dienste sind Aufgaben, die Saidy Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste“, mit einem Tippen weiter zum nächsten Kind.` },
-      { q: "Wie erfasse ich Fehlzeiten?", a: `Gehe zu Klasse → „Fehlzeiten“ → „+ Fehlzeit“. Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist.` },
+      { q: "Wie lösche ich eine Klasse?", a: `Öffne die Klasse, tippe auf das Bearbeiten-Symbol und wähle „Klasse löschen". Achtung: alle Daten dieser Klasse werden unwiderruflich entfernt.` },
+      { q: "Was sind Dienste?", a: `Dienste sind Aufgaben, die Saidy Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste", mit einem Tippen weiter zum nächsten Kind.` },
+      { q: "Wie erfasse ich Fehlzeiten?", a: `Gehe zu Klasse → „Fehlzeiten" → „+ Fehlzeit". Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist.` },
+      { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Im Editor kannst du Reihen- und Spaltenanzahl anpassen. Tippe auf eine:n Schüler:in (unten oder im Raster), dann auf einen freien Platz – fertig. Tippe auf zwei besetzte Plätze, um Kinder zu tauschen. Das kleine X entfernt ein Kind vom Platz. Zum Schluss auf „Speichern" tippen.` },
     ],
   },
   {
@@ -1891,30 +1892,30 @@ const HELP_DATA = [
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst. Das 💬-Symbol neben einem Kind öffnet direkt ein Gespräch mit Typ-Wahl (Schüler/Eltern/Förder) und Stimmungsskala.` },
       { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button "Zeugnis". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
-      { q: "Wo kann ich Gespräche mit Schüler:innen erfassen?", a: `An drei Stellen: (1) In der Klassenliste neben jedem Kind das 💬-Symbol antippen. (2) Im Schnellerfassungs-Modus nach dem Unterricht. (3) Direkt in der Notenansicht: Kind antippen – die Detailansicht zeigt oben eine Karte „Gespräch & Stimmung“ mit Typ-Wahl (Schüler / Eltern / Förder), Stimmungsskala (😄😊😐😕😟) und Notizfeld. Alle erfassten Gespräche erscheinen auch bei Elternsprechtag-Vorbereitung.` },
+      { q: "Wo kann ich Gespräche mit Schüler:innen erfassen?", a: `An drei Stellen: (1) In der Klassenliste neben jedem Kind das 💬-Symbol antippen. (2) Im Schnellerfassungs-Modus nach dem Unterricht. (3) Direkt in der Notenansicht: Kind antippen – die Detailansicht zeigt oben eine Karte „Gespräch & Stimmung" mit Typ-Wahl (Schüler / Eltern / Förder), Stimmungsskala (😄😊😐😕😟) und Notizfeld. Alle erfassten Gespräche erscheinen auch bei Elternsprechtag-Vorbereitung.` },
     ],
   },
   {
     category: "Kalender & Termine",
     items: [
-      { q: "Wie lege ich einen Termin an?", a: `Tippe auf „Mehr” in der Navigation und dann auf „Kalender”. Tippe dort auf „+ Neuen Termin anlegen” und gib Titel, Datum, Uhrzeit und Art ein.` },
-      { q: "Wie lege ich einen wiederkehrenden Termin an?", a: `Beim Anlegen eines Termins gibt es das Feld „Wiederholung” – dort kannst du Wöchentlich, Alle 2 Wochen oder Monatlich wählen. Der Termin erscheint dann automatisch an allen folgenden Termintagen im Kalender.` },
-      { q: "Wie trage ich Schulferien ein?", a: `Stelle zuerst dein Bundesland in den Einstellungen ein. Dann erscheint dort „Schulferien eintragen” – Saidy übernimmt alle Ferien automatisch.` },
-      { q: "Wie erledige ich einen Termin?", a: `Tippe auf den Kreis links neben dem Termin. Er wandert in den „Erledigt”-Bereich ganz unten.` },
+      { q: "Wie lege ich einen Termin an?", a: `Tippe auf „Mehr" in der Navigation und dann auf „Kalender". Tippe dort auf „+ Neuen Termin anlegen" und gib Titel, Datum, Uhrzeit und Art ein.` },
+      { q: "Wie lege ich einen wiederkehrenden Termin an?", a: `Beim Anlegen eines Termins gibt es das Feld „Wiederholung" – dort kannst du Wöchentlich, Alle 2 Wochen oder Monatlich wählen. Der Termin erscheint dann automatisch an allen folgenden Termintagen im Kalender.` },
+      { q: "Wie trage ich Schulferien ein?", a: `Stelle zuerst dein Bundesland in den Einstellungen ein. Dann erscheint dort „Schulferien eintragen" – Saidy übernimmt alle Ferien automatisch.` },
+      { q: "Wie erledige ich einen Termin?", a: `Tippe auf den Kreis links neben dem Termin. Er wandert in den „Erledigt"-Bereich ganz unten.` },
     ],
   },
   {
     category: "Aufgaben",
     items: [
-      { q: "Wie lege ich eine Aufgabe an?", a: `Tippe auf „Aufgaben” in der unteren Navigation. Wähle eine Liste und tippe auf „Aufgabe hinzufügen”. Du kannst Titel, Farbe und ein Fälligkeitsdatum vergeben.` },
+      { q: "Wie lege ich eine Aufgabe an?", a: `Tippe auf „Aufgaben" in der unteren Navigation. Wähle eine Liste und tippe auf „Aufgabe hinzufügen". Du kannst Titel, Farbe und ein Fälligkeitsdatum vergeben.` },
       { q: "Wie erstelle ich eine neue Aufgabenliste?", a: `Im Aufgaben-Tab tippe auf „Aufgabe hinzufügen". Im Dialog findest du unten ein Dropdown für die Liste – dort gibt es den Eintrag „+ Neue Liste erstellen", mit dem du eine neue Liste anlegen und ihr ein Icon geben kannst.` },
     ],
   },
   {
     category: "Backup & Daten",
     items: [
-      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr“ → „Einstellungen“ → „Backup“ → „Sichern“ (Datei speichern) oder „Teilen“ (z. B. per AirDrop).` },
-      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr“ → „Einstellungen“ → „Backup“ → „Gesichertes wiederherstellen“ und wähle deine Backup-Datei.` },
+      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Backup" → „Sichern" (Datei speichern) oder „Teilen" (z. B. per AirDrop).` },
+      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr" → „Einstellungen" → „Backup" → „Gesichertes wiederherstellen" und wähle deine Backup-Datei.` },
       { q: "Wo werden meine Daten gespeichert?", a: `Alle Daten bleiben ausschließlich auf deinem Gerät (lokaler Browser-Speicher). Es werden keine Daten an Server übertragen.` },
       { q: "Warum bekomme ich eine Backup-Erinnerung?", a: `Saidy erinnert nach 7 Tagen ohne Backup. Da die Daten nur lokal gespeichert sind, schützt ein regelmäßiges Backup vor Datenverlust.` },
     ],
@@ -1922,14 +1923,14 @@ const HELP_DATA = [
   {
     category: "Import",
     items: [
-      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: `Öffne den „Klassen”-Tab und tippe oben rechts auf „Fehlzeiten”. Alternativ: „Mehr” → „Einstellungen” → „WebUntis-Import”. Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Saidy übernimmt sie automatisch in die passenden Klassen.` },
+      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: `Öffne den „Klassen"-Tab und tippe oben rechts auf „Fehlzeiten". Alternativ: „Mehr" → „Einstellungen" → „WebUntis-Import". Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Saidy übernimmt sie automatisch in die passenden Klassen.` },
     ],
   },
   {
     category: "Datenschutz & Rechtliches",
     items: [
       { q: "Wer ist verantwortlich für die Schülerdaten?", a: `Du als Lehrkraft bist gemäß Art. 4 Nr. 7 DSGVO selbst datenschutzrechtlich Verantwortliche:r für die eingegebenen Daten. Der Entwickler von Saidy hat keinen Zugriff auf deine Daten.` },
-      { q: "Wo finde ich das Impressum und die Datenschutzerklärung?", a: `Tippe auf „Mehr” → „Einstellungen” und scrolle ganz nach unten. Dort findest du den Link „Impressum & Datenschutz”.` },
+      { q: "Wo finde ich das Impressum und die Datenschutzerklärung?", a: `Tippe auf „Mehr" → „Einstellungen" und scrolle ganz nach unten. Dort findest du den Link „Impressum & Datenschutz".` },
       { q: "Werden meine Daten irgendwohin übertragen?", a: `Nein. Alle Daten bleiben ausschließlich auf deinem Gerät (Browser-localStorage). Es werden keine Daten an den Entwickler oder Dritte übermittelt. Beim Aufrufen der App werden lediglich technische Zugriffsdaten (IP-Adresse, Zeitstempel) durch den Hosting-Anbieter GitHub Pages verarbeitet.` },
     ],
   },
@@ -5016,6 +5017,187 @@ function DutyModal({ onSave, onClose }) {
   );
 }
 
+/* ---------- Sitzplan ---------- */
+
+function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
+  const [rows, setRows] = useState(sitzplan?.rows ?? 5);
+  const [cols, setCols] = useState(sitzplan?.cols ?? 4);
+  const [seats, setSeats] = useState(() => sitzplan?.seats ? { ...sitzplan.seats } : {});
+  const [selected, setSelected] = useState(null); // studentId | null
+
+  const seatKey = (r, c) => `${r}-${c}`;
+  const placedIds = new Set(Object.values(seats).filter(Boolean));
+  const unplaced = students.filter((s) => !s.deletedAt && !placedIds.has(s.id));
+
+  // Remove seats that fall outside current grid bounds
+  useEffect(() => {
+    setSeats((prev) => {
+      const next = {};
+      for (const [k, v] of Object.entries(prev)) {
+        const [r, c] = k.split("-").map(Number);
+        if (r < rows && c < cols) next[k] = v;
+      }
+      return next;
+    });
+  }, [rows, cols]);
+
+  function handleSeatTap(r, c) {
+    const key = seatKey(r, c);
+    const occupant = seats[key] ?? null;
+
+    if (selected === null) {
+      if (occupant) setSelected(occupant);
+      return;
+    }
+
+    if (occupant === selected) { setSelected(null); return; }
+
+    const fromKey = Object.entries(seats).find(([, v]) => v === selected)?.[0] ?? null;
+
+    setSeats((prev) => {
+      const next = { ...prev };
+      if (occupant) {
+        // swap: occupant goes where selected came from (or to unplaced if from unplaced)
+        if (fromKey) next[fromKey] = occupant;
+        else delete next[key]; // can't place occupant back, leave unplaced
+      } else {
+        if (fromKey) delete next[fromKey];
+      }
+      next[key] = selected;
+      return next;
+    });
+    setSelected(null);
+  }
+
+  function handleUnplacedTap(studentId) {
+    setSelected((prev) => (prev === studentId ? null : studentId));
+  }
+
+  function removeSeat(key, e) {
+    e.stopPropagation();
+    setSeats((prev) => { const next = { ...prev }; delete next[key]; return next; });
+    setSelected(null);
+  }
+
+  function shortName(name) {
+    return name.split(" ")[0].slice(0, 9);
+  }
+
+  function save() {
+    onSave({ rows, cols, seats });
+    onClose();
+  }
+
+  const hasSelection = selected !== null;
+  const totalSeats = rows * cols;
+  const filledSeats = Object.keys(seats).length;
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/50 z-[60] flex items-end md:items-center justify-center" onClick={onClose}>
+      <div className="bg-white w-full md:max-w-2xl rounded-t-3xl md:rounded-2xl shadow-xl max-h-[92dvh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-stone-100 shrink-0">
+          <div>
+            <div className="font-semibold text-stone-900">Sitzplan</div>
+            <div className="text-xs text-stone-400">{cls.name} · {filledSeats} von {students.filter((s) => !s.deletedAt).length} platziert</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={save}>Speichern</Button>
+            <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center text-stone-500 hover:bg-stone-200"><X size={16} /></button>
+          </div>
+        </div>
+
+        {/* Grid-size controls */}
+        <div className="flex items-center gap-5 px-5 py-2.5 border-b border-stone-100 bg-stone-50/60 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-stone-500">Reihen</span>
+            <button onClick={() => setRows((r) => Math.max(2, r - 1))} className="w-6 h-6 rounded-md bg-stone-200 hover:bg-stone-300 flex items-center justify-center text-stone-700 font-bold text-sm leading-none">–</button>
+            <span className="w-4 text-center text-sm font-semibold text-stone-800 tnum">{rows}</span>
+            <button onClick={() => setRows((r) => Math.min(9, r + 1))} className="w-6 h-6 rounded-md bg-stone-200 hover:bg-stone-300 flex items-center justify-center text-stone-700 font-bold text-sm leading-none">+</button>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-stone-500">Spalten</span>
+            <button onClick={() => setCols((c) => Math.max(2, c - 1))} className="w-6 h-6 rounded-md bg-stone-200 hover:bg-stone-300 flex items-center justify-center text-stone-700 font-bold text-sm leading-none">–</button>
+            <span className="w-4 text-center text-sm font-semibold text-stone-800 tnum">{cols}</span>
+            <button onClick={() => setCols((c) => Math.min(7, c + 1))} className="w-6 h-6 rounded-md bg-stone-200 hover:bg-stone-300 flex items-center justify-center text-stone-700 font-bold text-sm leading-none">+</button>
+          </div>
+          {hasSelection && (
+            <span className="ml-auto text-xs text-[#4F5844] font-medium animate-pulse">→ Platz antippen</span>
+          )}
+        </div>
+
+        {/* Scrollable body */}
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+          {/* Grid */}
+          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+            {Array.from({ length: rows * cols }, (_, i) => {
+              const r = Math.floor(i / cols);
+              const c = i % cols;
+              const key = seatKey(r, c);
+              const studentId = seats[key] ?? null;
+              const student = studentId ? students.find((s) => s.id === studentId) : null;
+              const isSelected = studentId === selected;
+
+              return (
+                <button
+                  key={key}
+                  onClick={() => handleSeatTap(r, c)}
+                  className={`relative rounded-xl aspect-square flex items-center justify-center text-[11px] font-medium transition-all select-none leading-tight
+                    ${student
+                      ? isSelected
+                        ? "bg-[#4F5844] text-white shadow-lg scale-[1.04]"
+                        : "bg-[#ECEEE2] text-[#4F5844] border border-[#4F5844]/15 active:scale-[0.97]"
+                      : hasSelection
+                        ? "border-2 border-dashed border-[#4F5844]/35 bg-[#4F5844]/5 active:bg-[#4F5844]/10"
+                        : "border-2 border-dashed border-stone-200 bg-stone-50"
+                    }`}
+                >
+                  {student ? (
+                    <>
+                      <span className="px-0.5 text-center break-words w-full">{shortName(student.name)}</span>
+                      <button
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => removeSeat(key, e)}
+                        className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center shadow-sm transition-colors ${isSelected ? "bg-white text-[#4F5844]" : "bg-stone-300 text-white hover:bg-red-400"}`}
+                      >
+                        <X size={8} />
+                      </button>
+                    </>
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Unplaced students */}
+          {unplaced.length > 0 && (
+            <div className="mt-5">
+              <div className="text-[11px] font-medium uppercase tracking-wide text-stone-400 mb-2">Noch ohne Platz</div>
+              <div className="flex flex-wrap gap-2">
+                {unplaced.map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => handleUnplacedTap(s.id)}
+                    className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${selected === s.id ? "bg-[#4F5844] text-white shadow-md scale-105" : "bg-stone-100 text-stone-700 hover:bg-stone-200 active:scale-[0.97]"}`}
+                  >
+                    {shortName(s.name)}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {unplaced.length === 0 && filledSeats > 0 && (
+            <p className="mt-4 text-center text-xs text-stone-400">Alle Schüler:innen sind platziert ✓</p>
+          )}
+
+          <p className="mt-4 text-center text-[11px] text-stone-300">Schüler:in antippen → Platz antippen zum Setzen · X zum Entfernen</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed }) {
   const [selectedClass, setSelectedClass] = useState(data.classes[0]?.id ?? null);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
@@ -5030,6 +5212,8 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
   const [expandedClass, setExpandedClass] = useState(null); // aufgeklappte Klassenkarte
   const [renameValue, setRenameValue] = useState("");
   const [overviewStudentId, setOverviewStudentId] = useState(null);
+  const [showSitzplan, setShowSitzplan] = useState(false);
+  const [sitzplanClassId, setSitzplanClassId] = useState(null);
 
   useEffect(() => {
     if (!focusStudentId) return;
@@ -5140,6 +5324,14 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
     });
   }
 
+  function saveSitzplan(classId, plan) {
+    update((d) => {
+      if (!d.sitzplaene) d.sitzplaene = {};
+      d.sitzplaene[classId] = plan;
+      return d;
+    });
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -5223,6 +5415,16 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
                   >
                     <Users size={15} className="text-stone-400" /> Schüler:innen
                     <span className="ml-auto text-stone-400 tnum">{cCount}</span>
+                  </button>
+
+                  <button
+                    onClick={() => { setSitzplanClassId(c.id); setShowSitzplan(true); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700"
+                  >
+                    <LayoutGrid size={15} className="text-stone-400" /> Sitzplan
+                    {data.sitzplaene?.[c.id] && (
+                      <span className="ml-auto text-[11px] text-stone-400">bearbeiten</span>
+                    )}
                   </button>
 
                   <div className="text-[11px] font-medium uppercase tracking-wide text-stone-400 px-1 pt-2">Noten nach Fach</div>
@@ -5361,6 +5563,21 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
           onClose={() => setShowImportModal(false)}
         />
       )}
+
+      {showSitzplan && sitzplanClassId && (() => {
+        const spCls = data.classes.find((c) => c.id === sitzplanClassId);
+        const spStudents = data.students.filter((s) => s.classId === sitzplanClassId && !s.deletedAt);
+        if (!spCls) return null;
+        return (
+          <SitzplanModal
+            cls={spCls}
+            students={spStudents}
+            sitzplan={data.sitzplaene?.[sitzplanClassId] ?? null}
+            onSave={(plan) => saveSitzplan(sitzplanClassId, plan)}
+            onClose={() => { setShowSitzplan(false); setSitzplanClassId(null); }}
+          />
+        );
+      })()}
     </div>
   );
 }
