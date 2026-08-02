@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "input=$(cat); cmd=$(echo \"$input\" | jq -r '.tool_input.command // \"\"'); if echo \"$cmd\" | grep -q 'push origin main'; then echo '{\"systemMessage\": \"✅ Saidy deployed – Änderungen sind live auf GitHub Pages. App neu laden um die neueste Version zu sehen (PWA: App schließen und neu öffnen).\"}'; fi",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
