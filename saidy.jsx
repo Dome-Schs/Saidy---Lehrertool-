@@ -2673,7 +2673,7 @@ export default function App() {
                   <Icon size={20} strokeWidth={active ? 2.4 : 2} className={active ? "akzent-text" : "text-stone-400"} />
                 </span>
                 <span className={`text-[10px] leading-none ${active ? "akzent-text font-semibold" : "text-stone-400"}`}>
-                  {t.key === "klassen" ? "Klassen" : t.label}
+                  {t.key === "klassen" ? "Klassen" : t.key === "noten" ? "Noten" : t.label}
                 </span>
               </button>
             );
