@@ -2658,7 +2658,7 @@ export default function App() {
       </div>
 
       {/* Feste untere Navigation (nur mobil) */}
-      <nav className="md:hidden shrink-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]">
+      <nav className="md:hidden shrink-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[calc(env(safe-area-inset-bottom)+6px)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]">
         <div className="flex items-stretch justify-around px-2 pt-2 pb-1.5">
           {[tabs[0], tabs[1], tabs[4], tabs[5]].map((t) => {
             const Icon = t.icon;
