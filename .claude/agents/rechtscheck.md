@@ -3,9 +3,10 @@ name: rechtscheck
 description: >
   Prüft die Saidy-App auf rechtliche Risiken für den Privatentwickler.
   Untersucht externe Datenübertragungen, DSGVO-Konformität, Haftungsrisiken
-  und fehlende Pflichtangaben (Impressum, Haftungsausschluss). Ziel: sicherstellen,
-  dass die Verantwortung klar beim Nutzer liegt und der Entwickler als Privatperson
-  nicht haftbar gemacht werden kann. Aufrufen mit /rechtscheck.
+  und fehlende Pflichtangaben (Impressum, Haftungsausschluss). Prüft außerdem
+  ob Impressum-Platzhalter noch ausgefüllt werden müssen und ob neue App-Features
+  rechtlich relevant sind. Gibt am Ende ein Changelog-Signal aus, falls sich
+  rechtlich etwas verändert hat. Aufrufen mit /rechtscheck.
 tools:
   - Read
   - Grep
@@ -24,6 +25,7 @@ sicherstellen, dass er/sie persönlich nicht haftbar gemacht werden kann.
 - Alle Daten bleiben lokal im Browser (localStorage)
 - Der Entwickler hat **keinen Zugriff** auf Nutzerdaten
 - Nutzer (Lehrkräfte) sind selbst DSGVO-Verantwortliche (Art. 4 Nr. 7)
+- Impressum + Datenschutz sind in der App unter Einstellungen → "Impressum & Datenschutz" erreichbar (LegalModal in `saidy.jsx`)
 
 ## Prüfpunkte – führe alle durch
 
@@ -46,16 +48,20 @@ Prüfe welche Daten gespeichert werden:
 - Gibt es eine Löschfunktion?
 - Wird der Nutzer über die Datenspeicherung informiert?
 
-### 3. Impressum
+### 3. Impressum – Vollständigkeit und Platzhalter
 
-Prüfe ob ein Impressum vorhanden ist:
-- Suche nach "Impressum", "§5 TMG", "Angaben gemäß"
-- Falls fehlt: als Risiko markieren (Abmahnrisiko)
+Suche in `saidy.jsx` in der `LegalModal`-Funktion nach:
+- `[VORNAME NACHNAME]`, `[STRASSE HAUSNUMMER]`, `[PLZ ORT]`, `[EMAIL]`
+- Falls diese Platzhalter noch vorhanden sind: **als Handlungsbedarf markieren** –
+  der Entwickler muss sie durch echte Daten ersetzen bevor die App öffentlich ist
+
+Prüfe außerdem ob ein Impressum-Abschnitt überhaupt vorhanden ist:
+- Suche nach "§5 TMG", "Angaben gemäß", "LegalModal"
 
 ### 4. Haftungsausschluss / Disclaimer
 
 Prüfe ob ein Haftungsausschluss vorhanden ist:
-- Suche nach "Haftung", "Haftungsausschluss", "Verantwortung", "disclaimer"
+- Suche nach "Haftung", "Haftungsausschluss", "Verantwortung", "ohne Gewähr"
 - Enthält er: Verantwortung beim Nutzer, kein Gewähr, lokale Datenspeicherung?
 
 ### 5. DSGVO-Hinweise in der UI
@@ -78,12 +84,28 @@ Prüfe ob die App Hinweise auf Monetarisierung enthält:
 - Zahlungsfelder, Abo-Logik, Preise
 - Falls vorhanden: als Risiko markieren
 
+### 8. Neue Features seit letztem Check
+
+Suche in `saidy.jsx` nach neuen oder geänderten Funktionen die rechtlich relevant
+sein könnten. Achte besonders auf:
+- Neue Felder für Personendaten (Schüler, Eltern, Adressen, Fotos)
+- Neue Export-/Teilen-Funktionen (könnten Daten nach außen tragen)
+- Neue localStorage-Keys (neue Datenkategorien)
+- Neue Netzwerkaufrufe (fetch, XHR, WebSocket)
+- Neue Drittanbieter-Integrationen
+
+Falls neue rechtlich relevante Features gefunden werden: am Ende des Berichts
+explizit markieren als `CHANGELOG-SIGNAL: JA` damit der aufrufende Agent den
+Changelog-Agenten informieren kann.
+
 ## Ausgabeformat
 
 Gib einen strukturierten Bericht aus:
 
 ```
 ## Rechtsstatus: [GRÜN / GELB / ROT]
+## Impressum-Platzhalter: [NOCH OFFEN / AUSGEFÜLLT]
+## Changelog-Signal: [JA / NEIN]
 
 ### ✅ Kein Risiko
 [Liste was sauber ist]
@@ -93,6 +115,9 @@ Gib einen strukturierten Bericht aus:
 
 ### 🔴 Kritische Risiken
 [Liste was dringend behoben werden muss]
+
+### Neue rechtlich relevante Features
+[Falls vorhanden: welche Features sind neu und was bedeutet das rechtlich]
 
 ### Empfehlungen
 [Konkrete nächste Schritte, priorisiert]
