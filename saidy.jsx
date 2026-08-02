@@ -6,7 +6,7 @@ import {
   Clock, StickyNote, ClipboardCheck, Copy, CheckCircle2, AlertCircle, AlertTriangle,
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
-  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal,
+  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2,
 } from "lucide-react";
 
 /* ---------- Konstanten ---------- */
@@ -1768,8 +1768,9 @@ const HELP_DATA = [
   {
     category: "Noten",
     items: [
-      { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten“, wähle Klasse und Fach. Tippe auf eine:n Schüler:in und dann auf „+ Note“. Du kannst Art, Gewichtung und Datum angeben.` },
+      { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten”, wähle Klasse und Fach. Tippe auf eine:n Schüler:in und dann auf „+ Note”. Du kannst Art, Gewichtung und Datum angeben.` },
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aller Noten. Schriftliche Noten werden standardmäßig doppelt gewichtet. Die berechnete Note erscheint in der Notenübersicht.` },
+      { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht” antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst. Das 💬-Symbol neben einem Kind öffnet direkt ein Kindgespräch mit Stimmungswahl.` },
     ],
   },
@@ -3681,8 +3682,67 @@ const MOOD_OPTIONS = [
   { key: "schlecht", emoji: "😟", label: "Nicht so gut" },
 ];
 
+/* Notenübersicht eines Schülers / einer Schülerin über alle Fächer */
+function StudentOverviewModal({ student, faecher, grades, finalGrades, onClose }) {
+  const halbjahr = currentHalbjahr();
+  const facherWithGrades = faecher
+    .filter((f) => grades.some((g) => g.studentId === student.id && g.fachId === f.id))
+    .sort((a, b) => a.name.localeCompare(b.name, "de"));
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 z-[65] flex items-end md:items-center md:justify-center" onClick={onClose}>
+      <div className="bg-white w-full md:max-w-md md:rounded-2xl rounded-t-2xl shadow-xl overflow-y-auto dialog pb-[max(2rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-3 p-5 border-b border-stone-100">
+          <StudentAvatar student={student} size={40} />
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-stone-800 truncate">{student.name}</div>
+            <div className="text-xs text-stone-400">Notenübersicht · {halbjahr}. Halbjahr</div>
+          </div>
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 shrink-0"><X size={18} /></button>
+        </div>
+
+        <div className="p-5">
+          {facherWithGrades.length === 0 ? (
+            <div className="text-sm text-stone-400 text-center py-8">Noch keine Noten für {student.name} erfasst.</div>
+          ) : (
+            <ul className="divide-y divide-stone-100">
+              {facherWithGrades.map((fach) => {
+                const fachGrades = grades.filter((g) => g.studentId === student.id && g.fachId === fach.id);
+                const avg = calcOverall(fachGrades, fach.weights);
+                const finalGrade = finalGrades?.find((fg) => fg.studentId === student.id && fg.fachId === fach.id && fg.halbjahr === halbjahr);
+                const gradeCount = fachGrades.length;
+                return (
+                  <li key={fach.id} className="py-3 flex items-center gap-3">
+                    <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: fach.color ?? "#8E8E93" }} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-stone-800 truncate">{fach.name}</div>
+                      <div className="text-xs text-stone-400">{gradeCount} {gradeCount === 1 ? "Note" : "Noten"}</div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {avg != null ? (
+                        <>
+                          <div className={`font-semibold text-sm ${gradeColor(avg)}`}>{gradeLabel(avg)}</div>
+                          {finalGrade && (
+                            <div className="text-[11px] text-stone-400">Zeugnis: {gradeLabel(finalGrade.value)}</div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="text-stone-400 text-sm">—</div>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* Eigenständiges Fenster für die Schülerliste einer Klasse – bewusst getrennt von der Klassenübersicht */
-function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onOpenAdd, onClose }) {
+function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onOpenAdd, onOpenOverview, onClose }) {
   const [photoError, setPhotoError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showMedicalConsent, setShowMedicalConsent] = useState(false);
@@ -3773,6 +3833,16 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                         </p>
                       </div>
                     </div>
+
+                    {onOpenOverview && (
+                      <button
+                        onClick={() => onOpenOverview(s.id)}
+                        className="w-full flex items-center justify-center gap-1.5 text-sm font-medium akzent-text akzent-ton rounded-lg py-2 hover:opacity-80 transition-opacity"
+                      >
+                        <BarChart2 size={14} />
+                        Notenübersicht
+                      </button>
+                    )}
 
                     <div className="grid grid-cols-2 gap-2">
                       <Field label="Geburtstag">
@@ -4550,6 +4620,7 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach, onOpenUntisIm
   const [confirmState, setConfirmState] = useState(null); // { title, message, onConfirm }
   const [expandedClass, setExpandedClass] = useState(null); // aufgeklappte Klassenkarte
   const [renameValue, setRenameValue] = useState("");
+  const [overviewStudentId, setOverviewStudentId] = useState(null);
 
   const cls = data.classes.find((c) => c.id === selectedClass);
   const classFaecher = data.faecher.filter((f) => f.classId === selectedClass);
@@ -4835,9 +4906,24 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach, onOpenUntisIm
           onAddGespraech={addGespraech}
           onDeleteNote={deleteNote}
           onOpenAdd={() => setShowAddModal(true)}
+          onOpenOverview={(sid) => setOverviewStudentId(sid)}
           onClose={() => { setShowStudentsModal(false); setSelectedStudent(null); }}
         />
       )}
+
+      {overviewStudentId && (() => {
+        const overviewStudent = data.students.find((s) => s.id === overviewStudentId);
+        if (!overviewStudent) return null;
+        return (
+          <StudentOverviewModal
+            student={overviewStudent}
+            faecher={data.faecher.filter((f) => f.classId === overviewStudent.classId)}
+            grades={data.grades}
+            finalGrades={data.finalGrades}
+            onClose={() => setOverviewStudentId(null)}
+          />
+        );
+      })()}
 
       {showAddModal && (
         <AddStudentModal
