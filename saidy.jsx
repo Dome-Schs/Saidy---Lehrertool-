@@ -915,6 +915,92 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
   );
 }
 
+function LegalModal({ onClose }) {
+  const [activeTab, setActiveTab] = useState("impressum");
+  const tabs = [["impressum", "Impressum"], ["datenschutz", "Datenschutz"]];
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={onClose}>
+      <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
+          <div className="font-semibold text-stone-800">Rechtliches</div>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center"><X size={16} /></button>
+        </div>
+        <div className="flex border-b border-stone-100 px-5 gap-1">
+          {tabs.map(([key, label]) => (
+            <button
+              key={key}
+              onClick={() => setActiveTab(key)}
+              className={`py-2.5 px-2 text-sm font-medium border-b-2 transition-colors ${activeTab === key ? "border-[var(--oliv)] akzent-text" : "border-transparent text-stone-400 hover:text-stone-600"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))] text-sm text-stone-700 leading-relaxed space-y-5">
+          {activeTab === "impressum" ? (
+            <>
+              <div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Angaben gemäß § 5 TMG</div>
+                <p className="font-medium text-stone-800">[VORNAME NACHNAME]</p>
+                <p>[STRASSE HAUSNUMMER]</p>
+                <p>[PLZ ORT]</p>
+                <p>Deutschland</p>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1">Kontakt</div>
+                <p>E-Mail: [EMAIL]</p>
+              </div>
+              <div className="bg-stone-50 rounded-xl p-3 text-xs text-stone-500 space-y-1.5">
+                <p>Dieses Projekt wird als privates, nicht-kommerzielles Vorhaben ohne Gewinnerzielungsabsicht betrieben.</p>
+                <p>Es besteht kein Handelsregistereintrag und keine Umsatzsteuer-Identifikationsnummer.</p>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1">Streitschlichtung</div>
+                <p className="text-xs text-stone-500">Wir sind nicht bereit oder verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.</p>
+              </div>
+            </>
+          ) : (
+            <>
+              <div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">1. Verantwortlicher (Webangebot)</div>
+                <p className="text-xs text-stone-600 mb-1">Verantwortlicher für das Webangebot im Sinne der DSGVO:</p>
+                <p className="font-medium text-stone-800">[VORNAME NACHNAME]</p>
+                <p className="text-xs text-stone-600">[STRASSE HAUSNUMMER], [PLZ ORT]</p>
+                <p className="text-xs text-stone-600">E-Mail: [EMAIL]</p>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">2. Hosting (GitHub Pages)</div>
+                <p className="text-xs text-stone-600">Diese App wird über GitHub Pages gehostet:</p>
+                <p className="text-xs font-medium text-stone-800 mt-1">GitHub, Inc., 88 Colin P Kelly Jr St, San Francisco, CA 94107, USA</p>
+                <p className="text-xs text-stone-500 mt-1">GitHub verarbeitet beim Aufruf technische Zugriffsdaten (IP-Adresse, Zeitstempel, Browsertyp) in Server-Logfiles. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO. Serverstandort: USA. Weitere Infos: docs.github.com/privacy</p>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">3. App-Daten (Schüler, Noten, Klassen)</div>
+                <div className="space-y-2 text-xs text-stone-600">
+                  <p>Alle in der App eingegebenen Daten werden <strong className="text-stone-800">ausschließlich lokal</strong> auf deinem Gerät gespeichert (Browser-localStorage). Es erfolgt <strong className="text-stone-800">keine Übertragung</strong> an den Entwickler oder Dritte.</p>
+                  <p>Der Entwickler hat keinen Zugriff auf eingegebene Daten.</p>
+                  <p>Die nutzende Lehrkraft ist gemäß <strong className="text-stone-800">Art. 4 Nr. 7 DSGVO</strong> selbst datenschutzrechtlich Verantwortliche:r für die eingegebenen Schüler- und Klassendaten und dafür verantwortlich, geltende schulrechtliche Datenschutzvorgaben einzuhalten (z. B. Einwilligungen bei Fotos oder Gesundheitsdaten).</p>
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">4. Lokale Datenspeicherung</div>
+                <p className="text-xs text-stone-600">Saidy verwendet ausschließlich den localStorage des Browsers. Es werden keine Tracking-Cookies gesetzt. Die gespeicherten Daten verlassen das Gerät nicht automatisch.</p>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">5. Haftungsausschluss</div>
+                <p className="text-xs text-stone-600">Die App wird ohne Gewähr bereitgestellt. Der Entwickler übernimmt keine Haftung für Datenverlust, fehlerhafte Berechnungen oder Folgen aus der Nutzung. Für die DSGVO-konforme Nutzung ist die nutzende Lehrkraft selbst verantwortlich.</p>
+              </div>
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-800">
+                Diese Seite ersetzt keine individuelle Rechtsberatung. Für steuerliche Fragen konsultiere bitte eine:n Steuerberater:in.
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* Einstellungen: Reihenfolge der Dashboard-Karten per Pfeiltasten anpassen */
 function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onImport, onReset, onClose, onOpenUntisImport }) {
   const gespeicherteReihenfolge = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
@@ -934,6 +1020,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
   const [showICloudSteps, setShowICloudSteps] = useState(false);
   const [confirmICloud, setConfirmICloud] = useState(false);
   const [showPromote, setShowPromote] = useState(false);
+  const [showLegal, setShowLegal] = useState(false);
 
   function promoteClasses(ids) {
     update((d) => {
@@ -1268,8 +1355,19 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           )}
         </div>
 
-        <Button onClick={onClose} className="w-full justify-center mt-5">Schließen</Button>
+        <div className="pt-4 border-t border-stone-100 mt-2">
+          <button
+            onClick={() => setShowLegal(true)}
+            className="w-full flex items-center gap-2 text-xs text-stone-400 hover:text-stone-600 py-2 justify-center transition-colors"
+          >
+            <FileText size={13} /> Impressum & Datenschutz
+          </button>
         </div>
+
+        <Button onClick={onClose} className="w-full justify-center mt-3">Schließen</Button>
+        </div>
+
+        {showLegal && <LegalModal onClose={() => setShowLegal(false)} />}
 
         {showPromote && (
           <PromoteModal
@@ -1812,6 +1910,14 @@ const HELP_DATA = [
     category: "Import",
     items: [
       { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: `Öffne den „Klassen”-Tab und tippe oben rechts auf „Fehlzeiten”. Alternativ: „Mehr” → „Einstellungen” → „WebUntis-Import”. Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Saidy übernimmt sie automatisch in die passenden Klassen.` },
+    ],
+  },
+  {
+    category: "Datenschutz & Rechtliches",
+    items: [
+      { q: "Wer ist verantwortlich für die Schülerdaten?", a: `Du als Lehrkraft bist gemäß Art. 4 Nr. 7 DSGVO selbst datenschutzrechtlich Verantwortliche:r für die eingegebenen Daten. Der Entwickler von Saidy hat keinen Zugriff auf deine Daten.` },
+      { q: "Wo finde ich das Impressum und die Datenschutzerklärung?", a: `Tippe auf „Mehr” → „Einstellungen” und scrolle ganz nach unten. Dort findest du den Link „Impressum & Datenschutz”.` },
+      { q: "Werden meine Daten irgendwohin übertragen?", a: `Nein. Alle Daten bleiben ausschließlich auf deinem Gerät (Browser-localStorage). Es werden keine Daten an den Entwickler oder Dritte übermittelt. Beim Aufrufen der App werden lediglich technische Zugriffsdaten (IP-Adresse, Zeitstempel) durch den Hosting-Anbieter GitHub Pages verarbeitet.` },
     ],
   },
 ];
