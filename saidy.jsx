@@ -3348,7 +3348,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
           unterricht: (
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2 gap-2">
-                <button onClick={() => onNavigate?.("stundenplan")} className="flex items-center gap-2 text-stone-800 font-medium text-sm hover:akzent-text">
+                <button onClick={() => onNavigate?.("stundenplan")} className="flex items-center gap-2 akzent-text font-medium text-sm">
                   <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#ECEEE2" : "#EDE9E0", color: "#4F5844" }}><Clock size={14} /></span> Unterricht
                   <ChevronRight size={13} className="text-stone-300" />
                 </button>
@@ -3397,7 +3397,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
           aufgaben: (
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <button onClick={() => onNavigate?.("aufgaben")} className="flex items-center gap-2 text-stone-800 font-medium text-sm hover:akzent-text">
+                <button onClick={() => onNavigate?.("aufgaben")} className="flex items-center gap-2 akzent-text font-medium text-sm">
                   <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#E9EDF0" : "#EDE9E0", color: isColor ? "#41697E" : "#4F5844" }}><ListChecks size={14} /></span> Tagesaufgaben
                   {!!openTasks.length && <span className="text-xs text-stone-400">{openTasks.length}</span>}
                   <ChevronRight size={13} className="text-stone-300" />
@@ -3428,7 +3428,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
           kalender: (
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <button onClick={() => onNavigate?.("kalender")} className="flex items-center gap-2 text-stone-800 font-medium text-sm hover:akzent-text">
+                <button onClick={() => onNavigate?.("kalender")} className="flex items-center gap-2 akzent-text font-medium text-sm">
                   <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#F3E7D6" : "#EDE9E0", color: isColor ? "#B07D2B" : "#4F5844" }}><CalendarDays size={14} /></span> Termine
                   <ChevronRight size={13} className="text-stone-300" />
                 </button>
@@ -3451,7 +3451,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
           ),
           geburtstage: (
             <Card className="p-4">
-              <button onClick={() => onNavigate?.("klassen")} className="flex items-center gap-2 text-stone-800 font-medium text-sm mb-2 hover:akzent-text">
+              <button onClick={() => onNavigate?.("klassen")} className="flex items-center gap-2 akzent-text font-medium text-sm mb-2">
                 <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#F4DBD7" : "#EDE9E0", color: isColor ? "#C0392B" : "#4F5844" }}><PartyPopper size={14} /></span> Geburtstage
                 <ChevronRight size={13} className="text-stone-300" />
               </button>
@@ -3493,7 +3493,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
           dienste: (
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <button onClick={() => onNavigate?.("klassen", "dienste")} className="flex items-center gap-2 text-stone-800 font-medium text-sm hover:akzent-text">
+                <button onClick={() => onNavigate?.("klassen", "dienste")} className="flex items-center gap-2 akzent-text font-medium text-sm">
                   <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#E4EAD9" : "#EDE9E0", color: isColor ? "#5F7A45" : "#4F5844" }}><ClipboardCheck size={14} /></span> Dienste
                   <ChevronRight size={13} className="text-stone-300" />
                 </button>
@@ -3555,7 +3555,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
             return (
               <Card className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2 text-stone-800 font-medium text-sm">
+                  <div className="flex items-center gap-2 akzent-text font-medium text-sm">
                     <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#FEF3C7" : "#EDE9E0", color: isColor ? "#B45309" : "#4F5844" }}><AlertTriangle size={14} /></span>
                     Offene Entschuldigungen
                     {ausstehend.length > 0 && <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
