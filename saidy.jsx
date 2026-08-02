@@ -6,7 +6,7 @@ import {
   Clock, StickyNote, ClipboardCheck, Copy, CheckCircle2, AlertCircle, AlertTriangle,
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
-  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search,
+  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical,
 } from "lucide-react";
 
 /* ---------- Konstanten ---------- */
@@ -3026,6 +3026,9 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
 function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setCaptureLesson, pendingLessons, now }) {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showPending, setShowPending] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [dragOverKey, setDragOverKey] = useState(null);
+  const dragKey = useRef(null);
   const todayStr = isoDate(new Date());
   const selStr = isoDate(selectedDate);
   const isToday = selStr === todayStr;
@@ -3448,10 +3451,69 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
         const gespeichert = data.settings?.dashboardOrder || Object.keys(sections);
         // Neu hinzugekommene Karten anhängen, falls die gespeicherte Reihenfolge sie noch nicht kennt
         const order = [...gespeichert, ...Object.keys(sections).filter((k) => !gespeichert.includes(k))].filter((k) => sections[k]);
+
+        function handleDragStart(e, key) {
+          dragKey.current = key;
+          e.dataTransfer.effectAllowed = "move";
+        }
+        function handleDragOver(e, key) {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = "move";
+          if (dragOverKey !== key) setDragOverKey(key);
+        }
+        function handleDrop(key) {
+          const from = dragKey.current;
+          if (!from || from === key) return;
+          const fi = order.indexOf(from);
+          const ti = order.indexOf(key);
+          const newOrder = [...order];
+          newOrder.splice(fi, 1);
+          newOrder.splice(ti, 0, from);
+          update((d) => { d.settings = { ...(d.settings || {}), dashboardOrder: newOrder }; return d; });
+          dragKey.current = null;
+          setDragOverKey(null);
+        }
+        function handleDragEnd() {
+          dragKey.current = null;
+          setDragOverKey(null);
+        }
+
         return (
-          <div className="grid md:grid-cols-2 gap-3">
-            {order.map((key) => sections[key] ? <div key={key}>{sections[key]}</div> : null)}
-          </div>
+          <>
+            <div className="flex justify-end -mt-1 mb-1">
+              <button
+                onClick={() => { setEditMode((v) => !v); setDragOverKey(null); }}
+                className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-colors ${editMode ? "akzent-flaeche" : "text-stone-400 hover:text-stone-600"}`}
+              >
+                <GripVertical size={12} />
+                {editMode ? "Fertig" : "Anpassen"}
+              </button>
+            </div>
+            <div className="grid md:grid-cols-2 gap-3">
+              {order.map((key) => {
+                if (!sections[key]) return null;
+                const isOver = editMode && dragOverKey === key;
+                return (
+                  <div
+                    key={key}
+                    draggable={editMode}
+                    onDragStart={editMode ? (e) => handleDragStart(e, key) : undefined}
+                    onDragOver={editMode ? (e) => handleDragOver(e, key) : undefined}
+                    onDrop={editMode ? () => handleDrop(key) : undefined}
+                    onDragEnd={editMode ? handleDragEnd : undefined}
+                    className={`relative transition-shadow ${editMode ? "cursor-grab active:cursor-grabbing" : ""} ${isOver ? "ring-2 ring-[var(--oliv)] rounded-xl" : ""}`}
+                  >
+                    {editMode && (
+                      <div className="absolute top-3.5 right-3.5 z-10 text-stone-300 pointer-events-none">
+                        <GripVertical size={15} />
+                      </div>
+                    )}
+                    {sections[key]}
+                  </div>
+                );
+              })}
+            </div>
+          </>
         );
       })()}
 
