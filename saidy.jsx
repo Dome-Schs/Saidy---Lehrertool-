@@ -6,7 +6,7 @@ import {
   Clock, StickyNote, ClipboardCheck, Copy, CheckCircle2, AlertCircle, AlertTriangle,
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
-  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2,
+  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw,
 } from "lucide-react";
 
 /* ---------- Konstanten ---------- */
@@ -347,6 +347,14 @@ const FERIEN = {
 };
 
 const TASK_COLORS = ["#2E3328", "#A3402F", "#B07D2B", "#5F7A45", "#41697E"];
+
+const RECURRENCE_OPTIONS = [
+  { value: "", label: "Kein" },
+  { value: "weekly", label: "Wöchentlich" },
+  { value: "biweekly", label: "Alle 2 Wochen" },
+  { value: "monthly", label: "Monatlich" },
+];
+const RECURRENCE_LABELS = { weekly: "Wöchentlich", biweekly: "Alle 2 Wo.", monthly: "Monatlich" };
 
 const LIST_ICON_MAP = {
   sparkles: Sparkles, shoppingbag: ShoppingBag, zap: Zap, briefcase: Briefcase,
@@ -1778,6 +1786,7 @@ const HELP_DATA = [
     category: "Kalender & Termine",
     items: [
       { q: "Wie lege ich einen Termin an?", a: `Tippe auf „Mehr” in der Navigation und dann auf „Kalender”. Tippe dort auf „+ Neuen Termin anlegen” und gib Titel, Datum, Uhrzeit und Art ein.` },
+      { q: "Wie lege ich einen wiederkehrenden Termin an?", a: `Beim Anlegen eines Termins gibt es das Feld „Wiederholung” – dort kannst du Wöchentlich, Alle 2 Wochen oder Monatlich wählen. Der Termin erscheint dann automatisch an allen folgenden Termintagen im Kalender.` },
       { q: "Wie trage ich Schulferien ein?", a: `Stelle zuerst dein Bundesland in den Einstellungen ein. Dann erscheint dort „Schulferien eintragen” – Saidy übernimmt alle Ferien automatisch.` },
       { q: "Wie erledige ich einen Termin?", a: `Tippe auf den Kreis links neben dem Termin. Er wandert in den „Erledigt”-Bereich ganz unten.` },
     ],
@@ -5196,6 +5205,40 @@ function CellEditor({ faecher, classes, initial, onSave, onCancel }) {
 
 /* ---------- Kalender ---------- */
 
+function nextOccurrence(event) {
+  if (!event.recurrence) return event.date;
+  const today = isoDate(new Date());
+  let d = new Date(event.date + "T00:00:00");
+  while (isoDate(d) < today) {
+    const prev = isoDate(d);
+    if (event.recurrence === "weekly") d = addDays(d, 7);
+    else if (event.recurrence === "biweekly") d = addDays(d, 14);
+    else if (event.recurrence === "monthly") { d = new Date(d); d.setMonth(d.getMonth() + 1); }
+    else break;
+    if (isoDate(d) === prev) break;
+  }
+  return isoDate(d);
+}
+
+function isEventOnDate(event, ds) {
+  if (!event.recurrence) {
+    return event.endDate ? event.date <= ds && ds <= event.endDate : event.date === ds;
+  }
+  let d = new Date(event.date + "T00:00:00");
+  const target = new Date(ds + "T00:00:00");
+  if (d > target) return false;
+  while (d <= target) {
+    if (isoDate(d) === ds) return true;
+    const prev = isoDate(d);
+    if (event.recurrence === "weekly") d = addDays(d, 7);
+    else if (event.recurrence === "biweekly") d = addDays(d, 14);
+    else if (event.recurrence === "monthly") { d = new Date(d); d.setMonth(d.getMonth() + 1); }
+    else break;
+    if (isoDate(d) === prev) break;
+  }
+  return false;
+}
+
 function KalenderTab({ data, update }) {
   const [view, setView] = useState("liste"); // "liste" | "monat"
   const [monthCursor, setMonthCursor] = useState(() => { const d = new Date(); d.setDate(1); return d; });
@@ -5205,6 +5248,7 @@ function KalenderTab({ data, update }) {
   const [time, setTime] = useState("");
   const [type, setType] = useState("termin");
   const [color, setColor] = useState(TASK_COLORS[0]);
+  const [recurrence, setRecurrence] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showAllFerien, setShowAllFerien] = useState(false);
 
@@ -5214,10 +5258,10 @@ function KalenderTab({ data, update }) {
   function addEvent() {
     if (!title.trim()) return;
     update((d) => {
-      d.events.push({ id: uid(), title: title.trim(), date, time, type, color, done: false });
+      d.events.push({ id: uid(), title: title.trim(), date, time, type, color, done: false, recurrence: recurrence || null });
       return d;
     });
-    setTitle(""); setTime("");
+    setTitle(""); setTime(""); setRecurrence("");
   }
 
   function toggleDone(id) {
@@ -5233,10 +5277,11 @@ function KalenderTab({ data, update }) {
   }
 
   const sorted = [...data.events]
-    .filter((e) => !filterDate || e.date === filterDate)
-    .sort((a, b) => (a.date + (a.time || "")).localeCompare(b.date + (b.time || "")));
-  const open = sorted.filter((e) => !e.done);
-  const done = sorted.filter((e) => e.done && e.type !== "ferien");
+    .map((e) => ({ ...e, _eff: e.recurrence ? nextOccurrence(e) : e.date }))
+    .filter((e) => !filterDate || isEventOnDate(e, filterDate))
+    .sort((a, b) => (a._eff + (a.time || "")).localeCompare(b._eff + (b.time || "")));
+  const open = sorted.filter((e) => e.recurrence || !e.done);
+  const done = sorted.filter((e) => !e.recurrence && e.done && e.type !== "ferien");
 
   const tasksDue = [...(data.tasks || [])]
     .filter((t) => t.dueDate && !t.done)
@@ -5282,7 +5327,7 @@ function KalenderTab({ data, update }) {
               const ds = isoDate(d);
               const inMonth = d.getMonth() === monthCursor.getMonth();
               const isToday = ds === todayStr;
-              const dayHasEvents = data.events.filter((e) => (e.endDate ? e.date <= ds && ds <= e.endDate : e.date === ds));
+              const dayHasEvents = data.events.filter((e) => isEventOnDate(e, ds));
               const dayHasTasks = (data.tasks || []).filter((t) => t.dueDate && t.dueDate.slice(0, 10) === ds && !t.done);
               const active = filterDate === ds;
               return (
@@ -5329,14 +5374,25 @@ function KalenderTab({ data, update }) {
         <ul className="space-y-3">
           {open.filter((e) => e.type !== "ferien").map((e) => (
             <li key={e.id} className="flex items-start gap-2.5 text-sm">
-              <button onClick={() => toggleDone(e.id)} className="w-5 h-5 rounded-full border-2 border-stone-300 hover:akzent-rand shrink-0 mt-0.5" />
+              {e.recurrence ? (
+                <span className="w-5 h-5 shrink-0 mt-0.5 flex items-center justify-center text-stone-300">
+                  <RefreshCw size={13} />
+                </span>
+              ) : (
+                <button onClick={() => toggleDone(e.id)} className="w-5 h-5 rounded-full border-2 border-stone-300 hover:akzent-rand shrink-0 mt-0.5" />
+              )}
               <span className="w-2.5 h-2.5 rounded-full shrink-0 mt-1" style={{ backgroundColor: e.color || "#c9702f" }} />
               <div className="flex-1 min-w-0">
                 <div className="text-stone-800 leading-snug">{e.title}</div>
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                   <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${typeColors[e.type]}`}>{typeLabels[e.type]}</span>
+                  {e.recurrence && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium bg-stone-100 text-stone-500 flex items-center gap-0.5">
+                      <RefreshCw size={9} />{RECURRENCE_LABELS[e.recurrence]}
+                    </span>
+                  )}
                   <span className="text-stone-400 text-xs">
-                    {new Date(e.date).toLocaleDateString("de-DE")}{e.time ? `, ${e.time}` : ""}
+                    {new Date(e._eff || e.date).toLocaleDateString("de-DE")}{e.time ? `, ${e.time}` : ""}
                   </span>
                 </div>
               </div>
@@ -5460,19 +5516,24 @@ function KalenderTab({ data, update }) {
                 <option value="erinnerung">Erinnerung</option>
               </select>
             </Field>
-            <Field label="Farbe">
-              <div className="flex gap-2 items-center h-full">
-                {TASK_COLORS.map((c) => (
-                  <button
-                    key={c}
-                    onClick={() => setColor(c)}
-                    className="w-7 h-7 rounded-full shrink-0"
-                    style={{ backgroundColor: c, boxShadow: c === color ? "0 0 0 2px white, 0 0 0 3.5px #292524" : "0 0 0 2px white" }}
-                  />
-                ))}
-              </div>
+            <Field label="Wiederholung">
+              <select className={inputCls} value={recurrence} onChange={(e) => setRecurrence(e.target.value)}>
+                {RECURRENCE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
             </Field>
           </div>
+          <Field label="Farbe" className="mt-3">
+            <div className="flex gap-2 items-center h-full">
+              {TASK_COLORS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => setColor(c)}
+                  className="w-7 h-7 rounded-full shrink-0"
+                  style={{ backgroundColor: c, boxShadow: c === color ? "0 0 0 2px white, 0 0 0 3.5px #292524" : "0 0 0 2px white" }}
+                />
+              ))}
+            </div>
+          </Field>
           <Button onClick={() => { addEvent(); setShowForm(false); }} className="w-full justify-center mt-3"><Plus size={15} /> Anlegen</Button>
         </Card>
       )}
