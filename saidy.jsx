@@ -1913,8 +1913,8 @@ const HELP_DATA = [
   {
     category: "Backup & Daten",
     items: [
-      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr“ → „Einstellungen“ → „Backup“ → „Backup exportieren“ (Datei speichern) oder „Backup teilen“ (z. B. per AirDrop).` },
-      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr“ → „Einstellungen“ → „Backup“ → „Backup importieren“ und wähle deine Backup-Datei.` },
+      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr“ → „Einstellungen“ → „Backup“ → „Sichern“ (Datei speichern) oder „Teilen“ (z. B. per AirDrop).` },
+      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr“ → „Einstellungen“ → „Backup“ → „Gesichertes wiederherstellen“ und wähle deine Backup-Datei.` },
       { q: "Wo werden meine Daten gespeichert?", a: `Alle Daten bleiben ausschließlich auf deinem Gerät (lokaler Browser-Speicher). Es werden keine Daten an Server übertragen.` },
       { q: "Warum bekomme ich eine Backup-Erinnerung?", a: `Saidy erinnert nach 7 Tagen ohne Backup. Da die Daten nur lokal gespeichert sind, schützt ein regelmäßiges Backup vor Datenverlust.` },
     ],
@@ -2776,6 +2776,13 @@ function addDays(d, n) {
 function isoDate(d) {
   const p = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+// Parst reine YYYY-MM-DD-Strings als lokale Mitternacht statt UTC, verhindert Vortagsanzeige in UTC+1/+2
+function localDate(str) {
+  if (!str) return new Date(NaN);
+  if (str instanceof Date) return str;
+  if (typeof str === "string" && /^\d{4}-\d{2}-\d{2}$/.test(str)) return new Date(str + "T00:00:00");
+  return new Date(str);
 }
 
 /* Aktuelle Schulwoche: Kalenderwoche (ISO 8601) und Datumsbereich Mo–Fr. */
@@ -3994,7 +4001,7 @@ function ImportCsvModal({ className, onImport, onClose }) {
                   {preview.slice(0, 30).map((r, i) => (
                     <li key={i} className="px-3 py-1.5 text-sm text-stone-700 flex justify-between">
                       <span>{r.name}</span>
-                      {r.birthday && <span className="text-xs text-stone-400">{new Date(r.birthday).toLocaleDateString("de-DE")}</span>}
+                      {r.birthday && <span className="text-xs text-stone-400">{localDate(r.birthday).toLocaleDateString("de-DE")}</span>}
                     </li>
                   ))}
                 </ul>
@@ -4035,7 +4042,7 @@ function StudentOverviewModal({ student, faecher, grades, finalGrades, onClose }
   const halbjahr = currentHalbjahr();
   const facherWithGrades = faecher
     .filter((f) => grades.some((g) => g.studentId === student.id && g.fachId === f.id))
-    .sort((a, b) => a.name.localeCompare(b.name, "de"));
+    .sort((a, b) => a.subject.localeCompare(b.subject, "de"));
 
   return (
     <div className="fixed inset-0 bg-stone-900/40 z-[65] flex items-end md:items-center md:justify-center" onClick={onClose}>
@@ -4056,14 +4063,14 @@ function StudentOverviewModal({ student, faecher, grades, finalGrades, onClose }
             <ul className="divide-y divide-stone-100">
               {facherWithGrades.map((fach) => {
                 const fachGrades = grades.filter((g) => g.studentId === student.id && g.fachId === fach.id);
-                const avg = calcOverall(fachGrades, fach.weights);
+                const { overall: avg } = calcOverall(fachGrades, fach.weights || DEFAULT_WEIGHTS);
                 const finalGrade = finalGrades?.find((fg) => fg.studentId === student.id && fg.fachId === fach.id && fg.halbjahr === halbjahr);
                 const gradeCount = fachGrades.length;
                 return (
                   <li key={fach.id} className="py-3 flex items-center gap-3">
                     <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: fach.color ?? "#8E8E93" }} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-stone-800 truncate">{fach.name}</div>
+                      <div className="text-sm font-medium text-stone-800 truncate">{fach.subject}</div>
                       <div className="text-xs text-stone-400">{gradeCount} {gradeCount === 1 ? "Note" : "Noten"}</div>
                     </div>
                     <div className="text-right shrink-0">
@@ -4329,7 +4336,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                           <li key={n.id} className="text-sm bg-stone-50 rounded-lg px-3 py-2 flex justify-between gap-3">
                             <span className="text-stone-700">{n.text}</span>
                             <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-stone-400 text-xs whitespace-nowrap">{new Date(n.date).toLocaleDateString("de-DE")}</span>
+                              <span className="text-stone-400 text-xs whitespace-nowrap">{localDate(n.date).toLocaleDateString("de-DE")}</span>
                               <button onClick={() => onDeleteNote(n.id)} className="text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
                             </div>
                           </li>
@@ -4387,7 +4394,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-sm leading-none">{mood?.emoji ?? "💬"}</span>
                                   {typ && <span className="text-[10px] font-medium akzent-text bg-[#ECEEE2] px-1.5 py-0.5 rounded">{typ.label}</span>}
-                                  <span className="text-[11px] text-stone-400">{new Date(g.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+                                  <span className="text-[11px] text-stone-400">{localDate(g.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
                                 </div>
                                 <button onClick={() => onDeleteNote(g.id)} className="text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
                               </div>
@@ -4876,7 +4883,7 @@ function DiensteTab({ data, update }) {
                                       <span className="flex-1 text-stone-400 line-through truncate">{s.name}</span>
                                       {eintrag && (
                                         <span className="text-[10px] text-stone-400 shrink-0">
-                                          {new Date(eintrag.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
+                                          {localDate(eintrag.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
                                         </span>
                                       )}
                                     </li>
@@ -5773,7 +5780,7 @@ function KalenderTab({ data, update }) {
           </div>
           {filterDate && (
             <button onClick={() => setFilterDate(null)} className="text-xs akzent-text hover:underline mt-3">
-              Filter für {new Date(filterDate).toLocaleDateString("de-DE")} zurücksetzen
+              Filter für {localDate(filterDate).toLocaleDateString("de-DE")} zurücksetzen
             </button>
           )}
         </Card>
@@ -5829,8 +5836,8 @@ function KalenderTab({ data, update }) {
                 <div className="flex-1 min-w-0">
                   <div className="text-stone-800 leading-snug">{t.title}</div>
                   <div className="mt-1">
-                    <span className={`text-xs px-2 py-0.5 rounded-full ${new Date(t.dueDate) < new Date() ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-600"}`}>
-                      {new Date(t.dueDate).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${localDate(t.dueDate) < new Date() ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-600"}`}>
+                      {localDate(t.dueDate).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}
                       {t.dueDate.length > 10 ? `, ${t.dueDate.slice(11, 16)}` : ""}
                     </span>
                   </div>
@@ -5852,8 +5859,8 @@ function KalenderTab({ data, update }) {
             </div>
             <ul className="space-y-1.5">
               {visible.map((e) => {
-                const von = new Date(e.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
-                const bis = e.endDate ? new Date(e.endDate).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
+                const von = localDate(e.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+                const bis = e.endDate ? localDate(e.endDate).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
                 return (
                   <li key={e.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 text-sm">
                     <span className="text-emerald-900">{e.title}</span>
@@ -6185,8 +6192,8 @@ function AufgabenTab({ data, update }) {
                   {list && <div className="text-xs text-stone-400">{list.name}</div>}
                 </button>
                 {t.dueDate && (
-                  <span className={`text-xs rounded-full px-2.5 py-1 shrink-0 ${!t.done && new Date(t.dueDate) < new Date() ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-600"}`}>
-                    {new Date(t.dueDate).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}{t.dueDate.length > 10 ? `, ${t.dueDate.slice(11, 16)}` : ""}
+                  <span className={`text-xs rounded-full px-2.5 py-1 shrink-0 ${!t.done && localDate(t.dueDate) < new Date() ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-600"}`}>
+                    {localDate(t.dueDate).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}{t.dueDate.length > 10 ? `, ${t.dueDate.slice(11, 16)}` : ""}
                   </span>
                 )}
                 <button onClick={() => removeTask(t.id)} className="text-stone-300 hover:text-red-500 shrink-0"><Trash2 size={14} /></button>
@@ -6711,7 +6718,7 @@ function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
         doc.txt(40, GRADE_OPTIONS.find((o) => o.value === g.value)?.label || "", { size: 10, bold: true });
         doc.txt(75, CATS.find((c) => c.key === g.category)?.label || "", { size: 9, gray: 0.45 });
         doc.txt(140, pdfLatin1(`${g.title || "—"}${g.auto ? " (automatisch)" : ""}`).slice(0, 55), { size: 10 });
-        doc.txt(490, new Date(g.date).toLocaleDateString("de-DE"), { size: 9, gray: 0.45 });
+        doc.txt(490, localDate(g.date).toLocaleDateString("de-DE"), { size: 9, gray: 0.45 });
         doc.rowDown(15);
       });
       if (!grades.length) { doc.para("Noch keine Noten.", { size: 10, gray: 0.45 }); }
@@ -6723,7 +6730,7 @@ function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
         doc.rowDown(6);
         doc.hline();
         notes.forEach((n) => {
-          doc.para(`– ${n.text} (${new Date(n.date).toLocaleDateString("de-DE")})`, { size: 9, maxChars: 105 });
+          doc.para(`– ${n.text} (${localDate(n.date).toLocaleDateString("de-DE")})`, { size: 9, maxChars: 105 });
         });
       }
 
@@ -6862,7 +6869,7 @@ function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
                         <td className="py-1 pr-2 font-semibold w-10">{GRADE_OPTIONS.find((o) => o.value === g.value)?.label}</td>
                         <td className="py-1 px-2 text-stone-500 w-24">{CATS.find((c) => c.key === g.category)?.label}</td>
                         <td className="py-1 px-2">{g.title || "—"}{g.auto ? " (automatisch)" : ""}</td>
-                        <td className="py-1 pl-2 text-stone-500 text-right whitespace-nowrap">{new Date(g.date).toLocaleDateString("de-DE")}</td>
+                        <td className="py-1 pl-2 text-stone-500 text-right whitespace-nowrap">{localDate(g.date).toLocaleDateString("de-DE")}</td>
                       </tr>
                     ))}
                     {!grades.length && <tr><td className="py-1 text-stone-400">Noch keine Noten.</td></tr>}
@@ -6875,7 +6882,7 @@ function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
                   <div className="font-semibold text-sm border-b border-stone-300 pb-1 mb-2">Beobachtungen</div>
                   <ul className="text-sm space-y-1">
                     {notes.map((n) => (
-                      <li key={n.id}>– {n.text} <span className="text-stone-400">({new Date(n.date).toLocaleDateString("de-DE")})</span></li>
+                      <li key={n.id}>– {n.text} <span className="text-stone-400">({localDate(n.date).toLocaleDateString("de-DE")})</span></li>
                     ))}
                   </ul>
                 </div>
@@ -7165,7 +7172,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
                     {eintraege.map((i) => (
                       <li key={i.id} className="py-2.5 flex items-center gap-2 text-sm">
                         <AlertTriangle size={13} className="text-amber-500 shrink-0" />
-                        <span className="text-stone-700 tnum">{new Date(i.date).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+                        <span className="text-stone-700 tnum">{localDate(i.date).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })}</span>
                         {i.note && <span className="text-xs text-stone-400 truncate">· {i.note}</span>}
                         <button onClick={() => entferne(i.id)} className="ml-auto text-stone-300 hover:text-red-600 shrink-0 p-1" title="Eintrag löschen"><Trash2 size={14} /></button>
                       </li>
@@ -7292,7 +7299,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
         });
         const incidentNotes = data.incidents.filter((i) => i.studentId === selectedStudent && i.fachId === selectedFach && i.note);
         incidentNotes.forEach((i) => {
-          lines.push(`  · ${new Date(i.date).toLocaleDateString("de-DE")}: ${i.note}`);
+          lines.push(`  · ${localDate(i.date).toLocaleDateString("de-DE")}: ${i.note}`);
         });
       }
       // Vergessen-Vorfälle ohne automatische Note zusätzlich zählen (z. B. Sportzeug-Klicks)
@@ -7315,7 +7322,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
     if (studentNotes.length) {
       lines.push("");
       lines.push("Zuletzt notierte Beobachtungen:");
-      studentNotes.forEach((n) => lines.push(`– ${n.text} (${new Date(n.date).toLocaleDateString("de-DE")})`));
+      studentNotes.forEach((n) => lines.push(`– ${n.text} (${localDate(n.date).toLocaleDateString("de-DE")})`));
     }
     if (studentGespraeche.length) {
       lines.push("");
@@ -7323,7 +7330,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
       const moodLabel = { sehr_gut: "😄", gut: "😊", ok: "😐", nicht_so_gut: "😕", schlecht: "😟" };
       studentGespraeche.slice(0, 5).forEach((g) => {
         const icon = moodLabel[g.mood] ?? "💬";
-        lines.push(`${icon} ${new Date(g.date).toLocaleDateString("de-DE")}: ${g.text}`);
+        lines.push(`${icon} ${localDate(g.date).toLocaleDateString("de-DE")}: ${g.text}`);
       });
     }
     if (studentAbsences.length) {
@@ -7731,7 +7738,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                                     {g.factor && g.factor !== 1 ? ` · x${g.factor}` : ""}
                                   </span>
                                   <span className="text-xs text-stone-400 ml-auto flex items-center gap-1">
-                                    {new Date(g.date).toLocaleDateString("de-DE")}
+                                    {localDate(g.date).toLocaleDateString("de-DE")}
                                     <Settings2 size={12} className="text-stone-300" />
                                   </span>
                                 </div>
@@ -7792,7 +7799,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                                 {studentAbsences.slice(0, 4).map((a) => (
                                   <li key={a.id} className="flex items-center gap-2 text-xs text-stone-600">
                                     <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isColor ? (EXCUSE_STATUS[a.excuseStatus]?.color ?? "#aaa") : "#A8A29E" }} />
-                                    <span className="text-stone-400 shrink-0">{new Date(a.date).toLocaleDateString("de-DE")}</span>
+                                    <span className="text-stone-400 shrink-0">{localDate(a.date).toLocaleDateString("de-DE")}</span>
                                     <span>{a.reason || "—"}</span>
                                   </li>
                                 ))}
@@ -7815,7 +7822,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                                       {typ && <span className="text-[10px] font-medium akzent-text bg-[#ECEEE2] px-1.5 py-0.5 rounded mr-1">{typ.label}</span>}
                                       <span className="text-stone-700">{g.text}</span>
                                     </div>
-                                    <span className="text-stone-400 text-xs whitespace-nowrap shrink-0">{new Date(g.date).toLocaleDateString("de-DE")}</span>
+                                    <span className="text-stone-400 text-xs whitespace-nowrap shrink-0">{localDate(g.date).toLocaleDateString("de-DE")}</span>
                                   </li>
                                 );
                               })}
@@ -7924,7 +7931,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                                   </span>
                                 )}
                               </span>
-                              <span className="text-stone-400 text-xs shrink-0 tnum">{new Date(g.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</span>
+                              <span className="text-stone-400 text-xs shrink-0 tnum">{localDate(g.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</span>
                               {!g.auto ? (
                                 <button onClick={() => setEditingGrade(g.id)} className="text-stone-300 hover:akzent-text shrink-0 p-1" title="Bearbeiten"><Settings2 size={15} /></button>
                               ) : (
