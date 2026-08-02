@@ -2599,7 +2599,7 @@ export default function App() {
             </div>
           )}
           {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenUntisImport={() => setShowUntisImport(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
-          {tab === "klassen" && <KlassenTab data={activeData} update={update} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} />}
+          {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
           {tab === "kalender" && <KalenderTab data={activeData} update={update} />}
           {tab === "aufgaben" && <AufgabenTab data={activeData} update={update} />}
@@ -4038,8 +4038,7 @@ const GESPRAECH_TYPEN = [
 ];
 
 /* Notenübersicht eines Schülers / einer Schülerin über alle Fächer */
-function StudentOverviewModal({ student, faecher, grades, finalGrades, onClose }) {
-  const halbjahr = currentHalbjahr();
+function StudentOverviewModal({ student, faecher, grades, finalGrades, halbjahr, onClose }) {
   const facherWithGrades = faecher
     .filter((f) => grades.some((g) => g.studentId === student.id && g.fachId === f.id))
     .sort((a, b) => a.subject.localeCompare(b.subject, "de"));
@@ -5017,7 +5016,7 @@ function DutyModal({ onSave, onClose }) {
   );
 }
 
-function KlassenTab({ data, update, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed }) {
+function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed }) {
   const [selectedClass, setSelectedClass] = useState(data.classes[0]?.id ?? null);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -5340,6 +5339,7 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach, onOpenUntisIm
             faecher={data.faecher.filter((f) => f.classId === overviewStudent.classId)}
             grades={data.grades}
             finalGrades={data.finalGrades}
+            halbjahr={halbjahr}
             onClose={() => setOverviewStudentId(null)}
           />
         );
