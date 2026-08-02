@@ -40,7 +40,7 @@ const QUICK_SYMBOLS = [
   { symbol: "– –", value: 5, color: "#B91C1C" },
 ];
 
-const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], deletedSnapshot: null, settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null, notenfarben: true } };
+const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], deletedSnapshot: null, settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null, notenfarben: true, colorMode: false } };
 
 const DASHBOARD_SECTIONS = {
   unterricht: "Unterricht",
@@ -1870,6 +1870,7 @@ const HELP_DATA = [
       { q: "Wie füge ich Schüler:innen hinzu?", a: `Öffne eine Klasse und tippe auf „+ Schüler:in“. Namen können einzeln oder als Liste eingegeben werden.` },
       { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Saidy automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr” → „Einstellungen” → Bundesland wählen → „Schulferien eintragen”.` },
       { q: "Was passiert beim ersten Start?", a: `Saidy führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
+      { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus.` },
     ],
   },
   {
@@ -2826,6 +2827,7 @@ function nextFerienCountdown(events, schooldaysOnly) {
 
 /* Schnellerfassung nach der Stunde: Note, Notiz und Auffälligkeit pro Schüler:in in einer kompakten Liste */
 function QuickCaptureModal({ data, update, fach, cls, students, date: initialDate, halbjahr, onClose }) {
+  const isColor = data.settings?.colorMode === true;
   const istSport = /sport/i.test(fach?.subject || "");
   const [date, setDate] = useState(initialDate || isoDate(new Date()));
   const [category, setCategory] = useState("muendlich");
@@ -3070,7 +3072,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                             key={qs.symbol}
                             onClick={() => setGrade(s.id, active ? "" : String(qs.value))}
                             className="h-9 rounded-lg text-sm font-semibold border"
-                            style={active ? { backgroundColor: qs.color, borderColor: qs.color, color: "white" } : { borderColor: "#E7E5E4", color: "#78716C" }}
+                            style={active ? { backgroundColor: isColor ? qs.color : "var(--oliv)", borderColor: isColor ? qs.color : "var(--oliv)", color: "white" } : { borderColor: "#E7E5E4", color: "#78716C" }}
                           >
                             {qs.symbol}
                           </button>
@@ -3213,6 +3215,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
     ? Math.floor((Date.now() - new Date(lastImport).getTime()) / 86400000)
     : null;
   const showImportReminder = daysSinceLast === null || daysSinceLast >= importInterval;
+  const isColor = data.settings?.colorMode === true;
 
   return (
     <div className="space-y-3">
@@ -3240,6 +3243,13 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
               <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-amber-400 border-2 border-[#F4F1E8]" />
             </button>
           )}
+          <button
+            onClick={() => update((d) => { d.settings = { ...d.settings, colorMode: !isColor }; return d; })}
+            title={isColor ? "Mono-Modus" : "Bring Farbe in mein Leben"}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 ${isColor ? "bg-stone-100 hover:bg-stone-200 text-stone-400" : "akzent-ton akzent-text"}`}
+          >
+            <Sparkles size={14} />
+          </button>
         </div>
       </div>
 
@@ -3279,7 +3289,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
             {pendingLessons.map((p) => (
               <li key={p.key} className="flex items-center gap-2 text-sm">
                 <span className="text-xs text-stone-400 w-11 shrink-0">{p.start}</span>
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: p.fach.color }} />
+                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? p.fach.color : "#C0BBA8" }} />
                 <span className="flex-1 text-stone-700 truncate">{p.cls?.name} – {p.fach.subject}</span>
                 <button
                   onClick={() => { setCaptureLesson({ fach: p.fach, cls: p.cls, date: todayStr }); setShowPending(false); }}
@@ -3352,7 +3362,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
                       <span className="text-stone-400 text-xs w-11 shrink-0">{pt ? pt.start : `${l.period}.`}</span>
                       <span className="flex-1 font-medium text-stone-800 flex flex-col min-w-0">
                         <span className="flex items-center gap-1.5 min-w-0">
-                          {fach && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: fach.color }} />}
+                          {fach && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? fach.color : "#C0BBA8" }} />}
                           <span className="truncate">{fach && cls ? `${cls.name} – ${fach.subject}` : "—"}</span>
                         </span>
                         {(() => {
@@ -3396,10 +3406,10 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
                       <button
                         onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
                         className="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors"
-                        style={{ borderColor: t.color, backgroundColor: "transparent" }}
+                        style={{ borderColor: isColor ? t.color : "#A8A29E", backgroundColor: "transparent" }}
                         aria-label="Erledigt"
                       >
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color, opacity: 0.3 }} />
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isColor ? t.color : "#A8A29E", opacity: 0.3 }} />
                       </button>
                       <span className="text-sm text-stone-700 truncate">{t.title}</span>
                     </li>
@@ -3423,7 +3433,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
                 <ul className="space-y-1.5">
                   {dayEvents.map((e) => (
                     <li key={e.id} className="text-sm flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: e.type === "ferien" ? "#10b981" : (e.color || "#c9702f") }} />
+                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isColor ? (e.type === "ferien" ? "#10b981" : (e.color || "#c9702f")) : "#A8A29E" }} />
                       <span className="text-stone-700 truncate">{e.title}</span>
                       {e.time && <span className="text-stone-400 text-xs ml-auto shrink-0">{e.time}</span>}
                     </li>
@@ -3437,7 +3447,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
           geburtstage: (
             <Card className="p-4">
               <button onClick={() => onNavigate?.("klassen")} className="flex items-center gap-2 text-stone-800 font-medium text-sm mb-2 hover:akzent-text">
-                <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#F4DBD7", color: "#C0392B" }}><PartyPopper size={14} /></span> Geburtstage
+                <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#F4DBD7" : "#EDE9E0", color: isColor ? "#C0392B" : "#4F5844" }}><PartyPopper size={14} /></span> Geburtstage
                 <ChevronRight size={13} className="text-stone-300" />
               </button>
               {birthdays.length || kommendeGeburtstage.length ? (
@@ -3446,10 +3456,10 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
                     const info = birthdayInfo(s, selectedDate);
                     return (
                       <li key={s.id} className="text-sm flex items-center gap-2.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider w-11 shrink-0" style={{ color: "#C0392B" }}>heute</span>
+                        <span className="text-[10px] font-semibold uppercase tracking-wider w-11 shrink-0" style={{ color: isColor ? "#C0392B" : "#4F5844" }}>heute</span>
                         <span className="text-stone-900 font-medium truncate">{s.name}</span>
                         {info?.alter != null && (
-                          <span className="ml-auto shrink-0 tnum text-sm font-semibold" style={{ color: "#C0392B" }}>
+                          <span className="ml-auto shrink-0 tnum text-sm font-semibold" style={{ color: isColor ? "#C0392B" : "#78716C" }}>
                             {info.alter}<span className="text-[10px] font-normal text-stone-400 ml-0.5">Jahre</span>
                           </span>
                         )}
@@ -3506,7 +3516,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
                                 .filter(Boolean);
                               return (
                                 <li key={duty.id} className="flex items-start gap-2 text-sm">
-                                  <span className="w-1.5 h-4 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: duty.color }} />
+                                  <span className="w-1.5 h-4 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: isColor ? duty.color : "#4F5844" }} />
                                   <span className="text-stone-700 shrink-0">{duty.name}</span>
                                   <span className="flex-1 text-right text-stone-500 text-xs">
                                     {kinder.length ? kinder.map((s) => s.name).join(", ") : "—"}
@@ -5376,6 +5386,7 @@ function FaecherTab({ data, update, onOpenFach }) {
 /* ---------- Stundenplan ---------- */
 
 function StundenplanTab({ data, update }) {
+  const isColor = data.settings?.colorMode === true;
   const [editingCell, setEditingCell] = useState(null); // {day, period}
   const [editingTime, setEditingTime] = useState(null); // period
 
@@ -5449,7 +5460,9 @@ function StundenplanTab({ data, update }) {
                           className="w-full h-12 rounded-md text-[10px] px-1 py-1 text-center leading-tight flex flex-col items-center justify-center transition-colors border overflow-hidden"
                           style={
                             fach
-                              ? { backgroundColor: fach.color + "1f", borderColor: fach.color + "40", color: fach.color }
+                              ? isColor
+                                ? { backgroundColor: fach.color + "1f", borderColor: fach.color + "40", color: fach.color }
+                                : { backgroundColor: "var(--oliv-hell)", borderColor: "var(--linie)", color: "var(--oliv)" }
                               : { backgroundColor: "#FAFAF9", borderColor: "#F0EEE8", color: "#D6D3D1" }
                           }
                         >
@@ -5568,8 +5581,11 @@ function KalenderTab({ data, update }) {
   const [showForm, setShowForm] = useState(false);
   const [showAllFerien, setShowAllFerien] = useState(false);
 
+  const isColor = data.settings?.colorMode === true;
   const typeLabels = { termin: "Termin", erinnerung: "Erinnerung", ferien: "Ferien" };
-  const typeColors = { termin: "bg-amber-100 text-amber-700", erinnerung: "bg-red-100 text-red-700", ferien: "bg-emerald-100 text-emerald-700" };
+  const typeColors = isColor
+    ? { termin: "bg-amber-100 text-amber-700", erinnerung: "bg-red-100 text-red-700", ferien: "bg-emerald-100 text-emerald-700" }
+    : { termin: "bg-stone-100 text-stone-600", erinnerung: "bg-stone-100 text-stone-600", ferien: "bg-stone-100 text-stone-600" };
 
   function addEvent() {
     if (!title.trim()) return;
@@ -5697,7 +5713,7 @@ function KalenderTab({ data, update }) {
               ) : (
                 <button onClick={() => toggleDone(e.id)} className="w-5 h-5 rounded-full border-2 border-stone-300 hover:akzent-rand shrink-0 mt-0.5" />
               )}
-              <span className="w-2.5 h-2.5 rounded-full shrink-0 mt-1" style={{ backgroundColor: e.color || "#c9702f" }} />
+              <span className="w-2.5 h-2.5 rounded-full shrink-0 mt-1" style={{ backgroundColor: isColor ? (e.color || "#c9702f") : "#A8A29E" }} />
               <div className="flex-1 min-w-0">
                 <div className="text-stone-800 leading-snug">{e.title}</div>
                 <div className="flex items-center gap-1.5 mt-1 flex-wrap">
@@ -5974,6 +5990,7 @@ function TaskModal({ data, initial, defaultListId, onSave, onClose }) {
 }
 
 function AufgabenTab({ data, update }) {
+  const isColor = data.settings?.colorMode === true;
   const [selected, setSelected] = useState("alle"); // "alle" | "erledigt" | listId
   const [showModal, setShowModal] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
@@ -6081,7 +6098,7 @@ function AufgabenTab({ data, update }) {
                 <button
                   onClick={() => toggleDone(t.id)}
                   className="mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center"
-                  style={{ borderColor: t.color, backgroundColor: t.done ? t.color : "transparent" }}
+                  style={{ borderColor: isColor ? t.color : "#A8A29E", backgroundColor: t.done ? (isColor ? t.color : "#A8A29E") : "transparent" }}
                 >
                   {t.done && <Check size={12} className="text-white" />}
                 </button>
@@ -6140,9 +6157,11 @@ function AufgabenTab({ data, update }) {
 /* ---------- Noten ---------- */
 
 /* Verteilungsbalken: Anzahl Schüler:innen je Note 1–6, wie bei der Sammelbewertung gewohnt */
-function GradeDistributionBar({ values }) {
+function GradeDistributionBar({ values, isColor = true }) {
   const counts = [1, 2, 3, 4, 5, 6].map((n) => values.filter((v) => Math.round(v) === n).length);
-  const bg = ["bg-emerald-700/40", "bg-emerald-600/40", "bg-lime-600/40", "bg-amber-600/40", "bg-orange-600/40", "bg-red-700/40"];
+  const bg = isColor
+    ? ["bg-emerald-700/40", "bg-emerald-600/40", "bg-lime-600/40", "bg-amber-600/40", "bg-orange-600/40", "bg-red-700/40"]
+    : Array(6).fill("bg-stone-200");
   return (
     <div className="grid grid-cols-6 gap-1">
       {counts.map((c, i) => (
@@ -6155,7 +6174,7 @@ function GradeDistributionBar({ values }) {
 }
 
 /* Sammelbewertung: eine Note (z. B. mündliche Mitarbeit) für die ganze Klasse auf einen Blick vergeben */
-function BulkGradeModal({ fach, cls, students, halbjahr, onSave, onClose }) {
+function BulkGradeModal({ fach, cls, students, halbjahr, isColor = true, onSave, onClose }) {
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("muendlich");
   const [date, setDate] = useState(isoDate(new Date()));
@@ -6198,7 +6217,7 @@ function BulkGradeModal({ fach, cls, students, halbjahr, onSave, onClose }) {
 
         <div className="mb-4">
           <div className="text-xs text-stone-400 mb-1.5">Verteilung ({values.length} von {students.length} bewertet)</div>
-          <GradeDistributionBar values={values} />
+          <GradeDistributionBar values={values} isColor={isColor} />
         </div>
 
         <ul className="divide-y divide-stone-100 -mx-1">
@@ -6215,7 +6234,7 @@ function BulkGradeModal({ fach, cls, students, halbjahr, onSave, onClose }) {
                         key={qs.symbol}
                         onClick={() => setGrade(s.id, active ? "" : String(qs.value))}
                         className="w-9 h-8 rounded-lg text-sm font-semibold border"
-                        style={active ? { backgroundColor: qs.color, borderColor: qs.color, color: "white" } : { borderColor: "#E7E5E4", color: "#78716C" }}
+                        style={active ? { backgroundColor: isColor ? qs.color : "var(--oliv)", borderColor: isColor ? qs.color : "var(--oliv)", color: "white" } : { borderColor: "#E7E5E4", color: "#78716C" }}
                       >
                         {qs.symbol}
                       </button>
@@ -6831,7 +6850,8 @@ function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
 /* Klassenübersicht: alle Kinder eines Fachs auf einen Blick, mit Foto und farbcodierten Noten */
 function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStudent, onSelect }) {
   const weights = fach?.weights || DEFAULT_WEIGHTS;
-  const colored = data.settings?.notenfarben !== false;
+  const isColor = data.settings?.colorMode === true;
+  const colored = isColor && data.settings?.notenfarben !== false;
   const [tendencyPopup, setTendencyPopup] = useState(null); // { name, tendency, overall }
   const [sortDir, setSortDir] = useState("az"); // "az" | "za"
   const [nameOrder, setNameOrder] = useState("vorname"); // "vorname" | "nachname"
@@ -6967,7 +6987,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
                       {tendency && (
                         <button
                           onClick={(e) => { e.stopPropagation(); setTendencyPopup({ name: s.name, tendency, overall }); }}
-                          className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center ${tendency.direction === "besseren" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600"}`}
+                          className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center ${isColor ? (tendency.direction === "besseren" ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-600") : "bg-stone-100 text-stone-500"}`}
                           title="Tendenz – antippen für Details"
                         >
                           {tendency.direction === "besseren" ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
@@ -6998,8 +7018,8 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
 
       {rows.some((r) => r.tendency) && (
         <p className="text-[10px] text-stone-400 mt-2 flex items-center gap-3 px-1">
-          <span className="flex items-center gap-1"><TrendingUp size={9} className="text-emerald-600" /> Tendenz zur besseren Note</span>
-          <span className="flex items-center gap-1"><TrendingDown size={9} className="text-red-500" /> Tendenz zur schlechteren Note</span>
+          <span className="flex items-center gap-1"><TrendingUp size={9} className={isColor ? "text-emerald-600" : "text-stone-400"} /> Tendenz zur besseren Note</span>
+          <span className="flex items-center gap-1"><TrendingDown size={9} className={isColor ? "text-red-500" : "text-stone-400"} /> Tendenz zur schlechteren Note</span>
         </p>
       )}
 
@@ -7097,7 +7117,8 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
 }
 
 function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
-  const colored = data.settings?.notenfarben !== false;
+  const isColor = data.settings?.colorMode === true;
+  const colored = isColor && data.settings?.notenfarben !== false;
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedFach, setSelectedFach] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -7307,7 +7328,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
               <>
                 <ChevronRight size={13} className="text-stone-300" />
                 <span className="text-stone-800 font-medium inline-flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: fach.color }} />
+                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isColor ? fach.color : "var(--linie)" }} />
                   {fach.subject}
                 </span>
               </>
@@ -7357,7 +7378,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                       key={f.id}
                       className="inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-lg bg-stone-50 text-stone-600"
                     >
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: f.color }} />
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isColor ? f.color : "var(--linie)" }} />
                       {f.subject}
                     </span>
                   ))}
@@ -7386,7 +7407,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                 className="w-full bg-white rounded-2xl border border-stone-200 shadow-sm p-4 text-left hover:akzent-rand transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <span className="w-2.5 h-11 rounded-full shrink-0" style={{ backgroundColor: f.color }} />
+                  <span className="w-2.5 h-11 rounded-full shrink-0" style={{ backgroundColor: isColor ? f.color : "var(--oliv)" }} />
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold text-stone-800">{f.subject}</div>
                     <div className="text-xs text-stone-400">
@@ -7620,8 +7641,8 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                                 {runningOverall != null && (
                                   <div className="text-xs text-stone-400 mt-0.5 flex items-center gap-1">
                                     Stand danach: <span className={`font-medium ${gradeColor(runningOverall, colored)}`}>{gradeLabel(runningOverall)}</span>
-                                    {better && <TrendingUp size={11} className="text-emerald-600" />}
-                                    {worse && <TrendingDown size={11} className="text-red-500" />}
+                                    {better && <TrendingUp size={11} className={isColor ? "text-emerald-600" : "text-stone-400"} />}
+                                    {worse && <TrendingDown size={11} className={isColor ? "text-red-500" : "text-stone-400"} />}
                                   </div>
                                 )}
                               </button>
@@ -7661,7 +7682,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                               {Object.entries(
                                 studentAbsences.reduce((acc, a) => { acc[a.excuseStatus] = (acc[a.excuseStatus] || 0) + 1; return acc; }, {})
                               ).map(([status, count]) => (
-                                <span key={status} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium bg-stone-100" style={{ color: EXCUSE_STATUS[status]?.color ?? "#555" }}>
+                                <span key={status} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full font-medium bg-stone-100" style={{ color: isColor ? (EXCUSE_STATUS[status]?.color ?? "#555") : "#78716C" }}>
                                   {EXCUSE_STATUS[status]?.label ?? status}: {count}×
                                 </span>
                               ))}
@@ -7670,7 +7691,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                               <ul className="mt-2 space-y-1">
                                 {studentAbsences.slice(0, 4).map((a) => (
                                   <li key={a.id} className="flex items-center gap-2 text-xs text-stone-600">
-                                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: EXCUSE_STATUS[a.excuseStatus]?.color ?? "#aaa" }} />
+                                    <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isColor ? (EXCUSE_STATUS[a.excuseStatus]?.color ?? "#aaa") : "#A8A29E" }} />
                                     <span className="text-stone-400 shrink-0">{new Date(a.date).toLocaleDateString("de-DE")}</span>
                                     <span>{a.reason || "—"}</span>
                                   </li>
@@ -7828,6 +7849,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
           cls={cls}
           students={students}
           halbjahr={halbjahr}
+          isColor={data.settings?.colorMode === true}
           onSave={saveBulk}
           onClose={() => setShowBulkModal(false)}
         />
