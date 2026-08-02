@@ -3,6 +3,13 @@
 React-PWA für Grundschullehrkräfte. Single-file-Build via Vite + vite-plugin-singlefile.
 Alle App-Logik in `saidy.jsx`. Deployment über GitHub Pages (Branch: main → `.github/workflows/`).
 
+## Projektübersicht
+
+Lebende Übersicht (Infrastruktur, Agents, Features, Tasks):
+https://claude.ai/code/artifact/1a678b08-f9f5-4556-bdba-a1beeaa82106
+
+Nach Änderungen an `saidy.jsx` oder Agents: Artifact mit demselben Dateipfad neu publizieren (gleiche URL).
+
 ## Entwicklungs-Branch
 
 Alle Änderungen auf Branch `claude/bitte-beachten-nix4oc` committen und pushen.
