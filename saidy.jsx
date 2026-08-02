@@ -2571,7 +2571,7 @@ export default function App() {
         </aside>
 
         {/* Inhalt */}
-        <main className="flex-1 md:ml-56 overflow-y-auto px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-6 md:px-8 md:pt-8 md:pb-8 max-w-5xl">
+        <main className="flex-1 md:ml-56 overflow-y-auto px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-[calc(env(safe-area-inset-bottom)+80px)] md:pb-8 md:px-8 md:pt-8 max-w-5xl">
           {saveState === "error" && (
             <div className="mb-5 flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm">
               <span className="text-red-600 shrink-0">⚠</span>
@@ -2658,7 +2658,7 @@ export default function App() {
       </div>
 
       {/* Feste untere Navigation (nur mobil) */}
-      <nav className="md:hidden shrink-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[calc(env(safe-area-inset-bottom)+6px)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]">
+      <nav className="md:hidden fixed inset-x-0 bottom-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[calc(env(safe-area-inset-bottom)+6px)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]">
         <div className="flex items-stretch justify-around px-2 pt-2 pb-1.5">
           {[tabs[0], tabs[1], tabs[4], tabs[5]].map((t) => {
             const Icon = t.icon;
