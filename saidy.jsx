@@ -3217,14 +3217,11 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-3 min-w-0">
-          <SaidyLogoMark size={40} className="shrink-0" />
-          <div className="min-w-0">
-            <h1 className="text-xl font-semibold tracking-tight leading-tight">Guten Tag</h1>
-            <p className="text-stone-500 text-xs">
-              {selectedDate.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
-            </p>
-          </div>
+        <div className="min-w-0">
+          <h1 className="text-xl font-semibold tracking-tight leading-tight">Guten Tag</h1>
+          <p className="text-stone-500 text-xs">
+            {selectedDate.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
+          </p>
         </div>
         <div className="flex items-end gap-2 shrink-0">
           {showImportReminder && (
