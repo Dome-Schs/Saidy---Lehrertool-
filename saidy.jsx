@@ -7252,6 +7252,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
   const [showGradesList, setShowGradesList] = useState(false);
   const [editingGrade, setEditingGrade] = useState(null);
   const [gesprNDraft, setGesprNDraft] = useState({ text: "", mood: "ok", typ: "schueler" });
+  const [showSprechtagPicker, setShowSprechtagPicker] = useState(false);
 
   const fach = data.faecher.find((f) => f.id === selectedFach);
   const cls = fach ? data.classes.find((c) => c.id === fach.classId) : null;
@@ -7572,7 +7573,33 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
             <div className="flex gap-2 flex-wrap">
               <Button variant="subtle" onClick={() => setShowBulkModal(true)}>Sammelbewertung</Button>
               <Button variant="subtle" onClick={() => setShowIncidents(true)}><AlertTriangle size={15} /> Material vergessen</Button>
+              <Button variant="subtle" onClick={() => setShowSprechtagPicker(true)}>💬 Elternsprechtag</Button>
               <Button variant="subtle" onClick={() => setPrintMode({ type: "class" })}><Printer size={15} /> PDF</Button>
+            </div>
+          )}
+
+          {showSprechtagPicker && (
+            <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={() => setShowSprechtagPicker(false)}>
+              <div className="bg-white w-full md:max-w-sm rounded-t-3xl md:rounded-2xl shadow-xl" onClick={(e) => e.stopPropagation()}>
+                <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between">
+                  <div className="font-semibold text-stone-800">Elternsprechtag – Kind wählen</div>
+                  <button onClick={() => setShowSprechtagPicker(false)} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center"><X size={16} /></button>
+                </div>
+                <ul className="overflow-y-auto max-h-[60vh] divide-y divide-stone-100 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                  {students.map((s) => (
+                    <li key={s.id}>
+                      <button
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-stone-50 active:bg-stone-100 text-left"
+                        onClick={() => { setSelectedStudent(s.id); setShowSprechtag(true); setShowSprechtagPicker(false); }}
+                      >
+                        <StudentAvatar student={s} size={32} />
+                        <span className="text-sm font-medium text-stone-800">{s.name}</span>
+                        <ChevronRight size={16} className="text-stone-300 ml-auto shrink-0" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           )}
 
