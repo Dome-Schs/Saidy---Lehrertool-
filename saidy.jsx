@@ -2441,7 +2441,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen app-bg text-[color:var(--ink)] font-sans">
+    <div className="h-[100dvh] flex flex-col overflow-hidden app-bg text-[color:var(--ink)] font-sans">
       <style>{`
         :root {
           --oliv: #4F5844;        /* Salbei-Oliv: Akzent */
@@ -2480,7 +2480,7 @@ export default function App() {
       {showOnboarding && (
         <OnboardingModal onSave={applyBundesland} onDone={handleOnboardingDone} onSkip={() => setShowOnboarding(false)} />
       )}
-      <div className="md:flex">
+      <div className="flex flex-1 min-h-0">
         {/* Seitenleiste (Desktop) */}
         <aside className="hidden md:w-56 md:fixed md:inset-y-0 md:flex md:flex-col border-r border-stone-200 bg-white">
           {/* App-Kopf */}
@@ -2559,7 +2559,7 @@ export default function App() {
         </aside>
 
         {/* Inhalt */}
-        <main className="flex-1 md:ml-56 px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-24 md:px-8 md:pt-8 md:pb-8 max-w-5xl">
+        <main className="flex-1 md:ml-56 overflow-y-auto px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-6 md:px-8 md:pt-8 md:pb-8 max-w-5xl">
           {saveState === "error" && (
             <div className="mb-5 flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm">
               <span className="text-red-600 shrink-0">⚠</span>
@@ -2646,7 +2646,7 @@ export default function App() {
       </div>
 
       {/* Feste untere Navigation (nur mobil) */}
-      <nav className="md:hidden fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]">
+      <nav className="md:hidden shrink-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]">
         <div className="flex items-stretch justify-around px-2 pt-2 pb-1.5">
           {[tabs[0], tabs[1], tabs[4], tabs[5]].map((t) => {
             const Icon = t.icon;
