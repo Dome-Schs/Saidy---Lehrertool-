@@ -11,6 +11,17 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "changed=$(git -C /home/user/Saidy---Lehrertool- diff --name-only HEAD~1 HEAD 2>/dev/null | grep -E 'saidy\\.jsx|\\.claude/agents/'); if [ -n \"$changed\" ]; then echo '{\"systemMessage\": \"📋 Hinweis: saidy.jsx oder ein Agent wurde geändert – bitte die Projektübersicht aktualisieren (claude.ai/code/artifact/1a678b08-f9f5-4556-bdba-a1beeaa82106).\"}'; fi",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }
