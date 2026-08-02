@@ -1496,6 +1496,7 @@ function demoData() {
   const fachSport7aId = uid();
   const maxId = uid();
   const jennyId = uid();
+  const jenny2Id = uid();
   const leonId = uid();
   const aylinId = uid();
   const hj = currentHalbjahr();
@@ -1547,6 +1548,7 @@ function demoData() {
   const students = [
     { id: maxId, name: "Max Mustermann", classId, birthday: null },
     { id: jennyId, name: "Jenny Reuter", classId, birthday: null },
+    { id: jenny2Id, name: "Jenny Schmidt", classId, birthday: null },
     { id: leonId, name: "Leon Fischer", classId: class2Id, birthday: null },
     { id: aylinId, name: "Aylin Kaya", classId: class2Id, birthday: null },
   ];
@@ -1569,6 +1571,12 @@ function demoData() {
     { id: uid(), studentId: jennyId, classId, fachId: fachMatheId, category: "schriftlich", value: 1.75, factor: 2, title: "Klassenarbeit Nr. 1", date: d(10), halbjahr: hj },
     // Jenny – Sport
     { id: uid(), studentId: jennyId, classId, fachId: fachSportId, category: "muendlich", value: 2, factor: 1, title: "Mitarbeit", date: d(12), halbjahr: hj },
+    // Jenny Schmidt – Mathematik: gut
+    { id: uid(), studentId: jenny2Id, classId, fachId: fachMatheId, category: "muendlich", value: 2, factor: 1, title: "Mitarbeit", date: d(14), halbjahr: hj },
+    { id: uid(), studentId: jenny2Id, classId, fachId: fachMatheId, category: "muendlich", value: 3, factor: 1, title: "Mitarbeit", date: d(7), halbjahr: hj },
+    { id: uid(), studentId: jenny2Id, classId, fachId: fachMatheId, category: "schriftlich", value: 2.5, factor: 2, title: "Klassenarbeit Nr. 1", date: d(10), halbjahr: hj },
+    // Jenny Schmidt – Sport
+    { id: uid(), studentId: jenny2Id, classId, fachId: fachSportId, category: "muendlich", value: 3, factor: 1, title: "Mitarbeit", date: d(12), halbjahr: hj },
     // Leon – Sport 7a: mittelmäßig mit Ausreißern
     { id: uid(), studentId: leonId, classId: class2Id, fachId: fachSport7aId, category: "muendlich", value: 3, factor: 1, title: "Mitarbeit", date: d(13), halbjahr: hj },
     { id: uid(), studentId: leonId, classId: class2Id, fachId: fachSport7aId, category: "muendlich", value: 2, factor: 1, title: "Mitarbeit", date: d(6), halbjahr: hj },
@@ -1587,7 +1595,7 @@ function demoData() {
   const pick = (arr) => arr[Math.floor(rnd() * arr.length)];
 
   students.forEach((s) => {
-    if ([maxId, jennyId, leonId, aylinId].includes(s.id)) return;
+    if ([maxId, jennyId, jenny2Id, leonId, aylinId].includes(s.id)) return;
     if (s.classId === classId) {
       // 5c: Mathematik (2 mündlich + 1 Arbeit) und Sport (2 mündlich)
       grades.push({ id: uid(), studentId: s.id, classId, fachId: fachMatheId, category: "muendlich", value: pick(muendlichWerte), factor: 1, title: "Mitarbeit", date: d(14), halbjahr: hj });
@@ -1710,6 +1718,8 @@ function demoData() {
   const finalGrades = [
     { id: uid(), studentId: maxId, fachId: fachMatheId, halbjahr: hj, value: 3 },
     { id: uid(), studentId: jennyId, fachId: fachMatheId, halbjahr: hj, value: 1.75 },
+    { id: uid(), studentId: jenny2Id, fachId: fachMatheId, halbjahr: hj, value: 2 },
+    { id: uid(), studentId: leonId, fachId: fachSport7aId, halbjahr: hj, value: 3 },
     { id: uid(), studentId: aylinId, fachId: fachSport7aId, halbjahr: hj, value: 1.25 },
   ];
 
@@ -1879,6 +1889,7 @@ const HELP_DATA = [
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aller Noten. Schriftliche Noten werden standardmäßig doppelt gewichtet. Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht” antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst. Das 💬-Symbol neben einem Kind öffnet direkt ein Kindgespräch mit Stimmungswahl.` },
+      { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button "Zeugnis". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
     ],
   },
   {
@@ -6022,84 +6033,81 @@ function AufgabenTab({ data, update }) {
   const doneCount = tasks.filter((t) => t.done).length;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <h1 className="text-2xl font-semibold tracking-tight">Aufgaben</h1>
 
-      <div className="grid md:grid-cols-[220px_1fr] gap-4">
-        <Card className="p-3 h-fit">
-          <div className="space-y-1">
-            <button
-              onClick={() => setSelected("alle")}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm ${selected === "alle" ? "akzent-ton font-medium" : "text-stone-600 hover:bg-stone-50"}`}
-            >
-              <span className="flex items-center gap-2"><Inbox size={15} /> Alle Aufgaben</span>
-              <span className="text-xs text-stone-400">{tasks.filter((t) => !t.done).length}</span>
-            </button>
-            {lists.map((l) => {
-              const Icon = LIST_ICON_MAP[l.icon] || ListChecks;
-              const count = tasks.filter((t) => !t.done && t.listId === l.id).length;
-              return (
-                <div key={l.id} className="group flex items-center">
-                  <button
-                    onClick={() => setSelected(l.id)}
-                    className={`flex-1 flex items-center justify-between px-3 py-2 rounded-lg text-sm ${selected === l.id ? "akzent-ton font-medium" : "text-stone-600 hover:bg-stone-50"}`}
-                  >
-                    <span className="flex items-center gap-2"><Icon size={15} /> {l.name}</span>
-                    <span className="text-xs text-stone-400">{count}</span>
-                  </button>
-                  <button onClick={() => removeList(l.id)} className="text-stone-300 hover:text-red-500 px-1 opacity-0 group-hover:opacity-100"><Trash2 size={13} /></button>
-                </div>
-              );
-            })}
-            <button
-              onClick={() => setSelected("erledigt")}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm ${selected === "erledigt" ? "akzent-ton font-medium" : "text-stone-500 hover:bg-stone-50"}`}
-            >
-              <span className="flex items-center gap-2"><FolderCheck size={15} /> Erledigt</span>
-              <span className="text-xs text-stone-400">{doneCount}</span>
-            </button>
-          </div>
-        </Card>
-
-        <Card className="p-5">
-          <ul className="divide-y divide-stone-100">
-            {visibleTasks.map((t) => {
-              const list = lists.find((l) => l.id === t.listId);
-              return (
-                <li key={t.id} className="py-2.5 flex items-start gap-3">
-                  <button
-                    onClick={() => toggleDone(t.id)}
-                    className="mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center"
-                    style={{ borderColor: t.color, backgroundColor: t.done ? t.color : "transparent" }}
-                  >
-                    {t.done && <Check size={12} className="text-white" />}
-                  </button>
-                  <button onClick={() => { setEditingTask(t); setShowModal(true); }} className="flex-1 text-left">
-                    <div className={`text-sm ${t.done ? "text-stone-400 line-through" : "text-stone-800"}`}>{t.title}</div>
-                    {list && <div className="text-xs text-stone-400">{list.name}</div>}
-                  </button>
-                  {t.dueDate && (
-                    <span className={`text-xs rounded-full px-2.5 py-1 shrink-0 ${!t.done && new Date(t.dueDate) < new Date() ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-600"}`}>
-                      {new Date(t.dueDate).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}{t.dueDate.length > 10 ? `, ${t.dueDate.slice(11, 16)}` : ""}
-                    </span>
-                  )}
-                  <button onClick={() => removeTask(t.id)} className="text-stone-300 hover:text-red-500 shrink-0"><Trash2 size={14} /></button>
-                </li>
-              );
-            })}
-            {!visibleTasks.length && <li className="py-6 text-sm text-stone-400 text-center">Keine Aufgaben hier.</li>}
-          </ul>
-
-          {selected !== "erledigt" && (
-            <button
-              onClick={() => { setEditingTask(null); setShowModal(true); }}
-              className="mt-3 w-full flex items-center gap-2 border border-dashed border-stone-300 rounded-xl px-3 py-2.5 text-sm text-stone-400 hover:akzent-rand hover:akzent-text"
-            >
-              <span className="w-4 h-4 rounded-full border border-dashed border-current" /> Aufgabe hinzufügen
-            </button>
-          )}
-        </Card>
+      {/* Horizontale Tab-Leiste für Listen */}
+      <div className="flex gap-2 overflow-x-auto pb-1 -mx-0.5 px-0.5" style={{ scrollbarWidth: "none" }}>
+        <button
+          onClick={() => setSelected("alle")}
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors ${selected === "alle" ? "akzent-ton akzent-rand akzent-text font-medium" : "bg-white border-stone-200 text-stone-600"}`}
+        >
+          <Inbox size={13} /> Alle
+          <span className="text-xs opacity-60">{tasks.filter((t) => !t.done).length}</span>
+        </button>
+        {lists.map((l) => {
+          const Icon = LIST_ICON_MAP[l.icon] || ListChecks;
+          const count = tasks.filter((t) => !t.done && t.listId === l.id).length;
+          return (
+            <div key={l.id} className="shrink-0 flex items-center gap-0.5">
+              <button
+                onClick={() => setSelected(l.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors ${selected === l.id ? "akzent-ton akzent-rand akzent-text font-medium" : "bg-white border-stone-200 text-stone-600"}`}
+              >
+                <Icon size={13} /> {l.name}
+                <span className="text-xs opacity-60">{count}</span>
+              </button>
+              <button onClick={() => removeList(l.id)} className="w-5 h-5 flex items-center justify-center text-stone-300 hover:text-red-500 rounded-full shrink-0"><Trash2 size={11} /></button>
+            </div>
+          );
+        })}
+        <button
+          onClick={() => setSelected("erledigt")}
+          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm border transition-colors ${selected === "erledigt" ? "akzent-ton akzent-rand akzent-text font-medium" : "bg-white border-stone-200 text-stone-500"}`}
+        >
+          <FolderCheck size={13} /> Erledigt
+          <span className="text-xs opacity-60">{doneCount}</span>
+        </button>
       </div>
+
+      <Card className="p-4">
+        <ul className="divide-y divide-stone-100">
+          {visibleTasks.map((t) => {
+            const list = lists.find((l) => l.id === t.listId);
+            return (
+              <li key={t.id} className="py-2.5 flex items-start gap-3">
+                <button
+                  onClick={() => toggleDone(t.id)}
+                  className="mt-0.5 w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center"
+                  style={{ borderColor: t.color, backgroundColor: t.done ? t.color : "transparent" }}
+                >
+                  {t.done && <Check size={12} className="text-white" />}
+                </button>
+                <button onClick={() => { setEditingTask(t); setShowModal(true); }} className="flex-1 text-left">
+                  <div className={`text-sm ${t.done ? "text-stone-400 line-through" : "text-stone-800"}`}>{t.title}</div>
+                  {list && <div className="text-xs text-stone-400">{list.name}</div>}
+                </button>
+                {t.dueDate && (
+                  <span className={`text-xs rounded-full px-2.5 py-1 shrink-0 ${!t.done && new Date(t.dueDate) < new Date() ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-600"}`}>
+                    {new Date(t.dueDate).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}{t.dueDate.length > 10 ? `, ${t.dueDate.slice(11, 16)}` : ""}
+                  </span>
+                )}
+                <button onClick={() => removeTask(t.id)} className="text-stone-300 hover:text-red-500 shrink-0"><Trash2 size={14} /></button>
+              </li>
+            );
+          })}
+          {!visibleTasks.length && <li className="py-6 text-sm text-stone-400 text-center">Keine Aufgaben hier.</li>}
+        </ul>
+
+        {selected !== "erledigt" && (
+          <button
+            onClick={() => { setEditingTask(null); setShowModal(true); }}
+            className="mt-3 w-full flex items-center gap-2 border border-dashed border-stone-300 rounded-xl px-3 py-2.5 text-sm text-stone-400 hover:akzent-rand hover:akzent-text"
+          >
+            <span className="w-4 h-4 rounded-full border border-dashed border-current" /> Aufgabe hinzufügen
+          </button>
+        )}
+      </Card>
 
       {showModal && (
         <TaskModal
@@ -6813,6 +6821,8 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
   const [sortDir, setSortDir] = useState("az"); // "az" | "za"
   const [nameOrder, setNameOrder] = useState("vorname"); // "vorname" | "nachname"
   const [sportzeugDetail, setSportzeugDetail] = useState(null); // studentId für das Detailfenster
+  const zeugnisphase = [1, 2, 6, 7].includes(new Date().getMonth() + 1);
+  const [showZeugnis, setShowZeugnis] = useState(zeugnisphase);
 
   // Nur im Fach Sport gibt es die Sportzeug-Spalte
   const istSport = /sport/i.test(fach?.subject || "");
@@ -6823,10 +6833,17 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
     if (parts.length < 2) return { vor: name, nach: "" };
     return { vor: parts.slice(0, -1).join(" "), nach: parts[parts.length - 1] };
   }
+  const dupFirstNames = useMemo(() => {
+    const cnt = {};
+    students.forEach((s) => { const { vor } = splitName(s.name); cnt[vor] = (cnt[vor] || 0) + 1; });
+    return new Set(Object.entries(cnt).filter(([, n]) => n > 1).map(([v]) => v));
+  }, [students]);
   function displayName(name) {
     const { vor, nach } = splitName(name);
     if (!nach) return name;
-    return nameOrder === "nachname" ? `${nach}, ${vor}` : name;
+    if (nameOrder === "nachname") return `${nach}, ${vor}`;
+    if (dupFirstNames.has(vor)) return `${vor} ${nach.charAt(0)}.`;
+    return name;
   }
   function sortKey(name) {
     const { vor, nach } = splitName(name);
@@ -6862,6 +6879,12 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
         >
           {nameOrder === "vorname" ? "Vorname zuerst" : "Nachname zuerst"}
         </button>
+        <button
+          onClick={() => setShowZeugnis((v) => !v)}
+          className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border text-xs transition-colors ${showZeugnis ? "akzent-ton akzent-rand akzent-text" : "bg-white border-stone-200 text-stone-500"}`}
+        >
+          Zeugnis
+        </button>
         {istSport && <span className="text-[11px] text-stone-400 ml-auto self-center">Tipp auf „Sportz." erfasst vergessenes Sportzeug für heute</span>}
       </div>
 
@@ -6872,7 +6895,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
           <col className="w-12" />
           <col className={istSport ? "w-20" : "w-12"} />
           <col className="w-14" />
-          <col className="w-14" />
+          {showZeugnis && <col className="w-14" />}
         </colgroup>
         <thead>
           <tr className="text-[10px] text-stone-400 uppercase tracking-wide">
@@ -6880,7 +6903,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
             <th className="font-semibold pb-1" title={`Mündlicher Schnitt (${weights.muendlich ?? 50} %)`}>Mündl.</th>
             <th className="font-semibold pb-1" title={istSport ? "Sportzeug vergessen (Anzahl)" : `Schriftlicher Schnitt (${weights.schriftlich ?? 50} %)`}>{istSport ? "Sportz." : "Schr."}</th>
             <th className="font-semibold pb-1" title="Gewichteter Gesamtdurchschnitt">Ges.</th>
-            <th className="font-semibold pb-1" title="Manuell eingetragene Zeugnisnote">Zeugn.</th>
+            {showZeugnis && <th className="font-semibold pb-1" title="Manuell eingetragene Zeugnisnote">Zeugn.</th>}
           </tr>
         </thead>
         <tbody>
@@ -6921,7 +6944,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
                     byCat.schriftlich ? <span className={`font-semibold ${gradeColor(byCat.schriftlich.avg, colored)}`}>{gradeLabel(byCat.schriftlich.avg)}</span> : <span className="text-stone-300">—</span>
                   )}
                 </td>
-                <td className="text-center">
+                <td className={`text-center${showZeugnis ? "" : " rounded-r-xl"}`}>
                   {overall != null ? (
                     <span className="inline-flex flex-col items-center leading-none">
                       <span className={`text-base font-semibold tnum ${gradeColor(overall, colored)}`}>{gradeLabel(overall)}</span>
@@ -6939,18 +6962,20 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
                     <span className="text-stone-300">—</span>
                   )}
                 </td>
-                <td className="text-center rounded-r-xl">
-                  {finalGrade ? (
-                    <span className="inline-flex items-center justify-center min-w-7 h-7 px-1 rounded-md bg-stone-900 text-white text-sm font-semibold tnum">{gradeLabel(finalGrade.value)}</span>
-                  ) : (
-                    <span className="text-stone-300">—</span>
-                  )}
-                </td>
+                {showZeugnis && (
+                  <td className="text-center rounded-r-xl">
+                    {finalGrade ? (
+                      <span className="inline-flex items-center justify-center min-w-7 h-7 px-1 rounded-md bg-stone-900 text-white text-sm font-semibold tnum">{gradeLabel(finalGrade.value)}</span>
+                    ) : (
+                      <span className="text-stone-300">—</span>
+                    )}
+                  </td>
+                )}
               </tr>
             );
           })}
           {!rows.length && (
-            <tr><td colSpan={5} className="text-sm text-stone-400 py-3 px-2">Keine Schüler:innen in dieser Klasse.</td></tr>
+            <tr><td colSpan={showZeugnis ? 5 : 4} className="text-sm text-stone-400 py-3 px-2">Keine Schüler:innen in dieser Klasse.</td></tr>
           )}
         </tbody>
       </table>
