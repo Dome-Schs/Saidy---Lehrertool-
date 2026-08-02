@@ -3349,7 +3349,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2 gap-2">
                 <button onClick={() => onNavigate?.("stundenplan")} className="flex items-center gap-2 text-stone-800 font-medium text-sm hover:akzent-text">
-                  <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#ECEEE2", color: "#4F5844" }}><Clock size={14} /></span> Unterricht
+                  <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#ECEEE2" : "#EDE9E0", color: "#4F5844" }}><Clock size={14} /></span> Unterricht
                   <ChevronRight size={13} className="text-stone-300" />
                 </button>
               </div>
@@ -3398,7 +3398,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <button onClick={() => onNavigate?.("aufgaben")} className="flex items-center gap-2 text-stone-800 font-medium text-sm hover:akzent-text">
-                  <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#E9EDF0", color: "#41697E" }}><ListChecks size={14} /></span> Tagesaufgaben
+                  <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#E9EDF0" : "#EDE9E0", color: isColor ? "#41697E" : "#4F5844" }}><ListChecks size={14} /></span> Tagesaufgaben
                   {!!openTasks.length && <span className="text-xs text-stone-400">{openTasks.length}</span>}
                   <ChevronRight size={13} className="text-stone-300" />
                 </button>
@@ -3429,7 +3429,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <button onClick={() => onNavigate?.("kalender")} className="flex items-center gap-2 text-stone-800 font-medium text-sm hover:akzent-text">
-                  <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#F3E7D6", color: "#B07D2B" }}><CalendarDays size={14} /></span> Termine
+                  <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#F3E7D6" : "#EDE9E0", color: isColor ? "#B07D2B" : "#4F5844" }}><CalendarDays size={14} /></span> Termine
                   <ChevronRight size={13} className="text-stone-300" />
                 </button>
                 <button onClick={() => onNavigate?.("kalender")} className="text-xs text-stone-400 hover:akzent-text shrink-0">+</button>
@@ -3494,7 +3494,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <button onClick={() => onNavigate?.("klassen", "dienste")} className="flex items-center gap-2 text-stone-800 font-medium text-sm hover:akzent-text">
-                  <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#E4EAD9", color: "#5F7A45" }}><ClipboardCheck size={14} /></span> Dienste
+                  <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#E4EAD9" : "#EDE9E0", color: isColor ? "#5F7A45" : "#4F5844" }}><ClipboardCheck size={14} /></span> Dienste
                   <ChevronRight size={13} className="text-stone-300" />
                 </button>
                 <span className="text-[11px] text-stone-400">{currentSchoolWeek().label}</span>
@@ -3556,7 +3556,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
               <Card className="p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2 text-stone-800 font-medium text-sm">
-                    <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: "#FEF3C7", color: "#B45309" }}><AlertTriangle size={14} /></span>
+                    <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#FEF3C7" : "#EDE9E0", color: isColor ? "#B45309" : "#4F5844" }}><AlertTriangle size={14} /></span>
                     Offene Entschuldigungen
                     {ausstehend.length > 0 && <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
                   </div>
@@ -6229,9 +6229,9 @@ function BulkGradeModal({ fach, cls, students, halbjahr, isColor = true, onSave,
           {students.map((s) => (
             <li key={s.id} className="py-2 px-1 flex items-center gap-3">
               <StudentAvatar student={s} size={24} />
-              <span className="flex-1 text-sm text-stone-700">{s.name}</span>
+              <span className="flex-1 min-w-0 text-sm text-stone-700 truncate">{s.name}</span>
               {category === "muendlich" ? (
-                <div className="flex gap-1">
+                <div className="flex gap-1 shrink-0">
                   {QUICK_SYMBOLS.map((qs) => {
                     const active = gradeMap[s.id] === qs.value;
                     return (
@@ -6909,7 +6909,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
       <div className="flex items-center gap-2 px-1 text-xs">
         <button
           onClick={() => setSortDir((d) => (d === "az" ? "za" : "az"))}
-          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-stone-600"
+          className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white border border-stone-200 text-stone-600 whitespace-nowrap shrink-0"
         >
           {sortDir === "az" ? "A → Z" : "Z → A"}
         </button>
