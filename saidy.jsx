@@ -1886,11 +1886,12 @@ const HELP_DATA = [
   {
     category: "Noten",
     items: [
-      { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten”, wähle Klasse und Fach. Tippe auf eine:n Schüler:in und dann auf „+ Note”. Du kannst Art, Gewichtung und Datum angeben.` },
+      { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten", wähle Klasse und Fach. Tippe auf eine:n Schüler:in und dann auf „+ Note". Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aller Noten. Schriftliche Noten werden standardmäßig doppelt gewichtet. Die berechnete Note erscheint in der Notenübersicht.` },
-      { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht” antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
-      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst. Das 💬-Symbol neben einem Kind öffnet direkt ein Kindgespräch mit Stimmungswahl.` },
+      { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
+      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst. Das 💬-Symbol neben einem Kind öffnet direkt ein Gespräch mit Typ-Wahl (Schüler/Eltern/Förder) und Stimmungsskala.` },
       { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button "Zeugnis". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
+      { q: "Wo kann ich Gespräche mit Schüler:innen erfassen?", a: `In der Klassenliste gibt es neben jedem Kind ein 💬-Symbol. Ein Tipp öffnet direkt ein kompaktes Formular: Typ (Schülergespräch / Elterngespräch / Fördergespräch), Stimmungsskala (😄😊😐😕😟) und freies Notizfeld. Gespräche sind auch im Schnellerfassungs-Modus nach dem Unterricht erreichbar.` },
     ],
   },
   {
@@ -2837,6 +2838,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
   const [noteDrafts, setNoteDrafts] = useState({});
   const [gesprExpanded, setGesprExpanded] = useState(null);
   const [gesprMood, setGesprMood] = useState("ok");
+  const [gesprTyp, setGesprTyp] = useState("schueler");
   const [gesprTexts, setGesprTexts] = useState({});
 
   // Optionales Stundenthema für genau diese Stunde (Fach + Datum)
@@ -2926,7 +2928,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
     const text = (gesprTexts[studentId] || "").trim();
     if (!text) return;
     update((d) => {
-      d.notes.push({ id: uid(), studentId, date, text, type: "gespraech", mood: gesprMood });
+      d.notes.push({ id: uid(), studentId, date, text, type: "gespraech", mood: gesprMood, gesprTyp });
       return d;
     });
     setGesprTexts((d) => ({ ...d, [studentId]: "" }));
@@ -3105,7 +3107,14 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
 
                   {gesprExpanded === s.id && (
                     <div className="mt-2 bg-stone-50 border border-stone-200 rounded-xl p-2.5">
-                      <div className="text-[11px] font-medium text-stone-500 mb-1.5">Kindgespräch</div>
+                      <div className="flex gap-1 mb-1.5">
+                        {GESPRAECH_TYPEN.map((t) => (
+                          <button key={t.key} type="button" onClick={() => setGesprTyp(t.key)}
+                            className={`flex-1 py-1 rounded-lg border text-xs font-medium transition-colors ${gesprTyp === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 bg-white text-stone-500"}`}>
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
                       <div className="flex gap-1 mb-1.5">
                         {MOOD_OPTIONS.map((m) => (
                           <button
@@ -3113,6 +3122,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                             type="button"
                             onClick={() => setGesprMood(m.key)}
                             className={`flex-1 py-1 rounded-lg border text-base transition-colors ${gesprMood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-white"}`}
+                            title={m.label}
                           >
                             {m.emoji}
                           </button>
@@ -4007,9 +4017,17 @@ function ImportCsvModal({ className, onImport, onClose }) {
 }
 
 const MOOD_OPTIONS = [
+  { key: "sehr_gut", emoji: "😄", label: "Sehr gut" },
   { key: "gut", emoji: "😊", label: "Gut" },
   { key: "ok", emoji: "😐", label: "Ok" },
-  { key: "schlecht", emoji: "😟", label: "Nicht so gut" },
+  { key: "nicht_so_gut", emoji: "😕", label: "Nicht so gut" },
+  { key: "schlecht", emoji: "😟", label: "Schlecht" },
+];
+
+const GESPRAECH_TYPEN = [
+  { key: "schueler", label: "Schüler" },
+  { key: "eltern", label: "Eltern" },
+  { key: "foerder", label: "Förder" },
 ];
 
 /* Notenübersicht eines Schülers / einer Schülerin über alle Fächer */
@@ -4076,6 +4094,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
   const [photoError, setPhotoError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showMedicalConsent, setShowMedicalConsent] = useState(false);
+  const [quickGesprId, setQuickGesprId] = useState(null);
 
   async function handlePhoto(studentId, file) {
     if (!file) return;
@@ -4132,10 +4151,54 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                     {s.name}
                     {s.medicalInfo && <AlertCircle size={13} className="text-amber-500 shrink-0" />}
                   </button>
+                  <button
+                    onClick={() => { setQuickGesprId(quickGesprId === s.id ? null : s.id); setGespraechDraft({ text: "", mood: "ok", typ: "schueler" }); }}
+                    className={`p-1 shrink-0 text-lg leading-none ${quickGesprId === s.id ? "akzent-text" : "text-stone-300 hover:text-stone-500"}`}
+                    title="Gespräch erfassen"
+                  >💬</button>
                   <button onClick={() => setConfirmDeleteId(s.id)} className="text-stone-300 hover:text-red-500 p-1 shrink-0">
                     <Trash2 size={14} />
                   </button>
                 </div>
+
+                {quickGesprId === s.id && (
+                  <div className="mt-1.5 ml-5 bg-stone-50 border border-stone-200 rounded-xl p-2.5">
+                    <div className="flex gap-1 mb-1.5">
+                      {GESPRAECH_TYPEN.map((t) => (
+                        <button key={t.key} type="button" onClick={() => setGespraechDraft((d) => ({ ...d, typ: t.key }))}
+                          className={`flex-1 py-1 rounded-lg border text-xs font-medium transition-colors ${gespraechDraft.typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 bg-white text-stone-500"}`}>
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-1 mb-1.5">
+                      {MOOD_OPTIONS.map((m) => (
+                        <button key={m.key} type="button" onClick={() => setGespraechDraft((d) => ({ ...d, mood: m.key }))}
+                          className={`flex-1 py-1 rounded-lg border text-base transition-colors ${gespraechDraft.mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-white"}`}
+                          title={m.label}>
+                          {m.emoji}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-1.5">
+                      <input
+                        autoFocus
+                        className="flex-1 text-sm rounded-lg border border-stone-300 px-2.5 py-1.5"
+                        placeholder="Was bewegt das Kind …"
+                        maxLength={500}
+                        value={gespraechDraft.text}
+                        onChange={(e) => setGespraechDraft((d) => ({ ...d, text: e.target.value }))}
+                        onKeyDown={(e) => { if (e.key === "Enter" && gespraechDraft.text.trim()) { onAddGespraech(s.id); setQuickGesprId(null); } }}
+                      />
+                      <button type="button"
+                        onClick={() => { onAddGespraech(s.id); setQuickGesprId(null); }}
+                        disabled={!gespraechDraft.text.trim()}
+                        className="shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium akzent-flaeche text-white disabled:opacity-40">
+                        ✓
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {open && (
                   <div className="mt-3 mb-2 pl-5 space-y-3">
@@ -4283,6 +4346,14 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                       </div>
                       <div className="space-y-2 mb-2">
                         <div className="flex gap-1.5">
+                          {GESPRAECH_TYPEN.map((t) => (
+                            <button key={t.key} onClick={() => setGespraechDraft((d) => ({ ...d, typ: t.key }))}
+                              className={`flex-1 py-1 rounded-lg border text-xs font-medium transition-colors ${gespraechDraft.typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 bg-stone-50 text-stone-500"}`}>
+                              {t.label}
+                            </button>
+                          ))}
+                        </div>
+                        <div className="flex gap-1.5">
                           {MOOD_OPTIONS.map((m) => (
                             <button
                               key={m.key}
@@ -4309,12 +4380,14 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                       <ul className="space-y-1.5">
                         {studentGespraeche.map((g) => {
                           const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
+                          const typ = GESPRAECH_TYPEN.find((t) => t.key === g.gesprTyp);
                           return (
                             <li key={g.id} className="text-sm bg-stone-50 rounded-lg px-3 py-2.5">
                               <div className="flex items-center justify-between mb-1">
                                 <div className="flex items-center gap-1.5">
                                   <span className="text-sm leading-none">{mood?.emoji ?? "💬"}</span>
-                                  <span className="text-[11px] font-medium text-stone-500">{new Date(g.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
+                                  {typ && <span className="text-[10px] font-medium akzent-text bg-[#ECEEE2] px-1.5 py-0.5 rounded">{typ.label}</span>}
+                                  <span className="text-[11px] text-stone-400">{new Date(g.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
                                 </div>
                                 <button onClick={() => onDeleteNote(g.id)} className="text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
                               </div>
@@ -4942,7 +5015,7 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach, onOpenUntisIm
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [newNote, setNewNote] = useState("");
-  const [gespraechDraft, setGespraechDraft] = useState({ text: "", mood: "ok" });
+  const [gespraechDraft, setGespraechDraft] = useState({ text: "", mood: "ok", typ: "schueler" });
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showStudentsModal, setShowStudentsModal] = useState(false);
@@ -5047,10 +5120,10 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach, onOpenUntisIm
   function addGespraech(studentId) {
     if (!gespraechDraft.text.trim() || !studentId) return;
     update((d) => {
-      d.notes.push({ id: uid(), studentId, date: isoDate(new Date()), text: gespraechDraft.text.trim(), type: "gespraech", mood: gespraechDraft.mood });
+      d.notes.push({ id: uid(), studentId, date: isoDate(new Date()), text: gespraechDraft.text.trim(), type: "gespraech", mood: gespraechDraft.mood, gesprTyp: gespraechDraft.typ || "schueler" });
       return d;
     });
-    setGespraechDraft({ text: "", mood: "ok" });
+    setGespraechDraft({ text: "", mood: "ok", typ: "schueler" });
   }
 
   function deleteNote(noteId) {
@@ -6863,6 +6936,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
   const [sportzeugDetail, setSportzeugDetail] = useState(null); // studentId für das Detailfenster
   const zeugnisphase = [1, 2, 6, 7].includes(new Date().getMonth() + 1);
   const [showZeugnis, setShowZeugnis] = useState(zeugnisphase);
+  const [quickGradeId, setQuickGradeId] = useState(null); // studentId für Schnellbewertung-Popover
 
   // Nur im Fach Sport gibt es die Sportzeug-Spalte
   const istSport = /sport/i.test(fach?.subject || "");
@@ -6888,6 +6962,13 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
   function sortKey(name) {
     const { vor, nach } = splitName(name);
     return (nameOrder === "nachname" ? `${nach} ${vor}` : name).toLowerCase();
+  }
+
+  function addQuickMuendlich(studentId, value) {
+    update((d) => {
+      d.grades.push({ id: uid(), studentId, classId: fach.classId, fachId: fach.id, category: "muendlich", value, factor: 1, title: "Mündlich", date: isoDate(new Date()), halbjahr, quick: true });
+      return d;
+    });
   }
 
   const rows = students.map((s) => {
@@ -6929,7 +7010,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
         {istSport && <span className="text-[11px] text-stone-400 ml-auto self-center">Tipp auf „Sportz." erfasst vergessenes Sportzeug für heute</span>}
       </div>
 
-    <Card className="p-2 overflow-x-auto">
+    <Card className="p-2 overflow-x-auto" onClick={() => setQuickGradeId(null)}>
       <table className="w-full text-sm border-separate border-spacing-y-1 table-fixed">
         <colgroup>
           <col />
@@ -6962,8 +7043,23 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
                     <span className={`truncate ${active ? "akzent-text font-semibold" : "text-stone-800 font-medium"}`}>{displayName(s.name)}</span>
                   </div>
                 </td>
-                <td className="text-center tnum">
-                  {byCat.muendlich ? <span className={`font-semibold ${gradeColor(byCat.muendlich.avg, colored)}`}>{gradeLabel(byCat.muendlich.avg)}</span> : <span className="text-stone-300">—</span>}
+                <td className="text-center tnum relative" onClick={(e) => { e.stopPropagation(); setQuickGradeId(quickGradeId === s.id ? null : s.id); }}>
+                  {byCat.muendlich
+                    ? <span className={`font-semibold cursor-pointer hover:underline underline-offset-2 ${gradeColor(byCat.muendlich.avg, colored)}`}>{gradeLabel(byCat.muendlich.avg)}</span>
+                    : <span className="text-stone-400 text-base cursor-pointer select-none" title="Schnellbewertung">+</span>}
+                  {quickGradeId === s.id && (
+                    <div className="absolute z-50 top-full left-1/2 -translate-x-1/2 mt-1 bg-white rounded-xl shadow-xl border border-stone-200 p-1.5 flex gap-1" onClick={(e) => e.stopPropagation()}>
+                      {QUICK_SYMBOLS.map((qs) => (
+                        <button key={qs.symbol}
+                          onClick={() => { addQuickMuendlich(s.id, qs.value); setQuickGradeId(null); }}
+                          className="w-9 h-8 rounded-lg text-sm font-semibold border transition-colors hover:text-white"
+                          style={{ borderColor: isColor ? qs.color : "var(--oliv)", color: isColor ? qs.color : "var(--oliv)" }}
+                          onMouseEnter={e => { e.currentTarget.style.backgroundColor = isColor ? qs.color : "var(--oliv)"; e.currentTarget.style.color = "white"; }}
+                          onMouseLeave={e => { e.currentTarget.style.backgroundColor = ""; e.currentTarget.style.color = isColor ? qs.color : "var(--oliv)"; }}
+                        >{qs.symbol}</button>
+                      ))}
+                    </div>
+                  )}
                 </td>
                 <td className="text-center tnum">
                   {istSport ? (
@@ -7225,7 +7321,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
     if (studentGespraeche.length) {
       lines.push("");
       lines.push("Kindgespräche (was das Kind bewegt):");
-      const moodLabel = { gut: "😊", ok: "😐", schlecht: "😟" };
+      const moodLabel = { sehr_gut: "😄", gut: "😊", ok: "😐", nicht_so_gut: "😕", schlecht: "😟" };
       studentGespraeche.slice(0, 5).forEach((g) => {
         const icon = moodLabel[g.mood] ?? "💬";
         lines.push(`${icon} ${new Date(g.date).toLocaleDateString("de-DE")}: ${g.text}`);
@@ -7712,10 +7808,14 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                             <ul className="space-y-1.5">
                               {studentGespraeche.slice(0, 5).map((g) => {
                                 const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
+                                const typ = GESPRAECH_TYPEN.find((t) => t.key === g.gesprTyp);
                                 return (
                                   <li key={g.id} className="flex items-start gap-2 bg-stone-50 rounded-xl px-3 py-2 text-sm">
                                     <span className="text-base shrink-0 leading-snug">{mood?.emoji ?? "💬"}</span>
-                                    <span className="flex-1 text-stone-700">{g.text}</span>
+                                    <div className="flex-1 min-w-0">
+                                      {typ && <span className="text-[10px] font-medium akzent-text bg-[#ECEEE2] px-1.5 py-0.5 rounded mr-1">{typ.label}</span>}
+                                      <span className="text-stone-700">{g.text}</span>
+                                    </div>
                                     <span className="text-stone-400 text-xs whitespace-nowrap shrink-0">{new Date(g.date).toLocaleDateString("de-DE")}</span>
                                   </li>
                                 );
