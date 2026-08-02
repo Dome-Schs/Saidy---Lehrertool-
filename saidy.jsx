@@ -6,7 +6,7 @@ import {
   Clock, StickyNote, ClipboardCheck, Copy, CheckCircle2, AlertCircle, AlertTriangle,
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
-  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw,
+  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search,
 } from "lucide-react";
 
 /* ---------- Konstanten ---------- */
@@ -1767,6 +1767,7 @@ const HELP_DATA = [
   {
     category: "Klassen & Schüler:innen",
     items: [
+      { q: "Wie finde ich schnell ein bestimmtes Kind?", a: `Tippe auf „Suchen" – in der Seitenleiste (Desktop) oder im „Mehr"-Menü (Mobil). Du kannst nach Namen oder Notiztext suchen. Ein Tipp auf ein Ergebnis öffnet direkt das Schülerprofil.` },
       { q: "Wie bearbeite ich eine:n Schüler:in?", a: `Tippe in der Klassenliste auf den Namen. Im Profil kannst du Name, Foto und weitere Angaben bearbeiten.` },
       { q: "Wie lösche ich eine Klasse?", a: `Öffne die Klasse, tippe auf das Bearbeiten-Symbol und wähle „Klasse löschen“. Achtung: alle Daten dieser Klasse werden unwiderruflich entfernt.` },
       { q: "Was sind Dienste?", a: `Dienste sind Aufgaben, die Saidy Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste“, mit einem Tippen weiter zum nächsten Kind.` },
@@ -1896,6 +1897,104 @@ function HilfeItem({ item, open, toggle, showCategory }) {
   );
 }
 
+function GlobalSearchModal({ data, onSelectStudent, onClose }) {
+  const [query, setQuery] = useState("");
+  const inputRef = useRef(null);
+  const q = query.trim().toLowerCase();
+
+  const activeStudents = data.students.filter((s) => !s.deletedAt);
+  const classMap = Object.fromEntries(data.classes.map((c) => [c.id, c.name]));
+
+  const studentResults = q.length < 2 ? [] : activeStudents
+    .filter((s) => s.name.toLowerCase().includes(q))
+    .slice(0, 8);
+
+  const noteResults = q.length < 2 ? [] : data.notes
+    .filter((n) => n.text && n.text.toLowerCase().includes(q) && n.type !== "gespraech")
+    .slice(0, 5)
+    .map((n) => {
+      const student = activeStudents.find((s) => s.id === n.studentId);
+      return student ? { note: n, student } : null;
+    })
+    .filter(Boolean);
+
+  useEffect(() => { inputRef.current?.focus(); }, []);
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/50 z-[75] flex flex-col items-center pt-[max(env(safe-area-inset-top),2rem)] px-4 pb-4" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center gap-2.5 px-4 py-3 border-b border-stone-100">
+          <Search size={16} className="text-stone-400 shrink-0" />
+          <input
+            ref={inputRef}
+            className="flex-1 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none bg-transparent"
+            placeholder="Schüler:in oder Notiz suchen …"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          <button onClick={onClose} className="text-stone-400 hover:text-stone-600 shrink-0"><X size={16} /></button>
+        </div>
+
+        <div className="overflow-y-auto" style={{ maxHeight: "60vh" }}>
+          {q.length < 2 && (
+            <div className="px-4 py-10 text-sm text-stone-400 text-center">Mindestens 2 Zeichen eingeben …</div>
+          )}
+
+          {q.length >= 2 && studentResults.length === 0 && noteResults.length === 0 && (
+            <div className="px-4 py-10 text-sm text-stone-400 text-center">Keine Ergebnisse für „{query}"</div>
+          )}
+
+          {studentResults.length > 0 && (
+            <div>
+              <div className="px-4 pt-3 pb-1 text-[10px] font-semibold text-stone-400 uppercase tracking-widest">Schüler:innen</div>
+              <ul>
+                {studentResults.map((s) => (
+                  <li key={s.id}>
+                    <button
+                      onClick={() => onSelectStudent(s.id)}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-stone-50 text-left"
+                    >
+                      <StudentAvatar student={s} size={32} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium text-stone-800 truncate">{s.name}</div>
+                        <div className="text-xs text-stone-400 truncate">{classMap[s.classId] ?? "Unbekannte Klasse"}</div>
+                      </div>
+                      <ChevronRight size={14} className="text-stone-300 shrink-0" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {noteResults.length > 0 && (
+            <div>
+              <div className="px-4 pt-3 pb-1 text-[10px] font-semibold text-stone-400 uppercase tracking-widest">Notizen</div>
+              <ul>
+                {noteResults.map(({ note, student }) => (
+                  <li key={note.id}>
+                    <button
+                      onClick={() => onSelectStudent(student.id)}
+                      className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-stone-50 text-left"
+                    >
+                      <StudentAvatar student={student} size={32} />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-stone-500 truncate">{student.name} · {classMap[student.classId] ?? ""}</div>
+                        <div className="text-sm text-stone-700 leading-snug line-clamp-2">{note.text}</div>
+                      </div>
+                      <ChevronRight size={14} className="text-stone-300 shrink-0" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [data, setData] = useState(EMPTY_DATA);
   const [loaded, setLoaded] = useState(false);
@@ -1907,6 +2006,8 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [focusStudentId, setFocusStudentId] = useState(null);
   const [klassenSubTab, setKlassenSubTab] = useState("klassen");
   const [backupReminderDays, setBackupReminderDays] = useState(null); // null=kein Banner, 0=nie gesichert, >0=Tage seit letztem Backup
   const [toast, setToast] = useState(null);
@@ -1922,6 +2023,11 @@ export default function App() {
   const goToFach = useCallback((fachId) => {
     setNotenFachId(fachId);
     setTab("noten");
+  }, []);
+  const navigateToStudent = useCallback((studentId) => {
+    setShowSearch(false);
+    setFocusStudentId(studentId);
+    setTab("klassen");
   }, []);
   const [captureLesson, setCaptureLesson] = useState(null); // { fach, cls }
   const [now, setNow] = useState(() => new Date());
@@ -2318,8 +2424,14 @@ export default function App() {
             </div>
           </nav>
 
-          {/* Einstellungen unten */}
-          <div className="px-2 py-3 border-t border-stone-100">
+          {/* Suche + Einstellungen unten */}
+          <div className="px-2 py-3 border-t border-stone-100 space-y-0.5">
+            <button
+              onClick={() => setShowSearch(true)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-800 transition-colors"
+            >
+              <Search size={17} strokeWidth={2} /> Suchen
+            </button>
             <button
               onClick={() => setShowSettings(true)}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-800 transition-colors"
@@ -2358,7 +2470,7 @@ export default function App() {
             </div>
           )}
           {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenUntisImport={() => setShowUntisImport(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
-          {tab === "klassen" && <KlassenTab data={activeData} update={update} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} />}
+          {tab === "klassen" && <KlassenTab data={activeData} update={update} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
           {tab === "kalender" && <KalenderTab data={activeData} update={update} />}
           {tab === "aufgaben" && <AufgabenTab data={activeData} update={update} />}
@@ -2470,6 +2582,13 @@ export default function App() {
                 );
               })}
               <button
+                onClick={() => { setShowSearch(true); setShowMore(false); }}
+                className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-stone-200"
+              >
+                <Search size={22} className="text-stone-500" />
+                <span className="text-xs text-stone-600">Suchen</span>
+              </button>
+              <button
                 onClick={() => { setShowSettings(true); setShowMore(false); }}
                 className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-stone-200"
               >
@@ -2489,6 +2608,14 @@ export default function App() {
       )}
 
       {showHelp && <HilfeSheet onClose={() => setShowHelp(false)} />}
+
+      {showSearch && (
+        <GlobalSearchModal
+          data={activeData}
+          onSelectStudent={navigateToStudent}
+          onClose={() => setShowSearch(false)}
+        />
+      )}
 
       {/* Toast-Meldung */}
       {toast && (
@@ -4616,7 +4743,7 @@ function DutyModal({ onSave, onClose }) {
   );
 }
 
-function KlassenTab({ data, update, subTab, setSubTab, onOpenFach, onOpenUntisImport }) {
+function KlassenTab({ data, update, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed }) {
   const [selectedClass, setSelectedClass] = useState(data.classes[0]?.id ?? null);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -4630,6 +4757,16 @@ function KlassenTab({ data, update, subTab, setSubTab, onOpenFach, onOpenUntisIm
   const [expandedClass, setExpandedClass] = useState(null); // aufgeklappte Klassenkarte
   const [renameValue, setRenameValue] = useState("");
   const [overviewStudentId, setOverviewStudentId] = useState(null);
+
+  useEffect(() => {
+    if (!focusStudentId) return;
+    const student = data.students.find((s) => s.id === focusStudentId && !s.deletedAt);
+    if (!student) return;
+    setSelectedClass(student.classId);
+    setShowStudentsModal(true);
+    setSelectedStudent(focusStudentId);
+    onFocusConsumed?.();
+  }, [focusStudentId]);
 
   const cls = data.classes.find((c) => c.id === selectedClass);
   const classFaecher = data.faecher.filter((f) => f.classId === selectedClass);
