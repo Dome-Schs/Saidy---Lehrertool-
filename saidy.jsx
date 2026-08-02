@@ -3216,69 +3216,59 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <h1 className="text-xl font-semibold tracking-tight leading-tight">Guten Tag</h1>
-          <p className="text-stone-500 text-xs">
-            {selectedDate.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
+      {/* Zeile 1: Wordmark + Icon-Actions */}
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] font-bold tracking-[0.22em] uppercase akzent-text select-none">Saidy</span>
+        <div className="flex items-center gap-1.5">
+          {showImportReminder && (
+            <button
+              onClick={() => onOpenUntisImport?.()}
+              className="relative w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors"
+              title={daysSinceLast === null ? "Fehlzeiten noch nie importiert" : `Fehlzeiten-Import fällig (vor ${daysSinceLast} Tagen)`}
+            >
+              <Upload size={15} />
+              <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-amber-400 border-2 border-[#F4F1E8]" />
+            </button>
+          )}
+          {isToday && !!(pendingLessons || []).length && (
+            <button
+              onClick={() => setShowPending((v) => !v)}
+              className="relative w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors"
+              title={`${pendingLessons.length} ${pendingLessons.length === 1 ? "Stunde" : "Stunden"} nachtragen`}
+            >
+              <ClipboardCheck size={15} />
+              <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-amber-400 border-2 border-[#F4F1E8]" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Zeile 2: Wochentag groß + Datum + optionaler Ferien-Countdown */}
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight leading-none" style={{ color: "var(--ink)" }}>
+            {selectedDate.toLocaleDateString("de-DE", { weekday: "long" })}
+          </h1>
+          <p className="text-sm text-stone-400 mt-1">
+            {selectedDate.toLocaleDateString("de-DE", { day: "numeric", month: "long" })}
           </p>
         </div>
-        <div className="flex items-end gap-2 shrink-0">
-          {showImportReminder && (
-            <div className="flex flex-col items-center gap-0.5">
-              <button
-                onClick={() => onOpenUntisImport?.()}
-                className="relative w-9 h-9 rounded-full bg-stone-100 text-stone-400 hover:bg-stone-200 flex items-center justify-center shrink-0"
-                title={daysSinceLast === null ? "WebUntis-Fehlzeiten noch nie importiert" : `WebUntis-Import fällig (vor ${daysSinceLast} Tagen)`}
-              >
-                <Upload size={16} />
-                <span className="absolute top-0.5 right-0.5 w-2.5 h-2.5 rounded-full bg-amber-500 border-2 border-white" />
-              </button>
-              <span className="text-[11px] leading-none text-amber-600 font-medium">Fehlzeiten</span>
-            </div>
-          )}
-          {isToday && (
-            !!(pendingLessons || []).length ? (
-              <button
-                onClick={() => setShowPending((v) => !v)}
-                className="flex items-center gap-1.5 bg-amber-100 hover:bg-amber-200 text-amber-800 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors shrink-0"
-                title="Unterricht erfassen"
-              >
-                <ClipboardCheck size={14} />
-                {pendingLessons.length} {pendingLessons.length === 1 ? "Stunde" : "Stunden"} nachtragen
-              </button>
-            ) : (
-              <div className="flex flex-col items-center gap-0.5">
-                <div className="relative w-9 h-9 rounded-full bg-stone-100 text-stone-300 flex items-center justify-center shrink-0">
-                  <ClipboardCheck size={17} />
-                </div>
-                <span className="text-[11px] leading-none text-stone-400">Erfasst</span>
-              </div>
-            )
-          )}
         {data.settings?.showFerienCountdown && (() => {
           const cd = nextFerienCountdown(data.events, data.settings?.countdownSchooldaysOnly);
           if (!cd) return null;
           if (cd.inFerien) {
-            return (
-              <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-1.5 flex items-center gap-1.5 shrink-0" title={cd.title}>
-                <span className="text-base leading-none">🌴</span>
-                <span className="text-[11px] font-medium text-emerald-800">{cd.title}</span>
-              </div>
-            );
+            return <span className="text-xs text-stone-400 shrink-0 pb-0.5">🌴 {cd.title}</span>;
           }
           return (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-1.5 flex items-baseline gap-1.5 shrink-0">
-              <span className="text-lg font-bold text-emerald-700 leading-none">{cd.days}</span>
-              <span className="text-[11px] text-emerald-800">
-                {data.settings?.countdownSchooldaysOnly
-                  ? (cd.days === 1 ? "Schultag" : "Schultage")
-                  : (cd.days === 1 ? "Tag" : "Tage")} bis {cd.title}
-              </span>
-            </div>
+            <span className="text-xs text-stone-400 shrink-0 pb-0.5">
+              <span className="font-semibold text-stone-600">{cd.days}</span>{" "}
+              {data.settings?.countdownSchooldaysOnly
+                ? cd.days === 1 ? "Schultag" : "Schultage"
+                : cd.days === 1 ? "Tag" : "Tage"}{" "}
+              bis {cd.title}
+            </span>
           );
         })()}
-        </div>
       </div>
 
       {/* Aufklappbare Liste der nachzutragenden Stunden */}
