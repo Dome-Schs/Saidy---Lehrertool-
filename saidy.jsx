@@ -7007,7 +7007,6 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
         >
           <GraduationCap size={12} /> Zeugnisnote
         </button>
-        {istSport && <span className="text-[11px] text-stone-400 ml-auto self-center">„Sportz." → Sportzeug vergessen</span>}
       </div>
 
     <Card className="p-2 overflow-x-auto" onClick={() => setQuickGradeId(null)}>
