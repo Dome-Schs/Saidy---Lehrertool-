@@ -3221,7 +3221,12 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
     <div className="space-y-3">
       {/* Zeile 1: Wordmark + Icon-Actions */}
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold tracking-[0.22em] uppercase akzent-text select-none">Saidy</span>
+        <div className="flex items-center gap-2 select-none">
+          <span className="w-7 h-7 rounded-lg akzent-ton flex items-center justify-center shrink-0" aria-hidden="true">
+            <span className="text-sm font-bold akzent-text leading-none">S</span>
+          </span>
+          <span className="text-[11px] font-bold tracking-[0.22em] uppercase akzent-text">Saidy</span>
+        </div>
         <div className="flex items-center gap-1.5">
           {showImportReminder && (
             <button
