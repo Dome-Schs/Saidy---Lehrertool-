@@ -1891,7 +1891,7 @@ const HELP_DATA = [
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst. Das 💬-Symbol neben einem Kind öffnet direkt ein Gespräch mit Typ-Wahl (Schüler/Eltern/Förder) und Stimmungsskala.` },
       { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button "Zeugnis". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
-      { q: "Wo kann ich Gespräche mit Schüler:innen erfassen?", a: `In der Klassenliste gibt es neben jedem Kind ein 💬-Symbol. Ein Tipp öffnet direkt ein kompaktes Formular: Typ (Schülergespräch / Elterngespräch / Fördergespräch), Stimmungsskala (😄😊😐😕😟) und freies Notizfeld. Gespräche sind auch im Schnellerfassungs-Modus nach dem Unterricht erreichbar.` },
+      { q: "Wo kann ich Gespräche mit Schüler:innen erfassen?", a: `An drei Stellen: (1) In der Klassenliste neben jedem Kind das 💬-Symbol antippen. (2) Im Schnellerfassungs-Modus nach dem Unterricht. (3) Direkt in der Notenansicht: Kind antippen – die Detailansicht zeigt oben eine Karte „Gespräch & Stimmung“ mit Typ-Wahl (Schüler / Eltern / Förder), Stimmungsskala (😄😊😐😕😟) und Notizfeld. Alle erfassten Gespräche erscheinen auch bei Elternsprechtag-Vorbereitung.` },
     ],
   },
   {
@@ -7251,6 +7251,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
   const [showIncidents, setShowIncidents] = useState(false);
   const [showGradesList, setShowGradesList] = useState(false);
   const [editingGrade, setEditingGrade] = useState(null);
+  const [gesprNDraft, setGesprNDraft] = useState({ text: "", mood: "ok", typ: "schueler" });
 
   const fach = data.faecher.find((f) => f.id === selectedFach);
   const cls = fach ? data.classes.find((c) => c.id === fach.classId) : null;
@@ -7271,6 +7272,16 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
       if (value != null) d.finalGrades.push({ id: uid(), studentId: selectedStudent, fachId: selectedFach, halbjahr, value });
       return d;
     });
+  }
+
+  function saveGesprNote() {
+    if (!selectedStudent || !gesprNDraft.text.trim()) return;
+    update((d) => {
+      d.notes = d.notes || [];
+      d.notes.push({ id: uid(), studentId: selectedStudent, type: "gespraech", text: gesprNDraft.text.trim(), mood: gesprNDraft.mood, gesprTyp: gesprNDraft.typ, date: isoDate(new Date()) });
+      return d;
+    });
+    setGesprNDraft({ text: "", mood: "ok", typ: "schueler" });
   }
 
   const sprechtagText = useMemo(() => {
@@ -7610,6 +7621,61 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                       <Button onClick={addGrade} className="justify-center shrink-0"><Plus size={15} /></Button>
                     </div>
                   </div>
+                </Card>
+
+                {/* Gespräch / Stimmung direkt erfassen */}
+                <Card className="p-4">
+                  <div className="font-medium text-stone-800 text-sm mb-3">Gespräch &amp; Stimmung</div>
+                  <div className="flex gap-1.5 mb-2 flex-wrap">
+                    {GESPRAECH_TYPEN.map((t) => (
+                      <button
+                        key={t.key}
+                        onClick={() => setGesprNDraft((d) => ({ ...d, typ: t.key }))}
+                        className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${gesprNDraft.typ === t.key ? "akzent-ton akzent-rand" : "border-stone-200 text-stone-500 bg-white"}`}
+                      >{t.label}</button>
+                    ))}
+                  </div>
+                  <div className="flex gap-1 mb-2">
+                    {MOOD_OPTIONS.map((m) => (
+                      <button
+                        key={m.key}
+                        onClick={() => setGesprNDraft((d) => ({ ...d, mood: m.key }))}
+                        title={m.label}
+                        className={`flex-1 text-lg py-1 rounded-xl transition-colors ${gesprNDraft.mood === m.key ? "bg-[#ECEEE2] ring-1 ring-[var(--oliv)]" : "bg-stone-50 hover:bg-stone-100"}`}
+                      >{m.emoji}</button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      className={`${inputCls} flex-1`}
+                      placeholder="Notiz zum Gespräch …"
+                      value={gesprNDraft.text}
+                      onChange={(e) => setGesprNDraft((d) => ({ ...d, text: e.target.value }))}
+                      maxLength={500}
+                      onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); saveGesprNote(); } }}
+                    />
+                    <Button onClick={saveGesprNote} className="shrink-0 justify-center" disabled={!gesprNDraft.text.trim()}>
+                      <Plus size={15} />
+                    </Button>
+                  </div>
+                  {studentGespraeche.length > 0 && (
+                    <ul className="mt-3 space-y-1.5">
+                      {studentGespraeche.slice(0, 3).map((g) => {
+                        const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
+                        const typ = GESPRAECH_TYPEN.find((t) => t.key === g.gesprTyp);
+                        return (
+                          <li key={g.id} className="flex items-start gap-2 bg-stone-50 rounded-xl px-3 py-2 text-sm">
+                            <span className="text-base shrink-0 leading-snug">{mood?.emoji ?? "💬"}</span>
+                            <div className="flex-1 min-w-0">
+                              {typ && <span className="text-[10px] font-medium akzent-text bg-[#ECEEE2] px-1.5 py-0.5 rounded mr-1">{typ.label}</span>}
+                              <span className="text-stone-700">{g.text}</span>
+                            </div>
+                            <span className="text-stone-400 text-xs whitespace-nowrap shrink-0">{localDate(g.date).toLocaleDateString("de-DE")}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
                 </Card>
 
                 <Card className="p-5">
