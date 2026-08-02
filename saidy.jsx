@@ -2748,7 +2748,7 @@ export default function App() {
 
       {/* Toast-Meldung */}
       {toast && (
-        <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-stone-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg pointer-events-none">
+        <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+76px)] md:bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-stone-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg pointer-events-none">
           {toast}
         </div>
       )}
@@ -5580,7 +5580,7 @@ function PeriodTimeEditor({ initial, onSave, onCancel }) {
   return (
     <div className="relative">
       <div className="h-8" />
-      <div className="absolute top-0 left-0 z-20 bg-white border akzent-rand rounded-lg p-1.5 space-y-1 shadow-lg w-24">
+      <div className="absolute top-0 left-0 z-50 bg-white border akzent-rand rounded-lg p-1.5 space-y-1 shadow-lg w-24">
         <input type="time" className="w-full text-xs rounded border border-stone-200 px-1 py-1" value={start} onChange={(e) => setStart(e.target.value)} />
       <input type="time" className="w-full text-xs rounded border border-stone-200 px-1 py-1" value={end} onChange={(e) => setEnd(e.target.value)} />
       <div className="flex gap-1">
@@ -5599,7 +5599,7 @@ function CellEditor({ faecher, classes, initial, onSave, onCancel }) {
     <div className="relative">
       {/* Platzhalter in Zellengröße, Editor schwebt darüber */}
       <div className="h-12" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 z-20 bg-white border akzent-rand rounded-lg p-1.5 space-y-1 shadow-lg w-40">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 z-50 bg-white border akzent-rand rounded-lg p-1.5 space-y-1 shadow-lg w-40">
         <select className="w-full text-xs rounded border border-stone-200 px-1 py-1" value={fachId} onChange={(e) => setFachId(e.target.value)} autoFocus>
           <option value="">frei</option>
           {faecher.map((f) => {
@@ -7580,12 +7580,12 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
 
           {showSprechtagPicker && (
             <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={() => setShowSprechtagPicker(false)}>
-              <div className="bg-white w-full md:max-w-sm rounded-t-3xl md:rounded-2xl shadow-xl" onClick={(e) => e.stopPropagation()}>
-                <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between">
+              <div className="bg-white w-full md:max-w-sm rounded-t-3xl md:rounded-2xl shadow-xl sheet overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+                <div className="bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between">
                   <div className="font-semibold text-stone-800">Elternsprechtag – Kind wählen</div>
                   <button onClick={() => setShowSprechtagPicker(false)} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center"><X size={16} /></button>
                 </div>
-                <ul className="overflow-y-auto max-h-[60vh] divide-y divide-stone-100 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                <ul className="divide-y divide-stone-100 pb-[max(1rem,env(safe-area-inset-bottom))]">
                   {students.map((s) => (
                     <li key={s.id}>
                       <button
