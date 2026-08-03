@@ -1883,6 +1883,7 @@ const HELP_DATA = [
       { q: "Wie erfasse ich Fehlzeiten?", a: `Gehe zu Klasse → „Fehlzeiten" → „+ Fehlzeit". Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist.` },
       { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle in der Fläche – es erscheint eine Auswahlliste zum Auswählen des Kindes. Alternativ auf „Kind hinzufügen" tippen. Platzierte Kinder lassen sich frei auf der Fläche verschieben. Die Tafel oben lässt sich an jeden Rand ziehen (oben, unten, links, rechts). Einmal antippen (ohne zu schieben) markiert den Sitzplatz farbig: grün = klappt gut, amber = beobachten, rot = klappt nicht. Ein Kind entfernen: Token nach unten über den Rand der Fläche in die rote Toolbar ziehen und loslassen. „Aufräumen" richtet alle Kinder gleichzeitig in einem sauberen Raster aus. „Löschen" entfernt den gesamten Sitzplan. Am Ende „Speichern" tippen.` },
       { q: "Was zeigt die Zusammenfassung im Schülerprofil?", a: `Im Profil-Tab „Übersicht" erscheint eine automatisch generierte Zusammenfassung – erkennbar am Sparkles-Symbol. Sie fasst Stimmung, Notendurchschnitt, Tendenz, Aktivität der letzten 30 Tage, Förderbedarfe und aktive Ziele in einem Satz zusammen. Die Zusammenfassung wird lokal aus den gespeicherten Daten berechnet und nur angezeigt, wenn genügend Informationen vorliegen.` },
+      { q: "Was sind die farbigen Signale im Schülerprofil?", a: `Direkt unter der Profilkarte erscheinen farbige Signale: Rot (kritisch), Gelb (beobachten), Grün (positiv) und Blau (Info). Sie werden automatisch aus den Daten berechnet – z. B. kritischer Notenschnitt, kein Eintrag seit mehr als 14 Tagen, negative Stimmung in Folge, Förderbedarf ohne aktives Ziel, oder Geburtstag in den nächsten 7 Tagen. Tippe auf ein Signal, um direkt zum betreffenden Tab zu springen.` },
     ],
   },
   {
@@ -4684,6 +4685,70 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
       }
       const aiSummary = buildAiSummary();
 
+      function computeSignals() {
+        const result = [];
+        const todayMs = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime(); })();
+
+        // Kritischer Notenschnitt
+        if (profileAvg != null && profileAvg >= 4.0) {
+          result.push({ level: "krit", label: `Krit. Ø ${profileAvg.toFixed(1)}`, tab: "leistung" });
+        }
+
+        // Notentrend
+        if (sGradesAll.length >= 4) {
+          const mid = Math.floor(sGradesAll.length / 2);
+          const fA = sGradesAll.slice(0, mid).reduce((a, g) => a + g.value, 0) / mid;
+          const lA = sGradesAll.slice(mid).reduce((a, g) => a + g.value, 0) / (sGradesAll.length - mid);
+          if (lA > fA + 0.5 && profileAvg < 4.0) {
+            result.push({ level: "warn", label: `Notenabfall ↘`, tab: "leistung" });
+          } else if (lA < fA - 0.5) {
+            result.push({ level: "gut", label: `Notenverbesserung ↗`, tab: "leistung" });
+          }
+        }
+
+        // Sehr guter Schnitt
+        if (profileAvg != null && profileAvg <= 1.5 && sGradesAll.length >= 3 && profileAvg >= 4.0 === false) {
+          result.push({ level: "gut", label: `Sehr gut (Ø ${profileAvg.toFixed(1)})`, tab: "leistung" });
+        }
+
+        // Keine Einträge seit N Tagen
+        const allEntries = [...sNotes, ...sGespraeche];
+        if (allEntries.length > 0) {
+          const lastIso = allEntries.reduce((m, e) => e.date > m ? e.date : m, allEntries[0].date);
+          const daysSince = Math.round((todayMs - localDate(lastIso).getTime()) / 86400000);
+          if (daysSince >= 14) {
+            result.push({ level: "warn", label: `${daysSince} Tage ohne Eintrag`, tab: "notizen" });
+          }
+        } else if (sGradesAll.length > 0) {
+          result.push({ level: "info", label: "Noch keine Notiz", tab: "notizen" });
+        }
+
+        // Negative Stimmung in Folge
+        const last3 = sGespraeche.slice(0, 3);
+        if (last3.length >= 2 && last3.every((g) => ["nicht_so_gut", "schlecht"].includes(g.mood))) {
+          result.push({ level: "warn", label: "Stimmung zuletzt negativ", tab: "gespräche" });
+        }
+
+        // Förderbedarf ohne aktives Ziel
+        if (foerderTags.length > 0 && !sZiele.some((z) => !z.doneAt)) {
+          result.push({ level: "warn", label: "Kein Förderziel gesetzt", tab: "mehr" });
+        }
+
+        // Geburtstag in ≤ 7 Tagen
+        if (s.birthday) {
+          const b = localDate(s.birthday);
+          const yr = new Date().getFullYear();
+          let next = new Date(yr, b.getMonth(), b.getDate());
+          if (next.getTime() < todayMs) next = new Date(yr + 1, b.getMonth(), b.getDate());
+          const days = Math.round((next.getTime() - todayMs) / 86400000);
+          if (days === 0) result.push({ level: "info", label: "Heute Geburtstag 🎂", tab: null });
+          else if (days <= 7) result.push({ level: "info", label: `Geburtstag in ${days} T. 🎂`, tab: null });
+        }
+
+        return result;
+      }
+      const signals = computeSignals();
+
       return (
       <div className="fixed inset-0 z-[55] bg-stone-100 flex flex-col" style={{ maxHeight: "100dvh" }}>
           {/* Minimaler Kopf: Navigation + Tabs */}
@@ -4768,6 +4833,24 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
                     </div>
                   )}
                 </div>
+
+                {/* Signale */}
+                {signals.length > 0 && (
+                  <div className="overflow-x-auto -mx-4 px-4 chip-scroll">
+                    <div className="flex gap-2 pb-1">
+                      {signals.map((sig, i) => (
+                        <button
+                          key={i}
+                          onClick={() => sig.tab ? setProfileTab(sig.tab) : undefined}
+                          className={`chip chip-${sig.level} shrink-0 font-semibold`}
+                          style={{ fontSize: "0.75rem", padding: "0.3rem 0.75rem", cursor: sig.tab ? "pointer" : "default" }}
+                        >
+                          {sig.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {/* 3-Spalten Statistik-Gitter */}
                 <div className="grid grid-cols-3 gap-2">
