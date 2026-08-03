@@ -4283,11 +4283,13 @@ function VoiceNoteButton({ onTranscript }) {
   const [listening, setListening] = useState(false);
   const [interim, setInterim] = useState("");
   const [showConsent, setShowConsent] = useState(false);
+  const [micError, setMicError] = useState("");
   const srRef = useRef(null);
 
   if (!SR) return null;
 
   function startRecording() {
+    setMicError("");
     const sr = new SR();
     sr.lang = "de-DE";
     sr.continuous = false;
@@ -4302,14 +4304,29 @@ function VoiceNoteButton({ onTranscript }) {
       }
     };
     sr.onend = () => { setListening(false); setInterim(""); };
-    sr.onerror = () => { setListening(false); setInterim(""); };
+    sr.onerror = (e) => {
+      setListening(false);
+      setInterim("");
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        setMicError("Mikrofon-Zugriff verweigert. Bitte in den Geräte-Einstellungen erlauben.");
+      } else if (e.error === "no-speech") {
+        setMicError("Kein Ton erkannt – bitte nochmal versuchen.");
+      } else if (e.error !== "aborted") {
+        setMicError("Spracherkennung nicht verfügbar.");
+      }
+    };
     srRef.current = sr;
-    sr.start();
-    setListening(true);
+    try {
+      sr.start();
+      setListening(true);
+    } catch {
+      setMicError("Mikrofon konnte nicht gestartet werden.");
+    }
   }
 
   function handleClick() {
     if (listening) { srRef.current?.stop(); return; }
+    setMicError("");
     if (!localStorage.getItem(VOICE_CONSENT_KEY)) { setShowConsent(true); return; }
     startRecording();
   }
@@ -4317,16 +4334,16 @@ function VoiceNoteButton({ onTranscript }) {
   return (
     <>
       <div className="relative shrink-0">
-        {interim && (
-          <div className="absolute bottom-full right-0 mb-2 z-10 bg-stone-800 text-white text-xs rounded-xl px-3 py-2 max-w-[180px] text-right shadow-lg leading-snug">
-            {interim}
+        {(interim || micError) && (
+          <div className={`absolute bottom-full right-0 mb-2 z-10 text-xs rounded-xl px-3 py-2 max-w-[220px] text-right shadow-lg leading-snug ${micError ? "bg-red-600 text-white" : "bg-stone-800 text-white"}`}>
+            {micError || interim}
           </div>
         )}
         <button
           type="button"
           onClick={handleClick}
           title={listening ? "Aufnahme beenden" : "Sprachnotiz"}
-          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${listening ? "bg-red-500 text-white" : "bg-stone-100 text-stone-400 hover:text-stone-600"}`}
+          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${listening ? "bg-red-500 text-white" : micError ? "bg-red-100 text-red-500" : "bg-stone-100 text-stone-400 hover:text-stone-600"}`}
         >
           <Mic size={15} className={listening ? "animate-pulse" : ""} />
         </button>
