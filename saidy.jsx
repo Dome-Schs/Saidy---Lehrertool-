@@ -5433,7 +5433,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
               );
             })()}
 
-            {placedCount === 0 && !isDraggingToken && (
+            {placedCount === 0 && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
                 <p className="text-stone-400 text-sm text-center px-10">Auf die Fläche tippen, um ein Kind zu platzieren</p>
               </div>
