@@ -1882,6 +1882,7 @@ const HELP_DATA = [
       { q: "Was sind Dienste?", a: `Dienste sind Aufgaben, die Saidy Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste", mit einem Tippen weiter zum nächsten Kind.` },
       { q: "Wie erfasse ich Fehlzeiten?", a: `Gehe zu Klasse → „Fehlzeiten" → „+ Fehlzeit". Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist.` },
       { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle in der Fläche – es erscheint eine Auswahlliste zum Auswählen des Kindes. Alternativ auf „Kind hinzufügen" tippen. Platzierte Kinder lassen sich frei auf der Fläche verschieben. Die Tafel oben lässt sich an jeden Rand ziehen (oben, unten, links, rechts). Einmal antippen (ohne zu schieben) markiert den Sitzplatz farbig: grün = klappt gut, amber = beobachten, rot = klappt nicht. Ein Kind entfernen: Token nach unten über den Rand der Fläche in die rote Toolbar ziehen und loslassen. „Aufräumen" richtet alle Kinder gleichzeitig in einem sauberen Raster aus. „Löschen" entfernt den gesamten Sitzplan. Am Ende „Speichern" tippen.` },
+      { q: "Was zeigt die Zusammenfassung im Schülerprofil?", a: `Im Profil-Tab „Übersicht" erscheint eine automatisch generierte Zusammenfassung – erkennbar am Sparkles-Symbol. Sie fasst Stimmung, Notendurchschnitt, Tendenz, Aktivität der letzten 30 Tage, Förderbedarfe und aktive Ziele in einem Satz zusammen. Die Zusammenfassung wird lokal aus den gespeicherten Daten berechnet und nur angezeigt, wenn genügend Informationen vorliegen.` },
     ],
   },
   {
@@ -4634,6 +4635,55 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
       const nextGoal = sZiele.find((z) => !z.doneAt) ?? null;
       const lastN = sNotes[0] ?? null;
 
+      const sGradesAll = (grades || []).filter((g) => g.studentId === s.id).sort((a, b) => a.date.localeCompare(b.date));
+
+      function buildAiSummary() {
+        if (!profileAvg && !sNotes.length && !sGespraeche.length && !foerderTags.length && !nextGoal) return "";
+        const vorname = s.name.split(" ")[0];
+        const parts = [];
+
+        if (profileMood) {
+          const st = { sehr_gut: "einen sehr positiven Eindruck", gut: "einen guten Eindruck", ok: "einen zufriedenstellenden Eindruck", nicht_so_gut: "etwas belastet", schlecht: "deutlich belastet" }[profileMood.key] ?? "einen neutralen Eindruck";
+          const verb = ["nicht_so_gut", "schlecht"].includes(profileMood.key) ? "wirkt" : "macht derzeit";
+          parts.push(`${vorname} ${verb} ${st}.`);
+        }
+
+        if (profileAvg != null) {
+          const bereich = profileAvg <= 1.5 ? "sehr guten" : profileAvg <= 2.5 ? "guten" : profileAvg <= 3.5 ? "befriedigenden" : profileAvg <= 4.5 ? "ausreichenden" : "kritischen";
+          let trendText = "";
+          if (sGradesAll.length >= 4) {
+            const mid = Math.floor(sGradesAll.length / 2);
+            const fAvg = sGradesAll.slice(0, mid).reduce((a, g) => a + g.value, 0) / mid;
+            const lAvg = sGradesAll.slice(mid).reduce((a, g) => a + g.value, 0) / (sGradesAll.length - mid);
+            if (lAvg < fAvg - 0.25) trendText = ", Tendenz verbessert";
+            else if (lAvg > fAvg + 0.25) trendText = ", Tendenz verschlechtert";
+            else trendText = ", stabile Tendenz";
+          }
+          parts.push(`Noten: Ø ${profileAvg.toFixed(1)} (${bereich}${trendText}).`);
+        }
+
+        const cutoffStr = (() => { const d = new Date(); d.setDate(d.getDate() - 30); return d.toISOString().slice(0, 10); })();
+        const rN = sNotes.filter((n) => n.date >= cutoffStr).length;
+        const rG = sGespraeche.filter((g) => g.date >= cutoffStr).length;
+        if (rN + rG > 0) {
+          const acts = [];
+          if (rN > 0) acts.push(rN === 1 ? "1 Notiz" : `${rN} Notizen`);
+          if (rG > 0) acts.push(rG === 1 ? "1 Gespräch" : `${rG} Gespräche`);
+          parts.push(`Letzte 30 Tage: ${acts.join(", ")}.`);
+        }
+
+        if (foerderTags.length > 0) parts.push(`Förderbedarf: ${foerderTags.join(", ")}.`);
+
+        if (nextGoal) {
+          const label = nextGoal.typ === "wochen" ? "Wochenziel" : "Förderziel";
+          const txt = nextGoal.text.length > 60 ? nextGoal.text.slice(0, 60) + "…" : nextGoal.text;
+          parts.push(`Aktives ${label}: „${txt}"`);
+        }
+
+        return parts.join(" ");
+      }
+      const aiSummary = buildAiSummary();
+
       return (
       <div className="fixed inset-0 z-[55] bg-stone-100 flex flex-col" style={{ maxHeight: "100dvh" }}>
           {/* Minimaler Kopf: Navigation + Tabs */}
@@ -4759,6 +4809,19 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
                     )}
                   </div>
                 </div>
+
+                {/* KI-Zusammenfassung */}
+                {aiSummary && (
+                  <div className="rounded-2xl p-4 border border-stone-200/60" style={{ background: "var(--creme)" }}>
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <div className="w-6 h-6 rounded-lg akzent-flaeche flex items-center justify-center shrink-0">
+                        <Sparkles size={12} className="text-white" />
+                      </div>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Zusammenfassung</span>
+                    </div>
+                    <p className="text-sm text-stone-700 leading-relaxed">{aiSummary}</p>
+                  </div>
+                )}
 
                 {/* Nächste Aufgabe / Förderziel */}
                 {nextGoal && (
