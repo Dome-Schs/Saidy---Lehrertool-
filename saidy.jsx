@@ -1955,7 +1955,7 @@ function HilfeSheet({ onClose }) {
   return (
     <div className="fixed inset-0 bg-stone-900/40 z-50 flex items-end" onClick={onClose}>
       <div
-        className="bg-white rounded-t-3xl w-full p-4 pb-[max(2rem,env(safe-area-inset-bottom))] max-h-[88vh] flex flex-col sheet"
+        className="bg-white rounded-t-3xl w-full p-4 pb-[max(2rem,env(safe-area-inset-bottom))] max-h-[88vh] flex flex-col sheet anim-sheet"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4 shrink-0" />
@@ -2594,8 +2594,36 @@ export default function App() {
         .press-scale { transition: transform 0.12s ease, opacity 0.12s ease; }
         .press-scale:active { transform: scale(0.97); opacity: 0.85; }
 
+        /* ── Eingangs-Animationen ── */
+        @keyframes slide-up-sheet {
+          from { transform: translateY(100%); }
+          to   { transform: translateY(0); }
+        }
+        @keyframes slide-from-right {
+          from { transform: translateX(100%); opacity: 0; }
+          to   { transform: translateX(0);    opacity: 1; }
+        }
+        @keyframes item-pop {
+          from { transform: scale(0.88) translateY(6px); opacity: 0; }
+          to   { transform: scale(1)    translateY(0);   opacity: 1; }
+        }
+        @keyframes fade-in {
+          from { opacity: 0; }
+          to   { opacity: 1; }
+        }
+        @keyframes fade-in-tab {
+          from { opacity: 0; transform: translateY(6px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .anim-sheet       { animation: slide-up-sheet  0.28s cubic-bezier(0.32, 0.72, 0, 1) both; }
+        .anim-slide-right { animation: slide-from-right 0.26s cubic-bezier(0.32, 0.72, 0, 1) both; }
+        .anim-item        { animation: item-pop 0.20s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+        .anim-bg          { animation: fade-in 0.22s ease both; }
+        .anim-tab         { animation: fade-in-tab 0.18s ease both; }
+
         @media (prefers-reduced-motion: reduce) {
-          * { transition-duration: 0.01ms !important; }
+          * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
         }
       `}</style>
       {showOnboarding && (
@@ -2802,7 +2830,7 @@ export default function App() {
       {/* Mehr-Menü (mobil) */}
       {showMore && (
         <div className="md:hidden fixed inset-0 bg-stone-900/40 z-50 flex items-end" onClick={() => setShowMore(false)}>
-          <div className="bg-white rounded-t-3xl w-full p-4 pb-[max(2rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-t-3xl w-full p-4 pb-[max(2rem,env(safe-area-inset-bottom))] anim-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
             <div className="grid grid-cols-2 gap-3">
               {[tabs[2], tabs[3]].map((t) => {
@@ -2869,8 +2897,8 @@ export default function App() {
               <button
                 key={label}
                 onClick={() => { onClick(); setFabOpen(false); }}
-                className="flex items-center gap-2.5 bg-white border border-stone-100 shadow-lg px-4 py-2.5 rounded-full text-sm font-medium text-stone-800 press-scale"
-                style={{ animationDelay: `${i * 35}ms` }}
+                className="flex items-center gap-2.5 bg-white border border-stone-100 shadow-lg px-4 py-2.5 rounded-full text-sm font-medium text-stone-800 press-scale anim-item"
+                style={{ animationDelay: `${i * 40}ms`, animationFillMode: "both" }}
               >
                 <span className="w-7 h-7 rounded-full akzent-flaeche flex items-center justify-center flex-shrink-0">
                   <Icon size={13} className="text-white" />
@@ -4302,7 +4330,7 @@ function VoiceNoteButton({ onTranscript }) {
 
       {showConsent && (
         <div className="fixed inset-0 z-[80] bg-stone-900/50 flex items-end" onClick={() => setShowConsent(false)}>
-          <div className="bg-white rounded-t-3xl w-full p-5 pb-[max(2rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white rounded-t-3xl w-full p-5 pb-[max(2rem,env(safe-area-inset-bottom))] anim-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
             <div className="flex items-center gap-2 mb-3">
               <Mic size={18} className="akzent-text shrink-0" />
@@ -4537,7 +4565,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
     {/* TP-02 · Schülerliste als Bottom-Sheet mit Preview-Karten */}
     <div className="fixed inset-0 bg-stone-900/50 z-50 flex flex-col justify-end" onClick={onClose}>
       <div
-        className="bg-stone-100 rounded-t-3xl w-full flex flex-col"
+        className="bg-stone-100 rounded-t-3xl w-full flex flex-col anim-sheet"
         style={{ maxHeight: "90dvh", boxShadow: "var(--shadow-xl)" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -4835,7 +4863,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
       const signals = computeSignals();
 
       return (
-      <div className="fixed inset-0 z-[55] bg-stone-100 flex flex-col" style={{ maxHeight: "100dvh" }}>
+      <div className="fixed inset-0 z-[55] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
           {/* Minimaler Kopf: Navigation + Tabs */}
           <div className="bg-white border-b border-stone-100 shrink-0">
             <div className="flex items-center gap-2 px-4 pt-3 pb-2">
@@ -4873,7 +4901,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
 
             {/* ── ÜBERSICHT ── */}
             {profileTab === "übersicht" && (
-              <div className="p-4 space-y-3">
+              <div className="p-4 space-y-3 anim-tab">
 
                 {/* Profil-Karte */}
                 <div className="card p-4">
@@ -5132,7 +5160,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
               const trend = gradeTrend();
 
               return (
-                <div className="p-4 space-y-3">
+                <div className="p-4 space-y-3 anim-tab">
                   {/* Stats-Reihe */}
                   <div className="grid grid-cols-3 gap-2">
                     <div className="card p-3">
@@ -5230,7 +5258,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
 
             {/* ── NOTIZEN ── */}
             {profileTab === "notizen" && (
-              <div className="p-4 space-y-3">
+              <div className="p-4 space-y-3 anim-tab">
                 <div className="card p-4">
                   <div className="flex gap-2 items-center">
                     <input autoFocus className="input-base flex-1"
@@ -5276,7 +5304,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
 
             {/* ── GESPRÄCHE ── */}
             {profileTab === "gespräche" && (
-              <div className="p-4 space-y-3">
+              <div className="p-4 space-y-3 anim-tab">
                 <div className="card p-4 space-y-2">
                   <div className="flex gap-1.5">
                     {GESPRAECH_TYPEN.map((t) => (
@@ -5345,7 +5373,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
 
             {/* ── MEHR: Förderstatus + Ziele + Stammdaten ── */}
             {profileTab === "mehr" && (
-              <div className="p-4 space-y-4">
+              <div className="p-4 space-y-4 anim-tab">
 
                 {/* Förderstatus Tags */}
                 <div className="card p-4">
@@ -6767,7 +6795,7 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
     .map((n) => ({ ...n, student: students.find((s) => s.id === n.studentId) }));
 
   return (
-    <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col" style={{ maxHeight: "100dvh" }}>
+    <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
       <div className="bg-white border-b border-stone-100 shrink-0">
         <div className="flex items-center gap-3 px-4 pt-4 pb-4">
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale">
