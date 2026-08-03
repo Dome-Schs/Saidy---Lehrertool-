@@ -2450,42 +2450,136 @@ export default function App() {
   return (
     <div className="h-[100dvh] flex flex-col overflow-hidden app-bg text-[color:var(--ink)] font-sans">
       <style>{`
+        /* ═══════════════════════════════════════════════════
+           TP-01 · Design-Fundament
+           ─────────────────────────────────────────────────
+           Tokens, Semantik, Typographie, Karten, Chips
+           ═══════════════════════════════════════════════════ */
         :root {
-          --oliv: #4F5844;        /* Salbei-Oliv: Akzent */
+          /* Marke */
+          --oliv: #4F5844;
           --oliv-dunkel: #3E4636;
-          --oliv-hell: #ECEEE2;   /* heller Salbeiton für Flächen */
-          --creme: #F4F1E8;       /* Grundfläche */
-          --karte: #FFFDF8;       /* Kartenfläche, leicht warm */
-          --linie: #E4DFD2;       /* Haarlinie */
-          --ink: #2E3328;         /* Text */
+          --oliv-hell: #ECEEE2;
+          --creme: #F4F1E8;
+          --karte: #FFFDF8;
+          --linie: #E4DFD2;
+          --ink: #2E3328;
+
+          /* Semantische Status-Farben
+             Grün = gut · Amber = Aufmerksamkeit · Rot = dringend · Blau = Info
+             Grau = neutral/Standard — nur diese 5 Farben für Status */
+          --s-gut:  #166534; --s-gut-bg:  #DCFCE7; --s-gut-rand:  #86EFAC;
+          --s-warn: #92400E; --s-warn-bg: #FEF3C7; --s-warn-rand: #FCD34D;
+          --s-krit: #991B1B; --s-krit-bg: #FEE2E2; --s-krit-rand: #FCA5A5;
+          --s-info: #1E40AF; --s-info-bg: #DBEAFE; --s-info-rand: #93C5FD;
+          --s-neu:  #4F5844; --s-neu-bg:  #ECEEE2; --s-neu-rand:  #C5CDB8;
+
+          /* Abstände — 24 außen / 16 zwischen Karten / 12 innen */
+          --sp-out:  1.5rem;
+          --sp-card: 1rem;
+          --sp-in:   0.75rem;
+
+          /* Schatten */
+          --shadow-card: 0 1px 3px rgba(46,51,40,0.07), 0 1px 2px rgba(46,51,40,0.04);
+          --shadow-md:   0 4px 16px rgba(46,51,40,0.10), 0 1px 4px rgba(46,51,40,0.06);
+          --shadow-xl:   0 8px 32px rgba(46,51,40,0.14), 0 2px 8px rgba(46,51,40,0.08);
         }
-        .app-bg { background: var(--creme); }
-        .karte { background: var(--karte); border: 1px solid var(--linie); }
+
+        /* ── Hintergrund ── */
+        .app-bg  { background: var(--creme); }
         .bg-karte { background: var(--karte); }
+
+        /* ── Karten (shadow-first, kein schwerer Rahmen) ──
+           .card        weißer Grund, weiches Shadow
+           .card-warm   creme-weißer Grund (wie bisher --karte)
+           .karte       Rückwärtskompatibel: bleibt mit Rand */
+        .card      { background: #fff;            border-radius: 1rem; box-shadow: var(--shadow-card); }
+        .card-warm { background: var(--karte);    border-radius: 1rem; box-shadow: var(--shadow-card); }
+        .card-p    { padding: var(--sp-in); }
+        .karte     { background: var(--karte); border: 1px solid var(--linie); }
+
+        /* ── Akzent (unverändert, Rückwärtskompatibilität) ── */
         .akzent-flaeche { background: var(--oliv); color: #fff; }
         .akzent-flaeche:hover { background: var(--oliv-dunkel); }
         .akzent-text { color: var(--oliv); }
-        .akzent-ton { background: var(--oliv-hell); color: var(--oliv); }
+        .akzent-ton  { background: var(--oliv-hell); color: var(--oliv); }
         .akzent-rand { border-color: var(--oliv); }
-        .hover\:akzent-rand:hover { border-color: var(--oliv); }
-        .hover\:akzent-text:hover { color: var(--oliv); }
-        .hover\:akzent-ton:hover  { background: var(--oliv-hell); color: var(--oliv); }
-        /* Chip-Scrollleiste ausblenden (Firefox + WebKit) */
+        .hover\\:akzent-rand:hover { border-color: var(--oliv); }
+        .hover\\:akzent-text:hover { color: var(--oliv); }
+        .hover\\:akzent-ton:hover  { background: var(--oliv-hell); color: var(--oliv); }
+
+        /* ── Semantische Status-Klassen ── */
+        .s-gut  { background: var(--s-gut-bg);  color: var(--s-gut);  border-color: var(--s-gut-rand); }
+        .s-warn { background: var(--s-warn-bg); color: var(--s-warn); border-color: var(--s-warn-rand); }
+        .s-krit { background: var(--s-krit-bg); color: var(--s-krit); border-color: var(--s-krit-rand); }
+        .s-info { background: var(--s-info-bg); color: var(--s-info); border-color: var(--s-info-rand); }
+        .s-neu  { background: var(--s-neu-bg);  color: var(--s-neu);  border-color: var(--s-neu-rand); }
+
+        /* ── Chips (Status-Badges) ── */
+        .chip        { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.6875rem; font-weight: 500; padding: 0.2rem 0.625rem; border-radius: 9999px; border: 1px solid transparent; line-height: 1.4; white-space: nowrap; }
+        .chip-gut    { background: var(--s-gut-bg);  color: var(--s-gut);  border-color: var(--s-gut-rand); }
+        .chip-warn   { background: var(--s-warn-bg); color: var(--s-warn); border-color: var(--s-warn-rand); }
+        .chip-krit   { background: var(--s-krit-bg); color: var(--s-krit); border-color: var(--s-krit-rand); }
+        .chip-info   { background: var(--s-info-bg); color: var(--s-info); border-color: var(--s-info-rand); }
+        .chip-akzent { background: var(--s-neu-bg);  color: var(--s-neu);  border-color: var(--s-neu-rand); }
+        .chip-neutral{ background: #f5f5f4; color: #57534e; border-color: #e7e5e4; }
+
+        /* ── Status-Punkte (●) ── */
+        .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+        .dot-gut  { background: var(--s-gut); }
+        .dot-warn { background: var(--s-warn); }
+        .dot-krit { background: var(--s-krit); }
+        .dot-info { background: var(--s-info); }
+        .dot-neutral { background: #a8a29e; }
+
+        /* ── Typographie-Hierarchie ──
+           Nur Labels, Captions, Section-Header — Lauftext via Tailwind */
+        .t-section { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #a8a29e; }
+        .t-label   { font-size: 0.75rem;   font-weight: 500; color: #78716c; line-height: 1.4; }
+        .t-value   { font-size: 0.875rem;  font-weight: 500; color: #1c1917; }
+        .t-caption { font-size: 0.6875rem; color: #a8a29e; line-height: 1.4; }
+        .t-mono    { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+        /* ── Eingabefelder (nur diese bekommen Rahmen) ── */
+        .input-base {
+          background: #fff;
+          border: 1.5px solid var(--linie);
+          border-radius: 0.625rem;
+          padding: 0.5rem 0.75rem;
+          font-size: 0.875rem;
+          width: 100%;
+          color: var(--ink);
+          transition: border-color 0.15s;
+          -webkit-appearance: none;
+        }
+        .input-base:focus { outline: none; border-color: var(--oliv); }
+        .input-base::placeholder { color: #a8a29e; }
+
+        /* ── Timeline-Basis (für TP-05) ── */
+        .tl-line { width: 2px; border-radius: 1px; background: var(--linie); flex-shrink: 0; }
+        .tl-dot  { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--linie); background: #fff; flex-shrink: 0; }
+        .tl-dot-filled { border-color: var(--oliv); background: var(--oliv); }
+
+        /* ── Hilfsprogramme ── */
         .chip-scroll { scrollbar-width: none; }
         .chip-scroll::-webkit-scrollbar { display: none; }
-        /* Ziffern laufen exakt untereinander wie in einer Notenliste */
         .tnum { font-variant-numeric: tabular-nums; }
-        /* Bottom-Sheets: nie hinter den App-Balken; immer Sicherheitsabstand oben und unten */
+
+        /* ── Sheets & Dialoge ── */
         .sheet {
           max-height: calc(100dvh - env(safe-area-inset-top) - 64px);
           margin-top: max(env(safe-area-inset-top), 12px);
           overscroll-behavior: contain;
         }
-        /* Zentrierte Dialoge: nie höher als der sichtbare Bereich */
         .dialog {
           max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px);
           overscroll-behavior: contain;
         }
+
+        /* ── Micro-Interactions ── */
+        .press-scale { transition: transform 0.12s ease, opacity 0.12s ease; }
+        .press-scale:active { transform: scale(0.97); opacity: 0.85; }
+
         @media (prefers-reduced-motion: reduce) {
           * { transition-duration: 0.01ms !important; }
         }
