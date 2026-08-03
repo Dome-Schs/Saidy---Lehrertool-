@@ -2403,6 +2403,10 @@ export default function App() {
   }
 
   function importBackup(file, onResult) {
+    if (file.size > 50 * 1024 * 1024) {
+      onResult?.({ ok: false, msg: "Datei zu groß (max. 50 MB). Ist das die richtige Datei?" });
+      return;
+    }
     const reader = new FileReader();
     reader.onload = () => {
       try {
@@ -4556,7 +4560,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
           </div>
           <p className="text-sm text-stone-600 mb-4">Gesundheitsinformationen sind besonders geschützte Daten. Sie dürfen nur mit <strong>schriftlicher Einwilligung</strong> der Erziehungsberechtigten gespeichert werden.</p>
           <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => setShowMedicalConsent(false)} className="flex-1 justify-center">Abbrechen</Button>
+            <Button variant="ghost" onClick={() => { setShowMedicalConsent(false); document.activeElement?.blur(); }} className="flex-1 justify-center">Abbrechen</Button>
             <Button onClick={() => { localStorage.setItem("saidy_medical_consent", "1"); setShowMedicalConsent(false); }} className="flex-1 justify-center">Verstanden</Button>
           </div>
         </div>
@@ -5377,7 +5381,15 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
 
                 {/* Förderstatus Tags */}
                 <div className="card p-4">
-                  <div className="t-label font-semibold text-stone-700 mb-3">Förderstatus</div>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="t-label font-semibold text-stone-700">Förderstatus</div>
+                    {foerderTags.length > 0 && (
+                      <button onClick={() => onUpdateField(s.id, "foerderStatus", "")}
+                        className="text-[11px] text-stone-400 hover:text-red-500 transition-colors">
+                        Tags leeren
+                      </button>
+                    )}
+                  </div>
                   <div className="flex flex-wrap gap-1.5">
                     {foerderTags.map((tag) => (
                       <span key={tag} className="chip chip-warn flex items-center gap-1">
@@ -5397,6 +5409,10 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
                         className="chip border border-dashed border-stone-300 text-stone-400 hover:border-stone-400">+ Tag</button>
                     )}
                   </div>
+                  <p className="text-[11px] text-amber-600 mt-3 flex items-start gap-1">
+                    <ShieldCheck size={11} className="shrink-0 mt-0.5" />
+                    Lern- und Verhaltensauffälligkeiten können besonders geschützte Daten (Art. 9 DSGVO) darstellen — nur mit schriftlicher Einwilligung speichern.
+                  </p>
                 </div>
 
                 {/* Förderziele */}
