@@ -5101,12 +5101,11 @@ function resolveCollisions(positions, canvasRect) {
 
 const QUALITY_COLORS = { gut: "#16a34a", mittel: "#d97706", schlecht: "#dc2626" };
 
-function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityChange, onRemove, onDragStart, onDragStop }) {
+function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onTap }) {
   const elRef = useRef(null);
   const circleRef = useRef(null);
   const dragRef = useRef(null);
   const currentPosRef = useRef(pos);
-  const inTrashRef = useRef(false);
 
   useEffect(() => {
     currentPosRef.current = pos;
@@ -5158,7 +5157,6 @@ function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityC
     const dy = e.clientY - dragRef.current.startClientY;
     if (!dragRef.current.moved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
       dragRef.current.moved = true;
-      onDragStart?.();
     }
     if (!dragRef.current.moved) return;
     const { startPosX, startPosY, rect } = dragRef.current;
@@ -5169,23 +5167,12 @@ function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityC
     currentPosRef.current = { x: newX, y: newY };
     elRef.current.style.left = `${newX * 100}%`;
     elRef.current.style.top = `${newY * 100}%`;
-    // Löschzone: Token unter den Canvas-Rand gezogen (absolute clientY)
-    const nowInTrash = e.clientY > rect.bottom - 10;
-    if (nowInTrash !== inTrashRef.current) {
-      inTrashRef.current = nowInTrash;
-      if (circleRef.current) {
-        circleRef.current.style.background = nowInTrash ? "#dc2626" : "#3d4433";
-        circleRef.current.style.transform = nowInTrash ? "scale(0.8)" : "scale(1.1)";
-      }
-    }
   }
 
   function onPointerUp(e) {
     if (!dragRef.current) return;
     const moved = dragRef.current.moved;
-    const wasInTrash = inTrashRef.current;
     dragRef.current = null;
-    inTrashRef.current = false;
     elRef.current.style.zIndex = "5";
     elRef.current.style.cursor = "grab";
     if (circleRef.current) {
@@ -5193,12 +5180,8 @@ function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityC
       circleRef.current.style.background = "#4F5844";
     }
     if (!moved) {
-      onQualityChange();
-    } else if (wasInTrash) {
-      onDragStop?.();
-      onRemove();
+      onTap(e.clientX, e.clientY);
     } else {
-      onDragStop?.();
       onDragEnd(currentPosRef.current);
     }
   }
@@ -5247,7 +5230,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   const [pendingPos, setPendingPos] = useState(null); // where to place the next picked student
   const [pickerSearch, setPickerSearch] = useState("");
   const [showConfirmClear, setShowConfirmClear] = useState(false);
-  const [isDraggingToken, setIsDraggingToken] = useState(false);
+  const [activePopup, setActivePopup] = useState(null); // { studentId, screenX, screenY }
   const canvasRef = useRef(null);
   const canvasTapStart = useRef(null);
   const tafelDragRef = useRef(null);
@@ -5268,12 +5251,12 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
     ));
   }
 
-  function handleQualityCycle(studentId) {
-    setPositions((prev) => {
-      const cur = prev[studentId]?.quality ?? null;
-      const next = cur === null ? "gut" : cur === "gut" ? "mittel" : cur === "mittel" ? "schlecht" : null;
-      return { ...prev, [studentId]: { ...prev[studentId], quality: next } };
-    });
+  function handleQualitySet(studentId, value) {
+    setPositions((prev) => ({ ...prev, [studentId]: { ...prev[studentId], quality: value ?? undefined } }));
+  }
+
+  function handleTokenTap(studentId, screenX, screenY) {
+    setActivePopup((prev) => prev?.studentId === studentId ? null : { studentId, screenX, screenY });
   }
 
   function handleCanvasPointerDown(e) {
@@ -5463,10 +5446,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
                 quality={positions[s.id]?.quality ?? null}
                 canvasRef={canvasRef}
                 onDragEnd={(newPos) => handleDragEnd(s.id, newPos)}
-                onQualityChange={() => handleQualityCycle(s.id)}
-                onRemove={() => removeStudent(s.id)}
-                onDragStart={() => setIsDraggingToken(true)}
-                onDragStop={() => setIsDraggingToken(false)}
+                onTap={(sx, sy) => handleTokenTap(s.id, sx, sy)}
               />
             ))}
           </div>
@@ -5487,53 +5467,92 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
           ))}
         </div>
 
-        {/* Toolbar — wird beim Drag zur Löschzone */}
+        {/* Toolbar */}
         <div
-          className="flex items-center gap-3 px-4 shrink-0 border-t transition-colors"
-          style={{
-            paddingTop: "0.75rem",
-            paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
-            borderColor: isDraggingToken ? "#fca5a5" : "#f1f5f9",
-            background: isDraggingToken ? "#fff1f2" : "transparent",
-            transition: "background 0.15s, border-color 0.15s",
-          }}
+          className="flex items-center gap-3 px-4 py-3 border-t border-stone-100 shrink-0"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
         >
-          {isDraggingToken ? (
-            <div className="flex-1 flex items-center justify-center gap-2 text-red-500">
-              <Trash2 size={16} />
-              <span className="text-sm font-medium">Hier ablegen zum Entfernen</span>
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={openPickerCenter}
-                disabled={unplaced.length === 0}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4F5844] text-white text-sm font-medium disabled:opacity-40 transition-opacity"
-              >
-                <Plus size={14} />
-                Kind hinzufügen
-                {unplaced.length > 0 && (
-                  <span className="bg-white/20 rounded-full px-1.5 py-0.5 text-[11px]">{unplaced.length}</span>
-                )}
-              </button>
-              <button
-                onClick={handleCleanup}
-                disabled={placedCount < 2}
-                className="px-3 py-2 rounded-xl text-sm text-stone-500 hover:bg-stone-100 disabled:opacity-30 transition-colors"
-              >
-                Aufräumen
-              </button>
-              <button
-                onClick={() => setShowConfirmClear(true)}
-                disabled={placedCount === 0}
-                className="ml-auto px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 disabled:opacity-30 transition-colors"
-              >
-                Löschen
-              </button>
-            </>
-          )}
+          <button
+            onClick={openPickerCenter}
+            disabled={unplaced.length === 0}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4F5844] text-white text-sm font-medium disabled:opacity-40 transition-opacity"
+          >
+            <Plus size={14} />
+            Kind hinzufügen
+            {unplaced.length > 0 && (
+              <span className="bg-white/20 rounded-full px-1.5 py-0.5 text-[11px]">{unplaced.length}</span>
+            )}
+          </button>
+          <button
+            onClick={handleCleanup}
+            disabled={placedCount < 2}
+            className="px-3 py-2 rounded-xl text-sm text-stone-500 hover:bg-stone-100 disabled:opacity-30 transition-colors"
+          >
+            Aufräumen
+          </button>
+          <button
+            onClick={() => setShowConfirmClear(true)}
+            disabled={placedCount === 0}
+            className="ml-auto px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 disabled:opacity-30 transition-colors"
+          >
+            Löschen
+          </button>
         </div>
       </div>
+
+      {/* Token-Kontextmenü */}
+      {activePopup && (() => {
+        const curQuality = positions[activePopup.studentId]?.quality ?? null;
+        const popupY = activePopup.screenY > window.innerHeight * 0.55
+          ? activePopup.screenY - 118
+          : activePopup.screenY + 28;
+        const popupX = Math.max(96, Math.min(window.innerWidth - 96, activePopup.screenX));
+        return (
+          <>
+            <div className="fixed inset-0 z-[75]" onClick={() => setActivePopup(null)} />
+            <div
+              className="fixed z-[76] bg-white rounded-2xl shadow-xl p-3"
+              style={{ left: popupX, top: popupY, transform: "translateX(-50%)", minWidth: 176 }}
+            >
+              <div className="text-[10px] text-stone-400 text-center mb-2">Sitzplatz markieren</div>
+              <div className="flex items-center justify-center gap-2 mb-3">
+                {/* Keine Markierung */}
+                <button
+                  onClick={() => { handleQualitySet(activePopup.studentId, null); setActivePopup(null); }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-stone-400 text-base font-bold transition-colors"
+                  style={{ background: curQuality === null ? "#e7e5e4" : "#f5f5f4", outline: curQuality === null ? "2px solid #a8a29e" : "none", outlineOffset: "2px" }}
+                >
+                  –
+                </button>
+                {[
+                  { key: "gut", color: "#16a34a" },
+                  { key: "mittel", color: "#d97706" },
+                  { key: "schlecht", color: "#dc2626" },
+                ].map(({ key, color }) => (
+                  <button
+                    key={key}
+                    onClick={() => { handleQualitySet(activePopup.studentId, key); setActivePopup(null); }}
+                    className="w-8 h-8 rounded-full transition-transform active:scale-95"
+                    style={{
+                      background: color,
+                      outline: curQuality === key ? `2px solid ${color}` : "none",
+                      outlineOffset: "2px",
+                      boxShadow: curQuality === key ? "0 0 0 2px white inset" : "none",
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="border-t border-stone-100 mb-2" />
+              <button
+                onClick={() => { removeStudent(activePopup.studentId); setActivePopup(null); }}
+                className="w-full py-1 text-sm text-red-500 font-medium hover:bg-red-50 rounded-lg transition-colors"
+              >
+                Entfernen
+              </button>
+            </div>
+          </>
+        );
+      })()}
 
       {/* Student picker sheet */}
       {showPicker && (
