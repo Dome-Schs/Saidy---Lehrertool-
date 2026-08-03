@@ -5100,7 +5100,6 @@ function resolveCollisions(positions, canvasRect) {
 }
 
 const QUALITY_COLORS = { gut: "#16a34a", mittel: "#d97706", schlecht: "#dc2626" };
-const TRASH_THRESHOLD = 0.78; // unterste 22% des Canvas = Löschzone
 
 function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityChange, onRemove, onDragStart, onDragStop }) {
   const elRef = useRef(null);
@@ -5170,8 +5169,8 @@ function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityC
     currentPosRef.current = { x: newX, y: newY };
     elRef.current.style.left = `${newX * 100}%`;
     elRef.current.style.top = `${newY * 100}%`;
-    // Löschzone-Feedback
-    const nowInTrash = newY > TRASH_THRESHOLD;
+    // Löschzone: Token unter den Canvas-Rand gezogen (absolute clientY)
+    const nowInTrash = e.clientY > rect.bottom - 10;
     if (nowInTrash !== inTrashRef.current) {
       inTrashRef.current = nowInTrash;
       if (circleRef.current) {
@@ -5441,20 +5440,6 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
                 <p className="text-stone-400 text-sm text-center px-10">Auf die Fläche tippen, um ein Kind zu platzieren</p>
               </div>
             )}
-            {/* Löschzone — erscheint beim Ziehen eines Tokens */}
-            <div
-              className="absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center gap-1 pointer-events-none"
-              style={{
-                height: "22%",
-                zIndex: 15,
-                background: "linear-gradient(to top, rgba(220,38,38,0.18) 0%, transparent 100%)",
-                opacity: isDraggingToken ? 1 : 0,
-                transition: "opacity 0.15s",
-              }}
-            >
-              <Trash2 size={20} className="text-red-500" />
-              <span className="text-red-600 text-[11px] font-medium">Hier ablegen zum Entfernen</span>
-            </div>
             {activeStudents.filter((s) => positions[s.id]).map((s) => (
               <SitzplanToken
                 key={s.id}
@@ -5487,29 +5472,44 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
           ))}
         </div>
 
-        {/* Toolbar */}
+        {/* Toolbar — wird beim Drag zur Löschzone */}
         <div
-          className="flex items-center gap-3 px-4 py-3 border-t border-stone-100 shrink-0"
-          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+          className="flex items-center gap-3 px-4 shrink-0 border-t transition-colors"
+          style={{
+            paddingTop: "0.75rem",
+            paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))",
+            borderColor: isDraggingToken ? "#fca5a5" : "#f1f5f9",
+            background: isDraggingToken ? "#fff1f2" : "transparent",
+            transition: "background 0.15s, border-color 0.15s",
+          }}
         >
-          <button
-            onClick={openPickerCenter}
-            disabled={unplaced.length === 0}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4F5844] text-white text-sm font-medium disabled:opacity-40 transition-opacity"
-          >
-            <Plus size={14} />
-            Kind hinzufügen
-            {unplaced.length > 0 && (
-              <span className="bg-white/20 rounded-full px-1.5 py-0.5 text-[11px]">{unplaced.length}</span>
-            )}
-          </button>
-          <button
-            onClick={() => setShowConfirmClear(true)}
-            disabled={placedCount === 0}
-            className="ml-auto px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 disabled:opacity-30 transition-colors"
-          >
-            Sitzplan löschen
-          </button>
+          {isDraggingToken ? (
+            <div className="flex-1 flex items-center justify-center gap-2 text-red-500">
+              <Trash2 size={16} />
+              <span className="text-sm font-medium">Hier ablegen zum Entfernen</span>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={openPickerCenter}
+                disabled={unplaced.length === 0}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4F5844] text-white text-sm font-medium disabled:opacity-40 transition-opacity"
+              >
+                <Plus size={14} />
+                Kind hinzufügen
+                {unplaced.length > 0 && (
+                  <span className="bg-white/20 rounded-full px-1.5 py-0.5 text-[11px]">{unplaced.length}</span>
+                )}
+              </button>
+              <button
+                onClick={() => setShowConfirmClear(true)}
+                disabled={placedCount === 0}
+                className="ml-auto px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 disabled:opacity-30 transition-colors"
+              >
+                Sitzplan löschen
+              </button>
+            </>
+          )}
         </div>
       </div>
 
