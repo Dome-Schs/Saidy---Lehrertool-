@@ -5509,10 +5509,11 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
         const popupX = Math.max(96, Math.min(window.innerWidth - 96, activePopup.screenX));
         return (
           <>
-            <div className="fixed inset-0 z-[75]" onClick={() => setActivePopup(null)} />
+            <div className="fixed inset-0 z-[75]" onClick={(e) => { e.stopPropagation(); setActivePopup(null); }} />
             <div
               className="fixed z-[76] bg-white rounded-2xl shadow-xl p-3"
               style={{ left: popupX, top: popupY, transform: "translateX(-50%)", minWidth: 176 }}
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="text-[10px] text-stone-400 text-center mb-2">Sitzplatz markieren</div>
               <div className="flex items-center justify-center gap-2 mb-3">
