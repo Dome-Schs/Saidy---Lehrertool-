@@ -616,7 +616,7 @@ function ConfirmDialog({ open, title, message, confirmLabel = "Löschen", onConf
 }
 
 function Button({ children, onClick, variant = "primary", className = "", type = "button", disabled }) {
-  const base = "inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-500 focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed";
+  const base = "inline-flex items-center gap-1.5 px-3.5 py-2 min-h-[44px] rounded-xl text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-stone-500 focus-visible:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed";
   const variants = {
     primary: "akzent-flaeche",
     ghost: "bg-transparent text-stone-600 hover:bg-stone-100",
@@ -1181,7 +1181,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           </div>
           <div className="flex gap-2 mb-2">
             <Button variant="subtle" onClick={() => setConfirmBackupAction("export")} className="flex-1 justify-center"><Download size={15} /> Sichern</Button>
-            <Button variant="subtle" onClick={() => setConfirmBackupAction("share")} className="flex-1 justify-center">Teilen</Button>
+            <Button variant="subtle" onClick={() => setConfirmBackupAction("share")} className="flex-1 justify-center" title="Backup teilen – z. B. via AirDrop oder Dateien-App">Teilen</Button>
           </div>
           <Button variant="ghost" onClick={() => importInputRef.current?.click()} className="w-full justify-center"><Upload size={15} /> Gesichertes wiederherstellen</Button>
           <input
@@ -4341,7 +4341,7 @@ function VoiceNoteButton({ onTranscript }) {
               <div className="font-semibold text-stone-800">Sprachnotizen</div>
             </div>
             <p className="text-sm text-stone-600 leading-relaxed mb-4">
-              Saidy nutzt die integrierte Sprach-zu-Text-Funktion deines Geräts (Apple / Google). Deine Audioaufnahme wird <strong>kurzzeitig zur Transkription übertragen</strong> und danach nicht gespeichert. Nur der fertige Text wird lokal auf deinem Gerät abgelegt.
+              Saidy nutzt die Sprach-zu-Text-Funktion deines Geräts. Die Audioaufnahme wird dabei <strong>kurzzeitig an Apple (Safari) bzw. Google (Chrome/Edge) in die USA übertragen</strong> und danach nicht gespeichert. Nur der fertige Text bleibt lokal auf deinem Gerät. Nenne in Aufnahmen keine Schülernamen.
             </p>
             <div className="flex gap-2">
               <button onClick={() => setShowConsent(false)} className="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-600 font-medium">Abbrechen</button>
@@ -4460,7 +4460,7 @@ function GradeChart({ grades, faecher }) {
 }
 
 /* Eigenständiges Fenster für die Schülerliste einer Klasse – bewusst getrennt von der Klassenübersicht */
-function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
+function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, notenfarben, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
   const [photoError, setPhotoError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showMedicalConsent, setShowMedicalConsent] = useState(false);
@@ -4481,6 +4481,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
 
   function gradeColor(avg) {
     if (avg == null) return "text-stone-300";
+    if (notenfarben === false) return "text-stone-700";
     if (avg <= 2.5) return "text-[var(--s-gut)]";
     if (avg <= 3.5) return "text-[var(--s-warn)]";
     return "text-[var(--s-krit)]";
@@ -7314,6 +7315,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
           grades={data.grades || []}
           faecher={classFaecher}
           foerderZiele={data.foerderZiele || []}
+          notenfarben={data.settings?.notenfarben !== false}
           selectedStudent={selectedStudent}
           setSelectedStudent={setSelectedStudent}
           onDeleteStudent={deleteStudent}
