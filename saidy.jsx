@@ -2126,6 +2126,8 @@ export default function App() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
+  const [fabOpen, setFabOpen] = useState(false);
+  const [fabActions, setFabActions] = useState([]); // [{label, icon, onClick}]
   const [showSearch, setShowSearch] = useState(false);
   const [focusStudentId, setFocusStudentId] = useState(null);
   const [klassenSubTab, setKlassenSubTab] = useState("klassen");
@@ -2149,6 +2151,7 @@ export default function App() {
     setFocusStudentId(studentId);
     setTab("klassen");
   }, []);
+  useEffect(() => { setFabOpen(false); }, [tab]);
   const [captureLesson, setCaptureLesson] = useState(null); // { fach, cls }
   const [now, setNow] = useState(() => new Date());
   const saveTimer = useRef(null);
@@ -2701,7 +2704,7 @@ export default function App() {
             </div>
           )}
           {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenUntisImport={() => setShowUntisImport(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
-          {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} />}
+          {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} onRegisterFab={setFabActions} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
           {tab === "kalender" && <KalenderTab data={activeData} update={update} />}
           {tab === "aufgaben" && <AufgabenTab data={activeData} update={update} />}
@@ -2846,6 +2849,45 @@ export default function App() {
           onSelectStudent={navigateToStudent}
           onClose={() => setShowSearch(false)}
         />
+      )}
+
+      {/* Floating Action Button (nur mobil, nur wenn Aktionen registriert) */}
+      {fabActions.length > 0 && !showMore && (
+        <>
+          {fabOpen && (
+            <div className="md:hidden fixed inset-0 z-[44]" onClick={() => setFabOpen(false)} />
+          )}
+          <div
+            className="md:hidden fixed z-[45] flex flex-col items-end gap-2.5"
+            style={{ bottom: "calc(env(safe-area-inset-bottom) + 82px)", right: "1rem" }}
+          >
+            {fabOpen && fabActions.map(({ label, icon: Icon, onClick }, i) => (
+              <button
+                key={label}
+                onClick={() => { onClick(); setFabOpen(false); }}
+                className="flex items-center gap-2.5 bg-white border border-stone-100 shadow-lg px-4 py-2.5 rounded-full text-sm font-medium text-stone-800 press-scale"
+                style={{ animationDelay: `${i * 35}ms` }}
+              >
+                <span className="w-7 h-7 rounded-full akzent-flaeche flex items-center justify-center flex-shrink-0">
+                  <Icon size={13} className="text-white" />
+                </span>
+                {label}
+              </button>
+            ))}
+            <button
+              onClick={() => setFabOpen((o) => !o)}
+              className="w-14 h-14 rounded-full akzent-flaeche text-white flex items-center justify-center press-scale"
+              style={{ boxShadow: "0 6px 20px rgba(79,88,68,0.45)" }}
+              aria-label="Aktionen"
+            >
+              <Plus
+                size={26}
+                className="text-white"
+                style={{ transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
+              />
+            </button>
+          </div>
+        </>
       )}
 
       {/* Toast-Meldung */}
@@ -6433,7 +6475,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   );
 }
 
-function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed }) {
+function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed, onRegisterFab }) {
   const [selectedClass, setSelectedClass] = useState(data.classes[0]?.id ?? null);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -6449,6 +6491,20 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
   const [overviewStudentId, setOverviewStudentId] = useState(null);
   const [showSitzplan, setShowSitzplan] = useState(false);
   const [sitzplanClassId, setSitzplanClassId] = useState(null);
+
+  useEffect(() => {
+    if (!onRegisterFab) return;
+    if (showStudentsModal) {
+      onRegisterFab([]);
+      return;
+    }
+    if (selectedClass) {
+      onRegisterFab([{ label: "Schüler hinzufügen", icon: Plus, onClick: () => setShowAddModal(true) }]);
+    } else {
+      onRegisterFab([{ label: "Neue Klasse", icon: Plus, onClick: () => setShowNewClassModal(true) }]);
+    }
+    return () => onRegisterFab([]);
+  }, [selectedClass, showStudentsModal]);
 
   useEffect(() => {
     if (!focusStudentId) return;
