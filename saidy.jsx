@@ -4888,7 +4888,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, no
       <div className="fixed inset-0 z-[55] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
           {/* Minimaler Kopf: Navigation + Tabs */}
           <div className="bg-white border-b border-stone-100 shrink-0">
-            <div className="flex items-center gap-2 px-4 pt-3 pb-2">
+            <div className="flex items-center gap-2 px-4 pb-2" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
               <button
                 onClick={() => setSelectedStudent(null)}
                 className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale"
@@ -6831,7 +6831,7 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
   return (
     <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
       <div className="bg-white border-b border-stone-100 shrink-0">
-        <div className="flex items-center gap-3 px-4 pt-4 pb-4">
+        <div className="flex items-center gap-3 px-4 pb-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale">
             <ChevronLeft size={18} className="text-stone-600" />
           </button>
