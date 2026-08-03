@@ -3480,7 +3480,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
   const isColor = data.settings?.colorMode === true;
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {/* Zeile 1: Wordmark + Icon-Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 select-none">
@@ -3526,7 +3526,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
           <h1 className="text-2xl font-semibold tracking-tight leading-none" style={{ color: "var(--ink)" }}>
             {selectedDate.toLocaleDateString("de-DE", { weekday: "long" })}
           </h1>
-          <p className="text-sm text-stone-400 mt-1">
+          <p className="text-xs text-stone-400 mt-0.5">
             {selectedDate.toLocaleDateString("de-DE", { day: "numeric", month: "long" })}
           </p>
         </div>
@@ -3570,22 +3570,22 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
         </Card>
       )}
 
-      {/* Wochentagsleiste */}
-      <Card className="p-2">
-        <div className="flex items-center gap-1">
-          <button onClick={() => setSelectedDate((d) => addDays(d, -7))} className="p-1.5 text-stone-400 hover:text-stone-700 shrink-0">
-            <ChevronLeft size={18} />
+      {/* Wochentagsleiste – schlank, kein Rahmen */}
+      <div>
+        <div className="flex items-center gap-0.5">
+          <button onClick={() => setSelectedDate((d) => addDays(d, -7))} className="p-1 text-stone-300 hover:text-stone-600 shrink-0">
+            <ChevronLeft size={15} />
           </button>
-          <div className="flex-1 grid grid-cols-7 gap-1">
+          <div className="flex-1 grid grid-cols-7">
             {week.map((d, i) => {
               const active = isoDate(d) === selStr;
               const isTodayCol = isoDate(d) === todayStr;
               return (
-                <button key={i} onClick={() => setSelectedDate(d)} className="flex flex-col items-center gap-1 py-1.5 rounded-lg hover:bg-stone-50">
-                  <span className={`text-[11px] ${isTodayCol ? "text-red-500" : "text-stone-400"}`}>{WEEKDAY_LABELS[i]}</span>
+                <button key={i} onClick={() => setSelectedDate(d)} className="flex flex-col items-center gap-0.5 py-0.5 rounded-lg">
+                  <span className={`text-[10px] ${isTodayCol ? "text-red-400" : "text-stone-400"}`}>{WEEKDAY_LABELS[i]}</span>
                   <span
-                    className={`w-7 h-7 flex items-center justify-center rounded-full text-sm ${
-                      active ? "bg-stone-900 text-white font-medium" : isTodayCol ? "text-red-500 font-medium" : "text-stone-700"
+                    className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium ${
+                      active ? "akzent-flaeche text-white" : isTodayCol ? "text-red-400" : "text-stone-600"
                     }`}
                   >
                     {d.getDate()}
@@ -3594,25 +3594,24 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
               );
             })}
           </div>
-          <button onClick={() => setSelectedDate((d) => addDays(d, 7))} className="p-1.5 text-stone-400 hover:text-stone-700 shrink-0">
-            <ChevronRight size={18} />
+          <button onClick={() => setSelectedDate((d) => addDays(d, 7))} className="p-1 text-stone-300 hover:text-stone-600 shrink-0">
+            <ChevronRight size={15} />
           </button>
         </div>
         {!isToday && (
-          <button onClick={() => setSelectedDate(new Date())} className="text-xs akzent-text hover:underline mt-2 ml-1">
-            Zu heute springen
+          <button onClick={() => setSelectedDate(new Date())} className="text-[11px] akzent-text hover:underline ml-7 mt-0.5">
+            ↩ Heute
           </button>
         )}
-      </Card>
+      </div>
 
       {(() => {
         const sections = {
           unterricht: (
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-2 gap-2">
-                <button onClick={() => onNavigate?.("stundenplan")} className="flex items-center gap-2 akzent-text font-medium text-sm">
-                  <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#ECEEE2" : "#EDE9E0", color: "#4F5844" }}><Clock size={14} /></span> Unterricht
-                  <ChevronRight size={13} className="text-stone-300" />
+            <Card className="px-3 py-2.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <button onClick={() => onNavigate?.("stundenplan")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                  Unterricht <ChevronRight size={10} />
                 </button>
               </div>
               {!dayKey && <p className="text-xs text-stone-300 mb-2">Wochenende – kein regulärer Stundenplan</p>}
@@ -3625,8 +3624,8 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
                   const offen = isToday && fach && (pendingLessons || []).some((p) => p.fach.id === fach.id);
                   const istLetzte = isToday && fach && letzteStunde?.id === l.id;
                   return (
-                    <li key={l.id} className={`py-1.5 flex items-center justify-between text-sm gap-2 ${istLetzte ? "-mx-2 px-2 rounded-lg bg-stone-50" : ""}`}>
-                      <span className="text-stone-400 text-xs w-11 shrink-0">{pt ? pt.start : `${l.period}.`}</span>
+                    <li key={l.id} className={`py-1 flex items-center justify-between text-sm gap-2 ${istLetzte ? "-mx-2 px-2 rounded-lg bg-stone-50" : ""}`}>
+                      <span className="text-stone-400 text-xs w-10 shrink-0">{pt ? pt.start : `${l.period}.`}</span>
                       <span className="flex-1 font-medium text-stone-800 flex flex-col min-w-0">
                         <span className="flex items-center gap-1.5 min-w-0">
                           {fach && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? fach.color : "#C0BBA8" }} />}
@@ -3657,19 +3656,17 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
             </Card>
           ),
           aufgaben: (
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <button onClick={() => onNavigate?.("aufgaben")} className="flex items-center gap-2 akzent-text font-medium text-sm">
-                  <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#E9EDF0" : "#EDE9E0", color: isColor ? "#41697E" : "#4F5844" }}><ListChecks size={14} /></span> Tagesaufgaben
-                  {!!openTasks.length && <span className="text-xs text-stone-400">{openTasks.length}</span>}
-                  <ChevronRight size={13} className="text-stone-300" />
+            <Card className="px-3 py-2.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <button onClick={() => onNavigate?.("aufgaben")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                  Aufgaben {!!openTasks.length && <span className="text-stone-300">({openTasks.length})</span>} <ChevronRight size={10} />
                 </button>
-                <button onClick={() => onNavigate?.("aufgaben")} className="text-xs text-stone-400 hover:akzent-text shrink-0">+</button>
+                <button onClick={() => onNavigate?.("aufgaben")} className="text-sm text-stone-300 hover:akzent-text shrink-0 leading-none">+</button>
               </div>
               {openTasks.length ? (
-                <ul className="space-y-0.5">
+                <ul className="space-y-0">
                   {openTasks.map((t) => (
-                    <li key={t.id} className="flex items-center gap-2 py-0.5">
+                    <li key={t.id} className="flex items-center gap-2 py-1">
                       <button
                         onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
                         className="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors"
@@ -3688,13 +3685,12 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
             </Card>
           ),
           kalender: (
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <button onClick={() => onNavigate?.("kalender")} className="flex items-center gap-2 akzent-text font-medium text-sm">
-                  <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#F3E7D6" : "#EDE9E0", color: isColor ? "#B07D2B" : "#4F5844" }}><CalendarDays size={14} /></span> Termine
-                  <ChevronRight size={13} className="text-stone-300" />
+            <Card className="px-3 py-2.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <button onClick={() => onNavigate?.("kalender")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                  Termine <ChevronRight size={10} />
                 </button>
-                <button onClick={() => onNavigate?.("kalender")} className="text-xs text-stone-400 hover:akzent-text shrink-0">+</button>
+                <button onClick={() => onNavigate?.("kalender")} className="text-sm text-stone-300 hover:akzent-text shrink-0 leading-none">+</button>
               </div>
               {dayEvents.length ? (
                 <ul className="space-y-1.5">
@@ -3712,10 +3708,9 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
             </Card>
           ),
           geburtstage: (
-            <Card className="p-4">
-              <button onClick={() => onNavigate?.("klassen")} className="flex items-center gap-2 akzent-text font-medium text-sm mb-2">
-                <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#F4DBD7" : "#EDE9E0", color: isColor ? "#C0392B" : "#4F5844" }}><PartyPopper size={14} /></span> Geburtstage
-                <ChevronRight size={13} className="text-stone-300" />
+            <Card className="px-3 py-2.5">
+              <button onClick={() => onNavigate?.("klassen")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1.5">
+                Geburtstage <ChevronRight size={10} />
               </button>
               {birthdays.length || kommendeGeburtstage.length ? (
                 <ul className="space-y-2">
@@ -3753,13 +3748,12 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
             </Card>
           ),
           dienste: (
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <button onClick={() => onNavigate?.("klassen", "dienste")} className="flex items-center gap-2 akzent-text font-medium text-sm">
-                  <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#E4EAD9" : "#EDE9E0", color: isColor ? "#5F7A45" : "#4F5844" }}><ClipboardCheck size={14} /></span> Dienste
-                  <ChevronRight size={13} className="text-stone-300" />
+            <Card className="px-3 py-2.5">
+              <div className="flex items-center justify-between mb-1.5">
+                <button onClick={() => onNavigate?.("klassen", "dienste")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                  Dienste <ChevronRight size={10} />
                 </button>
-                <span className="text-[11px] text-stone-400">{currentSchoolWeek().label}</span>
+                <span className="text-[10px] text-stone-300">{currentSchoolWeek().label}</span>
               </div>
               {(() => {
                 const alleDienste = data.duties || [];
@@ -3815,12 +3809,11 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
               absences: as.sort((a, b) => b.date.localeCompare(a.date)),
             })).filter((e) => e.student).sort((a, b) => a.student.name.localeCompare(b.student.name, "de"));
             return (
-              <Card className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2 akzent-text font-medium text-sm">
-                    <span className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ backgroundColor: isColor ? "#FEF3C7" : "#EDE9E0", color: isColor ? "#B45309" : "#4F5844" }}><AlertTriangle size={14} /></span>
-                    Offene Entschuldigungen
-                    {ausstehend.length > 0 && <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
+              <Card className="px-3 py-2.5">
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                    Entschuldigungen
+                    {ausstehend.length > 0 && <span className="ml-1 text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
                   </div>
                 </div>
                 {!studentEntries.length
@@ -3883,7 +3876,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
                 {editMode ? "Fertig" : "Anpassen"}
               </button>
             </div>
-            <div className="grid md:grid-cols-2 gap-3">
+            <div className="grid md:grid-cols-2 gap-2">
               {order.map((key) => {
                 if (!sections[key]) return null;
                 const isOver = editMode && dragOverKey === key;
