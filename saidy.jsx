@@ -5021,6 +5021,44 @@ function DutyModal({ onSave, onClose }) {
 
 const SITZPLAN_TOKEN_R = 18;  // visual radius px (token = 36px diameter)
 const SITZPLAN_COLLISION_R = 23; // collision radius px (gives ~5px gap between tokens)
+const SITZPLAN_GRID_PX = 50;  // grid cell size in px
+
+// Snap to nearest free grid cell (BFS outward from target cell)
+function snapToGrid(pos, canvasRect, existingPositions, excludeId = null) {
+  if (!canvasRect || canvasRect.width === 0) return pos;
+  const stepX = SITZPLAN_GRID_PX / canvasRect.width;
+  const stepY = SITZPLAN_GRID_PX / canvasRect.height;
+  const m = SITZPLAN_COLLISION_R;
+  const minX = m / canvasRect.width;
+  const maxX = 1 - m / canvasRect.width;
+  const minY = m / canvasRect.height;
+  const maxY = 1 - m / canvasRect.height;
+
+  const occupied = new Set();
+  for (const [id, p] of Object.entries(existingPositions)) {
+    if (id === excludeId) continue;
+    occupied.add(`${Math.round(p.x / stepX)},${Math.round(p.y / stepY)}`);
+  }
+
+  const tx = Math.round(pos.x / stepX);
+  const ty = Math.round(pos.y / stepY);
+  const queue = [[tx, ty]];
+  const seen = new Set([`${tx},${ty}`]);
+
+  for (let i = 0; i < queue.length && i < 200; i++) {
+    const [cx, cy] = queue[i];
+    const rx = cx * stepX;
+    const ry = cy * stepY;
+    if (rx >= minX && rx <= maxX && ry >= minY && ry <= maxY && !occupied.has(`${cx},${cy}`)) {
+      return { x: rx, y: ry };
+    }
+    for (const [dx, dy] of [[0,1],[1,0],[0,-1],[-1,0],[1,1],[-1,1],[1,-1],[-1,-1]]) {
+      const k = `${cx + dx},${cy + dy}`;
+      if (!seen.has(k)) { seen.add(k); queue.push([cx + dx, cy + dy]); }
+    }
+  }
+  return pos;
+}
 
 // Push overlapping tokens apart until none overlap or max iterations reached
 function resolveCollisions(positions, canvasRect) {
@@ -5225,10 +5263,11 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   }
 
   function handleDragEnd(studentId, newPos) {
-    setPositions((prev) => resolveCollisions(
-      { ...prev, [studentId]: { ...prev[studentId], ...newPos } },
-      canvasRef.current?.getBoundingClientRect()
-    ));
+    const rect = canvasRef.current?.getBoundingClientRect();
+    setPositions((prev) => {
+      const snapped = snapToGrid(newPos, rect, prev, studentId);
+      return resolveCollisions({ ...prev, [studentId]: { ...prev[studentId], ...snapped } }, rect);
+    });
   }
 
   function handleQualityCycle(studentId) {
@@ -5264,8 +5303,12 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   }
 
   function pickStudent(studentId) {
-    const pos = pendingPos ?? { x: 0.35 + Math.random() * 0.3, y: 0.35 + Math.random() * 0.3 };
-    setPositions((prev) => resolveCollisions({ ...prev, [studentId]: pos }, canvasRef.current?.getBoundingClientRect()));
+    const rawPos = pendingPos ?? { x: 0.5, y: 0.5 };
+    const rect = canvasRef.current?.getBoundingClientRect();
+    setPositions((prev) => {
+      const snapped = snapToGrid(rawPos, rect, prev);
+      return resolveCollisions({ ...prev, [studentId]: snapped }, rect);
+    });
     setShowPicker(false);
     setPickerSearch("");
     setPendingPos(null);
