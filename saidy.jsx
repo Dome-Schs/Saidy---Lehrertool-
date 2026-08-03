@@ -1534,6 +1534,23 @@ function computePendingLessons(data, now) {
     .sort((a, b) => b.period - a.period); // neueste Stunde zuerst
 }
 
+function remainingLessonsForFach(fachId, testDateStr, timetable) {
+  const slots = (timetable || []).filter((t) => t.fachId === fachId);
+  if (!slots.length || !testDateStr) return 0;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const testDate = new Date(testDateStr + "T00:00:00");
+  let count = 0;
+  const cursor = new Date(today);
+  cursor.setDate(cursor.getDate() + 1);
+  while (cursor <= testDate) {
+    const dayKey = DAYS[(cursor.getDay() + 6) % 7];
+    if (dayKey) count += slots.filter((t) => t.day === dayKey).length;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
+
 function demoData() {
   const classId = uid();
   const class2Id = uid();
@@ -1607,20 +1624,20 @@ function demoData() {
     // Max – Mathematik: solide, aber knapp
     { id: uid(), studentId: maxId, classId, fachId: fachMatheId, category: "muendlich", value: 2, factor: 1, title: "Mitarbeit", date: d(14), halbjahr: hj },
     { id: uid(), studentId: maxId, classId, fachId: fachMatheId, category: "muendlich", value: 3, factor: 1, title: "Mitarbeit", date: d(7), halbjahr: hj },
-    { id: uid(), studentId: maxId, classId, fachId: fachMatheId, category: "schriftlich", value: 3.25, factor: 2, title: "Klassenarbeit Nr. 1", date: d(10), halbjahr: hj },
+    { id: uid(), studentId: maxId, classId, fachId: fachMatheId, category: "schriftlich", value: 3.25, factor: 2, title: "Klassenarbeit Nr. 1", date: d(10), halbjahr: hj, topic: "Bruchrechnung" },
     // Max – Sport: stark, inkl. einer automatischen 5 wegen Sportzeug
     { id: uid(), studentId: maxId, classId, fachId: fachSportId, category: "muendlich", value: 1, factor: 1, title: "Mitarbeit", date: d(12), halbjahr: hj },
     { id: uid(), studentId: maxId, classId, fachId: fachSportId, category: "muendlich", value: 5, factor: 1, title: "Sportzeug vergessen", date: d(5), halbjahr: hj, auto: true, reason: "Sportzeug" },
     // Jenny – Mathematik: sehr gut
     { id: uid(), studentId: jennyId, classId, fachId: fachMatheId, category: "muendlich", value: 1, factor: 1, title: "Mitarbeit", date: d(14), halbjahr: hj },
     { id: uid(), studentId: jennyId, classId, fachId: fachMatheId, category: "muendlich", value: 2, factor: 1, title: "Mitarbeit", date: d(7), halbjahr: hj },
-    { id: uid(), studentId: jennyId, classId, fachId: fachMatheId, category: "schriftlich", value: 1.75, factor: 2, title: "Klassenarbeit Nr. 1", date: d(10), halbjahr: hj },
+    { id: uid(), studentId: jennyId, classId, fachId: fachMatheId, category: "schriftlich", value: 1.75, factor: 2, title: "Klassenarbeit Nr. 1", date: d(10), halbjahr: hj, topic: "Bruchrechnung" },
     // Jenny – Sport
     { id: uid(), studentId: jennyId, classId, fachId: fachSportId, category: "muendlich", value: 2, factor: 1, title: "Mitarbeit", date: d(12), halbjahr: hj },
     // Jenny Schmidt – Mathematik: gut
     { id: uid(), studentId: jenny2Id, classId, fachId: fachMatheId, category: "muendlich", value: 2, factor: 1, title: "Mitarbeit", date: d(14), halbjahr: hj },
     { id: uid(), studentId: jenny2Id, classId, fachId: fachMatheId, category: "muendlich", value: 3, factor: 1, title: "Mitarbeit", date: d(7), halbjahr: hj },
-    { id: uid(), studentId: jenny2Id, classId, fachId: fachMatheId, category: "schriftlich", value: 2.5, factor: 2, title: "Klassenarbeit Nr. 1", date: d(10), halbjahr: hj },
+    { id: uid(), studentId: jenny2Id, classId, fachId: fachMatheId, category: "schriftlich", value: 2.5, factor: 2, title: "Klassenarbeit Nr. 1", date: d(10), halbjahr: hj, topic: "Bruchrechnung" },
     // Jenny Schmidt – Sport
     { id: uid(), studentId: jenny2Id, classId, fachId: fachSportId, category: "muendlich", value: 3, factor: 1, title: "Mitarbeit", date: d(12), halbjahr: hj },
     // Leon – Sport 7a: mittelmäßig mit Ausreißern
@@ -1646,7 +1663,7 @@ function demoData() {
       // 5c: Mathematik (2 mündlich + 1 Arbeit) und Sport (2 mündlich)
       grades.push({ id: uid(), studentId: s.id, classId, fachId: fachMatheId, category: "muendlich", value: pick(muendlichWerte), factor: 1, title: "Mitarbeit", date: d(14), halbjahr: hj });
       grades.push({ id: uid(), studentId: s.id, classId, fachId: fachMatheId, category: "muendlich", value: pick(muendlichWerte), factor: 1, title: "Mitarbeit", date: d(7), halbjahr: hj });
-      grades.push({ id: uid(), studentId: s.id, classId, fachId: fachMatheId, category: "schriftlich", value: pick(schriftlichWerte), factor: 2, title: "Klassenarbeit Nr. 1", date: d(10), halbjahr: hj });
+      grades.push({ id: uid(), studentId: s.id, classId, fachId: fachMatheId, category: "schriftlich", value: pick(schriftlichWerte), factor: 2, title: "Klassenarbeit Nr. 1", date: d(10), halbjahr: hj, topic: "Bruchrechnung" });
       grades.push({ id: uid(), studentId: s.id, classId, fachId: fachSportId, category: "muendlich", value: pick(muendlichWerte), factor: 1, title: "Mitarbeit", date: d(12), halbjahr: hj });
     } else {
       // 7a: Sport (3 mündlich)
@@ -1788,7 +1805,7 @@ function demoData() {
       { id: class2Id, name: "7a" },
     ],
     faecher: [
-      { id: fachMatheId, classId, subject: "Mathematik", color: COLOR_PALETTE[0], room: "0.107", weights: DEFAULT_WEIGHTS },
+      { id: fachMatheId, classId, subject: "Mathematik", color: COLOR_PALETTE[0], room: "0.107", weights: DEFAULT_WEIGHTS, nextTestDate: isoDate(addDays(heute, 12)), nextTestTitle: "Klassenarbeit Nr. 2" },
       { id: fachSportId, classId, subject: "Sport", color: COLOR_PALETTE[2], room: "Sporthalle", weights: { muendlich: 100, schriftlich: 0 } },
       { id: fachSport7aId, classId: class2Id, subject: "Sport", color: COLOR_PALETTE[2], room: "Sporthalle", weights: { muendlich: 100, schriftlich: 0 } },
     ],
@@ -1941,6 +1958,8 @@ const HELP_DATA = [
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aller Noten. Schriftliche Noten werden standardmäßig doppelt gewichtet. Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Gespräche eintragen kannst. Die Notenbuttons sind immer direkt sichtbar. Weitere Aktionen (Notiz, Gespräch, Vergessen) erscheinen nach Antippen des ···-Symbols neben dem Namen. Hat ein Kind bereits eine Notiz oder einen Auffälligkeits-Eintrag, leuchtet das ···-Symbol grün.` },
+      { q: "Was ist der Stunden-Timer in der Schnellerfassung?", a: `Wenn für ein Fach ein Termin für die nächste Klassenarbeit eingetragen ist, zeigt die Schnellerfassung ganz oben an, wie viele Unterrichtsstunden laut Stundenplan noch bis zu diesem Termin verbleiben – farbcodiert: grün (genug Zeit), amber (bald), rot (dringend). Der Timer erscheint auch als kleines Badge neben dem Fach in der Tagesübersicht auf der Startseite. Den Termin eingeben: „Noten & Berichte" → Fach antippen → Stift-Symbol → „Nächste Klassenarbeit / Test".` },
+      { q: "Was ist Themen-Tagging bei schriftlichen Noten?", a: `Beim Erfassen einer schriftlichen Note (Kategorie „Schriftlich") kannst du ein optionales Thema eingeben, z. B. „Bruchrechnung" oder „Kommasetzung". In der Fachansicht unter „Noten & Berichte" → Klasse → Fach erscheint dann die Karte „Wissensgebiete" mit einer Übersicht aller getaggten Themen und dem Klassenschnitt pro Thema – schlecht abschneidende Themen erscheinen zuerst. So werden Wissenslücken auf Klassenebene sichtbar.` },
       { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button "Zeugnis". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
       { q: "Wo kann ich Gespräche mit Schüler:innen erfassen?", a: `An drei Stellen: (1) In der Klassenliste neben jedem Kind das 💬-Symbol antippen. (2) Im Schnellerfassungs-Modus nach dem Unterricht. (3) Direkt in der Notenansicht: Kind antippen – die Detailansicht zeigt oben eine Karte „Gespräch & Stimmung" mit Typ-Wahl (Schüler / Eltern / Förder), Stimmungsskala (😄😊😐😕😟) und Notizfeld. Alle erfassten Gespräche erscheinen auch bei Elternsprechtag-Vorbereitung.` },
     ],
@@ -3191,6 +3210,27 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
 
         <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
 
+          {/* Stunden-Timer: zeigt verbleibende Stunden bis zur nächsten Klassenarbeit */}
+          {fach.nextTestDate && (() => {
+            const testDate = new Date(fach.nextTestDate + "T00:00:00");
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            if (testDate < today) return null;
+            const remaining = remainingLessonsForFach(fach.id, fach.nextTestDate, data.timetable);
+            const testLabel = fach.nextTestTitle || "nächster Test";
+            const urgent = remaining <= 1;
+            const warning = remaining <= 3;
+            return (
+              <div className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 mb-3 text-xs ${urgent ? "bg-red-50 border-red-200" : warning ? "bg-amber-50 border-amber-200" : "bg-stone-50 border-stone-200"}`}>
+                <Clock size={14} className={`shrink-0 ${urgent ? "text-red-500" : warning ? "text-amber-500" : "text-stone-400"}`} />
+                <span className={`flex-1 font-medium truncate ${urgent ? "text-red-700" : warning ? "text-amber-700" : "text-stone-600"}`}>{testLabel}</span>
+                <span className={`shrink-0 font-bold tabular-nums ${urgent ? "text-red-700" : warning ? "text-amber-700" : "text-stone-500"}`}>
+                  {remaining === 0 ? "Heute!" : `Noch ${remaining} Std.`}
+                </span>
+              </div>
+            );
+          })()}
+
           {/* Datum und Kategorie */}
           <div className="flex items-center gap-2 flex-wrap mb-3">
             <input
@@ -3630,6 +3670,19 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
                         <span className="flex items-center gap-1.5 min-w-0">
                           {fach && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? fach.color : "#C0BBA8" }} />}
                           <span className="truncate">{fach && cls ? `${cls.name} – ${fach.subject}` : "—"}</span>
+                          {fach?.nextTestDate && (() => {
+                            const testDate = new Date(fach.nextTestDate + "T00:00:00");
+                            const now = new Date(); now.setHours(0, 0, 0, 0);
+                            if (testDate < now) return null;
+                            const rem = remainingLessonsForFach(fach.id, fach.nextTestDate, data.timetable);
+                            const urgent = rem <= 1;
+                            const warning = rem <= 3;
+                            return (
+                              <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${urgent ? "bg-red-100 text-red-700" : warning ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-500"}`}>
+                                {rem === 0 ? "Heute!" : `${rem} Std.`}
+                              </span>
+                            );
+                          })()}
                         </span>
                         {(() => {
                           const t = fach && (data.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr);
@@ -3950,6 +4003,8 @@ function FachModal({ data, initial, onSave, onClose }) {
   const [color, setColor] = useState(initial?.color || nextPaletteColor(data.subjectColors));
   const [room, setRoom] = useState(initial?.room || "");
   const [weights, setWeights] = useState(initial?.weights || DEFAULT_WEIGHTS);
+  const [nextTestDate, setNextTestDate] = useState(initial?.nextTestDate || "");
+  const [nextTestTitle, setNextTestTitle] = useState(initial?.nextTestTitle || "");
 
   const existingSubjects = Array.from(new Set(data.faecher.map((f) => f.subject))).filter(Boolean).sort((a, b) => a.localeCompare(b, "de"));
 
@@ -3964,7 +4019,7 @@ function FachModal({ data, initial, onSave, onClose }) {
     if (classId !== "__new__" && !classId) return;
     if (classId === "__new__" && !finalClassName) return;
     if (!subject.trim()) return;
-    onSave({ classId: classId === "__new__" ? null : classId, newClassName: finalClassName, subject: subject.trim(), color, room: room.trim(), weights });
+    onSave({ classId: classId === "__new__" ? null : classId, newClassName: finalClassName, subject: subject.trim(), color, room: room.trim(), weights, nextTestDate: nextTestDate || null, nextTestTitle: nextTestTitle.trim() || null });
   }
 
   return (
@@ -4042,6 +4097,32 @@ function FachModal({ data, initial, onSave, onClose }) {
               ))}
             </div>
             <p className="text-xs text-stone-400 mt-1.5">Wird automatisch auf 100 % normiert, auch wenn noch nicht in jeder Kategorie Noten vorliegen.</p>
+          </Field>
+
+          <Field label="Nächste Klassenarbeit / Test (optional)">
+            <div className="flex gap-2 items-center">
+              <input
+                className={`${inputCls} flex-1`}
+                type="date"
+                value={nextTestDate}
+                onChange={(e) => setNextTestDate(e.target.value)}
+              />
+              {nextTestDate && (
+                <button onClick={() => { setNextTestDate(""); setNextTestTitle(""); }} className="text-stone-400 hover:text-red-500 shrink-0">
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+            {nextTestDate && (
+              <input
+                className={`${inputCls} mt-2`}
+                placeholder="Titel, z. B. Klassenarbeit Nr. 3"
+                value={nextTestTitle}
+                onChange={(e) => setNextTestTitle(e.target.value)}
+                maxLength={100}
+              />
+            )}
+            <p className="text-xs text-stone-400 mt-1.5">Zeigt in der Schnellerfassung an, wie viele Stunden bis zur nächsten Arbeit verbleiben.</p>
           </Field>
         </div>
 
@@ -7505,7 +7586,7 @@ function FaecherTab({ data, update, onOpenFach }) {
     return na - nb || ca.localeCompare(cb, "de") || a.subject.localeCompare(b.subject, "de");
   });
 
-  function saveFach({ classId, newClassName, subject, color, room, weights }) {
+  function saveFach({ classId, newClassName, subject, color, room, weights, nextTestDate, nextTestTitle }) {
     update((d) => {
       let finalClassId = classId;
       if (!finalClassId && newClassName) {
@@ -7517,9 +7598,9 @@ function FaecherTab({ data, update, onOpenFach }) {
 
       if (editingFach) {
         const f = d.faecher.find((x) => x.id === editingFach.id);
-        if (f) { f.classId = finalClassId; f.subject = subject; f.color = color; f.room = room; f.weights = weights || DEFAULT_WEIGHTS; }
+        if (f) { f.classId = finalClassId; f.subject = subject; f.color = color; f.room = room; f.weights = weights || DEFAULT_WEIGHTS; f.nextTestDate = nextTestDate || null; f.nextTestTitle = nextTestTitle || null; }
       } else {
-        d.faecher.push({ id: uid(), classId: finalClassId, subject, color, room, weights: weights || DEFAULT_WEIGHTS });
+        d.faecher.push({ id: uid(), classId: finalClassId, subject, color, room, weights: weights || DEFAULT_WEIGHTS, nextTestDate: nextTestDate || null, nextTestTitle: nextTestTitle || null });
       }
       return d;
     });
@@ -8388,6 +8469,7 @@ function BulkGradeModal({ fach, cls, students, halbjahr, isColor = true, onSave,
   const [category, setCategory] = useState("muendlich");
   const [date, setDate] = useState(isoDate(new Date()));
   const [factor, setFactor] = useState(1);
+  const [topic, setTopic] = useState("");
   const [gradeMap, setGradeMap] = useState({});
 
   const values = Object.values(gradeMap).filter((v) => v != null);
@@ -8399,7 +8481,8 @@ function BulkGradeModal({ fach, cls, students, halbjahr, isColor = true, onSave,
   function save() {
     const entries = Object.entries(gradeMap).filter(([, v]) => v != null).map(([studentId, value]) => ({ studentId, value }));
     if (!entries.length) return;
-    onSave({ title: title.trim() || `Mitarbeit am ${new Date(date).toLocaleDateString("de-DE")}`, category, date, factor, entries });
+    const topicVal = category === "schriftlich" ? topic.trim() || null : null;
+    onSave({ title: title.trim() || `Mitarbeit am ${new Date(date).toLocaleDateString("de-DE")}`, category, date, factor, entries, topic: topicVal });
   }
 
   return (
@@ -8419,6 +8502,9 @@ function BulkGradeModal({ fach, cls, students, halbjahr, isColor = true, onSave,
             {CATS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
           </select>
           <input className={inputCls} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          {category === "schriftlich" && (
+            <input className={`${inputCls} col-span-2`} placeholder="Thema (optional), z. B. Bruchrechnung" value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={100} />
+          )}
           <Field label="Faktor (z. B. x2 für Klassenarbeiten)">
             <input className={inputCls} type="number" step="0.5" min="0.5" value={factor} onChange={(e) => setFactor(Number(e.target.value))} />
           </Field>
@@ -9365,6 +9451,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
   const [category, setCategory] = useState("muendlich");
   const [value, setValue] = useState(2);
   const [gradeTitle, setGradeTitle] = useState("");
+  const [gradeTopic, setGradeTopic] = useState("");
   const [gdate, setGdate] = useState(isoDate(new Date()));
   const [showBulkModal, setShowBulkModal] = useState(false);
   const [showSprechtag, setShowSprechtag] = useState(false);
@@ -9495,11 +9582,13 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
 
   function addGrade() {
     if (!selectedStudent || !fach) return;
+    const topic = category === "schriftlich" ? gradeTopic.trim() || null : null;
     update((d) => {
-      d.grades.push({ id: uid(), studentId: selectedStudent, classId: fach.classId, fachId: fach.id, category, value, factor: 1, title: gradeTitle.trim(), date: gdate, halbjahr });
+      d.grades.push({ id: uid(), studentId: selectedStudent, classId: fach.classId, fachId: fach.id, category, value, factor: 1, title: gradeTitle.trim(), date: gdate, halbjahr, ...(topic ? { topic } : {}) });
       return d;
     });
     setGradeTitle("");
+    if (category !== "schriftlich") setGradeTopic("");
   }
 
   function removeGrade(id) {
@@ -9527,10 +9616,10 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
     });
   }
 
-  function saveBulk({ title, category, date, factor, entries }) {
+  function saveBulk({ title, category, date, factor, entries, topic }) {
     update((d) => {
       entries.forEach(({ studentId, value }) => {
-        d.grades.push({ id: uid(), studentId, classId: fach.classId, fachId: fach.id, category, value, factor, title, date, halbjahr });
+        d.grades.push({ id: uid(), studentId, classId: fach.classId, fachId: fach.id, category, value, factor, title, date, halbjahr, ...(topic ? { topic } : {}) });
       });
       return d;
     });
@@ -9702,6 +9791,48 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
             </div>
           )}
 
+          {/* Themen-Auswertung: Wissensgebiete aus schriftlichen Noten mit Themen-Tag */}
+          {(() => {
+            const allGrades = data.grades.filter((g) => g.fachId === fach.id && g.halbjahr === halbjahr && g.category === "schriftlich" && g.topic);
+            if (!allGrades.length) return null;
+            const byTopic = {};
+            allGrades.forEach((g) => {
+              if (!byTopic[g.topic]) byTopic[g.topic] = [];
+              byTopic[g.topic].push(g.value);
+            });
+            const topics = Object.entries(byTopic).map(([topic, vals]) => ({
+              topic,
+              avg: vals.reduce((a, b) => a + b, 0) / vals.length,
+              count: vals.length,
+            })).sort((a, b) => b.avg - a.avg); // schlechteste zuerst
+            return (
+              <Card className="px-4 py-3">
+                <div className="flex items-center gap-1.5 mb-2.5">
+                  <BarChart2 size={14} className="text-stone-400" />
+                  <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Wissensgebiete</span>
+                  <span className="text-[10px] text-stone-300 ml-1">schriftlich</span>
+                </div>
+                <ul className="space-y-2">
+                  {topics.map(({ topic, avg, count }) => {
+                    const pct = Math.round(((avg - 1) / 5) * 100);
+                    const barColor = avg <= 2 ? "bg-emerald-400" : avg <= 3 ? "bg-amber-400" : avg <= 4 ? "bg-orange-400" : "bg-red-400";
+                    return (
+                      <li key={topic} className="flex items-center gap-2 text-sm">
+                        <span className="flex-1 text-stone-700 truncate min-w-0">{topic}</span>
+                        <div className="w-24 h-1.5 bg-stone-100 rounded-full overflow-hidden shrink-0">
+                          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className={`text-xs font-bold w-8 text-right tabular-nums shrink-0 ${gradeColor(avg, colored)}`}>{gradeLabel(avg)}</span>
+                        <span className="text-[10px] text-stone-300 w-10 text-right shrink-0">{count} Note{count !== 1 ? "n" : ""}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <p className="text-[10px] text-stone-300 mt-2.5">Ø aller Schüler:innen mit Themen-Tag in diesem Halbjahr</p>
+              </Card>
+            );
+          })()}
+
           {showSprechtagPicker && (
             <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={() => setShowSprechtagPicker(false)}>
               <div className="bg-white w-full md:max-w-sm rounded-t-3xl md:rounded-2xl shadow-xl sheet overflow-y-auto" onClick={(e) => e.stopPropagation()}>
@@ -9757,8 +9888,8 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                     <div className="font-medium text-stone-800">Neue Note</div>
                     <Button variant="subtle" onClick={() => setShowGradesList(true)}>Einzelnoten ({studentGrades.length})</Button>
                   </div>
-                  <div className="space-y-2 md:space-y-0 md:grid md:grid-cols-[130px_90px_1fr_140px_auto] md:gap-2">
-                    <div className="flex gap-2 md:contents">
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
                       <select className={`${inputCls} flex-1`} value={category} onChange={(e) => setCategory(e.target.value)}>
                         {CATS.map((c) => <option key={c.key} value={c.key}>{c.label}</option>)}
                       </select>
@@ -9767,7 +9898,10 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                       </select>
                     </div>
                     <input className={inputCls} placeholder="Bezeichnung, z. B. Stundenbeteiligung" value={gradeTitle} onChange={(e) => setGradeTitle(e.target.value)} maxLength={200} />
-                    <div className="flex gap-2 md:contents">
+                    {category === "schriftlich" && (
+                      <input className={inputCls} placeholder="Thema (optional), z. B. Bruchrechnung" value={gradeTopic} onChange={(e) => setGradeTopic(e.target.value)} maxLength={100} />
+                    )}
+                    <div className="flex gap-2">
                       <input className={`${inputCls} flex-1`} type="date" value={gdate} onChange={(e) => setGdate(e.target.value)} />
                       <Button onClick={addGrade} className="justify-center shrink-0"><Plus size={15} /></Button>
                     </div>
@@ -10098,6 +10232,15 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                                 </select>
                               </div>
                               <input className={inputCls} placeholder="Bezeichnung (z. B. Mitarbeit)" value={g.title || ""} onChange={(e) => updateGrade(g.id, { title: e.target.value })} />
+                              {g.category === "schriftlich" && (
+                                <input
+                                  className={inputCls}
+                                  placeholder="Thema (optional), z. B. Bruchrechnung"
+                                  value={g.topic || ""}
+                                  onChange={(e) => updateGrade(g.id, { topic: e.target.value.trim() || null })}
+                                  maxLength={100}
+                                />
+                              )}
                               <div className="flex gap-2 items-center">
                                 <input className={inputCls} type="date" value={g.date} onChange={(e) => updateGrade(g.id, { date: e.target.value })} />
                                 {g.category === "schriftlich" && (
@@ -10140,8 +10283,11 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                                 <span className={`font-semibold w-8 shrink-0 tnum ${gradeColor(g.value, colored)}`}>{GRADE_OPTIONS.find((o) => o.value === g.value)?.label}</span>
                               )}
                               <span className="text-xs text-stone-400 w-16 shrink-0">{CATS.find((c) => c.key === g.category)?.label}</span>
-                              <span className="flex-1 text-stone-700 truncate flex items-center gap-1.5">
+                              <span className="flex-1 text-stone-700 truncate flex items-center gap-1.5 min-w-0">
                                 <span className="truncate">{g.title || "—"}{g.factor && g.factor !== 1 ? ` · ×${g.factor}` : ""}</span>
+                                {g.topic && (
+                                  <span className="inline-flex items-center text-[10px] text-stone-500 bg-stone-100 px-1.5 py-0.5 rounded-full shrink-0 max-w-[80px] truncate">{g.topic}</span>
+                                )}
                                 {!g.auto && g.reason && (
                                   <span className="inline-flex items-center gap-0.5 text-[10px] text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded-full shrink-0" title={`${g.reason} vergessen`}>
                                     <AlertTriangle size={9} /> {g.reason}
