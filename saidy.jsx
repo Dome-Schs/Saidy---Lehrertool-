@@ -6,7 +6,7 @@ import {
   Clock, StickyNote, ClipboardCheck, Copy, CheckCircle2, AlertCircle, AlertTriangle,
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
-  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical,
+  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target,
 } from "lucide-react";
 
 /* ---------- Konstanten ---------- */
@@ -4097,11 +4097,12 @@ function StudentOverviewModal({ student, faecher, grades, finalGrades, halbjahr,
 }
 
 /* Eigenständiges Fenster für die Schülerliste einer Klasse – bewusst getrennt von der Klassenübersicht */
-function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onOpenAdd, onOpenOverview, onClose }) {
+function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
   const [photoError, setPhotoError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showMedicalConsent, setShowMedicalConsent] = useState(false);
   const [quickGesprId, setQuickGesprId] = useState(null);
+  const [zielDraft, setZielDraft] = useState({ text: "", typ: "foerder" });
 
   async function handlePhoto(studentId, file) {
     if (!file) return;
@@ -4146,6 +4147,7 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
             const open = selectedStudent === s.id;
             const studentNotes = notes.filter((n) => n.studentId === s.id && n.type !== "gespraech").sort((a, b) => b.date.localeCompare(a.date));
             const studentGespraeche = notes.filter((n) => n.studentId === s.id && n.type === "gespraech").sort((a, b) => b.date.localeCompare(a.date));
+            const studentZiele = (foerderZiele || []).filter((z) => z.studentId === s.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
             return (
               <li key={s.id} className="py-2">
                 <div className="flex items-center justify-between gap-2">
@@ -4295,6 +4297,81 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                         className={inputCls}
                       />
                     </Field>
+
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Target size={15} className="text-stone-400" />
+                        <div className="font-medium text-stone-800 text-sm">Förderziele & Wochenziele</div>
+                      </div>
+                      <ul className="space-y-1.5 mb-2">
+                        {studentZiele.filter((z) => !z.doneAt).map((z) => (
+                          <li key={z.id} className="flex items-start gap-2 bg-stone-50 rounded-lg px-3 py-2">
+                            <button
+                              onClick={() => onToggleFoerderZiel(z.id)}
+                              className="shrink-0 mt-0.5 w-4 h-4 rounded border border-stone-300 hover:border-green-500 transition-colors"
+                              title="Als erledigt markieren"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className={`text-[10px] font-semibold mr-1 ${z.typ === "wochen" ? "text-blue-500" : "text-amber-600"}`}>
+                                {z.typ === "wochen" ? "Wochenziel" : "Förderziel"}
+                              </span>
+                              <span className="text-sm text-stone-700">{z.text}</span>
+                            </div>
+                            <button onClick={() => onDeleteFoerderZiel(z.id)} className="shrink-0 text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
+                          </li>
+                        ))}
+                        {studentZiele.filter((z) => z.doneAt).map((z) => (
+                          <li key={z.id} className="flex items-start gap-2 px-3 py-1.5 opacity-50">
+                            <button
+                              onClick={() => onToggleFoerderZiel(z.id)}
+                              className="shrink-0 mt-0.5 w-4 h-4 rounded bg-green-500 border border-green-500 flex items-center justify-center"
+                              title="Wieder öffnen"
+                            >
+                              <Check size={10} className="text-white" />
+                            </button>
+                            <span className="text-sm text-stone-400 line-through flex-1 min-w-0">{z.text}</span>
+                            <button onClick={() => onDeleteFoerderZiel(z.id)} className="shrink-0 text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
+                          </li>
+                        ))}
+                        {!studentZiele.length && <li className="text-sm text-stone-400">Noch keine Ziele eingetragen.</li>}
+                      </ul>
+                      <div className="flex gap-1.5">
+                        <div className="flex shrink-0 rounded-lg overflow-hidden border border-stone-200">
+                          {[{ key: "foerder", label: "F" }, { key: "wochen", label: "W" }].map(({ key, label }) => (
+                            <button
+                              key={key}
+                              onClick={() => setZielDraft((d) => ({ ...d, typ: key }))}
+                              title={key === "foerder" ? "Förderziel" : "Wochenziel"}
+                              className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${zielDraft.typ === key ? "akzent-flaeche text-white" : "bg-white text-stone-400 hover:text-stone-600"}`}
+                            >
+                              {label}
+                            </button>
+                          ))}
+                        </div>
+                        <input
+                          className={`${inputCls} flex-1`}
+                          placeholder={zielDraft.typ === "wochen" ? "Wochenziel eintragen …" : "Förderziel eintragen …"}
+                          value={zielDraft.text}
+                          maxLength={200}
+                          onChange={(e) => setZielDraft((d) => ({ ...d, text: e.target.value }))}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" && zielDraft.text.trim()) {
+                              onAddFoerderZiel(s.id, zielDraft.text, zielDraft.typ);
+                              setZielDraft((d) => ({ ...d, text: "" }));
+                            }
+                          }}
+                        />
+                        <Button
+                          onClick={() => {
+                            if (!zielDraft.text.trim()) return;
+                            onAddFoerderZiel(s.id, zielDraft.text, zielDraft.typ);
+                            setZielDraft((d) => ({ ...d, text: "" }));
+                          }}
+                        >
+                          <Plus size={15} />
+                        </Button>
+                      </div>
+                    </div>
 
                     <p className="text-[10px] text-stone-400 flex items-center gap-1 -mt-1">
                       <ShieldCheck size={10} className="shrink-0" />
@@ -5772,6 +5849,30 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
     });
   }
 
+  function addFoerderZiel(studentId, text, typ) {
+    if (!text.trim() || !studentId) return;
+    update((d) => {
+      d.foerderZiele = d.foerderZiele || [];
+      d.foerderZiele.push({ id: uid(), studentId, text: text.trim(), typ, createdAt: isoDate(new Date()), doneAt: null });
+      return d;
+    });
+  }
+
+  function toggleFoerderZiel(zielId) {
+    update((d) => {
+      const z = (d.foerderZiele || []).find((z) => z.id === zielId);
+      if (z) z.doneAt = z.doneAt ? null : isoDate(new Date());
+      return d;
+    });
+  }
+
+  function deleteFoerderZiel(zielId) {
+    update((d) => {
+      d.foerderZiele = (d.foerderZiele || []).filter((z) => z.id !== zielId);
+      return d;
+    });
+  }
+
   function saveSitzplan(classId, plan) {
     update((d) => {
       if (!d.sitzplaene) d.sitzplaene = {};
@@ -5963,6 +6064,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
           cls={cls}
           students={students}
           notes={data.notes}
+          foerderZiele={data.foerderZiele || []}
           selectedStudent={selectedStudent}
           setSelectedStudent={setSelectedStudent}
           onDeleteStudent={deleteStudent}
@@ -5974,6 +6076,9 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
           setGespraechDraft={setGespraechDraft}
           onAddGespraech={addGespraech}
           onDeleteNote={deleteNote}
+          onAddFoerderZiel={addFoerderZiel}
+          onToggleFoerderZiel={toggleFoerderZiel}
+          onDeleteFoerderZiel={deleteFoerderZiel}
           onOpenAdd={() => setShowAddModal(true)}
           onOpenOverview={(sid) => setOverviewStudentId(sid)}
           onClose={() => { setShowStudentsModal(false); setSelectedStudent(null); }}
