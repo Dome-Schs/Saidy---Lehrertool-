@@ -5118,7 +5118,7 @@ function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityC
 
   useEffect(() => {
     if (circleRef.current && !dragRef.current) {
-      circleRef.current.style.outline = quality ? `3.5px solid ${QUALITY_COLORS[quality]}` : "none";
+      circleRef.current.style.outline = quality ? `2px solid ${QUALITY_COLORS[quality]}` : "none";
     }
   }, [quality]);
 
@@ -5225,8 +5225,8 @@ function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityC
         style={{
           background: "#4F5844",
           transition: "transform 0.1s",
-          outline: quality ? `3.5px solid ${QUALITY_COLORS[quality]}` : "none",
-          outlineOffset: "2px",
+          outline: quality ? `2px solid ${QUALITY_COLORS[quality]}` : "none",
+          outlineOffset: "1px",
         }}
       >
         {initials(student.name)}
