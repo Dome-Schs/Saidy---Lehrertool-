@@ -5262,11 +5262,10 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   }
 
   function handleDragEnd(studentId, newPos) {
-    const rect = canvasRef.current?.getBoundingClientRect();
-    setPositions((prev) => {
-      const snapped = snapToGrid(newPos, rect, prev, studentId);
-      return resolveCollisions({ ...prev, [studentId]: { ...prev[studentId], ...snapped } }, rect);
-    });
+    setPositions((prev) => resolveCollisions(
+      { ...prev, [studentId]: { ...prev[studentId], ...newPos } },
+      canvasRef.current?.getBoundingClientRect()
+    ));
   }
 
   function handleQualityCycle(studentId) {
@@ -5302,15 +5301,31 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   }
 
   function pickStudent(studentId) {
-    const rawPos = pendingPos ?? { x: 0.5, y: 0.5 };
-    const rect = canvasRef.current?.getBoundingClientRect();
-    setPositions((prev) => {
-      const snapped = snapToGrid(rawPos, rect, prev);
-      return resolveCollisions({ ...prev, [studentId]: snapped }, rect);
-    });
+    const pos = pendingPos ?? { x: 0.35 + Math.random() * 0.3, y: 0.35 + Math.random() * 0.3 };
+    setPositions((prev) => resolveCollisions({ ...prev, [studentId]: pos }, canvasRef.current?.getBoundingClientRect()));
     setShowPicker(false);
     setPickerSearch("");
     setPendingPos(null);
+  }
+
+  function handleCleanup() {
+    const rect = canvasRef.current?.getBoundingClientRect();
+    if (!rect || rect.width === 0) return;
+    const stepX = SITZPLAN_GRID_PX / rect.width;
+    const stepY = SITZPLAN_GRID_PX / rect.height;
+    // Sortiert nach aktuellem Raster-Reihe dann -Spalte → Reihenfolge bleibt erhalten
+    const sorted = Object.keys(positions).sort((a, b) => {
+      const ay = Math.round(positions[a].y / stepY), by = Math.round(positions[b].y / stepY);
+      return ay !== by ? ay - by : Math.round(positions[a].x / stepX) - Math.round(positions[b].x / stepX);
+    });
+    const newPos = {};
+    const occupied = {};
+    for (const id of sorted) {
+      const snapped = snapToGrid(positions[id], rect, occupied);
+      newPos[id] = { ...positions[id], ...snapped };
+      occupied[id] = snapped;
+    }
+    setPositions(newPos);
   }
 
   function clearPlan() {
@@ -5502,11 +5517,18 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
                 )}
               </button>
               <button
+                onClick={handleCleanup}
+                disabled={placedCount < 2}
+                className="px-3 py-2 rounded-xl text-sm text-stone-500 hover:bg-stone-100 disabled:opacity-30 transition-colors"
+              >
+                Aufräumen
+              </button>
+              <button
                 onClick={() => setShowConfirmClear(true)}
                 disabled={placedCount === 0}
                 className="ml-auto px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 disabled:opacity-30 transition-colors"
               >
-                Sitzplan löschen
+                Löschen
               </button>
             </>
           )}
