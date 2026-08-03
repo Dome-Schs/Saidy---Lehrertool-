@@ -5062,12 +5062,14 @@ function resolveCollisions(positions, canvasRect) {
 }
 
 const QUALITY_COLORS = { gut: "#16a34a", mittel: "#d97706", schlecht: "#dc2626" };
+const TRASH_THRESHOLD = 0.78; // unterste 22% des Canvas = Löschzone
 
-function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityChange, onRemove }) {
+function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityChange, onRemove, onDragStart, onDragStop }) {
   const elRef = useRef(null);
   const circleRef = useRef(null);
   const dragRef = useRef(null);
   const currentPosRef = useRef(pos);
+  const inTrashRef = useRef(false);
 
   useEffect(() => {
     currentPosRef.current = pos;
@@ -5079,7 +5081,7 @@ function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityC
 
   useEffect(() => {
     if (circleRef.current && !dragRef.current) {
-      circleRef.current.style.outline = quality ? `2.5px solid ${QUALITY_COLORS[quality]}` : "none";
+      circleRef.current.style.outline = quality ? `3.5px solid ${QUALITY_COLORS[quality]}` : "none";
     }
   }, [quality]);
 
@@ -5117,7 +5119,10 @@ function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityC
     if (!dragRef.current) return;
     const dx = e.clientX - dragRef.current.startClientX;
     const dy = e.clientY - dragRef.current.startClientY;
-    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragRef.current.moved = true;
+    if (!dragRef.current.moved && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) {
+      dragRef.current.moved = true;
+      onDragStart?.();
+    }
     if (!dragRef.current.moved) return;
     const { startPosX, startPosY, rect } = dragRef.current;
     const mx = SITZPLAN_COLLISION_R / rect.width;
@@ -5127,22 +5132,37 @@ function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityC
     currentPosRef.current = { x: newX, y: newY };
     elRef.current.style.left = `${newX * 100}%`;
     elRef.current.style.top = `${newY * 100}%`;
+    // Löschzone-Feedback
+    const nowInTrash = newY > TRASH_THRESHOLD;
+    if (nowInTrash !== inTrashRef.current) {
+      inTrashRef.current = nowInTrash;
+      if (circleRef.current) {
+        circleRef.current.style.background = nowInTrash ? "#dc2626" : "#3d4433";
+        circleRef.current.style.transform = nowInTrash ? "scale(0.8)" : "scale(1.1)";
+      }
+    }
   }
 
   function onPointerUp(e) {
     if (!dragRef.current) return;
     const moved = dragRef.current.moved;
+    const wasInTrash = inTrashRef.current;
     dragRef.current = null;
+    inTrashRef.current = false;
     elRef.current.style.zIndex = "5";
     elRef.current.style.cursor = "grab";
     if (circleRef.current) {
       circleRef.current.style.transform = "";
       circleRef.current.style.background = "#4F5844";
     }
-    if (moved) {
-      onDragEnd(currentPosRef.current);
-    } else {
+    if (!moved) {
       onQualityChange();
+    } else if (wasInTrash) {
+      onDragStop?.();
+      onRemove();
+    } else {
+      onDragStop?.();
+      onDragEnd(currentPosRef.current);
     }
   }
 
@@ -5161,14 +5181,6 @@ function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityC
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
     >
-      {/* Remove button */}
-      <button
-        onPointerDown={(e) => e.stopPropagation()}
-        onClick={(e) => { e.stopPropagation(); onRemove(); }}
-        className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-400 hover:bg-red-500 text-white flex items-center justify-center shadow z-10 transition-colors"
-      >
-        <X size={5} />
-      </button>
       {/* Avatar circle — 36px */}
       <div
         ref={circleRef}
@@ -5198,6 +5210,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   const [pendingPos, setPendingPos] = useState(null); // where to place the next picked student
   const [pickerSearch, setPickerSearch] = useState("");
   const [showConfirmClear, setShowConfirmClear] = useState(false);
+  const [isDraggingToken, setIsDraggingToken] = useState(false);
   const canvasRef = useRef(null);
   const canvasTapStart = useRef(null);
   const tafelDragRef = useRef(null);
@@ -5380,11 +5393,25 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
               );
             })()}
 
-            {placedCount === 0 && (
+            {placedCount === 0 && !isDraggingToken && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
                 <p className="text-stone-400 text-sm text-center px-10">Auf die Fläche tippen, um ein Kind zu platzieren</p>
               </div>
             )}
+            {/* Löschzone — erscheint beim Ziehen eines Tokens */}
+            <div
+              className="absolute bottom-0 left-0 right-0 flex flex-col items-center justify-center gap-1 pointer-events-none"
+              style={{
+                height: "22%",
+                zIndex: 15,
+                background: "linear-gradient(to top, rgba(220,38,38,0.18) 0%, transparent 100%)",
+                opacity: isDraggingToken ? 1 : 0,
+                transition: "opacity 0.15s",
+              }}
+            >
+              <Trash2 size={20} className="text-red-500" />
+              <span className="text-red-600 text-[11px] font-medium">Hier ablegen zum Entfernen</span>
+            </div>
             {activeStudents.filter((s) => positions[s.id]).map((s) => (
               <SitzplanToken
                 key={s.id}
@@ -5395,6 +5422,8 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
                 onDragEnd={(newPos) => handleDragEnd(s.id, newPos)}
                 onQualityChange={() => handleQualityCycle(s.id)}
                 onRemove={() => removeStudent(s.id)}
+                onDragStart={() => setIsDraggingToken(true)}
+                onDragStop={() => setIsDraggingToken(false)}
               />
             ))}
           </div>
