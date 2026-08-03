@@ -1881,7 +1881,7 @@ const HELP_DATA = [
       { q: "Wie lösche ich eine Klasse?", a: `Öffne die Klasse, tippe auf das Bearbeiten-Symbol und wähle „Klasse löschen". Achtung: alle Daten dieser Klasse werden unwiderruflich entfernt.` },
       { q: "Was sind Dienste?", a: `Dienste sind Aufgaben, die Saidy Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste", mit einem Tippen weiter zum nächsten Kind.` },
       { q: "Wie erfasse ich Fehlzeiten?", a: `Gehe zu Klasse → „Fehlzeiten" → „+ Fehlzeit". Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist.` },
-      { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Im Editor kannst du Reihen- und Spaltenanzahl anpassen. Tippe auf eine:n Schüler:in (unten oder im Raster), dann auf einen freien Platz – fertig. Tippe auf zwei besetzte Plätze, um Kinder zu tauschen. Das kleine X entfernt ein Kind vom Platz. Zum Schluss auf „Speichern" tippen.` },
+      { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle im Feld, um ein Kind zu platzieren – es erscheint eine Auswahlliste. Platzierte Kinder lassen sich frei verschieben. Tippe einmal auf ein Kind (ohne zu schieben), um den Sitzplatz farbig zu markieren: grün = klappt gut, orange = beobachten, rot = klappt nicht. Das kleine X entfernt ein Kind. Mit „Sitzplan löschen" wird der gesamte Plan zurückgesetzt. Am Ende auf „Speichern" tippen.` },
     ],
   },
   {
@@ -5053,6 +5053,7 @@ function resolveCollisions(positions, canvasRect) {
   const result = {};
   for (const id of ids) {
     result[id] = {
+      ...positions[id],
       x: Math.max(m / canvasRect.width,  Math.min(1 - m / canvasRect.width,  px[id].x / canvasRect.width)),
       y: Math.max(m / canvasRect.height, Math.min(1 - m / canvasRect.height, px[id].y / canvasRect.height)),
     };
@@ -5060,7 +5061,9 @@ function resolveCollisions(positions, canvasRect) {
   return result;
 }
 
-function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
+const QUALITY_COLORS = { gut: "#22c55e", mittel: "#f97316", schlecht: "#ef4444" };
+
+function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityChange, onRemove }) {
   const elRef = useRef(null);
   const circleRef = useRef(null);
   const dragRef = useRef(null);
@@ -5073,6 +5076,12 @@ function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
       elRef.current.style.top = `${pos.y * 100}%`;
     }
   }, [pos.x, pos.y]);
+
+  useEffect(() => {
+    if (circleRef.current && !dragRef.current) {
+      circleRef.current.style.outline = quality ? `2.5px solid ${QUALITY_COLORS[quality]}` : "none";
+    }
+  }, [quality]);
 
   function initials(name) {
     const parts = name.trim().split(/\s+/);
@@ -5130,7 +5139,11 @@ function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
       circleRef.current.style.transform = "";
       circleRef.current.style.background = "#4F5844";
     }
-    if (moved) onDragEnd(currentPosRef.current);
+    if (moved) {
+      onDragEnd(currentPosRef.current);
+    } else {
+      onQualityChange();
+    }
   }
 
   return (
@@ -5160,7 +5173,12 @@ function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
       <div
         ref={circleRef}
         className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shadow text-white"
-        style={{ background: "#4F5844", transition: "transform 0.1s" }}
+        style={{
+          background: "#4F5844",
+          transition: "transform 0.1s",
+          outline: quality ? `2.5px solid ${QUALITY_COLORS[quality]}` : "none",
+          outlineOffset: "2px",
+        }}
       >
         {initials(student.name)}
       </div>
@@ -5194,7 +5212,18 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   }
 
   function handleDragEnd(studentId, newPos) {
-    setPositions((prev) => resolveCollisions({ ...prev, [studentId]: newPos }, canvasRef.current?.getBoundingClientRect()));
+    setPositions((prev) => resolveCollisions(
+      { ...prev, [studentId]: { ...prev[studentId], ...newPos } },
+      canvasRef.current?.getBoundingClientRect()
+    ));
+  }
+
+  function handleQualityCycle(studentId) {
+    setPositions((prev) => {
+      const cur = prev[studentId]?.quality ?? null;
+      const next = cur === null ? "gut" : cur === "gut" ? "mittel" : cur === "mittel" ? "schlecht" : null;
+      return { ...prev, [studentId]: { ...prev[studentId], quality: next } };
+    });
   }
 
   function handleCanvasPointerDown(e) {
@@ -5361,12 +5390,29 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
                 key={s.id}
                 student={s}
                 pos={positions[s.id]}
+                quality={positions[s.id]?.quality ?? null}
                 canvasRef={canvasRef}
                 onDragEnd={(newPos) => handleDragEnd(s.id, newPos)}
+                onQualityChange={() => handleQualityCycle(s.id)}
                 onRemove={() => removeStudent(s.id)}
               />
             ))}
           </div>
+        </div>
+
+        {/* Quality legend */}
+        <div className="flex items-center gap-3 px-4 py-1.5 border-t border-stone-100 shrink-0 flex-wrap">
+          <span className="text-[10px] text-stone-400 shrink-0">Tippen zum Markieren:</span>
+          {[
+            { key: "gut", color: "#22c55e", label: "Klappt gut" },
+            { key: "mittel", color: "#f97316", label: "Beobachten" },
+            { key: "schlecht", color: "#ef4444", label: "Klappt nicht" },
+          ].map(({ key, color, label }) => (
+            <span key={key} className="flex items-center gap-1">
+              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
+              <span className="text-[10px] text-stone-500 whitespace-nowrap">{label}</span>
+            </span>
+          ))}
         </div>
 
         {/* Toolbar */}
