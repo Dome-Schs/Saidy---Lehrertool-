@@ -4144,25 +4144,32 @@ function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, se
 
         <ul className="divide-y divide-stone-100">
           {students.map((s) => {
-            const open = selectedStudent === s.id;
-            const studentNotes = notes.filter((n) => n.studentId === s.id && n.type !== "gespraech").sort((a, b) => b.date.localeCompare(a.date));
-            const studentGespraeche = notes.filter((n) => n.studentId === s.id && n.type === "gespraech").sort((a, b) => b.date.localeCompare(a.date));
-            const studentZiele = (foerderZiele || []).filter((z) => z.studentId === s.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+            const sZieleCount = (foerderZiele || []).filter((z) => z.studentId === s.id && !z.doneAt).length;
             return (
-              <li key={s.id} className="py-2">
-                <div className="flex items-center justify-between gap-2">
+              <li key={s.id}>
+                <div className="flex items-center gap-2 py-2.5">
                   <button
-                    onClick={() => setSelectedStudent(open ? null : s.id)}
-                    className={`text-sm flex-1 text-left truncate flex items-center gap-2 ${open ? "akzent-text font-medium" : "text-stone-700 hover:akzent-text"}`}
+                    onClick={() => { setSelectedStudent(s.id); setProfileTab("übersicht"); }}
+                    className="flex-1 flex items-center gap-3 min-w-0 text-left"
                   >
-                    <ChevronRight size={14} className={`shrink-0 transition-transform ${open ? "rotate-90" : ""}`} />
-                    <StudentAvatar student={s} size={26} />
-                    {s.name}
-                    {s.medicalInfo && <AlertCircle size={13} className="text-amber-500 shrink-0" />}
+                    <StudentAvatar student={s} size={34} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-stone-800 truncate">{s.name}</div>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        {s.foerderStatus && (
+                          <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-1.5 py-0 leading-5">
+                            {s.foerderStatus.split(",")[0].trim()}{s.foerderStatus.includes(",") ? ` +${s.foerderStatus.split(",").length - 1}` : ""}
+                          </span>
+                        )}
+                        {s.medicalInfo && <AlertCircle size={11} className="text-amber-500 shrink-0" />}
+                        {sZieleCount > 0 && <span className="text-[10px] text-stone-400">{sZieleCount} Ziel{sZieleCount !== 1 ? "e" : ""}</span>}
+                      </div>
+                    </div>
+                    <ChevronRight size={15} className="text-stone-300 shrink-0" />
                   </button>
                   <button
                     onClick={() => { setQuickGesprId(quickGesprId === s.id ? null : s.id); setGespraechDraft({ text: "", mood: "ok", typ: "schueler" }); }}
-                    className={`p-1 shrink-0 text-lg leading-none ${quickGesprId === s.id ? "akzent-text" : "text-stone-300 hover:text-stone-500"}`}
+                    className={`p-1.5 shrink-0 text-lg leading-none ${quickGesprId === s.id ? "akzent-text" : "text-stone-300 hover:text-stone-500"}`}
                     title="Gespräch erfassen"
                   >💬</button>
                   <button onClick={() => setConfirmDeleteId(s.id)} className="text-stone-300 hover:text-red-500 p-1 shrink-0">
@@ -4171,7 +4178,7 @@ function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, se
                 </div>
 
                 {quickGesprId === s.id && (
-                  <div className="mt-1.5 ml-5 bg-stone-50 border border-stone-200 rounded-xl p-2.5">
+                  <div className="mb-2 bg-stone-50 border border-stone-200 rounded-xl p-2.5">
                     <div className="flex gap-1 mb-1.5">
                       {GESPRAECH_TYPEN.map((t) => (
                         <button key={t.key} type="button" onClick={() => setGespraechDraft((d) => ({ ...d, typ: t.key }))}
@@ -4208,292 +4215,6 @@ function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, se
                     </div>
                   </div>
                 )}
-
-                {open && (
-                  <div className="mt-3 mb-2 pl-5 space-y-3">
-                    <div className="flex items-center gap-3">
-                      <StudentAvatar student={s} size={56} />
-                      <div>
-                        <input
-                          type="file" accept="image/*" id={`photo-${s.id}`} className="hidden"
-                          onChange={(e) => handlePhoto(s.id, e.target.files?.[0])}
-                        />
-                        <label
-                          htmlFor={`photo-${s.id}`}
-                          className="cursor-pointer text-xs font-medium text-stone-500 hover:text-stone-800 underline underline-offset-2 inline-block"
-                        >
-                          Foto {s.photo ? "ändern" : "hinzufügen"}
-                        </label>
-                        {s.photo && (
-                          <button onClick={() => onUpdateField(s.id, "photo", "")} className="ml-2 text-xs text-stone-400 hover:text-red-500">
-                            Entfernen
-                          </button>
-                        )}
-                        <p className="text-[10px] text-stone-400 mt-1 flex items-center gap-1">
-                          <ShieldCheck size={10} className="shrink-0" />
-                          Nur mit schriftl. Einwilligung speichern. Nicht auf geteilten Schulgeräten nutzen.
-                        </p>
-                      </div>
-                    </div>
-
-                    {onOpenOverview && (
-                      <button
-                        onClick={() => onOpenOverview(s.id)}
-                        className="w-full flex items-center justify-center gap-1.5 text-sm font-medium akzent-text akzent-ton rounded-lg py-2 hover:opacity-80 transition-opacity"
-                      >
-                        <BarChart2 size={14} />
-                        Notenübersicht
-                      </button>
-                    )}
-
-                    <div className="grid grid-cols-2 gap-2">
-                      <Field label="Geburtstag">
-                        <input
-                          type="date"
-                          value={s.birthday || ""}
-                          onChange={(e) => onUpdateField(s.id, "birthday", e.target.value)}
-                          className={inputCls}
-                        />
-                      </Field>
-                      <Field label="Telefon Eltern">
-                        <div className="flex gap-1">
-                          <input
-                            type="tel"
-                            placeholder="0176 …"
-                            value={s.parentPhone || ""}
-                            maxLength={30}
-                            onChange={(e) => onUpdateField(s.id, "parentPhone", e.target.value)}
-                            className={inputCls}
-                          />
-                          {s.parentPhone && (
-                            <a
-                              href={`tel:${s.parentPhone}`}
-                              className="shrink-0 w-9 h-9 rounded-lg akzent-ton flex items-center justify-center"
-                              title="Anrufen"
-                            >
-                              <Phone size={15} />
-                            </a>
-                          )}
-                        </div>
-                      </Field>
-                    </div>
-
-                    <Field label="Name Eltern/Erziehungsberechtigte">
-                      <input
-                        placeholder="z. B. Frau Mustermann"
-                        value={s.parentName || ""}
-                        maxLength={100}
-                        onChange={(e) => onUpdateField(s.id, "parentName", e.target.value)}
-                        className={inputCls}
-                      />
-                    </Field>
-
-                    <Field label="Förderstatus">
-                      <input
-                        placeholder="z. B. LRS, Nachteilsausgleich, Förderbedarf Sprache …"
-                        value={s.foerderStatus || ""}
-                        maxLength={80}
-                        onChange={(e) => onUpdateField(s.id, "foerderStatus", e.target.value)}
-                        className={inputCls}
-                      />
-                    </Field>
-
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Target size={15} className="text-stone-400" />
-                        <div className="font-medium text-stone-800 text-sm">Förderziele & Wochenziele</div>
-                      </div>
-                      <ul className="space-y-1.5 mb-2">
-                        {studentZiele.filter((z) => !z.doneAt).map((z) => (
-                          <li key={z.id} className="flex items-start gap-2 bg-stone-50 rounded-lg px-3 py-2">
-                            <button
-                              onClick={() => onToggleFoerderZiel(z.id)}
-                              className="shrink-0 mt-0.5 w-4 h-4 rounded border border-stone-300 hover:border-green-500 transition-colors"
-                              title="Als erledigt markieren"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <span className={`text-[10px] font-semibold mr-1 ${z.typ === "wochen" ? "text-blue-500" : "text-amber-600"}`}>
-                                {z.typ === "wochen" ? "Wochenziel" : "Förderziel"}
-                              </span>
-                              <span className="text-sm text-stone-700">{z.text}</span>
-                            </div>
-                            <button onClick={() => onDeleteFoerderZiel(z.id)} className="shrink-0 text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
-                          </li>
-                        ))}
-                        {studentZiele.filter((z) => z.doneAt).map((z) => (
-                          <li key={z.id} className="flex items-start gap-2 px-3 py-1.5 opacity-50">
-                            <button
-                              onClick={() => onToggleFoerderZiel(z.id)}
-                              className="shrink-0 mt-0.5 w-4 h-4 rounded bg-green-500 border border-green-500 flex items-center justify-center"
-                              title="Wieder öffnen"
-                            >
-                              <Check size={10} className="text-white" />
-                            </button>
-                            <span className="text-sm text-stone-400 line-through flex-1 min-w-0">{z.text}</span>
-                            <button onClick={() => onDeleteFoerderZiel(z.id)} className="shrink-0 text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
-                          </li>
-                        ))}
-                        {!studentZiele.length && <li className="text-sm text-stone-400">Noch keine Ziele eingetragen.</li>}
-                      </ul>
-                      <div className="flex gap-1.5">
-                        <div className="flex shrink-0 rounded-lg overflow-hidden border border-stone-200">
-                          {[{ key: "foerder", label: "F" }, { key: "wochen", label: "W" }].map(({ key, label }) => (
-                            <button
-                              key={key}
-                              onClick={() => setZielDraft((d) => ({ ...d, typ: key }))}
-                              title={key === "foerder" ? "Förderziel" : "Wochenziel"}
-                              className={`px-2.5 py-1.5 text-xs font-semibold transition-colors ${zielDraft.typ === key ? "akzent-flaeche text-white" : "bg-white text-stone-400 hover:text-stone-600"}`}
-                            >
-                              {label}
-                            </button>
-                          ))}
-                        </div>
-                        <input
-                          className={`${inputCls} flex-1`}
-                          placeholder={zielDraft.typ === "wochen" ? "Wochenziel eintragen …" : "Förderziel eintragen …"}
-                          value={zielDraft.text}
-                          maxLength={200}
-                          onChange={(e) => setZielDraft((d) => ({ ...d, text: e.target.value }))}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter" && zielDraft.text.trim()) {
-                              onAddFoerderZiel(s.id, zielDraft.text, zielDraft.typ);
-                              setZielDraft((d) => ({ ...d, text: "" }));
-                            }
-                          }}
-                        />
-                        <Button
-                          onClick={() => {
-                            if (!zielDraft.text.trim()) return;
-                            onAddFoerderZiel(s.id, zielDraft.text, zielDraft.typ);
-                            setZielDraft((d) => ({ ...d, text: "" }));
-                          }}
-                        >
-                          <Plus size={15} />
-                        </Button>
-                      </div>
-                    </div>
-
-                    <p className="text-[10px] text-stone-400 flex items-center gap-1 -mt-1">
-                      <ShieldCheck size={10} className="shrink-0" />
-                      Kontaktdaten sind personenbezogen (DSGVO) – nur auf diesem Gerät gespeichert, nicht weitergeben.
-                    </p>
-
-                    <div>
-                      <div className="flex items-center justify-between mb-1">
-                        <label className="text-xs font-medium text-stone-500">Besonderheiten / Vorerkrankungen</label>
-                        {s.medicalInfo && (
-                          <button
-                            onClick={() => onUpdateField(s.id, "medicalInfo", "")}
-                            className="text-[11px] text-red-400 hover:text-red-600"
-                          >
-                            Löschen
-                          </button>
-                        )}
-                      </div>
-                      <textarea
-                        placeholder="z. B. Nussallergie, Asthma-Spray in der Tasche …"
-                        value={s.medicalInfo || ""}
-                        onChange={(e) => onUpdateField(s.id, "medicalInfo", e.target.value)}
-                        onFocus={() => { if (!localStorage.getItem("saidy_medical_consent") && !s.medicalInfo) setShowMedicalConsent(true); }}
-                        rows={2}
-                        maxLength={2000}
-                        className={`${inputCls} resize-none`}
-                      />
-                      <p className="text-[11px] text-amber-600 mt-1 flex items-start gap-1">
-                        <ShieldCheck size={11} className="shrink-0 mt-0.5" />
-                        Gesundheitsdaten (Art. 9 DSGVO) – nur mit schriftlicher Einwilligung der Erziehungsberechtigten speichern.
-                      </p>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <StickyNote size={15} className="text-stone-400" />
-                        <div className="font-medium text-stone-800 text-sm">Notizen</div>
-                      </div>
-                      <div className="flex gap-2 mb-2">
-                        <input
-                          className={inputCls} placeholder="Beobachtung, Info, Elterngespräch …" value={newNote} maxLength={1000}
-                          onChange={(e) => setNewNote(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && onAddNote(s.id)}
-                        />
-                        <Button onClick={() => onAddNote(s.id)}><Plus size={15} /></Button>
-                      </div>
-                      <ul className="space-y-1.5">
-                        {studentNotes.map((n) => (
-                          <li key={n.id} className="text-sm bg-stone-50 rounded-lg px-3 py-2 flex justify-between gap-3">
-                            <span className="text-stone-700">{n.text}</span>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-stone-400 text-xs whitespace-nowrap">{localDate(n.date).toLocaleDateString("de-DE")}</span>
-                              <button onClick={() => onDeleteNote(n.id)} className="text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
-                            </div>
-                          </li>
-                        ))}
-                        {!studentNotes.length && <li className="text-sm text-stone-400">Noch keine Notizen.</li>}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <MessageSquare size={15} className="text-stone-400" />
-                        <div className="font-medium text-stone-800 text-sm">Kindgespräche</div>
-                        <span className="text-[10px] text-stone-400 font-normal">Unabhängig vom Unterricht</span>
-                      </div>
-                      <div className="space-y-2 mb-2">
-                        <div className="flex gap-1.5">
-                          {GESPRAECH_TYPEN.map((t) => (
-                            <button key={t.key} onClick={() => setGespraechDraft((d) => ({ ...d, typ: t.key }))}
-                              className={`flex-1 py-1 rounded-lg border text-xs font-medium transition-colors ${gespraechDraft.typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 bg-stone-50 text-stone-500"}`}>
-                              {t.label}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="flex gap-1.5">
-                          {MOOD_OPTIONS.map((m) => (
-                            <button
-                              key={m.key}
-                              onClick={() => setGespraechDraft((d) => ({ ...d, mood: m.key }))}
-                              title={m.label}
-                              className={`flex-1 py-1.5 rounded-lg border text-base transition-colors ${gespraechDraft.mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-stone-50"}`}
-                            >
-                              {m.emoji}
-                            </button>
-                          ))}
-                        </div>
-                        <div className="flex gap-2">
-                          <input
-                            className={inputCls}
-                            placeholder="Was bewegt das Kind, wie geht es ihm/ihr …"
-                            value={gespraechDraft.text}
-                            maxLength={1000}
-                            onChange={(e) => setGespraechDraft((d) => ({ ...d, text: e.target.value }))}
-                            onKeyDown={(e) => e.key === "Enter" && onAddGespraech(s.id)}
-                          />
-                          <Button onClick={() => onAddGespraech(s.id)}><Plus size={15} /></Button>
-                        </div>
-                      </div>
-                      <ul className="space-y-1.5">
-                        {studentGespraeche.map((g) => {
-                          const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
-                          const typ = GESPRAECH_TYPEN.find((t) => t.key === g.gesprTyp);
-                          return (
-                            <li key={g.id} className="text-sm bg-stone-50 rounded-lg px-3 py-2.5">
-                              <div className="flex items-center justify-between mb-1">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-sm leading-none">{mood?.emoji ?? "💬"}</span>
-                                  {typ && <span className="text-[10px] font-medium akzent-text bg-[#ECEEE2] px-1.5 py-0.5 rounded">{typ.label}</span>}
-                                  <span className="text-[11px] text-stone-400">{localDate(g.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}</span>
-                                </div>
-                                <button onClick={() => onDeleteNote(g.id)} className="text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
-                              </div>
-                              <p className="text-stone-700 leading-snug">{g.text}</p>
-                            </li>
-                          );
-                        })}
-                        {!studentGespraeche.length && <li className="text-sm text-stone-400">Noch keine Gespräche erfasst.</li>}
-                      </ul>
-                    </div>
-                  </div>
-                )}
               </li>
             );
           })}
@@ -4501,6 +4222,510 @@ function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, se
         </ul>
       </div>
     </div>
+
+    {/* Schülerprofil – Vollbild-Overlay */}
+    {selectedStudent && (() => {
+      const s = students.find((st) => st.id === selectedStudent);
+      if (!s) return null;
+      const sNotes = notes.filter((n) => n.studentId === s.id && n.type !== "gespraech").sort((a, b) => b.date.localeCompare(a.date));
+      const sGespraeche = notes.filter((n) => n.studentId === s.id && n.type === "gespraech").sort((a, b) => b.date.localeCompare(a.date));
+      const sZiele = (foerderZiele || []).filter((z) => z.studentId === s.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+      const foerderTags = (s.foerderStatus || "").split(",").map((t) => t.trim()).filter(Boolean);
+
+      function removeFoerderTag(tag) {
+        const next = foerderTags.filter((t) => t !== tag).join(", ");
+        onUpdateField(s.id, "foerderStatus", next);
+      }
+      function addFoerderTag(tag) {
+        const next = [...foerderTags, tag.trim()].join(", ");
+        onUpdateField(s.id, "foerderStatus", next);
+        setNewTag("");
+        setAddingTag(false);
+      }
+
+      return (
+        <div className="fixed inset-0 z-[55] bg-stone-100 flex flex-col" style={{ maxHeight: "100dvh" }}>
+          {/* Kopfzeile */}
+          <div className="bg-white border-b border-stone-100 shrink-0">
+            <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+              <button
+                onClick={() => setSelectedStudent(null)}
+                className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0"
+              >
+                <ChevronLeft size={18} className="text-stone-600" />
+              </button>
+              <div className="flex-1 min-w-0 text-center">
+                <div className="text-xs text-stone-400">{cls.name}</div>
+              </div>
+              {onOpenOverview && (
+                <button
+                  onClick={() => onOpenOverview(s.id)}
+                  className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0"
+                  title="Notenübersicht"
+                >
+                  <BarChart2 size={15} className="text-stone-600" />
+                </button>
+              )}
+              <button
+                onClick={() => setConfirmDeleteId(s.id)}
+                className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0"
+                title="Löschen"
+              >
+                <Trash2 size={15} className="text-stone-500 hover:text-red-500" />
+              </button>
+            </div>
+
+            {/* Avatar + Name + Tags */}
+            <div className="flex items-center gap-4 px-5 pb-4">
+              <div className="relative shrink-0">
+                <StudentAvatar student={s} size={64} />
+                <label
+                  htmlFor={`photo-profile-${s.id}`}
+                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full border border-stone-200 flex items-center justify-center cursor-pointer shadow-sm"
+                >
+                  <ImageIcon size={11} className="text-stone-500" />
+                </label>
+                <input type="file" accept="image/*" id={`photo-profile-${s.id}`} className="hidden"
+                  onChange={(e) => handlePhoto(s.id, e.target.files?.[0])} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-xl font-bold text-stone-900 truncate">{s.name}</div>
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  {s.birthday && (
+                    <span className="inline-flex items-center gap-1 text-[11px] text-stone-500 bg-stone-100 rounded-full px-2 py-0.5">
+                      <CalendarDays size={10} />
+                      {localDate(s.birthday).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
+                    </span>
+                  )}
+                  {foerderTags.length > 0 && (
+                    <span className="text-[11px] bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5">
+                      Förderstatus
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Tab-Leiste */}
+            <div className="flex border-t border-stone-100 overflow-x-auto">
+              {[["übersicht", "Übersicht"], ["notizen", "Notizen"], ["gespräche", "Gespräche"]].map(([key, label]) => (
+                <button
+                  key={key}
+                  onClick={() => setProfileTab(key)}
+                  className={`flex-1 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${profileTab === key ? "border-[#4F5844] text-[#4F5844]" : "border-transparent text-stone-400"}`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Tab-Inhalt */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+
+            {/* ── ÜBERSICHT ── */}
+            {profileTab === "übersicht" && (<>
+
+              {/* Förderstatus */}
+              <div className="bg-white rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-3">
+                  <GraduationCap size={16} className="text-stone-400" />
+                  <div className="font-semibold text-stone-800 text-sm">Förderstatus</div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {foerderTags.map((tag) => (
+                    <span key={tag} className="inline-flex items-center gap-1 text-sm bg-[#ECEEE2] text-[#4F5844] rounded-full px-3 py-1">
+                      {tag}
+                      <button onClick={() => removeFoerderTag(tag)} className="ml-0.5 text-stone-400 hover:text-red-500 leading-none">×</button>
+                    </span>
+                  ))}
+                  {addingTag ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        autoFocus
+                        className="text-sm border border-stone-300 rounded-full px-3 py-1 w-36 outline-none focus:border-[#4F5844]"
+                        placeholder="z. B. LRS"
+                        maxLength={40}
+                        value={newTag}
+                        onChange={(e) => setNewTag(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter" && newTag.trim()) addFoerderTag(newTag); if (e.key === "Escape") { setAddingTag(false); setNewTag(""); } }}
+                        onBlur={() => { if (newTag.trim()) addFoerderTag(newTag); else { setAddingTag(false); setNewTag(""); } }}
+                      />
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setAddingTag(true)}
+                      className="w-8 h-8 rounded-full bg-stone-100 text-stone-400 hover:bg-stone-200 flex items-center justify-center text-lg leading-none"
+                    >+</button>
+                  )}
+                  {!foerderTags.length && !addingTag && <span className="text-sm text-stone-400">Noch kein Förderstatus eingetragen.</span>}
+                </div>
+              </div>
+
+              {/* Förderziele + Besonderheiten nebeneinander */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Förderziele */}
+                <div className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      <Target size={14} className="text-stone-400 shrink-0" />
+                      <div className="font-semibold text-stone-800 text-[13px]">Förderziele</div>
+                    </div>
+                    <button onClick={() => setProfileTab("ziele")} className="text-[11px] akzent-text font-medium">Bearbeiten</button>
+                  </div>
+                  {sZiele.filter((z) => !z.doneAt).length === 0 ? (
+                    <p className="text-xs text-stone-400">Noch keine Ziele.</p>
+                  ) : (
+                    <ul className="space-y-1.5">
+                      {sZiele.filter((z) => !z.doneAt).slice(0, 4).map((z) => (
+                        <li key={z.id} className="flex items-start gap-1.5">
+                          <span className={`shrink-0 mt-1 w-1.5 h-1.5 rounded-full ${z.typ === "wochen" ? "bg-blue-400" : "bg-amber-400"}`} />
+                          <span className="text-xs text-stone-700 leading-snug">{z.text}</span>
+                        </li>
+                      ))}
+                      {sZiele.filter((z) => !z.doneAt).length > 4 && (
+                        <li className="text-[10px] text-stone-400">+{sZiele.filter((z) => !z.doneAt).length - 4} weitere</li>
+                      )}
+                    </ul>
+                  )}
+                  {sZiele.some((z) => z.doneAt) && (
+                    <div className="mt-2 pt-2 border-t border-stone-100 text-[10px] text-stone-400">
+                      {sZiele.filter((z) => z.doneAt).length} erledigt
+                    </div>
+                  )}
+                </div>
+
+                {/* Besonderheiten */}
+                <div className="bg-white rounded-2xl p-4 shadow-sm">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <AlertCircle size={14} className="text-stone-400 shrink-0" />
+                    <div className="font-semibold text-stone-800 text-[13px]">Besonderheiten</div>
+                  </div>
+                  {s.medicalInfo ? (
+                    <div className="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                      <p className="text-xs text-amber-800 leading-snug">{s.medicalInfo}</p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setProfileTab("stammdaten")}
+                      className="text-xs text-stone-400 hover:akzent-text"
+                    >
+                      Eintragen →
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Notizen-Vorschau */}
+              <div className="bg-white rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <StickyNote size={15} className="text-stone-400" />
+                    <div className="font-semibold text-stone-800 text-sm">Notizen</div>
+                  </div>
+                  <button
+                    onClick={() => { setNewNote(""); setProfileTab("notizen"); }}
+                    className="flex items-center gap-1 text-[12px] akzent-text font-medium"
+                  >
+                    <Plus size={12} /> Neue Notiz
+                  </button>
+                </div>
+                {sNotes.length === 0 ? (
+                  <p className="text-sm text-stone-400">Noch keine Notizen.</p>
+                ) : (
+                  <>
+                    <div className="bg-stone-50 rounded-xl px-3 py-2.5 flex items-start gap-2">
+                      <StickyNote size={13} className="text-stone-300 mt-0.5 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-stone-700 truncate">{sNotes[0].text}</p>
+                        <p className="text-[10px] text-stone-400 mt-0.5">{localDate(sNotes[0].date).toLocaleDateString("de-DE")}</p>
+                      </div>
+                    </div>
+                    {sNotes.length > 1 && (
+                      <button
+                        onClick={() => setProfileTab("notizen")}
+                        className="mt-2 w-full flex items-center justify-between text-sm text-stone-500 hover:akzent-text py-1"
+                      >
+                        <span className="flex items-center gap-1.5"><ListChecks size={14} /> Alle {sNotes.length} Notizen anzeigen</span>
+                        <ChevronRight size={14} />
+                      </button>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Kindgespräche-Vorschau */}
+              <div className="bg-white rounded-2xl p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <MessageSquare size={15} className="text-stone-400" />
+                    <div className="font-semibold text-stone-800 text-sm">Kindgespräche</div>
+                    <span className="text-[10px] text-stone-400">Unabhängig vom Unterricht</span>
+                  </div>
+                  <button onClick={() => setProfileTab("gespräche")} className="w-7 h-7 rounded-full bg-stone-100 flex items-center justify-center akzent-text">
+                    <Plus size={14} />
+                  </button>
+                </div>
+                {/* Kompaktes Eingabeformular */}
+                <div className="space-y-2">
+                  <div className="flex gap-1.5">
+                    {GESPRAECH_TYPEN.map((t) => (
+                      <button key={t.key} onClick={() => setGespraechDraft((d) => ({ ...d, typ: t.key }))}
+                        className={`flex-1 py-1.5 rounded-xl border text-xs font-medium transition-colors ${gespraechDraft.typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 bg-stone-50 text-stone-500"}`}>
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-1">
+                    {MOOD_OPTIONS.map((m) => (
+                      <button key={m.key} onClick={() => setGespraechDraft((d) => ({ ...d, mood: m.key }))}
+                        title={m.label}
+                        className={`flex-1 py-1.5 rounded-xl border text-base transition-colors ${gespraechDraft.mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-stone-50"}`}>
+                        {m.emoji}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      className={`${inputCls} flex-1`}
+                      placeholder="Was bewegt das Kind, wie geht es ihm/ihr …"
+                      value={gespraechDraft.text}
+                      maxLength={1000}
+                      onChange={(e) => setGespraechDraft((d) => ({ ...d, text: e.target.value }))}
+                      onKeyDown={(e) => e.key === "Enter" && onAddGespraech(s.id)}
+                    />
+                    <Button onClick={() => onAddGespraech(s.id)}><Plus size={15} /></Button>
+                  </div>
+                </div>
+                {sGespraeche.length > 0 && (
+                  <button onClick={() => setProfileTab("gespräche")} className="mt-3 w-full flex items-center justify-between text-sm text-stone-500 hover:akzent-text py-1 border-t border-stone-100 pt-3">
+                    <span className="flex items-center gap-1.5"><MessageSquare size={14} /> {sGespraeche.length} Gespräch{sGespraeche.length !== 1 ? "e" : ""} anzeigen</span>
+                    <ChevronRight size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Stammdaten */}
+              <div className="bg-white rounded-2xl p-4 shadow-sm">
+                <button
+                  onClick={() => setProfileTab("stammdaten")}
+                  className="w-full flex items-center justify-between text-sm text-stone-700"
+                >
+                  <div className="flex items-center gap-2">
+                    <Users size={15} className="text-stone-400" />
+                    <span className="font-semibold">Stammdaten & Kontakt</span>
+                  </div>
+                  <ChevronRight size={15} className="text-stone-300" />
+                </button>
+              </div>
+            </>)}
+
+            {/* ── NOTIZEN ── */}
+            {profileTab === "notizen" && (<>
+              <div className="bg-white rounded-2xl p-4 shadow-sm">
+                <div className="flex gap-2">
+                  <input
+                    autoFocus
+                    className={`${inputCls} flex-1`}
+                    placeholder="Beobachtung, Info …"
+                    value={newNote}
+                    maxLength={1000}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && onAddNote(s.id)}
+                  />
+                  <Button onClick={() => onAddNote(s.id)}><Plus size={15} /></Button>
+                </div>
+              </div>
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <ul className="divide-y divide-stone-100">
+                  {sNotes.map((n) => (
+                    <li key={n.id} className="px-4 py-3 flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-2.5 flex-1 min-w-0">
+                        <StickyNote size={14} className="text-stone-300 mt-0.5 shrink-0" />
+                        <div>
+                          <p className="text-sm text-stone-700 leading-snug">{n.text}</p>
+                          <p className="text-[10px] text-stone-400 mt-1">{localDate(n.date).toLocaleDateString("de-DE")}</p>
+                        </div>
+                      </div>
+                      <button onClick={() => onDeleteNote(n.id)} className="text-stone-300 hover:text-red-500 shrink-0 mt-0.5"><Trash2 size={13} /></button>
+                    </li>
+                  ))}
+                  {!sNotes.length && <li className="px-4 py-4 text-sm text-stone-400">Noch keine Notizen.</li>}
+                </ul>
+              </div>
+            </>)}
+
+            {/* ── GESPRÄCHE ── */}
+            {profileTab === "gespräche" && (<>
+              <div className="bg-white rounded-2xl p-4 shadow-sm space-y-2">
+                <div className="flex gap-1.5">
+                  {GESPRAECH_TYPEN.map((t) => (
+                    <button key={t.key} onClick={() => setGespraechDraft((d) => ({ ...d, typ: t.key }))}
+                      className={`flex-1 py-1.5 rounded-xl border text-xs font-medium transition-colors ${gespraechDraft.typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 bg-stone-50 text-stone-500"}`}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-1">
+                  {MOOD_OPTIONS.map((m) => (
+                    <button key={m.key} onClick={() => setGespraechDraft((d) => ({ ...d, mood: m.key }))}
+                      title={m.label}
+                      className={`flex-1 py-1.5 rounded-xl border text-base transition-colors ${gespraechDraft.mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-stone-50"}`}>
+                      {m.emoji}
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    className={`${inputCls} flex-1`}
+                    placeholder="Was bewegt das Kind, wie geht es ihm/ihr …"
+                    value={gespraechDraft.text}
+                    maxLength={1000}
+                    onChange={(e) => setGespraechDraft((d) => ({ ...d, text: e.target.value }))}
+                    onKeyDown={(e) => e.key === "Enter" && onAddGespraech(s.id)}
+                  />
+                  <Button onClick={() => onAddGespraech(s.id)}><Plus size={15} /></Button>
+                </div>
+              </div>
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <ul className="divide-y divide-stone-100">
+                  {sGespraeche.map((g) => {
+                    const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
+                    const typ = GESPRAECH_TYPEN.find((t) => t.key === g.gesprTyp);
+                    return (
+                      <li key={g.id} className="px-4 py-3">
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-base leading-none">{mood?.emoji ?? "💬"}</span>
+                            {typ && <span className="text-[10px] font-semibold akzent-text bg-[#ECEEE2] px-2 py-0.5 rounded-full">{typ.label}</span>}
+                            <span className="text-[11px] text-stone-400">{localDate(g.date).toLocaleDateString("de-DE")}</span>
+                          </div>
+                          <button onClick={() => onDeleteNote(g.id)} className="text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
+                        </div>
+                        <p className="text-sm text-stone-700 leading-snug">{g.text}</p>
+                      </li>
+                    );
+                  })}
+                  {!sGespraeche.length && <li className="px-4 py-4 text-sm text-stone-400">Noch keine Gespräche erfasst.</li>}
+                </ul>
+              </div>
+            </>)}
+
+            {/* ── FÖRDERZIELE (via Bearbeiten-Link) ── */}
+            {profileTab === "ziele" && (<>
+              <div className="bg-white rounded-2xl p-4 shadow-sm">
+                <div className="flex gap-1.5 mb-3">
+                  <div className="flex shrink-0 rounded-xl overflow-hidden border border-stone-200">
+                    {[{ key: "foerder", label: "Förderziel" }, { key: "wochen", label: "Wochenziel" }].map(({ key, label }) => (
+                      <button key={key} onClick={() => setZielDraft((d) => ({ ...d, typ: key }))
+                      }
+                        className={`px-3 py-1.5 text-xs font-semibold transition-colors ${zielDraft.typ === key ? "akzent-flaeche text-white" : "bg-white text-stone-400 hover:text-stone-600"}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    autoFocus
+                    className={`${inputCls} flex-1`}
+                    placeholder={zielDraft.typ === "wochen" ? "Wochenziel eintragen …" : "Förderziel eintragen …"}
+                    value={zielDraft.text}
+                    maxLength={200}
+                    onChange={(e) => setZielDraft((d) => ({ ...d, text: e.target.value }))}
+                    onKeyDown={(e) => { if (e.key === "Enter" && zielDraft.text.trim()) { onAddFoerderZiel(s.id, zielDraft.text, zielDraft.typ); setZielDraft((d) => ({ ...d, text: "" })); } }}
+                  />
+                  <Button onClick={() => { if (!zielDraft.text.trim()) return; onAddFoerderZiel(s.id, zielDraft.text, zielDraft.typ); setZielDraft((d) => ({ ...d, text: "" })); }}>
+                    <Plus size={15} />
+                  </Button>
+                </div>
+              </div>
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <ul className="divide-y divide-stone-100">
+                  {sZiele.filter((z) => !z.doneAt).map((z) => (
+                    <li key={z.id} className="flex items-center gap-3 px-4 py-3">
+                      <button onClick={() => onToggleFoerderZiel(z.id)} className="shrink-0 w-5 h-5 rounded border-2 border-stone-300 hover:border-green-500 transition-colors" />
+                      <div className="flex-1 min-w-0">
+                        <span className={`text-[10px] font-semibold mr-1 ${z.typ === "wochen" ? "text-blue-500" : "text-amber-600"}`}>{z.typ === "wochen" ? "Wochenziel" : "Förderziel"}</span>
+                        <span className="text-sm text-stone-700">{z.text}</span>
+                      </div>
+                      <button onClick={() => onDeleteFoerderZiel(z.id)} className="shrink-0 text-stone-300 hover:text-red-500"><Trash2 size={14} /></button>
+                    </li>
+                  ))}
+                  {sZiele.filter((z) => z.doneAt).map((z) => (
+                    <li key={z.id} className="flex items-center gap-3 px-4 py-3 opacity-50">
+                      <button onClick={() => onToggleFoerderZiel(z.id)} className="shrink-0 w-5 h-5 rounded bg-green-500 border-2 border-green-500 flex items-center justify-center">
+                        <Check size={11} className="text-white" />
+                      </button>
+                      <span className="text-sm text-stone-400 line-through flex-1">{z.text}</span>
+                      <button onClick={() => onDeleteFoerderZiel(z.id)} className="shrink-0 text-stone-300 hover:text-red-500"><Trash2 size={14} /></button>
+                    </li>
+                  ))}
+                  {!sZiele.length && <li className="px-4 py-4 text-sm text-stone-400">Noch keine Ziele eingetragen.</li>}
+                </ul>
+              </div>
+            </>)}
+
+            {/* ── STAMMDATEN ── */}
+            {profileTab === "stammdaten" && (
+              <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
+                <input type="file" accept="image/*" id={`photo-stamm-${s.id}`} className="hidden"
+                  onChange={(e) => handlePhoto(s.id, e.target.files?.[0])} />
+                {s.photo && (
+                  <div className="flex items-center gap-2">
+                    <label htmlFor={`photo-stamm-${s.id}`} className="text-xs font-medium text-stone-500 hover:text-stone-800 underline underline-offset-2 cursor-pointer">Foto ändern</label>
+                    <button onClick={() => onUpdateField(s.id, "photo", "")} className="text-xs text-stone-400 hover:text-red-500">Entfernen</button>
+                  </div>
+                )}
+                <p className="text-[10px] text-stone-400 flex items-center gap-1">
+                  <ShieldCheck size={10} className="shrink-0" />
+                  Kontaktdaten nur auf diesem Gerät – nicht weitergeben (DSGVO).
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Geburtstag">
+                    <input type="date" value={s.birthday || ""} onChange={(e) => onUpdateField(s.id, "birthday", e.target.value)} className={inputCls} />
+                  </Field>
+                  <Field label="Telefon Eltern">
+                    <div className="flex gap-1">
+                      <input type="tel" placeholder="0176 …" value={s.parentPhone || ""} maxLength={30}
+                        onChange={(e) => onUpdateField(s.id, "parentPhone", e.target.value)} className={inputCls} />
+                      {s.parentPhone && (
+                        <a href={`tel:${s.parentPhone}`} className="shrink-0 w-9 h-9 rounded-lg akzent-ton flex items-center justify-center" title="Anrufen"><Phone size={15} /></a>
+                      )}
+                    </div>
+                  </Field>
+                </div>
+                <Field label="Name Eltern/Erziehungsberechtigte">
+                  <input placeholder="z. B. Frau Mustermann" value={s.parentName || ""} maxLength={100}
+                    onChange={(e) => onUpdateField(s.id, "parentName", e.target.value)} className={inputCls} />
+                </Field>
+                <Field label="Besonderheiten / Vorerkrankungen">
+                  <textarea
+                    placeholder="z. B. Nussallergie, Asthma-Spray in der Tasche …"
+                    value={s.medicalInfo || ""}
+                    onChange={(e) => onUpdateField(s.id, "medicalInfo", e.target.value)}
+                    onFocus={() => { if (!localStorage.getItem("saidy_medical_consent") && !s.medicalInfo) setShowMedicalConsent(true); }}
+                    rows={3} maxLength={2000} className={`${inputCls} resize-none`}
+                  />
+                  <p className="text-[11px] text-amber-600 mt-1 flex items-start gap-1">
+                    <ShieldCheck size={11} className="shrink-0 mt-0.5" />
+                    Gesundheitsdaten (Art. 9 DSGVO) – nur mit schriftlicher Einwilligung speichern.
+                  </p>
+                </Field>
+                {s.medicalInfo && (
+                  <button onClick={() => onUpdateField(s.id, "medicalInfo", "")} className="text-[11px] text-red-400 hover:text-red-600">
+                    Gesundheitsdaten löschen
+                  </button>
+                )}
+              </div>
+            )}
+
+            <div className="h-6" />
+          </div>
+        </div>
+      );
+    })()}
+
     <ConfirmDialog
       open={!!confirmDeleteId}
       title="Kind wirklich löschen?"
