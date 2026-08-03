@@ -2555,7 +2555,14 @@ export default function App() {
         .input-base:focus { outline: none; border-color: var(--oliv); }
         .input-base::placeholder { color: #a8a29e; }
 
-        /* ── Timeline-Basis (für TP-05) ── */
+        /* ── Timeline (TP-05) ── */
+        .tl-wrap { position: relative; }
+        .tl-rail { position: absolute; left: 19px; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--linie); pointer-events: none; }
+        .tl-entry { display: flex; align-items: flex-start; gap: 12px; position: relative; padding-bottom: 12px; }
+        .tl-entry:last-child { padding-bottom: 0; }
+        .tl-icon { width: 40px; height: 40px; border-radius: 14px; background: #fff; border: 1px solid var(--linie); display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 1; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+        .tl-body { flex: 1; min-width: 0; background: #fff; border-radius: 14px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+        .tl-group-label { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #a8a29e; padding: 10px 0 6px 52px; }
         .tl-line { width: 2px; border-radius: 1px; background: var(--linie); flex-shrink: 0; }
         .tl-dot  { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--linie); background: #fff; flex-shrink: 0; }
         .tl-dot-filled { border-color: var(--oliv); background: var(--oliv); }
@@ -4245,6 +4252,30 @@ function StudentsModal({ cls, students, notes, grades, foerderZiele, selectedStu
     return age;
   }
 
+  function dateGroupLabel(dateStr) {
+    if (!dateStr) return "Unbekannt";
+    const d = localDate(dateStr);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const target = new Date(d); target.setHours(0, 0, 0, 0);
+    const diff = Math.round((today - target) / 86400000);
+    if (diff === 0) return "Heute";
+    if (diff === 1) return "Gestern";
+    if (diff < 7) return "Diese Woche";
+    if (diff < 14) return "Letzte Woche";
+    return d.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+  }
+
+  function groupByDateLabel(items) {
+    const groups = [];
+    let lastLabel = null;
+    for (const item of items) {
+      const label = dateGroupLabel(item.date);
+      if (label !== lastLabel) { groups.push({ label, items: [] }); lastLabel = label; }
+      groups[groups.length - 1].items.push(item);
+    }
+    return groups;
+  }
+
   async function handlePhoto(studentId, file) {
     if (!file) return;
     try {
@@ -4586,24 +4617,6 @@ function StudentsModal({ cls, students, notes, grades, foerderZiele, selectedStu
                   </div>
                 </div>
 
-                {/* Letzte Notiz */}
-                {lastN && (
-                  <button onClick={() => setProfileTab("notizen")} className="card w-full p-4 text-left press-scale">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center shrink-0 mt-0.5">
-                        <StickyNote size={15} className="text-stone-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-0.5">
-                          <span className="t-label font-semibold text-stone-700">Letzte Notiz</span>
-                          <span className="t-caption shrink-0">{relativeTime(lastN.date)}</span>
-                        </div>
-                        <p className="text-sm text-stone-600 leading-snug line-clamp-2">{lastN.text}</p>
-                      </div>
-                    </div>
-                  </button>
-                )}
-
                 {/* Nächste Aufgabe / Förderziel */}
                 {nextGoal && (
                   <button onClick={() => setProfileTab("mehr")} className="card w-full p-4 text-left press-scale">
@@ -4621,17 +4634,18 @@ function StudentsModal({ cls, students, notes, grades, foerderZiele, selectedStu
                   </button>
                 )}
 
-                {/* Gespräche-Schnellzugang */}
-                <div className="card p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare size={15} className="text-stone-400" />
-                      <span className="text-sm font-semibold text-stone-800">Gespräch erfassen</span>
-                    </div>
-                    <button onClick={() => setProfileTab("gespräche")} className="t-caption akzent-text">Alle →</button>
+                {/* Schnelleingabe: Notiz + Gespräch */}
+                <div className="card p-4 space-y-3">
+                  <div className="flex gap-2">
+                    <input className="input-base flex-1" placeholder="Notiz hinzufügen …"
+                      value={newNote} maxLength={1000}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && onAddNote(s.id)} />
+                    <button onClick={() => onAddNote(s.id)} disabled={!newNote.trim()}
+                      className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold akzent-flaeche disabled:opacity-40">✓</button>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex gap-1.5">
+                  <div className="border-t border-stone-100 pt-3">
+                    <div className="flex gap-1.5 mb-2">
                       {GESPRAECH_TYPEN.map((t) => (
                         <button key={t.key} onClick={() => setGespraechDraft((d) => ({ ...d, typ: t.key }))}
                           className={`flex-1 py-1.5 rounded-xl border text-xs font-medium transition-colors ${gespraechDraft.typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 text-stone-500"}`}>
@@ -4639,7 +4653,7 @@ function StudentsModal({ cls, students, notes, grades, foerderZiele, selectedStu
                         </button>
                       ))}
                     </div>
-                    <div className="flex gap-1.5">
+                    <div className="flex gap-1.5 mb-2">
                       {MOOD_OPTIONS.map((m) => (
                         <button key={m.key} onClick={() => setGespraechDraft((d) => ({ ...d, mood: m.key }))}
                           title={m.label}
@@ -4649,7 +4663,7 @@ function StudentsModal({ cls, students, notes, grades, foerderZiele, selectedStu
                       ))}
                     </div>
                     <div className="flex gap-2">
-                      <input className="input-base flex-1" placeholder="Was bewegt das Kind …"
+                      <input className="input-base flex-1" placeholder="Gespräch erfassen …"
                         value={gespraechDraft.text} maxLength={1000}
                         onChange={(e) => setGespraechDraft((d) => ({ ...d, text: e.target.value }))}
                         onKeyDown={(e) => e.key === "Enter" && onAddGespraech(s.id)} />
@@ -4659,26 +4673,63 @@ function StudentsModal({ cls, students, notes, grades, foerderZiele, selectedStu
                   </div>
                 </div>
 
-                {/* Notizen-Schnelleingabe */}
-                <div className="card p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <StickyNote size={15} className="text-stone-400" />
-                      <span className="text-sm font-semibold text-stone-800">Notiz</span>
+                {/* Verlauf: Notizen + Gespräche kombiniert */}
+                {(() => {
+                  const combined = [
+                    ...sNotes.map((n) => ({ ...n, _kind: "notiz" })),
+                    ...sGespraeche.map((g) => ({ ...g, _kind: "gespraech" })),
+                  ].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 7);
+                  if (!combined.length) return null;
+                  const groups = groupByDateLabel(combined);
+                  const total = sNotes.length + sGespraeche.length;
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between mb-2 px-1">
+                        <span className="t-section">Verlauf</span>
+                        {total > 7 && (
+                          <div className="flex gap-3">
+                            <button onClick={() => setProfileTab("notizen")} className="t-caption akzent-text">Notizen →</button>
+                            <button onClick={() => setProfileTab("gespräche")} className="t-caption akzent-text">Gespräche →</button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="tl-wrap">
+                        <div className="tl-rail" />
+                        {groups.map(({ label, items }) => (
+                          <div key={label}>
+                            <div className="tl-group-label">{label}</div>
+                            {items.map((item) => {
+                              const isGespraeche = item._kind === "gespraech";
+                              const mood = isGespraeche ? MOOD_OPTIONS.find((m) => m.key === item.mood) : null;
+                              const typ = isGespraeche ? GESPRAECH_TYPEN.find((t) => t.key === item.gesprTyp) : null;
+                              return (
+                                <div key={item.id} className="tl-entry">
+                                  <div className="tl-icon">
+                                    {isGespraeche
+                                      ? <span className="text-lg leading-none">{mood?.emoji ?? "💬"}</span>
+                                      : <StickyNote size={15} className="text-stone-400" />}
+                                  </div>
+                                  <div className="tl-body">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                      {isGespraeche && typ && (
+                                        <span className="text-[10px] font-semibold akzent-text bg-[#ECEEE2] px-1.5 py-0.5 rounded-full">{typ.label}</span>
+                                      )}
+                                      {!isGespraeche && (
+                                        <span className="text-[10px] font-semibold text-stone-400">Notiz</span>
+                                      )}
+                                      <span className="t-caption ml-auto">{relativeTime(item.date)}</span>
+                                    </div>
+                                    <p className="text-sm text-stone-700 leading-snug line-clamp-2">{item.text}</p>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    {sNotes.length > 0 && (
-                      <button onClick={() => setProfileTab("notizen")} className="t-caption akzent-text">Alle {sNotes.length} →</button>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <input className="input-base flex-1" placeholder="Beobachtung, Info …"
-                      value={newNote} maxLength={1000}
-                      onChange={(e) => setNewNote(e.target.value)}
-                      onKeyDown={(e) => e.key === "Enter" && onAddNote(s.id)} />
-                    <button onClick={() => onAddNote(s.id)} disabled={!newNote.trim()}
-                      className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold akzent-flaeche disabled:opacity-40">✓</button>
-                  </div>
-                </div>
+                  );
+                })()}
 
               </div>
             )}
@@ -4708,22 +4759,27 @@ function StudentsModal({ cls, students, notes, grades, foerderZiele, selectedStu
                   </div>
                 </div>
                 {sNotes.length > 0 ? (
-                  <div className="relative">
-                    <div className="absolute left-[19px] top-0 bottom-0 w-px bg-stone-200" />
-                    {sNotes.map((n) => (
-                      <div key={n.id} className="relative flex gap-3 mb-3 last:mb-0">
-                        <div className="shrink-0 w-10 h-10 rounded-2xl bg-white border border-stone-100 flex items-center justify-center shadow-sm z-10">
-                          <StickyNote size={14} className="text-stone-400" />
-                        </div>
-                        <div className="flex-1 card p-3 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-sm text-stone-700 leading-snug flex-1">{n.text}</p>
-                            <button onClick={() => onDeleteNote(n.id)} className="shrink-0 text-stone-300 hover:text-red-500 mt-0.5">
-                              <Trash2 size={13} />
-                            </button>
+                  <div className="tl-wrap">
+                    <div className="tl-rail" />
+                    {groupByDateLabel(sNotes).map(({ label, items }) => (
+                      <div key={label}>
+                        <div className="tl-group-label">{label}</div>
+                        {items.map((n) => (
+                          <div key={n.id} className="tl-entry">
+                            <div className="tl-icon">
+                              <StickyNote size={15} className="text-stone-400" />
+                            </div>
+                            <div className="tl-body">
+                              <div className="flex items-start justify-between gap-2">
+                                <p className="text-sm text-stone-700 leading-snug flex-1">{n.text}</p>
+                                <button onClick={() => onDeleteNote(n.id)} className="shrink-0 text-stone-300 hover:text-red-500 mt-0.5">
+                                  <Trash2 size={13} />
+                                </button>
+                              </div>
+                              <div className="t-caption mt-1.5">{localDate(n.date).toLocaleDateString("de-DE")}</div>
+                            </div>
                           </div>
-                          <div className="t-caption mt-1.5">{localDate(n.date).toLocaleDateString("de-DE")}</div>
-                        </div>
+                        ))}
                       </div>
                     ))}
                   </div>
@@ -4765,31 +4821,36 @@ function StudentsModal({ cls, students, notes, grades, foerderZiele, selectedStu
                   </div>
                 </div>
                 {sGespraeche.length > 0 ? (
-                  <div className="relative">
-                    <div className="absolute left-[19px] top-0 bottom-0 w-px bg-stone-200" />
-                    {sGespraeche.map((g) => {
-                      const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
-                      const typ = GESPRAECH_TYPEN.find((t) => t.key === g.gesprTyp);
-                      return (
-                        <div key={g.id} className="relative flex gap-3 mb-3 last:mb-0">
-                          <div className="shrink-0 w-10 h-10 rounded-2xl bg-white border border-stone-100 flex items-center justify-center shadow-sm z-10 text-lg leading-none">
-                            {mood?.emoji ?? "💬"}
-                          </div>
-                          <div className="flex-1 card p-3 min-w-0">
-                            <div className="flex items-start justify-between gap-2 mb-1.5">
-                              <div className="flex items-center gap-1.5 flex-wrap">
-                                {typ && <span className="text-[10px] font-semibold akzent-text bg-[#ECEEE2] px-2 py-0.5 rounded-full">{typ.label}</span>}
-                                <span className="t-caption">{localDate(g.date).toLocaleDateString("de-DE")}</span>
+                  <div className="tl-wrap">
+                    <div className="tl-rail" />
+                    {groupByDateLabel(sGespraeche).map(({ label, items }) => (
+                      <div key={label}>
+                        <div className="tl-group-label">{label}</div>
+                        {items.map((g) => {
+                          const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
+                          const typ = GESPRAECH_TYPEN.find((t) => t.key === g.gesprTyp);
+                          return (
+                            <div key={g.id} className="tl-entry">
+                              <div className="tl-icon">
+                                <span className="text-lg leading-none">{mood?.emoji ?? "💬"}</span>
                               </div>
-                              <button onClick={() => onDeleteNote(g.id)} className="shrink-0 text-stone-300 hover:text-red-500">
-                                <Trash2 size={13} />
-                              </button>
+                              <div className="tl-body">
+                                <div className="flex items-start justify-between gap-2 mb-1.5">
+                                  <div className="flex items-center gap-1.5 flex-wrap">
+                                    {typ && <span className="text-[10px] font-semibold akzent-text bg-[#ECEEE2] px-2 py-0.5 rounded-full">{typ.label}</span>}
+                                    <span className="t-caption">{localDate(g.date).toLocaleDateString("de-DE")}</span>
+                                  </div>
+                                  <button onClick={() => onDeleteNote(g.id)} className="shrink-0 text-stone-300 hover:text-red-500">
+                                    <Trash2 size={13} />
+                                  </button>
+                                </div>
+                                <p className="text-sm text-stone-700 leading-snug">{g.text}</p>
+                              </div>
                             </div>
-                            <p className="text-sm text-stone-700 leading-snug">{g.text}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
+                      </div>
+                    ))}
                   </div>
                 ) : (
                   <div className="card card-p text-center text-sm text-stone-400 py-8">Noch keine Gespräche erfasst.</div>
