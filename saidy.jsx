@@ -1883,6 +1883,7 @@ const HELP_DATA = [
       { q: "Wie erfasse ich Fehlzeiten?", a: `Gehe zu Klasse → „Fehlzeiten" → „+ Fehlzeit". Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist.` },
       { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle in der Fläche – es erscheint eine Auswahlliste zum Auswählen des Kindes. Alternativ auf „Kind hinzufügen" tippen. Platzierte Kinder lassen sich frei auf der Fläche verschieben. Die Tafel oben lässt sich an jeden Rand ziehen (oben, unten, links, rechts). Einmal antippen (ohne zu schieben) markiert den Sitzplatz farbig: grün = klappt gut, amber = beobachten, rot = klappt nicht. Ein Kind entfernen: Token nach unten über den Rand der Fläche in die rote Toolbar ziehen und loslassen. „Aufräumen" richtet alle Kinder gleichzeitig in einem sauberen Raster aus. „Löschen" entfernt den gesamten Sitzplan. Am Ende „Speichern" tippen.` },
       { q: "Was zeigt die Zusammenfassung im Schülerprofil?", a: `Im Profil-Tab „Übersicht" erscheint eine automatisch generierte Zusammenfassung – erkennbar am Sparkles-Symbol. Sie fasst Stimmung, Notendurchschnitt, Tendenz, Aktivität der letzten 30 Tage, Förderbedarfe und aktive Ziele in einem Satz zusammen. Die Zusammenfassung wird lokal aus den gespeicherten Daten berechnet und nur angezeigt, wenn genügend Informationen vorliegen.` },
+      { q: "Was zeigt das Klassen-Dashboard?", a: `Im Klassen-Tab eine Klasse aufklappen → „Klassen-Dashboard" antippen. Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf-Zähler als Kacheln; eine Notenverteilungs-Leiste (Sehr gut–Gut / Befriedigend / Ausreichend+); eine „Aufmerksamkeit"-Liste mit Kindern, die einen kritischen Schnitt oder seit 14+ Tagen keinen Eintrag haben; Geburtstage in den nächsten 21 Tagen; sowie die letzten Notizen und Gespräche der Klasse als Verlaufszeile. Tippen auf ein Kind öffnet direkt sein Schülerprofil.` },
       { q: "Was sind die farbigen Signale im Schülerprofil?", a: `Direkt unter der Profilkarte erscheinen farbige Signale: Rot (kritisch), Gelb (beobachten), Grün (positiv) und Blau (Info). Sie werden automatisch aus den Daten berechnet – z. B. kritischer Notenschnitt, kein Eintrag seit mehr als 14 Tagen, negative Stimmung in Folge, Förderbedarf ohne aktives Ziel, oder Geburtstag in den nächsten 7 Tagen. Tippe auf ein Signal, um direkt zum betreffenden Tab zu springen.` },
     ],
   },
@@ -6621,6 +6622,201 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   );
 }
 
+function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele, onOpenStudent, onClose }) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const cutoff14Iso = (() => { const d = new Date(today); d.setDate(d.getDate() - 14); return d.toISOString().slice(0, 10); })();
+
+  function relTime(iso) {
+    const days = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+    if (days === 0) return "heute";
+    if (days === 1) return "gestern";
+    if (days < 7) return `vor ${days} T.`;
+    return `vor ${Math.floor(days / 7)} Wo.`;
+  }
+
+  function studentAvg(id) {
+    const sg = grades.filter((g) => g.studentId === id);
+    if (!sg.length) return null;
+    return sg.reduce((s, g) => s + g.value * (g.factor || 1), 0) / sg.reduce((s, g) => s + (g.factor || 1), 0);
+  }
+
+  const withData = students.map((s) => {
+    const avg = studentAvg(s.id);
+    const sNotes = notes.filter((n) => n.studentId === s.id);
+    const lastEntry = sNotes.length ? sNotes.reduce((m, n) => n.date > m ? n.date : m, sNotes[0].date) : null;
+    const foerderTags = (s.foerderStatus || "").split(",").map((t) => t.trim()).filter(Boolean);
+    return { ...s, avg, lastEntry, foerderTags };
+  });
+
+  const withAvg = withData.filter((s) => s.avg != null);
+  const klassenschnitt = withAvg.length ? withAvg.reduce((a, s) => a + s.avg, 0) / withAvg.length : null;
+  const foerderCount = withData.filter((s) => s.foerderTags.length > 0).length;
+
+  const dist = [
+    { label: "Sehr gut – Gut", max: 2.5, color: "var(--s-gut)", count: 0 },
+    { label: "Befriedigend", max: 3.5, color: "var(--s-warn)", count: 0 },
+    { label: "Ausreichend+", max: 99, color: "var(--s-krit)", count: 0 },
+  ];
+  withAvg.forEach((s) => { const d = dist.find((r, i) => s.avg < r.max || i === dist.length - 1); if (d) d.count++; });
+  const maxDist = Math.max(...dist.map((d) => d.count), 1);
+
+  const needAttention = withData.filter((s) => (s.avg != null && s.avg >= 4.0) || (s.lastEntry != null && s.lastEntry < cutoff14Iso) || (!s.lastEntry && grades.some((g) => g.studentId === s.id)));
+
+  const birthdays = withData
+    .filter((s) => s.birthday)
+    .map((s) => {
+      const b = localDate(s.birthday);
+      const yr = today.getFullYear();
+      let next = new Date(yr, b.getMonth(), b.getDate());
+      if (next < today) next = new Date(yr + 1, b.getMonth(), b.getDate());
+      return { ...s, daysLeft: Math.round((next - today) / 86400000) };
+    })
+    .filter((s) => s.daysLeft <= 21)
+    .sort((a, b) => a.daysLeft - b.daysLeft);
+
+  const recent = notes
+    .filter((n) => students.some((s) => s.id === n.studentId))
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 6)
+    .map((n) => ({ ...n, student: students.find((s) => s.id === n.studentId) }));
+
+  return (
+    <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col" style={{ maxHeight: "100dvh" }}>
+      <div className="bg-white border-b border-stone-100 shrink-0">
+        <div className="flex items-center gap-3 px-4 pt-4 pb-4">
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale">
+            <ChevronLeft size={18} className="text-stone-600" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="text-xl font-bold text-stone-900">{cls.name}</div>
+            <div className="t-caption">{students.length} Schüler:innen · Klassen-Dashboard</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+
+        {/* KPI-Kacheln */}
+        <div className="grid grid-cols-3 gap-2">
+          <div className="card p-3">
+            <div className="t-caption mb-1">Schüler:innen</div>
+            <div className="text-2xl font-bold tnum text-stone-800">{students.length}</div>
+          </div>
+          <div className="card p-3">
+            <div className="t-caption mb-1">Klassen-Ø</div>
+            {klassenschnitt != null
+              ? <div className={`text-2xl font-bold tnum ${klassenschnitt <= 2.5 ? "text-[var(--s-gut)]" : klassenschnitt <= 3.5 ? "text-[var(--s-warn)]" : "text-[var(--s-krit)]"}`}>{klassenschnitt.toFixed(1)}</div>
+              : <div className="text-stone-300 text-xl">–</div>}
+          </div>
+          <div className="card p-3">
+            <div className="t-caption mb-1">Förderbedarf</div>
+            <div className={`text-2xl font-bold tnum ${foerderCount > 0 ? "text-[var(--s-warn)]" : "text-stone-300"}`}>{foerderCount}</div>
+          </div>
+        </div>
+
+        {/* Notenverteilung */}
+        {withAvg.length > 0 && (
+          <div className="card p-4">
+            <div className="t-section mb-3">Notenverteilung</div>
+            <div className="space-y-2.5">
+              {dist.map((d) => (
+                <div key={d.label} className="flex items-center gap-3">
+                  <div className="w-[88px] shrink-0 text-xs text-stone-500 text-right">{d.label}</div>
+                  <div className="flex-1 h-4 bg-stone-100 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: `${(d.count / maxDist) * 100}%`, background: d.color, opacity: d.count ? 1 : 0.15, transition: "width 0.5s ease" }} />
+                  </div>
+                  <div className="w-6 text-right text-sm font-bold tnum text-stone-600">{d.count}</div>
+                </div>
+              ))}
+            </div>
+            <div className="text-[10px] text-stone-300 mt-3">{withAvg.length} von {students.length} Schüler:innen mit Noten</div>
+          </div>
+        )}
+
+        {/* Aufmerksamkeit */}
+        {needAttention.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 px-1 mb-2">
+              <span className="t-section">Aufmerksamkeit</span>
+              <span className="chip chip-warn ml-1">{needAttention.length}</span>
+            </div>
+            <div className="space-y-2">
+              {needAttention.map((s) => {
+                const reasons = [];
+                if (s.avg != null && s.avg >= 4.0) reasons.push(`Ø ${s.avg.toFixed(1)}`);
+                if (s.lastEntry && s.lastEntry < cutoff14Iso) {
+                  const d = Math.round((today - localDate(s.lastEntry)) / 86400000);
+                  reasons.push(`${d} T. kein Eintrag`);
+                } else if (!s.lastEntry) reasons.push("Noch kein Eintrag");
+                return (
+                  <button key={s.id} onClick={() => onOpenStudent(s.id)} className="card w-full p-3.5 flex items-center gap-3 text-left press-scale">
+                    <StudentAvatar student={s} size={36} />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-stone-800 truncate">{s.name}</div>
+                      <div className="text-xs text-stone-400 mt-0.5">{reasons.join(" · ")}</div>
+                    </div>
+                    <ChevronRight size={15} className="text-stone-300 shrink-0" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Geburtstage */}
+        {birthdays.length > 0 && (
+          <div>
+            <div className="t-section px-1 mb-2">Geburtstage · nächste 21 Tage</div>
+            <div className="card divide-y divide-stone-100 overflow-hidden">
+              {birthdays.map((s) => (
+                <button key={s.id} onClick={() => onOpenStudent(s.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-stone-50 press-scale">
+                  <span className="text-xl shrink-0">{s.daysLeft === 0 ? "🎂" : "🎁"}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-stone-800 truncate">{s.name}</div>
+                    <div className="t-caption">{s.daysLeft === 0 ? "Heute!" : `in ${s.daysLeft} Tagen`}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Letzte Aktivität */}
+        {recent.length > 0 && (
+          <div>
+            <div className="t-section px-1 mb-2">Letzte Aktivität</div>
+            <div className="tl-wrap">
+              <div className="tl-rail" />
+              {recent.map((entry) => {
+                const isG = entry.type === "gespraech";
+                const mood = isG ? MOOD_OPTIONS.find((m) => m.key === entry.mood) : null;
+                return (
+                  <button key={entry.id} onClick={() => onOpenStudent(entry.studentId)} className="tl-entry w-full text-left press-scale">
+                    <div className="tl-icon shrink-0">
+                      {isG ? <span className="text-base leading-none">{mood?.emoji ?? "💬"}</span> : <StickyNote size={14} className="text-stone-400" />}
+                    </div>
+                    <div className="tl-body">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span className="text-xs font-semibold text-stone-700">{entry.student?.name}</span>
+                        <span className="t-caption ml-auto">{relTime(entry.date)}</span>
+                      </div>
+                      <p className="text-xs text-stone-500 line-clamp-1">{entry.text}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {!students.length && (
+          <div className="card p-8 text-center text-stone-400 text-sm">Noch keine Schüler:innen in dieser Klasse.</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed, onRegisterFab }) {
   const [selectedClass, setSelectedClass] = useState(data.classes[0]?.id ?? null);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
@@ -6637,6 +6833,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
   const [overviewStudentId, setOverviewStudentId] = useState(null);
   const [showSitzplan, setShowSitzplan] = useState(false);
   const [sitzplanClassId, setSitzplanClassId] = useState(null);
+  const [klassenDashboardId, setKlassenDashboardId] = useState(null);
 
   useEffect(() => {
     if (!onRegisterFab) return;
@@ -6888,6 +7085,14 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
                     )}
                   </button>
 
+                  <button
+                    onClick={() => setKlassenDashboardId(c.id)}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700"
+                  >
+                    <BarChart2 size={15} className="text-stone-400" /> Klassen-Dashboard
+                    <ChevronRight size={15} className="text-stone-300 ml-auto" />
+                  </button>
+
                   <div className="text-[11px] font-medium uppercase tracking-wide text-stone-400 px-1 pt-2">Noten nach Fach</div>
                   {cFaecher.map((f) => (
                     <button
@@ -7030,6 +7235,32 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
           onClose={() => setShowImportModal(false)}
         />
       )}
+
+      {klassenDashboardId && (() => {
+        const dashCls = data.classes.find((c) => c.id === klassenDashboardId);
+        const dashStudents = data.students.filter((s) => s.classId === klassenDashboardId && !s.deletedAt).sort((a, b) => a.name.localeCompare(b.name, "de"));
+        const dashNotes = data.notes.filter((n) => dashStudents.some((s) => s.id === n.studentId)).sort((a, b) => b.date.localeCompare(a.date));
+        const dashGrades = data.grades.filter((g) => dashStudents.some((s) => s.id === g.studentId));
+        const dashFaecher = data.faecher.filter((f) => f.classId === klassenDashboardId);
+        if (!dashCls) return null;
+        return (
+          <KlassenDashboard
+            cls={dashCls}
+            students={dashStudents}
+            notes={dashNotes}
+            grades={dashGrades}
+            faecher={dashFaecher}
+            foerderZiele={data.foerderZiele || []}
+            onOpenStudent={(studentId) => {
+              setKlassenDashboardId(null);
+              setSelectedClass(klassenDashboardId);
+              setShowStudentsModal(true);
+              setSelectedStudent(studentId);
+            }}
+            onClose={() => setKlassenDashboardId(null)}
+          />
+        );
+      })()}
 
       {showSitzplan && sitzplanClassId && (() => {
         const spCls = data.classes.find((c) => c.id === sitzplanClassId);
