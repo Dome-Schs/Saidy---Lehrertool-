@@ -5110,12 +5110,14 @@ function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
 function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   // positions: { [studentId]: { x: number, y: number } }  — 0–1 relative to canvas
   const [positions, setPositions] = useState(() => sitzplan?.positions ? { ...sitzplan.positions } : {});
+  const [tafelEdge, setTafelEdge] = useState(sitzplan?.tafelEdge ?? "top");
   const [showPicker, setShowPicker] = useState(false);
   const [pendingPos, setPendingPos] = useState(null); // where to place the next picked student
   const [pickerSearch, setPickerSearch] = useState("");
   const [showConfirmClear, setShowConfirmClear] = useState(false);
   const canvasRef = useRef(null);
   const canvasTapStart = useRef(null);
+  const tafelDragRef = useRef(null);
 
   const activeStudents = students.filter((s) => !s.deletedAt);
   const placed = new Set(Object.keys(positions));
@@ -5167,8 +5169,41 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
     setShowConfirmClear(false);
   }
 
+  function onTafelPointerDown(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    e.currentTarget.setPointerCapture(e.pointerId);
+    tafelDragRef.current = { startX: e.clientX, startY: e.clientY, moved: false };
+  }
+
+  function onTafelPointerMove(e) {
+    if (!tafelDragRef.current) return;
+    const dx = Math.abs(e.clientX - tafelDragRef.current.startX);
+    const dy = Math.abs(e.clientY - tafelDragRef.current.startY);
+    if (dx > 6 || dy > 6) tafelDragRef.current.moved = true;
+  }
+
+  function onTafelPointerUp(e) {
+    if (!tafelDragRef.current) return;
+    const moved = tafelDragRef.current.moved;
+    tafelDragRef.current = null;
+    if (!moved) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const relX = (e.clientX - rect.left) / rect.width;
+    const relY = (e.clientY - rect.top) / rect.height;
+    const distTop = relY;
+    const distBottom = 1 - relY;
+    const distLeft = relX;
+    const distRight = 1 - relX;
+    const min = Math.min(distTop, distBottom, distLeft, distRight);
+    if (min === distTop) setTafelEdge("top");
+    else if (min === distBottom) setTafelEdge("bottom");
+    else if (min === distLeft) setTafelEdge("left");
+    else setTafelEdge("right");
+  }
+
   function save() {
-    onSave({ positions });
+    onSave({ positions, tafelEdge });
     onClose();
   }
 
@@ -5200,22 +5235,57 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
           </div>
         </div>
 
-        {/* Tafel */}
-        <div className="px-4 pt-3 shrink-0">
-          <div className="rounded-xl bg-[#4F5844] text-white text-xs font-medium py-2 text-center tracking-wide">
-            Tafel
-          </div>
-        </div>
-
         {/* Canvas */}
         <div className="flex-1 px-4 py-3 min-h-0">
           <div
             ref={canvasRef}
             className="relative w-full h-full rounded-2xl overflow-hidden"
-            style={{ background: "#F4F1E8", minHeight: "280px" }}
+            style={{ background: "#F4F1E8", minHeight: "300px" }}
             onPointerDown={handleCanvasPointerDown}
             onPointerUp={handleCanvasPointerUp}
           >
+            {/* Tafel — draggable, snaps to nearest edge */}
+            {(() => {
+              const isH = tafelEdge === "top" || tafelEdge === "bottom";
+              const baseStyle = {
+                position: "absolute",
+                zIndex: 3,
+                cursor: "grab",
+                userSelect: "none",
+                touchAction: "none",
+                ...(tafelEdge === "top"    ? { top: 0, left: 0, right: 0 } :
+                    tafelEdge === "bottom" ? { bottom: 0, left: 0, right: 0 } :
+                    tafelEdge === "left"   ? { left: 0, top: 0, bottom: 0 } :
+                                             { right: 0, top: 0, bottom: 0 }),
+              };
+              return (
+                <div
+                  style={baseStyle}
+                  className={`bg-[#4F5844] text-white flex items-center justify-center gap-1.5 select-none
+                    ${isH ? "h-9" : "w-9"}
+                    ${tafelEdge === "top" ? "rounded-b-lg" : tafelEdge === "bottom" ? "rounded-t-lg" : tafelEdge === "left" ? "rounded-r-lg" : "rounded-l-lg"}`}
+                  onPointerDown={onTafelPointerDown}
+                  onPointerMove={onTafelPointerMove}
+                  onPointerUp={onTafelPointerUp}
+                >
+                  {isH ? (
+                    <>
+                      <GripVertical size={12} className="opacity-50 shrink-0" />
+                      <span className="text-xs font-semibold tracking-wider">Tafel</span>
+                      <GripVertical size={12} className="opacity-50 shrink-0" />
+                    </>
+                  ) : (
+                    <span
+                      className="text-xs font-semibold tracking-wider"
+                      style={{ writingMode: "vertical-rl", transform: tafelEdge === "left" ? "rotate(180deg)" : "none" }}
+                    >
+                      Tafel
+                    </span>
+                  )}
+                </div>
+              );
+            })()}
+
             {placedCount === 0 && (
               <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
                 <p className="text-stone-400 text-sm text-center px-10">Auf die Fläche tippen, um ein Kind zu platzieren</p>
