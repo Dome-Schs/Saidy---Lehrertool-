@@ -5061,12 +5061,17 @@ function resolveCollisions(positions, canvasRect) {
 }
 
 function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
-  const [localPos, setLocalPos] = useState(pos);
-  const [isDragging, setIsDragging] = useState(false);
+  const elRef = useRef(null);
+  const circleRef = useRef(null);
   const dragRef = useRef(null);
+  const currentPosRef = useRef(pos);
 
   useEffect(() => {
-    if (!dragRef.current) setLocalPos(pos);
+    currentPosRef.current = pos;
+    if (elRef.current && !dragRef.current) {
+      elRef.current.style.left = `${pos.x * 100}%`;
+      elRef.current.style.top = `${pos.y * 100}%`;
+    }
   }, [pos.x, pos.y]);
 
   function initials(name) {
@@ -5086,12 +5091,17 @@ function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
     dragRef.current = {
       startClientX: e.clientX,
       startClientY: e.clientY,
-      startPosX: localPos.x,
-      startPosY: localPos.y,
+      startPosX: currentPosRef.current.x,
+      startPosY: currentPosRef.current.y,
       rect,
       moved: false,
     };
-    setIsDragging(true);
+    elRef.current.style.zIndex = "20";
+    elRef.current.style.cursor = "grabbing";
+    if (circleRef.current) {
+      circleRef.current.style.transform = "scale(1.1)";
+      circleRef.current.style.background = "#3d4433";
+    }
   }
 
   function onPointerMove(e) {
@@ -5105,26 +5115,34 @@ function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
     const my = SITZPLAN_COLLISION_R / rect.height;
     const newX = Math.max(mx, Math.min(1 - mx, startPosX + dx / rect.width));
     const newY = Math.max(my, Math.min(1 - my, startPosY + dy / rect.height));
-    setLocalPos({ x: newX, y: newY });
+    currentPosRef.current = { x: newX, y: newY };
+    elRef.current.style.left = `${newX * 100}%`;
+    elRef.current.style.top = `${newY * 100}%`;
   }
 
   function onPointerUp(e) {
     if (!dragRef.current) return;
     const moved = dragRef.current.moved;
     dragRef.current = null;
-    setIsDragging(false);
-    if (moved) onDragEnd(localPos);
+    elRef.current.style.zIndex = "5";
+    elRef.current.style.cursor = "grab";
+    if (circleRef.current) {
+      circleRef.current.style.transform = "";
+      circleRef.current.style.background = "#4F5844";
+    }
+    if (moved) onDragEnd(currentPosRef.current);
   }
 
   return (
     <div
+      ref={elRef}
       className="absolute select-none touch-none"
       style={{
-        left: `${localPos.x * 100}%`,
-        top: `${localPos.y * 100}%`,
+        left: `${pos.x * 100}%`,
+        top: `${pos.y * 100}%`,
         transform: "translate(-50%, -50%)",
-        zIndex: isDragging ? 20 : 5,
-        cursor: isDragging ? "grabbing" : "grab",
+        zIndex: 5,
+        cursor: "grab",
       }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
@@ -5139,7 +5157,11 @@ function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
         <X size={7} />
       </button>
       {/* Avatar circle — 36px */}
-      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shadow transition-transform ${isDragging ? "scale-110 shadow-lg bg-[#3d4433] text-white" : "bg-[#4F5844] text-white"}`}>
+      <div
+        ref={circleRef}
+        className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shadow text-white"
+        style={{ background: "#4F5844", transition: "transform 0.1s" }}
+      >
         {initials(student.name)}
       </div>
       {/* Name */}
