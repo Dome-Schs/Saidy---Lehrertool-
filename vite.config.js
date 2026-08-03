@@ -16,10 +16,11 @@ export default defineConfig({
         runtimeCaching: [
           {
             urlPattern: /\//,
-            handler: "CacheFirst",
+            handler: "NetworkFirst",
             options: {
               cacheName: "saidy-runtime",
-              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 7 },
             },
           },
         ],
