@@ -4286,6 +4286,16 @@ function StudentsModal({ cls, students, notes, selectedStudent, setSelectedStude
                       />
                     </Field>
 
+                    <Field label="Förderstatus">
+                      <input
+                        placeholder="z. B. LRS, Nachteilsausgleich, Förderbedarf Sprache …"
+                        value={s.foerderStatus || ""}
+                        maxLength={80}
+                        onChange={(e) => onUpdateField(s.id, "foerderStatus", e.target.value)}
+                        className={inputCls}
+                      />
+                    </Field>
+
                     <p className="text-[10px] text-stone-400 flex items-center gap-1 -mt-1">
                       <ShieldCheck size={10} className="shrink-0" />
                       Kontaktdaten sind personenbezogen (DSGVO) – nur auf diesem Gerät gespeichert, nicht weitergeben.
@@ -5503,6 +5513,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
       {/* Token-Kontextmenü */}
       {activePopup && (() => {
         const curQuality = positions[activePopup.studentId]?.quality ?? null;
+        const popupStudent = activeStudents.find((s) => s.id === activePopup.studentId);
         const popupY = activePopup.screenY > window.innerHeight * 0.55
           ? activePopup.screenY - 118
           : activePopup.screenY + 28;
@@ -5515,6 +5526,17 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
               style={{ left: popupX, top: popupY, transform: "translateX(-50%)", minWidth: 176 }}
               onClick={(e) => e.stopPropagation()}
             >
+              <div className="text-xs font-semibold text-stone-800 text-center mb-1 truncate px-1">
+                {popupStudent?.name}
+              </div>
+              {popupStudent?.foerderStatus && (
+                <div className="flex justify-center mb-2">
+                  <span className="inline-flex items-center gap-1 text-[11px] bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2.5 py-0.5">
+                    <AlertCircle size={10} />
+                    {popupStudent.foerderStatus}
+                  </span>
+                </div>
+              )}
               <div className="text-[10px] text-stone-400 text-center mb-2">Sitzplatz markieren</div>
               <div className="flex items-center justify-center gap-2 mb-3">
                 {/* Keine Markierung */}
