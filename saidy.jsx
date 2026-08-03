@@ -5019,87 +5019,180 @@ function DutyModal({ onSave, onClose }) {
 
 /* ---------- Sitzplan ---------- */
 
-function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
-  const [rows, setRows] = useState(sitzplan?.rows ?? 5);
-  const [cols, setCols] = useState(sitzplan?.cols ?? 4);
-  const [seats, setSeats] = useState(() => sitzplan?.seats ? { ...sitzplan.seats } : {});
-  const [selected, setSelected] = useState(null); // studentId | null
+function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
+  const [localPos, setLocalPos] = useState(pos);
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef(null);
 
-  const seatKey = (r, c) => `${r}-${c}`;
-  const placedIds = new Set(Object.values(seats).filter(Boolean));
-  const unplaced = students.filter((s) => !s.deletedAt && !placedIds.has(s.id));
-
-  // Remove seats that fall outside current grid bounds
   useEffect(() => {
-    setSeats((prev) => {
-      const next = {};
-      for (const [k, v] of Object.entries(prev)) {
-        const [r, c] = k.split("-").map(Number);
-        if (r < rows && c < cols) next[k] = v;
-      }
-      return next;
-    });
-  }, [rows, cols]);
+    if (!dragRef.current) setLocalPos(pos);
+  }, [pos.x, pos.y]);
 
-  function handleSeatTap(r, c) {
-    const key = seatKey(r, c);
-    const occupant = seats[key] ?? null;
-
-    if (selected === null) {
-      if (occupant) setSelected(occupant);
-      return;
-    }
-
-    if (occupant === selected) { setSelected(null); return; }
-
-    const fromKey = Object.entries(seats).find(([, v]) => v === selected)?.[0] ?? null;
-
-    setSeats((prev) => {
-      const next = { ...prev };
-      if (occupant) {
-        // swap: occupant goes where selected came from (or to unplaced if from unplaced)
-        if (fromKey) next[fromKey] = occupant;
-        else delete next[key]; // can't place occupant back, leave unplaced
-      } else {
-        if (fromKey) delete next[fromKey];
-      }
-      next[key] = selected;
-      return next;
-    });
-    setSelected(null);
+  function initials(name) {
+    const parts = name.trim().split(/\s+/);
+    return (parts[0][0] + (parts[1]?.[0] ?? parts[0][1] ?? "")).toUpperCase();
   }
 
-  function handleUnplacedTap(studentId) {
-    setSelected((prev) => (prev === studentId ? null : studentId));
+  function firstName(name) {
+    return name.split(" ")[0].slice(0, 10);
   }
 
-  function removeSeat(key, e) {
+  function onPointerDown(e) {
+    e.preventDefault();
     e.stopPropagation();
-    setSeats((prev) => { const next = { ...prev }; delete next[key]; return next; });
-    setSelected(null);
+    e.currentTarget.setPointerCapture(e.pointerId);
+    const rect = canvasRef.current.getBoundingClientRect();
+    dragRef.current = {
+      startClientX: e.clientX,
+      startClientY: e.clientY,
+      startPosX: localPos.x,
+      startPosY: localPos.y,
+      rect,
+      moved: false,
+    };
+    setIsDragging(true);
   }
 
-  function shortName(name) {
-    return name.split(" ")[0].slice(0, 9);
+  function onPointerMove(e) {
+    if (!dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startClientX;
+    const dy = e.clientY - dragRef.current.startClientY;
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragRef.current.moved = true;
+    if (!dragRef.current.moved) return;
+    const { startPosX, startPosY, rect } = dragRef.current;
+    const newX = Math.max(0.06, Math.min(0.94, startPosX + dx / rect.width));
+    const newY = Math.max(0.08, Math.min(0.92, startPosY + dy / rect.height));
+    setLocalPos({ x: newX, y: newY });
+  }
+
+  function onPointerUp(e) {
+    if (!dragRef.current) return;
+    const moved = dragRef.current.moved;
+    dragRef.current = null;
+    setIsDragging(false);
+    if (moved) onDragEnd(localPos);
+  }
+
+  return (
+    <div
+      className="absolute select-none touch-none"
+      style={{
+        left: `${localPos.x * 100}%`,
+        top: `${localPos.y * 100}%`,
+        transform: "translate(-50%, -50%)",
+        zIndex: isDragging ? 20 : 5,
+        cursor: isDragging ? "grabbing" : "grab",
+      }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+    >
+      {/* Remove button */}
+      <button
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => { e.stopPropagation(); onRemove(); }}
+        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-400 hover:bg-red-500 text-white flex items-center justify-center shadow-md z-10 transition-colors"
+      >
+        <X size={9} />
+      </button>
+      {/* Avatar circle */}
+      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold shadow-md transition-transform ${isDragging ? "scale-110 shadow-lg bg-[#3d4433] text-white" : "bg-[#4F5844] text-white"}`}>
+        {initials(student.name)}
+      </div>
+      {/* Name */}
+      <div className="text-center text-[10px] font-medium text-stone-700 mt-1 whitespace-nowrap leading-none">
+        {firstName(student.name)}
+      </div>
+    </div>
+  );
+}
+
+function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
+  // positions: { [studentId]: { x: number, y: number } }  — 0–1 relative to canvas
+  const [positions, setPositions] = useState(() => sitzplan?.positions ? { ...sitzplan.positions } : {});
+  const [showPicker, setShowPicker] = useState(false);
+  const [pendingPos, setPendingPos] = useState(null); // where to place the next picked student
+  const [pickerSearch, setPickerSearch] = useState("");
+  const [showConfirmClear, setShowConfirmClear] = useState(false);
+  const canvasRef = useRef(null);
+  const canvasTapStart = useRef(null);
+
+  const activeStudents = students.filter((s) => !s.deletedAt);
+  const placed = new Set(Object.keys(positions));
+  const unplaced = activeStudents.filter((s) => !placed.has(s.id));
+  const placedCount = placed.size;
+
+  function removeStudent(studentId) {
+    setPositions((prev) => { const next = { ...prev }; delete next[studentId]; return next; });
+  }
+
+  function handleDragEnd(studentId, newPos) {
+    setPositions((prev) => ({ ...prev, [studentId]: newPos }));
+  }
+
+  function handleCanvasPointerDown(e) {
+    if (e.target !== canvasRef.current) return;
+    canvasTapStart.current = { x: e.clientX, y: e.clientY };
+  }
+
+  function handleCanvasPointerUp(e) {
+    if (!canvasTapStart.current || e.target !== canvasRef.current) { canvasTapStart.current = null; return; }
+    const dx = Math.abs(e.clientX - canvasTapStart.current.x);
+    const dy = Math.abs(e.clientY - canvasTapStart.current.y);
+    canvasTapStart.current = null;
+    if (dx > 8 || dy > 8 || unplaced.length === 0) return;
+    const rect = canvasRef.current.getBoundingClientRect();
+    const x = Math.max(0.06, Math.min(0.94, (e.clientX - rect.left) / rect.width));
+    const y = Math.max(0.08, Math.min(0.92, (e.clientY - rect.top) / rect.height));
+    setPendingPos({ x, y });
+    setShowPicker(true);
+  }
+
+  function openPickerCenter() {
+    const spread = () => 0.35 + Math.random() * 0.3;
+    setPendingPos({ x: spread(), y: spread() });
+    setShowPicker(true);
+  }
+
+  function pickStudent(studentId) {
+    const pos = pendingPos ?? { x: 0.35 + Math.random() * 0.3, y: 0.35 + Math.random() * 0.3 };
+    setPositions((prev) => ({ ...prev, [studentId]: pos }));
+    setShowPicker(false);
+    setPickerSearch("");
+    setPendingPos(null);
+  }
+
+  function clearPlan() {
+    setPositions({});
+    setShowConfirmClear(false);
   }
 
   function save() {
-    onSave({ rows, cols, seats });
+    onSave({ positions });
     onClose();
   }
 
-  const hasSelection = selected !== null;
-  const totalSeats = rows * cols;
-  const filledSeats = Object.keys(seats).length;
+  function initials(name) {
+    const parts = name.trim().split(/\s+/);
+    return (parts[0][0] + (parts[1]?.[0] ?? parts[0][1] ?? "")).toUpperCase();
+  }
+
+  const filteredUnplaced = unplaced.filter((s) =>
+    s.name.toLowerCase().includes(pickerSearch.toLowerCase().trim())
+  );
 
   return (
     <div className="fixed inset-0 bg-stone-900/50 z-[60] flex items-end md:items-center justify-center" onClick={onClose}>
-      <div className="bg-white w-full md:max-w-2xl rounded-t-3xl md:rounded-2xl shadow-xl max-h-[92dvh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="bg-white w-full md:max-w-2xl rounded-t-3xl md:rounded-2xl shadow-xl flex flex-col"
+        style={{ maxHeight: "95dvh" }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-stone-100 shrink-0">
           <div>
             <div className="font-semibold text-stone-900">Sitzplan</div>
-            <div className="text-xs text-stone-400">{cls.name} · {filledSeats} von {students.filter((s) => !s.deletedAt).length} platziert</div>
+            <div className="text-xs text-stone-400">{cls.name} · {placedCount} von {activeStudents.length} platziert</div>
           </div>
           <div className="flex items-center gap-2">
             <Button onClick={save}>Speichern</Button>
@@ -5107,93 +5200,131 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
           </div>
         </div>
 
-        {/* Grid-size controls */}
-        <div className="flex items-center gap-5 px-5 py-2.5 border-b border-stone-100 bg-stone-50/60 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-stone-500">Reihen</span>
-            <button onClick={() => setRows((r) => Math.max(2, r - 1))} className="w-6 h-6 rounded-md bg-stone-200 hover:bg-stone-300 flex items-center justify-center text-stone-700 font-bold text-sm leading-none">–</button>
-            <span className="w-4 text-center text-sm font-semibold text-stone-800 tnum">{rows}</span>
-            <button onClick={() => setRows((r) => Math.min(9, r + 1))} className="w-6 h-6 rounded-md bg-stone-200 hover:bg-stone-300 flex items-center justify-center text-stone-700 font-bold text-sm leading-none">+</button>
+        {/* Tafel */}
+        <div className="px-4 pt-3 shrink-0">
+          <div className="rounded-xl bg-[#4F5844] text-white text-xs font-medium py-2 text-center tracking-wide">
+            Tafel
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-stone-500">Spalten</span>
-            <button onClick={() => setCols((c) => Math.max(2, c - 1))} className="w-6 h-6 rounded-md bg-stone-200 hover:bg-stone-300 flex items-center justify-center text-stone-700 font-bold text-sm leading-none">–</button>
-            <span className="w-4 text-center text-sm font-semibold text-stone-800 tnum">{cols}</span>
-            <button onClick={() => setCols((c) => Math.min(7, c + 1))} className="w-6 h-6 rounded-md bg-stone-200 hover:bg-stone-300 flex items-center justify-center text-stone-700 font-bold text-sm leading-none">+</button>
-          </div>
-          {hasSelection && (
-            <span className="ml-auto text-xs text-[#4F5844] font-medium animate-pulse">→ Platz antippen</span>
-          )}
         </div>
 
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-          {/* Grid */}
-          <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
-            {Array.from({ length: rows * cols }, (_, i) => {
-              const r = Math.floor(i / cols);
-              const c = i % cols;
-              const key = seatKey(r, c);
-              const studentId = seats[key] ?? null;
-              const student = studentId ? students.find((s) => s.id === studentId) : null;
-              const isSelected = studentId === selected;
-
-              return (
-                <button
-                  key={key}
-                  onClick={() => handleSeatTap(r, c)}
-                  className={`relative rounded-xl aspect-square flex items-center justify-center text-[11px] font-medium transition-all select-none leading-tight
-                    ${student
-                      ? isSelected
-                        ? "bg-[#4F5844] text-white shadow-lg scale-[1.04]"
-                        : "bg-[#ECEEE2] text-[#4F5844] border border-[#4F5844]/15 active:scale-[0.97]"
-                      : hasSelection
-                        ? "border-2 border-dashed border-[#4F5844]/35 bg-[#4F5844]/5 active:bg-[#4F5844]/10"
-                        : "border-2 border-dashed border-stone-200 bg-stone-50"
-                    }`}
-                >
-                  {student ? (
-                    <>
-                      <span className="px-0.5 text-center break-words w-full">{shortName(student.name)}</span>
-                      <button
-                        onPointerDown={(e) => e.stopPropagation()}
-                        onClick={(e) => removeSeat(key, e)}
-                        className={`absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center shadow-sm transition-colors ${isSelected ? "bg-white text-[#4F5844]" : "bg-stone-300 text-white hover:bg-red-400"}`}
-                      >
-                        <X size={8} />
-                      </button>
-                    </>
-                  ) : null}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Unplaced students */}
-          {unplaced.length > 0 && (
-            <div className="mt-5">
-              <div className="text-[11px] font-medium uppercase tracking-wide text-stone-400 mb-2">Noch ohne Platz</div>
-              <div className="flex flex-wrap gap-2">
-                {unplaced.map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => handleUnplacedTap(s.id)}
-                    className={`px-3 py-2 rounded-xl text-sm font-medium transition-all ${selected === s.id ? "bg-[#4F5844] text-white shadow-md scale-105" : "bg-stone-100 text-stone-700 hover:bg-stone-200 active:scale-[0.97]"}`}
-                  >
-                    {shortName(s.name)}
-                  </button>
-                ))}
+        {/* Canvas */}
+        <div className="flex-1 px-4 py-3 min-h-0">
+          <div
+            ref={canvasRef}
+            className="relative w-full h-full rounded-2xl overflow-hidden"
+            style={{ background: "#F4F1E8", minHeight: "280px" }}
+            onPointerDown={handleCanvasPointerDown}
+            onPointerUp={handleCanvasPointerUp}
+          >
+            {placedCount === 0 && (
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 pointer-events-none">
+                <p className="text-stone-400 text-sm text-center px-10">Auf die Fläche tippen, um ein Kind zu platzieren</p>
               </div>
-            </div>
-          )}
+            )}
+            {activeStudents.filter((s) => positions[s.id]).map((s) => (
+              <SitzplanToken
+                key={s.id}
+                student={s}
+                pos={positions[s.id]}
+                canvasRef={canvasRef}
+                onDragEnd={(newPos) => handleDragEnd(s.id, newPos)}
+                onRemove={() => removeStudent(s.id)}
+              />
+            ))}
+          </div>
+        </div>
 
-          {unplaced.length === 0 && filledSeats > 0 && (
-            <p className="mt-4 text-center text-xs text-stone-400">Alle Schüler:innen sind platziert ✓</p>
-          )}
-
-          <p className="mt-4 text-center text-[11px] text-stone-300">Schüler:in antippen → Platz antippen zum Setzen · X zum Entfernen</p>
+        {/* Toolbar */}
+        <div
+          className="flex items-center gap-3 px-4 py-3 border-t border-stone-100 shrink-0"
+          style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+        >
+          <button
+            onClick={openPickerCenter}
+            disabled={unplaced.length === 0}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#4F5844] text-white text-sm font-medium disabled:opacity-40 transition-opacity"
+          >
+            <Plus size={14} />
+            Kind hinzufügen
+            {unplaced.length > 0 && (
+              <span className="bg-white/20 rounded-full px-1.5 py-0.5 text-[11px]">{unplaced.length}</span>
+            )}
+          </button>
+          <button
+            onClick={() => setShowConfirmClear(true)}
+            disabled={placedCount === 0}
+            className="ml-auto px-3 py-2 rounded-xl text-sm text-red-500 hover:bg-red-50 disabled:opacity-30 transition-colors"
+          >
+            Sitzplan löschen
+          </button>
         </div>
       </div>
+
+      {/* Student picker sheet */}
+      {showPicker && (
+        <div
+          className="fixed inset-0 z-[65] flex items-end justify-center"
+          onClick={() => { setShowPicker(false); setPendingPos(null); setPickerSearch(""); }}
+        >
+          <div
+            className="bg-white w-full md:max-w-md rounded-t-3xl shadow-xl flex flex-col"
+            style={{ maxHeight: "65dvh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-4 pt-4 pb-3 shrink-0">
+              <div className="font-semibold text-stone-800 mb-3">Kind auswählen</div>
+              <input
+                autoFocus
+                className="w-full rounded-xl border border-stone-200 bg-stone-50 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F5844]/30 focus:border-transparent"
+                placeholder="Name suchen …"
+                value={pickerSearch}
+                onChange={(e) => setPickerSearch(e.target.value)}
+              />
+            </div>
+            <div className="overflow-y-auto flex-1 px-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
+              {filteredUnplaced.length === 0 && (
+                <p className="text-center text-sm text-stone-400 py-8">
+                  {pickerSearch ? "Kein Treffer" : "Alle Kinder sind bereits platziert"}
+                </p>
+              )}
+              {filteredUnplaced.map((s) => (
+                <button
+                  key={s.id}
+                  onClick={() => pickStudent(s.id)}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-stone-50 active:bg-stone-100 text-left transition-colors"
+                >
+                  <div className="w-9 h-9 rounded-full bg-[#4F5844] flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    {initials(s.name)}
+                  </div>
+                  <span className="text-sm font-medium text-stone-800">{s.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm clear */}
+      {showConfirmClear && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-stone-900/40"
+          onClick={() => setShowConfirmClear(false)}
+        >
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-semibold text-stone-800 mb-2">Sitzplan löschen?</div>
+            <p className="text-sm text-stone-500 mb-5">Alle {placedCount} platzierten Kinder werden entfernt. Das lässt sich nicht rückgängig machen.</p>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => setShowConfirmClear(false)} className="flex-1 justify-center">Abbrechen</Button>
+              <button
+                onClick={clearPlan}
+                className="flex-1 py-2 px-4 rounded-xl bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-colors"
+              >
+                Löschen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
