@@ -5019,6 +5019,47 @@ function DutyModal({ onSave, onClose }) {
 
 /* ---------- Sitzplan ---------- */
 
+const SITZPLAN_TOKEN_R = 18;  // visual radius px (token = 36px diameter)
+const SITZPLAN_COLLISION_R = 23; // collision radius px (gives ~5px gap between tokens)
+
+// Push overlapping tokens apart until none overlap or max iterations reached
+function resolveCollisions(positions, canvasRect) {
+  if (!canvasRect || canvasRect.width === 0) return positions;
+  const ids = Object.keys(positions);
+  if (ids.length < 2) return positions;
+  const minDist = SITZPLAN_COLLISION_R * 2;
+  // Convert to pixels for distance math
+  const px = {};
+  for (const id of ids) px[id] = { x: positions[id].x * canvasRect.width, y: positions[id].y * canvasRect.height };
+  for (let iter = 0; iter < 20; iter++) {
+    let any = false;
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        const a = px[ids[i]], b = px[ids[j]];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < minDist && dist > 0.01) {
+          const push = (minDist - dist) / 2 + 1;
+          const nx = dx / dist, ny = dy / dist;
+          a.x -= nx * push; a.y -= ny * push;
+          b.x += nx * push; b.y += ny * push;
+          any = true;
+        }
+      }
+    }
+    if (!any) break;
+  }
+  const m = SITZPLAN_COLLISION_R;
+  const result = {};
+  for (const id of ids) {
+    result[id] = {
+      x: Math.max(m / canvasRect.width,  Math.min(1 - m / canvasRect.width,  px[id].x / canvasRect.width)),
+      y: Math.max(m / canvasRect.height, Math.min(1 - m / canvasRect.height, px[id].y / canvasRect.height)),
+    };
+  }
+  return result;
+}
+
 function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
   const [localPos, setLocalPos] = useState(pos);
   const [isDragging, setIsDragging] = useState(false);
@@ -5060,8 +5101,10 @@ function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
     if (Math.abs(dx) > 4 || Math.abs(dy) > 4) dragRef.current.moved = true;
     if (!dragRef.current.moved) return;
     const { startPosX, startPosY, rect } = dragRef.current;
-    const newX = Math.max(0.06, Math.min(0.94, startPosX + dx / rect.width));
-    const newY = Math.max(0.08, Math.min(0.92, startPosY + dy / rect.height));
+    const mx = SITZPLAN_COLLISION_R / rect.width;
+    const my = SITZPLAN_COLLISION_R / rect.height;
+    const newX = Math.max(mx, Math.min(1 - mx, startPosX + dx / rect.width));
+    const newY = Math.max(my, Math.min(1 - my, startPosY + dy / rect.height));
     setLocalPos({ x: newX, y: newY });
   }
 
@@ -5091,16 +5134,16 @@ function SitzplanToken({ student, pos, canvasRef, onDragEnd, onRemove }) {
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); onRemove(); }}
-        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-400 hover:bg-red-500 text-white flex items-center justify-center shadow-md z-10 transition-colors"
+        className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-400 hover:bg-red-500 text-white flex items-center justify-center shadow z-10 transition-colors"
       >
-        <X size={9} />
+        <X size={7} />
       </button>
-      {/* Avatar circle */}
-      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold shadow-md transition-transform ${isDragging ? "scale-110 shadow-lg bg-[#3d4433] text-white" : "bg-[#4F5844] text-white"}`}>
+      {/* Avatar circle — 36px */}
+      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold shadow transition-transform ${isDragging ? "scale-110 shadow-lg bg-[#3d4433] text-white" : "bg-[#4F5844] text-white"}`}>
         {initials(student.name)}
       </div>
       {/* Name */}
-      <div className="text-center text-[10px] font-medium text-stone-700 mt-1 whitespace-nowrap leading-none">
+      <div className="text-center text-[9px] font-medium text-stone-600 mt-0.5 whitespace-nowrap leading-none">
         {firstName(student.name)}
       </div>
     </div>
@@ -5129,7 +5172,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   }
 
   function handleDragEnd(studentId, newPos) {
-    setPositions((prev) => ({ ...prev, [studentId]: newPos }));
+    setPositions((prev) => resolveCollisions({ ...prev, [studentId]: newPos }, canvasRef.current?.getBoundingClientRect()));
   }
 
   function handleCanvasPointerDown(e) {
@@ -5158,7 +5201,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
 
   function pickStudent(studentId) {
     const pos = pendingPos ?? { x: 0.35 + Math.random() * 0.3, y: 0.35 + Math.random() * 0.3 };
-    setPositions((prev) => ({ ...prev, [studentId]: pos }));
+    setPositions((prev) => resolveCollisions({ ...prev, [studentId]: pos }, canvasRef.current?.getBoundingClientRect()));
     setShowPicker(false);
     setPickerSearch("");
     setPendingPos(null);
@@ -5220,7 +5263,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
     <div className="fixed inset-0 bg-stone-900/50 z-[60] flex items-end md:items-center justify-center" onClick={onClose}>
       <div
         className="bg-white w-full md:max-w-2xl rounded-t-3xl md:rounded-2xl shadow-xl flex flex-col"
-        style={{ maxHeight: "95dvh" }}
+        style={{ maxHeight: "98dvh" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -5240,7 +5283,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
           <div
             ref={canvasRef}
             className="relative w-full h-full rounded-2xl overflow-hidden"
-            style={{ background: "#F4F1E8", minHeight: "300px" }}
+            style={{ background: "#F4F1E8", minHeight: "380px", height: "100%" }}
             onPointerDown={handleCanvasPointerDown}
             onPointerUp={handleCanvasPointerUp}
           >
