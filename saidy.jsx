@@ -1939,7 +1939,7 @@ const HELP_DATA = [
       { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten & Berichte", wähle Klasse und Fach. Tippe auf eine:n Schüler:in und dann auf „+ Note". Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aller Noten. Schriftliche Noten werden standardmäßig doppelt gewichtet. Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
-      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Auffälligkeiten eintragen kannst. Das 💬-Symbol neben einem Kind öffnet direkt ein Gespräch mit Typ-Wahl (Schüler/Eltern/Förder) und Stimmungsskala.` },
+      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Gespräche eintragen kannst. Die Notenbuttons sind immer direkt sichtbar. Weitere Aktionen (Notiz, Gespräch, Vergessen) erscheinen nach Antippen des ···-Symbols neben dem Namen. Hat ein Kind bereits eine Notiz oder einen Auffälligkeits-Eintrag, leuchtet das ···-Symbol grün.` },
       { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button "Zeugnis". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
       { q: "Wo kann ich Gespräche mit Schüler:innen erfassen?", a: `An drei Stellen: (1) In der Klassenliste neben jedem Kind das 💬-Symbol antippen. (2) Im Schnellerfassungs-Modus nach dem Unterricht. (3) Direkt in der Notenansicht: Kind antippen – die Detailansicht zeigt oben eine Karte „Gespräch & Stimmung" mit Typ-Wahl (Schüler / Eltern / Förder), Stimmungsskala (😄😊😐😕😟) und Notizfeld. Alle erfassten Gespräche erscheinen auch bei Elternsprechtag-Vorbereitung.` },
     ],
@@ -3072,6 +3072,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
   const [gesprMood, setGesprMood] = useState("ok");
   const [gesprTyp, setGesprTyp] = useState("schueler");
   const [gesprTexts, setGesprTexts] = useState({});
+  const [actionsId, setActionsId] = useState(null);
 
   // Optionales Stundenthema für genau diese Stunde (Fach + Datum)
   const topicId = `${fach.id}-${date}`;
@@ -3238,8 +3239,8 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                   <span>dabei?</span>
                 </div>
                 <p className={`text-xs mt-1.5 ${anyFehlt ? "text-amber-700" : "text-stone-500"}`}>
-                  Fehlt es, beim Kind auf <AlertTriangle size={11} className="inline -mt-0.5" /> tippen
-                  {autoGrade ? " – trägt automatisch eine mündliche 5 mit Vermerk ein." : "."}
+                  Fehlt es, beim Kind auf <MoreHorizontal size={11} className="inline -mt-0.5" /> tippen, dann „Vergessen"
+                  {autoGrade ? " – trägt automatisch eine mündliche 5 ein." : "."}
                 </p>
               </div>
             );
@@ -3249,54 +3250,37 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
             {students.map((s) => {
               const fehlt = incidentActive(s.id);
               const hatNotiz = !!noteFor(s.id);
+              const hasActivity = hatNotiz || fehlt;
               return (
                 <li key={s.id} className="py-2.5">
-                  {/* Name und die beiden Schalter */}
+                  {/* Name + MoreHorizontal toggle */}
                   <div className="flex items-center gap-2 mb-2">
                     <StudentAvatar student={s} size={26} />
                     <span className="flex-1 text-sm text-stone-800 truncate min-w-0">{s.name}</span>
+                    {fehlt && autoGrade && <span className="text-[11px] leading-none text-red-600 font-medium shrink-0">Note 5</span>}
                     <button
-                      onClick={() => setExpanded((cur) => (cur === s.id ? null : s.id))}
-                      className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border ${
-                        hatNotiz ? "akzent-ton akzent-rand" : "border-stone-200 text-stone-400"
+                      onClick={() => setActionsId((cur) => (cur === s.id ? null : s.id))}
+                      className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border transition-colors ${
+                        hasActivity ? "akzent-ton akzent-rand akzent-text" : actionsId === s.id ? "bg-stone-100 border-stone-300 text-stone-600" : "border-stone-200 text-stone-400"
                       }`}
-                      aria-label="Notiz"
+                      aria-label="Weitere Aktionen"
                     >
-                      <StickyNote size={16} />
+                      <MoreHorizontal size={16} />
                     </button>
-                    <button
-                      onClick={() => { setGesprExpanded((cur) => (cur === s.id ? null : s.id)); setGesprMood("ok"); }}
-                      className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border ${
-                        gesprExpanded === s.id ? "akzent-ton akzent-rand" : "border-stone-200 text-stone-400"
-                      }`}
-                      aria-label="Kindgespräch"
-                    >
-                      <MessageSquare size={16} />
-                    </button>
-                    <div className="flex flex-col items-center gap-0.5">
-                      <button
-                        onClick={() => toggleIncident(s.id)}
-                        className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border ${
-                          fehlt ? "bg-red-600 border-red-600 text-white" : "border-stone-200 text-stone-400"
-                        }`}
-                        aria-label={`${incidentLabel} vergessen`}
-                      >
-                        <AlertTriangle size={16} />
-                      </button>
-                      {fehlt && autoGrade && <span className="text-[11px] leading-none text-red-600 font-medium">Note 5</span>}
-                    </div>
                   </div>
 
+                  {/* Incident note – before grades so it's prominent */}
                   {fehlt && (
                     <input
                       className="w-full text-xs rounded-lg border border-red-200 bg-red-50/50 px-2.5 py-2 mb-2"
-                      placeholder={`Vermerk, z. B. nur Schuhe vergessen`}
+                      placeholder="Vermerk, z. B. nur Schuhe vergessen"
                       maxLength={200}
                       value={incidentNoteFor(s.id)}
                       onChange={(e) => setIncidentNote(s.id, e.target.value)}
                     />
                   )}
 
+                  {/* Grade buttons – always visible */}
                   {category === "muendlich" ? (
                     <div className="grid grid-cols-5 gap-1.5">
                       {QUICK_SYMBOLS.map((qs) => {
@@ -3322,6 +3306,36 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                       <option value="">—</option>
                       {GRADE_OPTIONS.map((g) => <option key={g.label} value={g.value}>{g.label}</option>)}
                     </select>
+                  )}
+
+                  {/* Action buttons – revealed by MoreHorizontal */}
+                  {actionsId === s.id && (
+                    <div className="flex gap-1.5 mt-2">
+                      <button
+                        onClick={() => setExpanded((cur) => (cur === s.id ? null : s.id))}
+                        className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border text-xs font-medium transition-colors ${
+                          hatNotiz ? "akzent-ton akzent-rand akzent-text" : "border-stone-200 text-stone-500 bg-stone-50"
+                        }`}
+                      >
+                        <StickyNote size={13} /> Notiz
+                      </button>
+                      <button
+                        onClick={() => { setGesprExpanded((cur) => (cur === s.id ? null : s.id)); setGesprMood("ok"); }}
+                        className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border text-xs font-medium transition-colors ${
+                          gesprExpanded === s.id ? "akzent-ton akzent-rand akzent-text" : "border-stone-200 text-stone-500 bg-stone-50"
+                        }`}
+                      >
+                        <MessageSquare size={13} /> Gespräch
+                      </button>
+                      <button
+                        onClick={() => toggleIncident(s.id)}
+                        className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border text-xs font-medium transition-colors ${
+                          fehlt ? "bg-red-500 border-red-500 text-white" : "border-stone-200 text-stone-500 bg-stone-50"
+                        }`}
+                      >
+                        <AlertTriangle size={13} /> Vergessen
+                      </button>
+                    </div>
                   )}
 
                   {expanded === s.id && (
