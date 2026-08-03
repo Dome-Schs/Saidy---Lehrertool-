@@ -17,6 +17,8 @@ Format: Nutzersicht, auf Deutsch, für Lehrerinnen und Lehrer.
 - **Sprachnotizen**: Beobachtungen per Sprache diktieren – funktioniert in Safari (Apple) und Chrome (Google).
 - **Floating Action Button**: Schnellzugriff auf „Schüler hinzufügen" und „Neue Klasse" direkt im Klassen-Tab.
 - **Animationen**: Sanfte Übergänge beim Öffnen von Profilen, Sheets und Tab-Wechseln (respektiert „Bewegung reduzieren").
+- **Countdown bis zur Klassenarbeit**: Im Fach können Datum und Titel der nächsten Klassenarbeit oder des nächsten Tests eingetragen werden. Die Schnellerfassung zeigt dann oben ein farbiges Banner mit der Anzahl der verbleibenden Unterrichtsstunden laut Stundenplan – grün wenn noch genug Zeit ist, gelb wenn es knapper wird, rot wenn es dringend ist. Auf der Startseite erscheint außerdem ein kleines Hinweis-Badge direkt am jeweiligen Fach.
+- **Themen-Auswertung bei schriftlichen Noten**: Schriftliche Noten können jetzt optional mit einem Thema versehen werden – zum Beispiel „Bruchrechnung" oder „Kommasetzung". In der Fachansicht unter „Noten & Berichte" erscheint eine neue Karte „Wissensgebiete" mit dem Klassenschnitt je Thema, die schwächsten Bereiche zuerst. So sieht man auf einen Blick, wo die Klasse als Ganzes noch Lücken hat.
 
 ### Verbessert
 - Touch-Targets auf mindestens 44 px vergrößert – einfacher zu treffen auch mit Handschuhen oder bei Eile.
