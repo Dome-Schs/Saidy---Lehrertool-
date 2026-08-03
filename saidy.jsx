@@ -4191,7 +4191,7 @@ function StudentOverviewModal({ student, faecher, grades, finalGrades, halbjahr,
 }
 
 /* Eigenständiges Fenster für die Schülerliste einer Klasse – bewusst getrennt von der Klassenübersicht */
-function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
+function StudentsModal({ cls, students, notes, grades, foerderZiele, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
   const [photoError, setPhotoError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showMedicalConsent, setShowMedicalConsent] = useState(false);
@@ -4200,6 +4200,50 @@ function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, se
   const [profileTab, setProfileTab] = useState("übersicht");
   const [newTag, setNewTag] = useState("");
   const [addingTag, setAddingTag] = useState(false);
+  const [listSort, setListSort] = useState("name");
+
+  function studentAvg(studentId) {
+    const sg = (grades || []).filter((g) => g.studentId === studentId);
+    if (!sg.length) return null;
+    const total = sg.reduce((s, g) => s + g.value * (g.factor || 1), 0);
+    const factors = sg.reduce((s, g) => s + (g.factor || 1), 0);
+    return total / factors;
+  }
+
+  function gradeColor(avg) {
+    if (avg == null) return "text-stone-300";
+    if (avg <= 2.5) return "text-[var(--s-gut)]";
+    if (avg <= 3.5) return "text-[var(--s-warn)]";
+    return "text-[var(--s-krit)]";
+  }
+
+  function moodFromGrades(avg) {
+    if (avg == null) return null;
+    if (avg <= 2.0) return { emoji: "😄", label: "Sehr gut" };
+    if (avg <= 2.7) return { emoji: "😊", label: "Gut" };
+    if (avg <= 3.4) return { emoji: "😐", label: "Neutral" };
+    if (avg <= 4.5) return { emoji: "😕", label: "Schwierig" };
+    return { emoji: "😟", label: "Kritisch" };
+  }
+
+  function relativeTime(dateStr) {
+    if (!dateStr) return null;
+    const days = Math.floor((Date.now() - new Date(dateStr).getTime()) / 86400000);
+    if (days === 0) return "heute";
+    if (days === 1) return "gestern";
+    if (days < 7) return `vor ${days} Tagen`;
+    if (days < 30) return `vor ${Math.floor(days / 7)} Wo.`;
+    return `vor ${Math.floor(days / 30)} Mon.`;
+  }
+
+  function ageFromBirthday(bday) {
+    if (!bday) return null;
+    const b = new Date(bday);
+    const today = new Date();
+    let age = today.getFullYear() - b.getFullYear();
+    if (today.getMonth() < b.getMonth() || (today.getMonth() === b.getMonth() && today.getDate() < b.getDate())) age--;
+    return age;
+  }
 
   async function handlePhoto(studentId, file) {
     if (!file) return;
@@ -4267,15 +4311,15 @@ function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, se
 
         {/* Schülerkarten */}
         <div className="flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] space-y-2">
-          {students.map((s) => {
-            const sNotes = notes.filter((n) => n.studentId === s.id && n.type !== "gespraech").sort((a, b) => b.date.localeCompare(a.date));
-            const lastNote = sNotes[0] ?? null;
+          {[...students].sort((a, b) => a.name.localeCompare(b.name, "de")).map((s) => {
+            const sAllNotes = notes.filter((n) => n.studentId === s.id).sort((a, b) => b.date.localeCompare(a.date));
+            const lastNote = sAllNotes.find((n) => n.type !== "gespraech") ?? null;
+            const lastGesprMood = sAllNotes.find((n) => n.type === "gespraech")?.mood ?? null;
             const sZieleCount = (foerderZiele || []).filter((z) => z.studentId === s.id && !z.doneAt).length;
             const foerderTagList = (s.foerderStatus || "").split(",").map((t) => t.trim()).filter(Boolean);
-            const daysSince = lastNote ? Math.floor((Date.now() - new Date(lastNote.date).getTime()) / 86400000) : null;
-            const dotColor = s.medicalInfo ? "krit" : foerderTagList.length > 0 ? "warn" : daysSince !== null && daysSince <= 7 ? "gut" : "neutral";
-            const lastNotePreview = lastNote?.text ? lastNote.text.replace(/\n/g, " ").slice(0, 65) : null;
-            const relTime = daysSince === null ? null : daysSince === 0 ? "heute" : daysSince === 1 ? "gestern" : daysSince < 7 ? `vor ${daysSince} Tagen` : daysSince < 30 ? `vor ${Math.floor(daysSince / 7)} Wo.` : `vor ${Math.floor(daysSince / 30)} Mon.`;
+            const avg = studentAvg(s.id);
+            const mood = lastGesprMood ? MOOD_OPTIONS.find((m) => m.key === lastGesprMood) : moodFromGrades(avg);
+            const lastNoteRel = lastNote ? relativeTime(lastNote.date) : null;
 
             return (
               <div key={s.id} className="space-y-1">
@@ -4287,35 +4331,33 @@ function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, se
                   >
                     <StudentAvatar student={s} size={44} />
                     <div className="flex-1 min-w-0">
-                      {/* Name + Förderstatus-Chip */}
-                      <div className="flex items-center gap-2 mb-0.5">
+                      {/* Name + Mood-Emoji */}
+                      <div className="flex items-center gap-1.5 mb-1">
                         <span className="text-sm font-semibold text-stone-900 truncate">{s.name}</span>
-                        {foerderTagList.length > 0 && (
-                          <span className="chip chip-warn shrink-0">
-                            {foerderTagList[0]}{foerderTagList.length > 1 ? ` +${foerderTagList.length - 1}` : ""}
-                          </span>
-                        )}
+                        {mood && <span className="text-base leading-none shrink-0" title={mood.label}>{mood.emoji}</span>}
                       </div>
-                      {/* Letzte Notiz Preview */}
-                      {lastNotePreview ? (
-                        <div className="flex items-baseline gap-2">
-                          <span className="t-caption truncate flex-1">„{lastNotePreview}"</span>
-                          <span className="t-caption shrink-0">{relTime}</span>
-                        </div>
-                      ) : (
-                        <span className="t-caption">Noch keine Notizen</span>
-                      )}
-                      {/* Zusatz-Chips */}
-                      {(s.medicalInfo || sZieleCount > 0) && (
-                        <div className="flex items-center gap-1.5 mt-1.5">
-                          {s.medicalInfo && <span className="chip chip-krit">Gesundheit</span>}
-                          {sZieleCount > 0 && <span className="chip chip-akzent">{sZieleCount} offene{sZieleCount !== 1 ? " Ziele" : "s Ziel"}</span>}
+                      {/* Förderstatus-Chips */}
+                      {foerderTagList.length > 0 && (
+                        <div className="flex flex-wrap gap-1 mb-1">
+                          {foerderTagList.map((tag) => (
+                            <span key={tag} className="chip chip-warn">{tag}</span>
+                          ))}
                         </div>
                       )}
+                      {/* Letzte Notiz */}
+                      <span className="t-caption">
+                        {lastNoteRel ? `Letzte Notiz: ${lastNoteRel}` : "Noch keine Notizen"}
+                      </span>
                     </div>
-                    {/* Status + Pfeil */}
-                    <div className="flex flex-col items-center gap-1.5 shrink-0 ml-1">
-                      <span className={`dot dot-${dotColor}`} />
+                    {/* Ø-Note + Pfeil */}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0 ml-2">
+                      {avg != null ? (
+                        <span className={`text-base font-bold tnum ${gradeColor(avg)}`}>
+                          Ø {avg.toFixed(1)}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-stone-300">–</span>
+                      )}
                       <ChevronRight size={14} className="text-stone-300" />
                     </div>
                   </button>
@@ -4409,77 +4451,43 @@ function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, se
         setAddingTag(false);
       }
 
+      const profileAvg = studentAvg(s.id);
+      const profileMood = (() => {
+        const lastGesprWithMood = sGespraeche.find((g) => g.mood);
+        return lastGesprWithMood ? MOOD_OPTIONS.find((m) => m.key === lastGesprWithMood.mood) : moodFromGrades(profileAvg);
+      })();
+      const age = ageFromBirthday(s.birthday);
+      const nextGoal = sZiele.find((z) => !z.doneAt) ?? null;
+      const lastN = sNotes[0] ?? null;
+
       return (
-        <div className="fixed inset-0 z-[55] bg-stone-100 flex flex-col" style={{ maxHeight: "100dvh" }}>
-          {/* Kopfzeile */}
+      <div className="fixed inset-0 z-[55] bg-stone-100 flex flex-col" style={{ maxHeight: "100dvh" }}>
+          {/* Minimaler Kopf: Navigation + Tabs */}
           <div className="bg-white border-b border-stone-100 shrink-0">
-            <div className="flex items-center gap-3 px-4 pt-4 pb-3">
+            <div className="flex items-center gap-2 px-4 pt-3 pb-2">
               <button
                 onClick={() => setSelectedStudent(null)}
-                className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0"
+                className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale"
               >
                 <ChevronLeft size={18} className="text-stone-600" />
               </button>
               <div className="flex-1 min-w-0 text-center">
-                <div className="text-xs text-stone-400">{cls.name}</div>
+                <div className="text-xs font-medium text-stone-400 truncate">{cls.name}</div>
               </div>
               {onOpenOverview && (
-                <button
-                  onClick={() => onOpenOverview(s.id)}
-                  className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0"
-                  title="Notenübersicht"
-                >
-                  <BarChart2 size={15} className="text-stone-600" />
+                <button onClick={() => onOpenOverview(s.id)} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale" title="Notenübersicht">
+                  <BarChart2 size={15} className="text-stone-500" />
                 </button>
               )}
-              <button
-                onClick={() => setConfirmDeleteId(s.id)}
-                className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0"
-                title="Löschen"
-              >
-                <Trash2 size={15} className="text-stone-500 hover:text-red-500" />
+              <button onClick={() => setConfirmDeleteId(s.id)} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale" title="Löschen">
+                <Trash2 size={15} className="text-stone-500" />
               </button>
             </div>
-
-            {/* Avatar + Name + Tags */}
-            <div className="flex items-center gap-4 px-5 pb-4">
-              <div className="relative shrink-0">
-                <StudentAvatar student={s} size={64} />
-                <label
-                  htmlFor={`photo-profile-${s.id}`}
-                  className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full border border-stone-200 flex items-center justify-center cursor-pointer shadow-sm"
-                >
-                  <ImageIcon size={11} className="text-stone-500" />
-                </label>
-                <input type="file" accept="image/*" id={`photo-profile-${s.id}`} className="hidden"
-                  onChange={(e) => handlePhoto(s.id, e.target.files?.[0])} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-xl font-bold text-stone-900 truncate">{s.name}</div>
-                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                  {s.birthday && (
-                    <span className="inline-flex items-center gap-1 text-[11px] text-stone-500 bg-stone-100 rounded-full px-2 py-0.5">
-                      <CalendarDays size={10} />
-                      {localDate(s.birthday).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}
-                    </span>
-                  )}
-                  {foerderTags.length > 0 && (
-                    <span className="text-[11px] bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2 py-0.5">
-                      Förderstatus
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {/* Tab-Leiste */}
-            <div className="flex border-t border-stone-100 overflow-x-auto">
-              {[["übersicht", "Übersicht"], ["notizen", "Notizen"], ["gespräche", "Gespräche"]].map(([key, label]) => (
-                <button
-                  key={key}
-                  onClick={() => setProfileTab(key)}
-                  className={`flex-1 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${profileTab === key ? "border-[#4F5844] text-[#4F5844]" : "border-transparent text-stone-400"}`}
-                >
+            {/* 5-Tab-Leiste */}
+            <div className="flex border-t border-stone-100 overflow-x-auto chip-scroll">
+              {[["übersicht", "Übersicht"], ["leistung", "Leistung"], ["notizen", "Notizen"], ["gespräche", "Gespräche"], ["mehr", "Mehr"]].map(([key, label]) => (
+                <button key={key} onClick={() => setProfileTab(key)}
+                  className={`flex-1 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition-colors min-w-[64px] ${profileTab === key ? "border-[var(--oliv)] akzent-text" : "border-transparent text-stone-400"}`}>
                   {label}
                 </button>
               ))}
@@ -4487,402 +4495,442 @@ function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, se
           </div>
 
           {/* Tab-Inhalt */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto pb-[max(1.5rem,env(safe-area-inset-bottom))]">
 
             {/* ── ÜBERSICHT ── */}
-            {profileTab === "übersicht" && (<>
+            {profileTab === "übersicht" && (
+              <div className="p-4 space-y-3">
 
-              {/* Förderstatus */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex items-center gap-2 mb-3">
-                  <GraduationCap size={16} className="text-stone-400" />
-                  <div className="font-semibold text-stone-800 text-sm">Förderstatus</div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {foerderTags.map((tag) => (
-                    <span key={tag} className="inline-flex items-center gap-1 text-sm bg-[#ECEEE2] text-[#4F5844] rounded-full px-3 py-1">
-                      {tag}
-                      <button onClick={() => removeFoerderTag(tag)} className="ml-0.5 text-stone-400 hover:text-red-500 leading-none">×</button>
-                    </span>
-                  ))}
-                  {addingTag ? (
-                    <div className="flex items-center gap-1">
-                      <input
-                        autoFocus
-                        className="text-sm border border-stone-300 rounded-full px-3 py-1 w-36 outline-none focus:border-[#4F5844]"
-                        placeholder="z. B. LRS"
-                        maxLength={40}
-                        value={newTag}
-                        onChange={(e) => setNewTag(e.target.value)}
-                        onKeyDown={(e) => { if (e.key === "Enter" && newTag.trim()) addFoerderTag(newTag); if (e.key === "Escape") { setAddingTag(false); setNewTag(""); } }}
-                        onBlur={() => { if (newTag.trim()) addFoerderTag(newTag); else { setAddingTag(false); setNewTag(""); } }}
-                      />
+                {/* Profil-Karte */}
+                <div className="card p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="relative shrink-0">
+                      <StudentAvatar student={s} size={64} />
+                      <label htmlFor={`photo-profile-${s.id}`}
+                        className="absolute -bottom-1 -right-1 w-6 h-6 bg-white rounded-full border border-stone-200 flex items-center justify-center cursor-pointer shadow-sm">
+                        <ImageIcon size={10} className="text-stone-400" />
+                      </label>
+                      <input type="file" accept="image/*" id={`photo-profile-${s.id}`} className="hidden"
+                        onChange={(e) => handlePhoto(s.id, e.target.files?.[0])} />
                     </div>
-                  ) : (
-                    <button
-                      onClick={() => setAddingTag(true)}
-                      className="w-8 h-8 rounded-full bg-stone-100 text-stone-400 hover:bg-stone-200 flex items-center justify-center text-lg leading-none"
-                    >+</button>
-                  )}
-                  {!foerderTags.length && !addingTag && <span className="text-sm text-stone-400">Noch kein Förderstatus eingetragen.</span>}
-                </div>
-              </div>
-
-              {/* Förderziele + Besonderheiten nebeneinander */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Förderziele */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-1.5">
-                      <Target size={14} className="text-stone-400 shrink-0" />
-                      <div className="font-semibold text-stone-800 text-[13px]">Förderziele</div>
-                    </div>
-                    <button onClick={() => setProfileTab("ziele")} className="text-[11px] akzent-text font-medium">Bearbeiten</button>
-                  </div>
-                  {sZiele.filter((z) => !z.doneAt).length === 0 ? (
-                    <p className="text-xs text-stone-400">Noch keine Ziele.</p>
-                  ) : (
-                    <ul className="space-y-1.5">
-                      {sZiele.filter((z) => !z.doneAt).slice(0, 4).map((z) => (
-                        <li key={z.id} className="flex items-start gap-1.5">
-                          <span className={`shrink-0 mt-1 w-1.5 h-1.5 rounded-full ${z.typ === "wochen" ? "bg-blue-400" : "bg-amber-400"}`} />
-                          <span className="text-xs text-stone-700 leading-snug">{z.text}</span>
-                        </li>
-                      ))}
-                      {sZiele.filter((z) => !z.doneAt).length > 4 && (
-                        <li className="text-[10px] text-stone-400">+{sZiele.filter((z) => !z.doneAt).length - 4} weitere</li>
-                      )}
-                    </ul>
-                  )}
-                  {sZiele.some((z) => z.doneAt) && (
-                    <div className="mt-2 pt-2 border-t border-stone-100 text-[10px] text-stone-400">
-                      {sZiele.filter((z) => z.doneAt).length} erledigt
-                    </div>
-                  )}
-                </div>
-
-                {/* Besonderheiten */}
-                <div className="bg-white rounded-2xl p-4 shadow-sm">
-                  <div className="flex items-center gap-1.5 mb-2">
-                    <AlertCircle size={14} className="text-stone-400 shrink-0" />
-                    <div className="font-semibold text-stone-800 text-[13px]">Besonderheiten</div>
-                  </div>
-                  {s.medicalInfo ? (
-                    <div className="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
-                      <p className="text-xs text-amber-800 leading-snug">{s.medicalInfo}</p>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setProfileTab("stammdaten")}
-                      className="text-xs text-stone-400 hover:akzent-text"
-                    >
-                      Eintragen →
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Notizen-Vorschau */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <StickyNote size={15} className="text-stone-400" />
-                    <div className="font-semibold text-stone-800 text-sm">Notizen</div>
-                  </div>
-                  <button
-                    onClick={() => { setNewNote(""); setProfileTab("notizen"); }}
-                    className="flex items-center gap-1 text-[12px] akzent-text font-medium"
-                  >
-                    <Plus size={12} /> Neue Notiz
-                  </button>
-                </div>
-                {sNotes.length === 0 ? (
-                  <p className="text-sm text-stone-400">Noch keine Notizen.</p>
-                ) : (
-                  <>
-                    <div className="bg-stone-50 rounded-xl px-3 py-2.5 flex items-start gap-2">
-                      <StickyNote size={13} className="text-stone-300 mt-0.5 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-stone-700 truncate">{sNotes[0].text}</p>
-                        <p className="text-[10px] text-stone-400 mt-0.5">{localDate(sNotes[0].date).toLocaleDateString("de-DE")}</p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl font-bold text-stone-900 truncate">{s.name}</span>
+                        {profileMood && <span className="text-xl shrink-0" title={profileMood.label}>{profileMood.emoji}</span>}
+                      </div>
+                      <div className="t-label mt-0.5">
+                        {cls.name}{age != null ? ` · ${age} Jahre` : ""}
                       </div>
                     </div>
-                    {sNotes.length > 1 && (
-                      <button
-                        onClick={() => setProfileTab("notizen")}
-                        className="mt-2 w-full flex items-center justify-between text-sm text-stone-500 hover:akzent-text py-1"
-                      >
-                        <span className="flex items-center gap-1.5"><ListChecks size={14} /> Alle {sNotes.length} Notizen anzeigen</span>
-                        <ChevronRight size={14} />
-                      </button>
+                  </div>
+
+                  {/* 3-Zellen Schnell-Info */}
+                  {(s.birthday || s.parentPhone || s.parentName) && (
+                    <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-stone-100">
+                      <div className="min-w-0">
+                        <div className="t-caption mb-0.5">Geburtstag</div>
+                        <div className="text-xs font-semibold text-stone-800">
+                          {s.birthday ? localDate(s.birthday).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : "–"}
+                        </div>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="t-caption mb-0.5">Telefon</div>
+                        <div className="text-xs font-semibold text-stone-800 truncate">{s.parentPhone || "–"}</div>
+                      </div>
+                      <div className="min-w-0">
+                        <div className="t-caption mb-0.5">Erziehungsber.</div>
+                        <div className="text-xs font-semibold text-stone-800 truncate">{s.parentName || "–"}</div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3-Spalten Statistik-Gitter */}
+                <div className="grid grid-cols-3 gap-2">
+                  {/* Förderstatus */}
+                  <div className="card p-3">
+                    <div className="t-caption mb-2">Förderstatus</div>
+                    {foerderTags.length > 0 ? (
+                      <div className="flex flex-col gap-1">
+                        {foerderTags.map((tag) => (
+                          <span key={tag} className="chip chip-warn text-[10px] px-1.5 py-0.5">{tag}</span>
+                        ))}
+                        <button onClick={() => setProfileTab("mehr")} className="text-[10px] akzent-text mt-1">Bearbeiten</button>
+                      </div>
+                    ) : (
+                      <button onClick={() => setProfileTab("mehr")} className="text-[10px] text-stone-400 hover:akzent-text">+ Hinzufügen</button>
                     )}
-                  </>
+                  </div>
+                  {/* Durchschnitt */}
+                  <div className="card p-3">
+                    <div className="t-caption mb-2">Durchschnitt</div>
+                    {profileAvg != null ? (
+                      <>
+                        <div className={`text-lg font-bold tnum leading-none ${gradeColor(profileAvg)}`}>Ø {profileAvg.toFixed(1)}</div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-stone-300">–</div>
+                    )}
+                  </div>
+                  {/* Stimmung */}
+                  <div className="card p-3">
+                    <div className="t-caption mb-2">Stimmung</div>
+                    {profileMood ? (
+                      <>
+                        <div className="text-2xl leading-none mb-0.5">{profileMood.emoji}</div>
+                        <div className="text-[10px] text-stone-500">{profileMood.label}</div>
+                      </>
+                    ) : (
+                      <div className="text-sm text-stone-300">–</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Letzte Notiz */}
+                {lastN && (
+                  <button onClick={() => setProfileTab("notizen")} className="card w-full p-4 text-left press-scale">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <StickyNote size={15} className="text-stone-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-2 mb-0.5">
+                          <span className="t-label font-semibold text-stone-700">Letzte Notiz</span>
+                          <span className="t-caption shrink-0">{relativeTime(lastN.date)}</span>
+                        </div>
+                        <p className="text-sm text-stone-600 leading-snug line-clamp-2">{lastN.text}</p>
+                      </div>
+                    </div>
+                  </button>
+                )}
+
+                {/* Nächste Aufgabe / Förderziel */}
+                {nextGoal && (
+                  <button onClick={() => setProfileTab("mehr")} className="card w-full p-4 text-left press-scale">
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 rounded-xl bg-stone-100 flex items-center justify-center shrink-0 mt-0.5">
+                        <Target size={15} className="text-stone-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="t-label font-semibold text-stone-700 mb-0.5">
+                          {nextGoal.typ === "wochen" ? "Wochenziel" : "Förderziel"}
+                        </div>
+                        <p className="text-sm text-stone-600 leading-snug">{nextGoal.text}</p>
+                      </div>
+                    </div>
+                  </button>
+                )}
+
+                {/* Gespräche-Schnellzugang */}
+                <div className="card p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare size={15} className="text-stone-400" />
+                      <span className="text-sm font-semibold text-stone-800">Gespräch erfassen</span>
+                    </div>
+                    <button onClick={() => setProfileTab("gespräche")} className="t-caption akzent-text">Alle →</button>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex gap-1.5">
+                      {GESPRAECH_TYPEN.map((t) => (
+                        <button key={t.key} onClick={() => setGespraechDraft((d) => ({ ...d, typ: t.key }))}
+                          className={`flex-1 py-1.5 rounded-xl border text-xs font-medium transition-colors ${gespraechDraft.typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 text-stone-500"}`}>
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-1.5">
+                      {MOOD_OPTIONS.map((m) => (
+                        <button key={m.key} onClick={() => setGespraechDraft((d) => ({ ...d, mood: m.key }))}
+                          title={m.label}
+                          className={`flex-1 py-1.5 rounded-xl border text-base transition-colors ${gespraechDraft.mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200"}`}>
+                          {m.emoji}
+                        </button>
+                      ))}
+                    </div>
+                    <div className="flex gap-2">
+                      <input className="input-base flex-1" placeholder="Was bewegt das Kind …"
+                        value={gespraechDraft.text} maxLength={1000}
+                        onChange={(e) => setGespraechDraft((d) => ({ ...d, text: e.target.value }))}
+                        onKeyDown={(e) => e.key === "Enter" && onAddGespraech(s.id)} />
+                      <button onClick={() => onAddGespraech(s.id)} disabled={!gespraechDraft.text.trim()}
+                        className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold akzent-flaeche disabled:opacity-40">✓</button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notizen-Schnelleingabe */}
+                <div className="card p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <StickyNote size={15} className="text-stone-400" />
+                      <span className="text-sm font-semibold text-stone-800">Notiz</span>
+                    </div>
+                    {sNotes.length > 0 && (
+                      <button onClick={() => setProfileTab("notizen")} className="t-caption akzent-text">Alle {sNotes.length} →</button>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <input className="input-base flex-1" placeholder="Beobachtung, Info …"
+                      value={newNote} maxLength={1000}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && onAddNote(s.id)} />
+                    <button onClick={() => onAddNote(s.id)} disabled={!newNote.trim()}
+                      className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold akzent-flaeche disabled:opacity-40">✓</button>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* ── LEISTUNG ── */}
+            {profileTab === "leistung" && (
+              <div className="p-4">
+                <div className="card p-4 text-center text-sm text-stone-400 py-10">
+                  Leistungsübersicht kommt in TP-06.
+                  <br /><button onClick={() => onOpenOverview && onOpenOverview(s.id)} className="mt-2 akzent-text text-sm font-medium">Jetzt Notenübersicht öffnen →</button>
+                </div>
+              </div>
+            )}
+
+            {/* ── NOTIZEN ── */}
+            {profileTab === "notizen" && (
+              <div className="p-4 space-y-3">
+                <div className="card p-4">
+                  <div className="flex gap-2">
+                    <input autoFocus className="input-base flex-1"
+                      placeholder="Beobachtung, Info …"
+                      value={newNote} maxLength={1000}
+                      onChange={(e) => setNewNote(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && onAddNote(s.id)} />
+                    <button onClick={() => onAddNote(s.id)} disabled={!newNote.trim()}
+                      className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold akzent-flaeche disabled:opacity-40">✓</button>
+                  </div>
+                </div>
+                {sNotes.length > 0 ? (
+                  <div className="relative">
+                    <div className="absolute left-[19px] top-0 bottom-0 w-px bg-stone-200" />
+                    {sNotes.map((n) => (
+                      <div key={n.id} className="relative flex gap-3 mb-3 last:mb-0">
+                        <div className="shrink-0 w-10 h-10 rounded-2xl bg-white border border-stone-100 flex items-center justify-center shadow-sm z-10">
+                          <StickyNote size={14} className="text-stone-400" />
+                        </div>
+                        <div className="flex-1 card p-3 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm text-stone-700 leading-snug flex-1">{n.text}</p>
+                            <button onClick={() => onDeleteNote(n.id)} className="shrink-0 text-stone-300 hover:text-red-500 mt-0.5">
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                          <div className="t-caption mt-1.5">{localDate(n.date).toLocaleDateString("de-DE")}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="card card-p text-center text-sm text-stone-400 py-8">Noch keine Notizen.</div>
                 )}
               </div>
+            )}
 
-              {/* Kindgespräche-Vorschau */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare size={15} className="text-stone-400" />
-                    <div className="font-semibold text-stone-800 text-sm">Kindgespräche</div>
-                    <span className="text-[10px] text-stone-400">Unabhängig vom Unterricht</span>
-                  </div>
-                  <button onClick={() => setProfileTab("gespräche")} className="w-7 h-7 rounded-full bg-stone-100 flex items-center justify-center akzent-text">
-                    <Plus size={14} />
-                  </button>
-                </div>
-                {/* Kompaktes Eingabeformular */}
-                <div className="space-y-2">
+            {/* ── GESPRÄCHE ── */}
+            {profileTab === "gespräche" && (
+              <div className="p-4 space-y-3">
+                <div className="card p-4 space-y-2">
                   <div className="flex gap-1.5">
                     {GESPRAECH_TYPEN.map((t) => (
                       <button key={t.key} onClick={() => setGespraechDraft((d) => ({ ...d, typ: t.key }))}
-                        className={`flex-1 py-1.5 rounded-xl border text-xs font-medium transition-colors ${gespraechDraft.typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 bg-stone-50 text-stone-500"}`}>
+                        className={`flex-1 py-1.5 rounded-xl border text-xs font-medium transition-colors ${gespraechDraft.typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 text-stone-500"}`}>
                         {t.label}
                       </button>
                     ))}
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1.5">
                     {MOOD_OPTIONS.map((m) => (
                       <button key={m.key} onClick={() => setGespraechDraft((d) => ({ ...d, mood: m.key }))}
                         title={m.label}
-                        className={`flex-1 py-1.5 rounded-xl border text-base transition-colors ${gespraechDraft.mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-stone-50"}`}>
+                        className={`flex-1 py-1.5 rounded-xl border text-base transition-colors ${gespraechDraft.mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200"}`}>
                         {m.emoji}
                       </button>
                     ))}
                   </div>
                   <div className="flex gap-2">
-                    <input
-                      className={`${inputCls} flex-1`}
+                    <input className="input-base flex-1"
                       placeholder="Was bewegt das Kind, wie geht es ihm/ihr …"
-                      value={gespraechDraft.text}
-                      maxLength={1000}
+                      value={gespraechDraft.text} maxLength={1000}
                       onChange={(e) => setGespraechDraft((d) => ({ ...d, text: e.target.value }))}
-                      onKeyDown={(e) => e.key === "Enter" && onAddGespraech(s.id)}
-                    />
-                    <Button onClick={() => onAddGespraech(s.id)}><Plus size={15} /></Button>
+                      onKeyDown={(e) => e.key === "Enter" && onAddGespraech(s.id)} />
+                    <button onClick={() => onAddGespraech(s.id)} disabled={!gespraechDraft.text.trim()}
+                      className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold akzent-flaeche disabled:opacity-40">✓</button>
                   </div>
                 </div>
-                {sGespraeche.length > 0 && (
-                  <button onClick={() => setProfileTab("gespräche")} className="mt-3 w-full flex items-center justify-between text-sm text-stone-500 hover:akzent-text py-1 border-t border-stone-100 pt-3">
-                    <span className="flex items-center gap-1.5"><MessageSquare size={14} /> {sGespraeche.length} Gespräch{sGespraeche.length !== 1 ? "e" : ""} anzeigen</span>
-                    <ChevronRight size={14} />
-                  </button>
-                )}
-              </div>
-
-              {/* Stammdaten */}
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <button
-                  onClick={() => setProfileTab("stammdaten")}
-                  className="w-full flex items-center justify-between text-sm text-stone-700"
-                >
-                  <div className="flex items-center gap-2">
-                    <Users size={15} className="text-stone-400" />
-                    <span className="font-semibold">Stammdaten & Kontakt</span>
-                  </div>
-                  <ChevronRight size={15} className="text-stone-300" />
-                </button>
-              </div>
-            </>)}
-
-            {/* ── NOTIZEN ── */}
-            {profileTab === "notizen" && (<>
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex gap-2">
-                  <input
-                    autoFocus
-                    className={`${inputCls} flex-1`}
-                    placeholder="Beobachtung, Info …"
-                    value={newNote}
-                    maxLength={1000}
-                    onChange={(e) => setNewNote(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && onAddNote(s.id)}
-                  />
-                  <Button onClick={() => onAddNote(s.id)}><Plus size={15} /></Button>
-                </div>
-              </div>
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                <ul className="divide-y divide-stone-100">
-                  {sNotes.map((n) => (
-                    <li key={n.id} className="px-4 py-3 flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-2.5 flex-1 min-w-0">
-                        <StickyNote size={14} className="text-stone-300 mt-0.5 shrink-0" />
-                        <div>
-                          <p className="text-sm text-stone-700 leading-snug">{n.text}</p>
-                          <p className="text-[10px] text-stone-400 mt-1">{localDate(n.date).toLocaleDateString("de-DE")}</p>
-                        </div>
-                      </div>
-                      <button onClick={() => onDeleteNote(n.id)} className="text-stone-300 hover:text-red-500 shrink-0 mt-0.5"><Trash2 size={13} /></button>
-                    </li>
-                  ))}
-                  {!sNotes.length && <li className="px-4 py-4 text-sm text-stone-400">Noch keine Notizen.</li>}
-                </ul>
-              </div>
-            </>)}
-
-            {/* ── GESPRÄCHE ── */}
-            {profileTab === "gespräche" && (<>
-              <div className="bg-white rounded-2xl p-4 shadow-sm space-y-2">
-                <div className="flex gap-1.5">
-                  {GESPRAECH_TYPEN.map((t) => (
-                    <button key={t.key} onClick={() => setGespraechDraft((d) => ({ ...d, typ: t.key }))}
-                      className={`flex-1 py-1.5 rounded-xl border text-xs font-medium transition-colors ${gespraechDraft.typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 bg-stone-50 text-stone-500"}`}>
-                      {t.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-1">
-                  {MOOD_OPTIONS.map((m) => (
-                    <button key={m.key} onClick={() => setGespraechDraft((d) => ({ ...d, mood: m.key }))}
-                      title={m.label}
-                      className={`flex-1 py-1.5 rounded-xl border text-base transition-colors ${gespraechDraft.mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-stone-50"}`}>
-                      {m.emoji}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <input
-                    className={`${inputCls} flex-1`}
-                    placeholder="Was bewegt das Kind, wie geht es ihm/ihr …"
-                    value={gespraechDraft.text}
-                    maxLength={1000}
-                    onChange={(e) => setGespraechDraft((d) => ({ ...d, text: e.target.value }))}
-                    onKeyDown={(e) => e.key === "Enter" && onAddGespraech(s.id)}
-                  />
-                  <Button onClick={() => onAddGespraech(s.id)}><Plus size={15} /></Button>
-                </div>
-              </div>
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                <ul className="divide-y divide-stone-100">
-                  {sGespraeche.map((g) => {
-                    const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
-                    const typ = GESPRAECH_TYPEN.find((t) => t.key === g.gesprTyp);
-                    return (
-                      <li key={g.id} className="px-4 py-3">
-                        <div className="flex items-center justify-between mb-1.5">
-                          <div className="flex items-center gap-2">
-                            <span className="text-base leading-none">{mood?.emoji ?? "💬"}</span>
-                            {typ && <span className="text-[10px] font-semibold akzent-text bg-[#ECEEE2] px-2 py-0.5 rounded-full">{typ.label}</span>}
-                            <span className="text-[11px] text-stone-400">{localDate(g.date).toLocaleDateString("de-DE")}</span>
+                {sGespraeche.length > 0 ? (
+                  <div className="relative">
+                    <div className="absolute left-[19px] top-0 bottom-0 w-px bg-stone-200" />
+                    {sGespraeche.map((g) => {
+                      const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
+                      const typ = GESPRAECH_TYPEN.find((t) => t.key === g.gesprTyp);
+                      return (
+                        <div key={g.id} className="relative flex gap-3 mb-3 last:mb-0">
+                          <div className="shrink-0 w-10 h-10 rounded-2xl bg-white border border-stone-100 flex items-center justify-center shadow-sm z-10 text-lg leading-none">
+                            {mood?.emoji ?? "💬"}
                           </div>
-                          <button onClick={() => onDeleteNote(g.id)} className="text-stone-300 hover:text-red-500"><Trash2 size={13} /></button>
+                          <div className="flex-1 card p-3 min-w-0">
+                            <div className="flex items-start justify-between gap-2 mb-1.5">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {typ && <span className="text-[10px] font-semibold akzent-text bg-[#ECEEE2] px-2 py-0.5 rounded-full">{typ.label}</span>}
+                                <span className="t-caption">{localDate(g.date).toLocaleDateString("de-DE")}</span>
+                              </div>
+                              <button onClick={() => onDeleteNote(g.id)} className="shrink-0 text-stone-300 hover:text-red-500">
+                                <Trash2 size={13} />
+                              </button>
+                            </div>
+                            <p className="text-sm text-stone-700 leading-snug">{g.text}</p>
+                          </div>
                         </div>
-                        <p className="text-sm text-stone-700 leading-snug">{g.text}</p>
-                      </li>
-                    );
-                  })}
-                  {!sGespraeche.length && <li className="px-4 py-4 text-sm text-stone-400">Noch keine Gespräche erfasst.</li>}
-                </ul>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="card card-p text-center text-sm text-stone-400 py-8">Noch keine Gespräche erfasst.</div>
+                )}
               </div>
-            </>)}
+            )}
 
-            {/* ── FÖRDERZIELE (via Bearbeiten-Link) ── */}
-            {profileTab === "ziele" && (<>
-              <div className="bg-white rounded-2xl p-4 shadow-sm">
-                <div className="flex gap-1.5 mb-3">
-                  <div className="flex shrink-0 rounded-xl overflow-hidden border border-stone-200">
-                    {[{ key: "foerder", label: "Förderziel" }, { key: "wochen", label: "Wochenziel" }].map(({ key, label }) => (
-                      <button key={key} onClick={() => setZielDraft((d) => ({ ...d, typ: key }))
-                      }
-                        className={`px-3 py-1.5 text-xs font-semibold transition-colors ${zielDraft.typ === key ? "akzent-flaeche text-white" : "bg-white text-stone-400 hover:text-stone-600"}`}>
-                        {label}
-                      </button>
+            {/* ── MEHR: Förderstatus + Ziele + Stammdaten ── */}
+            {profileTab === "mehr" && (
+              <div className="p-4 space-y-4">
+
+                {/* Förderstatus Tags */}
+                <div className="card p-4">
+                  <div className="t-label font-semibold text-stone-700 mb-3">Förderstatus</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {foerderTags.map((tag) => (
+                      <span key={tag} className="chip chip-warn flex items-center gap-1">
+                        {tag}
+                        <button onClick={() => removeFoerderTag(tag)} className="hover:text-red-600 leading-none">×</button>
+                      </span>
                     ))}
+                    {addingTag ? (
+                      <input autoFocus className="input-base text-xs px-2 py-1 w-28"
+                        value={newTag} maxLength={30} placeholder="Status …"
+                        onChange={(e) => setNewTag(e.target.value)}
+                        onKeyDown={(e) => { if (e.key === "Enter" && newTag.trim()) addFoerderTag(newTag); if (e.key === "Escape") { setAddingTag(false); setNewTag(""); } }}
+                        onBlur={() => { if (newTag.trim()) addFoerderTag(newTag); else { setAddingTag(false); setNewTag(""); } }}
+                      />
+                    ) : (
+                      <button onClick={() => setAddingTag(true)}
+                        className="chip border border-dashed border-stone-300 text-stone-400 hover:border-stone-400">+ Tag</button>
+                    )}
                   </div>
                 </div>
-                <div className="flex gap-2">
-                  <input
-                    autoFocus
-                    className={`${inputCls} flex-1`}
-                    placeholder={zielDraft.typ === "wochen" ? "Wochenziel eintragen …" : "Förderziel eintragen …"}
-                    value={zielDraft.text}
-                    maxLength={200}
-                    onChange={(e) => setZielDraft((d) => ({ ...d, text: e.target.value }))}
-                    onKeyDown={(e) => { if (e.key === "Enter" && zielDraft.text.trim()) { onAddFoerderZiel(s.id, zielDraft.text, zielDraft.typ); setZielDraft((d) => ({ ...d, text: "" })); } }}
-                  />
-                  <Button onClick={() => { if (!zielDraft.text.trim()) return; onAddFoerderZiel(s.id, zielDraft.text, zielDraft.typ); setZielDraft((d) => ({ ...d, text: "" })); }}>
-                    <Plus size={15} />
-                  </Button>
-                </div>
-              </div>
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-                <ul className="divide-y divide-stone-100">
-                  {sZiele.filter((z) => !z.doneAt).map((z) => (
-                    <li key={z.id} className="flex items-center gap-3 px-4 py-3">
-                      <button onClick={() => onToggleFoerderZiel(z.id)} className="shrink-0 w-5 h-5 rounded border-2 border-stone-300 hover:border-green-500 transition-colors" />
-                      <div className="flex-1 min-w-0">
-                        <span className={`text-[10px] font-semibold mr-1 ${z.typ === "wochen" ? "text-blue-500" : "text-amber-600"}`}>{z.typ === "wochen" ? "Wochenziel" : "Förderziel"}</span>
-                        <span className="text-sm text-stone-700">{z.text}</span>
-                      </div>
-                      <button onClick={() => onDeleteFoerderZiel(z.id)} className="shrink-0 text-stone-300 hover:text-red-500"><Trash2 size={14} /></button>
-                    </li>
-                  ))}
-                  {sZiele.filter((z) => z.doneAt).map((z) => (
-                    <li key={z.id} className="flex items-center gap-3 px-4 py-3 opacity-50">
-                      <button onClick={() => onToggleFoerderZiel(z.id)} className="shrink-0 w-5 h-5 rounded bg-green-500 border-2 border-green-500 flex items-center justify-center">
-                        <Check size={11} className="text-white" />
-                      </button>
-                      <span className="text-sm text-stone-400 line-through flex-1">{z.text}</span>
-                      <button onClick={() => onDeleteFoerderZiel(z.id)} className="shrink-0 text-stone-300 hover:text-red-500"><Trash2 size={14} /></button>
-                    </li>
-                  ))}
-                  {!sZiele.length && <li className="px-4 py-4 text-sm text-stone-400">Noch keine Ziele eingetragen.</li>}
-                </ul>
-              </div>
-            </>)}
 
-            {/* ── STAMMDATEN ── */}
-            {profileTab === "stammdaten" && (
-              <div className="bg-white rounded-2xl p-4 shadow-sm space-y-3">
-                <input type="file" accept="image/*" id={`photo-stamm-${s.id}`} className="hidden"
-                  onChange={(e) => handlePhoto(s.id, e.target.files?.[0])} />
-                {s.photo && (
-                  <div className="flex items-center gap-2">
-                    <label htmlFor={`photo-stamm-${s.id}`} className="text-xs font-medium text-stone-500 hover:text-stone-800 underline underline-offset-2 cursor-pointer">Foto ändern</label>
-                    <button onClick={() => onUpdateField(s.id, "photo", "")} className="text-xs text-stone-400 hover:text-red-500">Entfernen</button>
-                  </div>
-                )}
-                <p className="text-[10px] text-stone-400 flex items-center gap-1">
-                  <ShieldCheck size={10} className="shrink-0" />
-                  Kontaktdaten nur auf diesem Gerät – nicht weitergeben (DSGVO).
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Field label="Geburtstag">
-                    <input type="date" value={s.birthday || ""} onChange={(e) => onUpdateField(s.id, "birthday", e.target.value)} className={inputCls} />
-                  </Field>
-                  <Field label="Telefon Eltern">
-                    <div className="flex gap-1">
-                      <input type="tel" placeholder="0176 …" value={s.parentPhone || ""} maxLength={30}
-                        onChange={(e) => onUpdateField(s.id, "parentPhone", e.target.value)} className={inputCls} />
-                      {s.parentPhone && (
-                        <a href={`tel:${s.parentPhone}`} className="shrink-0 w-9 h-9 rounded-lg akzent-ton flex items-center justify-center" title="Anrufen"><Phone size={15} /></a>
-                      )}
+                {/* Förderziele */}
+                <div className="card p-4">
+                  <div className="t-label font-semibold text-stone-700 mb-3">Förderziele</div>
+                  <div className="flex gap-1.5 mb-3">
+                    <div className="flex shrink-0 rounded-xl overflow-hidden border border-stone-200">
+                      {[{ key: "foerder", label: "Förderziel" }, { key: "wochen", label: "Wochenziel" }].map(({ key, label }) => (
+                        <button key={key} onClick={() => setZielDraft((d) => ({ ...d, typ: key }))}
+                          className={`px-3 py-1.5 text-xs font-semibold transition-colors ${zielDraft.typ === key ? "akzent-flaeche text-white" : "bg-white text-stone-400"}`}>
+                          {label}
+                        </button>
+                      ))}
                     </div>
-                  </Field>
+                  </div>
+                  <div className="flex gap-2 mb-3">
+                    <input className="input-base flex-1"
+                      placeholder={zielDraft.typ === "wochen" ? "Wochenziel eintragen …" : "Förderziel eintragen …"}
+                      value={zielDraft.text} maxLength={200}
+                      onChange={(e) => setZielDraft((d) => ({ ...d, text: e.target.value }))}
+                      onKeyDown={(e) => { if (e.key === "Enter" && zielDraft.text.trim()) { onAddFoerderZiel(s.id, zielDraft.text, zielDraft.typ); setZielDraft((d) => ({ ...d, text: "" })); } }} />
+                    <button onClick={() => { if (!zielDraft.text.trim()) return; onAddFoerderZiel(s.id, zielDraft.text, zielDraft.typ); setZielDraft((d) => ({ ...d, text: "" })); }}
+                      className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold akzent-flaeche">+</button>
+                  </div>
+                  <ul className="space-y-0">
+                    {sZiele.filter((z) => !z.doneAt).map((z) => (
+                      <li key={z.id} className="flex items-center gap-3 py-2.5 border-t border-stone-100 first:border-0">
+                        <button onClick={() => onToggleFoerderZiel(z.id)} className="shrink-0 w-5 h-5 rounded border-2 border-stone-300 hover:border-green-500 transition-colors" />
+                        <div className="flex-1 min-w-0">
+                          <span className={`text-[10px] font-semibold mr-1 ${z.typ === "wochen" ? "text-blue-500" : "text-amber-600"}`}>{z.typ === "wochen" ? "Wochenziel" : "Förderziel"}</span>
+                          <span className="text-sm text-stone-700">{z.text}</span>
+                        </div>
+                        <button onClick={() => onDeleteFoerderZiel(z.id)} className="shrink-0 text-stone-300 hover:text-red-500"><Trash2 size={14} /></button>
+                      </li>
+                    ))}
+                    {sZiele.filter((z) => z.doneAt).map((z) => (
+                      <li key={z.id} className="flex items-center gap-3 py-2.5 border-t border-stone-100 opacity-50">
+                        <button onClick={() => onToggleFoerderZiel(z.id)} className="shrink-0 w-5 h-5 rounded bg-green-500 border-2 border-green-500 flex items-center justify-center">
+                          <Check size={11} className="text-white" />
+                        </button>
+                        <span className="text-sm text-stone-400 line-through flex-1">{z.text}</span>
+                        <button onClick={() => onDeleteFoerderZiel(z.id)} className="shrink-0 text-stone-300 hover:text-red-500"><Trash2 size={14} /></button>
+                      </li>
+                    ))}
+                    {!sZiele.length && <li className="text-sm text-stone-400 py-1">Noch keine Ziele eingetragen.</li>}
+                  </ul>
                 </div>
-                <Field label="Name Eltern/Erziehungsberechtigte">
-                  <input placeholder="z. B. Frau Mustermann" value={s.parentName || ""} maxLength={100}
-                    onChange={(e) => onUpdateField(s.id, "parentName", e.target.value)} className={inputCls} />
-                </Field>
-                <Field label="Besonderheiten / Vorerkrankungen">
-                  <textarea
-                    placeholder="z. B. Nussallergie, Asthma-Spray in der Tasche …"
-                    value={s.medicalInfo || ""}
-                    onChange={(e) => onUpdateField(s.id, "medicalInfo", e.target.value)}
-                    onFocus={() => { if (!localStorage.getItem("saidy_medical_consent") && !s.medicalInfo) setShowMedicalConsent(true); }}
-                    rows={3} maxLength={2000} className={`${inputCls} resize-none`}
-                  />
-                  <p className="text-[11px] text-amber-600 mt-1 flex items-start gap-1">
-                    <ShieldCheck size={11} className="shrink-0 mt-0.5" />
-                    Gesundheitsdaten (Art. 9 DSGVO) – nur mit schriftlicher Einwilligung speichern.
+
+                {/* Stammdaten */}
+                <div className="card p-4 space-y-3">
+                  <div className="t-label font-semibold text-stone-700">Stammdaten</div>
+                  <input type="file" accept="image/*" id={`photo-stamm-${s.id}`} className="hidden"
+                    onChange={(e) => handlePhoto(s.id, e.target.files?.[0])} />
+                  {s.photo && (
+                    <div className="flex items-center gap-2">
+                      <label htmlFor={`photo-stamm-${s.id}`} className="text-xs font-medium text-stone-500 hover:text-stone-800 underline underline-offset-2 cursor-pointer">Foto ändern</label>
+                      <button onClick={() => onUpdateField(s.id, "photo", "")} className="text-xs text-stone-400 hover:text-red-500">Entfernen</button>
+                    </div>
+                  )}
+                  <p className="text-[10px] text-stone-400 flex items-center gap-1">
+                    <ShieldCheck size={10} className="shrink-0" />
+                    Kontaktdaten nur auf diesem Gerät – nicht weitergeben (DSGVO).
                   </p>
-                </Field>
-                {s.medicalInfo && (
-                  <button onClick={() => onUpdateField(s.id, "medicalInfo", "")} className="text-[11px] text-red-400 hover:text-red-600">
-                    Gesundheitsdaten löschen
-                  </button>
-                )}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <div className="t-caption mb-1">Geburtstag</div>
+                      <input type="date" value={s.birthday || ""} onChange={(e) => onUpdateField(s.id, "birthday", e.target.value)} className="input-base w-full" />
+                    </div>
+                    <div>
+                      <div className="t-caption mb-1">Telefon Eltern</div>
+                      <div className="flex gap-1">
+                        <input type="tel" placeholder="0176 …" value={s.parentPhone || ""} maxLength={30}
+                          onChange={(e) => onUpdateField(s.id, "parentPhone", e.target.value)} className="input-base flex-1 min-w-0" />
+                        {s.parentPhone && (
+                          <a href={`tel:${s.parentPhone}`} className="shrink-0 w-9 h-9 rounded-lg akzent-ton flex items-center justify-center" title="Anrufen"><Phone size={15} /></a>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="t-caption mb-1">Name Erziehungsberechtigte</div>
+                    <input placeholder="z. B. Frau Mustermann" value={s.parentName || ""} maxLength={100}
+                      onChange={(e) => onUpdateField(s.id, "parentName", e.target.value)} className="input-base w-full" />
+                  </div>
+                  <div>
+                    <div className="t-caption mb-1 flex items-center gap-1.5">
+                      Besonderheiten / Vorerkrankungen
+                      <span className="text-[9px] text-amber-600 font-semibold">(nur mit Einwilligung)</span>
+                    </div>
+                    <textarea
+                      placeholder="z. B. Nussallergie, Asthma-Spray in der Tasche …"
+                      value={s.medicalInfo || ""}
+                      onChange={(e) => onUpdateField(s.id, "medicalInfo", e.target.value)}
+                      onFocus={() => { if (!localStorage.getItem("saidy_medical_consent") && !s.medicalInfo) setShowMedicalConsent(true); }}
+                      rows={3} maxLength={2000} className="input-base w-full resize-none"
+                    />
+                    <p className="text-[11px] text-amber-600 mt-1 flex items-start gap-1">
+                      <ShieldCheck size={11} className="shrink-0 mt-0.5" />
+                      Gesundheitsdaten (Art. 9 DSGVO) – nur mit schriftlicher Einwilligung speichern.
+                    </p>
+                  </div>
+                  {s.medicalInfo && (
+                    <button onClick={() => onUpdateField(s.id, "medicalInfo", "")} className="text-[11px] text-red-400 hover:text-red-600">
+                      Gesundheitsdaten löschen
+                    </button>
+                  )}
+                </div>
+
               </div>
             )}
 
@@ -6455,6 +6503,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
           cls={cls}
           students={students}
           notes={data.notes}
+          grades={data.grades || []}
           foerderZiele={data.foerderZiele || []}
           selectedStudent={selectedStudent}
           setSelectedStudent={setSelectedStudent}
