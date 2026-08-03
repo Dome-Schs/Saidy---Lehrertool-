@@ -5061,7 +5061,7 @@ function resolveCollisions(positions, canvasRect) {
   return result;
 }
 
-const QUALITY_COLORS = { gut: "#22c55e", mittel: "#f97316", schlecht: "#ef4444" };
+const QUALITY_COLORS = { gut: "#16a34a", mittel: "#d97706", schlecht: "#dc2626" };
 
 function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityChange, onRemove }) {
   const elRef = useRef(null);
@@ -5165,9 +5165,9 @@ function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityC
       <button
         onPointerDown={(e) => e.stopPropagation()}
         onClick={(e) => { e.stopPropagation(); onRemove(); }}
-        className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-red-400 hover:bg-red-500 text-white flex items-center justify-center shadow z-10 transition-colors"
+        className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-red-400 hover:bg-red-500 text-white flex items-center justify-center shadow z-10 transition-colors"
       >
-        <X size={7} />
+        <X size={5} />
       </button>
       {/* Avatar circle — 36px */}
       <div
@@ -5176,7 +5176,7 @@ function SitzplanToken({ student, pos, quality, canvasRef, onDragEnd, onQualityC
         style={{
           background: "#4F5844",
           transition: "transform 0.1s",
-          outline: quality ? `2.5px solid ${QUALITY_COLORS[quality]}` : "none",
+          outline: quality ? `3.5px solid ${QUALITY_COLORS[quality]}` : "none",
           outlineOffset: "2px",
         }}
       >
@@ -5404,9 +5404,9 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
         <div className="flex items-center gap-3 px-4 py-1.5 border-t border-stone-100 shrink-0 flex-wrap">
           <span className="text-[10px] text-stone-400 shrink-0">Tippen zum Markieren:</span>
           {[
-            { key: "gut", color: "#22c55e", label: "Klappt gut" },
-            { key: "mittel", color: "#f97316", label: "Beobachten" },
-            { key: "schlecht", color: "#ef4444", label: "Klappt nicht" },
+            { key: "gut", color: "#16a34a", label: "Klappt gut" },
+            { key: "mittel", color: "#d97706", label: "Beobachten" },
+            { key: "schlecht", color: "#dc2626", label: "Klappt nicht" },
           ].map(({ key, color, label }) => (
             <span key={key} className="flex items-center gap-1">
               <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: color }} />
