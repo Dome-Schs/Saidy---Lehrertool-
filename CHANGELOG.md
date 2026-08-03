@@ -9,7 +9,7 @@ Format: Nutzersicht, auf Deutsch, für Lehrerinnen und Lehrer.
 
 ### Neu
 - **Schülerprofil komplett überarbeitet**: 5 Tabs – Übersicht, Leistung, Notizen, Gespräche, Mehr. Alle Infos zu einem Kind auf einen Blick.
-- **KI-Zusammenfassung**: Automatisch generierter Kurzstatus im Übersicht-Tab – Noten, Stimmung, Aktivität der letzten 30 Tage.
+- **Automatische Zusammenfassung**: Lokal berechneter Kurzstatus im Übersicht-Tab – Noten, Stimmung, Aktivität der letzten 30 Tage.
 - **Intelligente Signalkarten**: Farbige Hinweise bei auffälligen Schülerverläufen (Notendurchschnitt, fehlende Einträge, Geburtstage).
 - **Leistungs-Tab**: Grafischer Notenverlauf, Fach-Aufschlüsselung und Trend (besser / stabil / schlechter).
 - **Aktivitäts-Timeline**: Chronologischer Verlauf aller Notizen, Gespräche und Noten mit Datumsgruppen.

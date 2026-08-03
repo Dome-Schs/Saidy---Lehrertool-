@@ -821,7 +821,7 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
             <div className="font-semibold text-stone-800">WebUntis Fehlzeiten importieren</div>
             <div className="text-xs text-stone-400"><Abbr short="CSV" long="Komma-getrennte Tabellendatei, aus WebUntis exportierbar" />-Export aus WebUntis hochladen</div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
+          <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
         </div>
         <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4">
           <div className="bg-stone-50 rounded-xl p-3 text-xs text-stone-600 space-y-1">
@@ -924,7 +924,7 @@ function LegalModal({ onClose }) {
       <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
           <div className="font-semibold text-stone-800">Rechtliches</div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center"><X size={16} /></button>
+          <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center"><X size={16} /></button>
         </div>
         <div className="flex border-b border-stone-100 px-5 gap-1">
           {tabs.map(([key, label]) => (
@@ -1128,7 +1128,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
       <div className="bg-white w-full md:max-w-sm rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
           <div className="font-semibold text-stone-800">Einstellungen</div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center"><X size={16} /></button>
+          <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center"><X size={16} /></button>
         </div>
 
         <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))]">
@@ -2464,11 +2464,15 @@ export default function App() {
           return;
         }
         const merged = { ...EMPTY_DATA, ...imported };
-        // Sanitize: photo URLs must be data URIs; reject http/blob/other schemes
+        // Sanitize: photo URLs must be data URIs; reject http/blob/other schemes; cap string field lengths
         if (Array.isArray(merged.students)) {
           merged.students = merged.students.map((s) => ({
             ...s,
             photo: typeof s.photo === "string" && s.photo.startsWith("data:image/") ? s.photo : "",
+            name: typeof s.name === "string" ? s.name.slice(0, 200) : s.name,
+            medicalInfo: typeof s.medicalInfo === "string" ? s.medicalInfo.slice(0, 2000) : s.medicalInfo,
+            foerderStatus: typeof s.foerderStatus === "string" ? s.foerderStatus.slice(0, 500) : s.foerderStatus,
+            parentPhone: typeof s.parentPhone === "string" ? s.parentPhone.slice(0, 100) : s.parentPhone,
           }));
         }
         setData(merged);
@@ -3180,7 +3184,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
             <div className="font-semibold text-stone-800 leading-tight">Schnellerfassung</div>
             <div className="text-xs text-stone-400 truncate">{cls?.name} · {fach.subject}</div>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0">
+          <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0">
             <X size={16} />
           </button>
         </div>
@@ -3489,7 +3493,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
           {showImportReminder && (
             <button
               onClick={() => onOpenUntisImport?.()}
-              className="relative w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors"
+              className="relative w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors"
               title={daysSinceLast === null ? "Fehlzeiten noch nie importiert" : `Fehlzeiten-Import fällig (vor ${daysSinceLast} Tagen)`}
             >
               <Upload size={15} />
@@ -3499,7 +3503,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
           {isToday && !!(pendingLessons || []).length && (
             <button
               onClick={() => setShowPending((v) => !v)}
-              className="relative w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors"
+              className="relative w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors"
               title={`${pendingLessons.length} ${pendingLessons.length === 1 ? "Stunde" : "Stunden"} nachtragen`}
             >
               <ClipboardCheck size={15} />
@@ -6950,6 +6954,7 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
               <span className="t-section">Aufmerksamkeit</span>
               <span className="chip chip-warn ml-1">{needAttention.length}</span>
             </div>
+            <p className="text-xs text-stone-400 px-1 mb-2">Kein Eintrag in den letzten 14 Tagen oder Notendurchschnitt ≥ 4,0</p>
             <div className="space-y-2">
               {needAttention.map((s) => {
                 const reasons = [];
@@ -7130,16 +7135,16 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
 
   function importStudents(rows) {
     if (!selectedClass) return;
+    const existingNames = new Set((data.students || []).filter((s) => s.classId === selectedClass).map((s) => s.name.toLowerCase()));
+    const newRows = rows.filter((r) => !existingNames.has(r.name.toLowerCase()));
     update((d) => {
-      const existingNames = new Set(d.students.filter((s) => s.classId === selectedClass).map((s) => s.name.toLowerCase()));
-      rows.forEach((r) => {
-        if (existingNames.has(r.name.toLowerCase())) return;
+      newRows.forEach((r) => {
         d.students.push({ id: uid(), name: r.name, classId: selectedClass, birthday: r.birthday || null });
-        existingNames.add(r.name.toLowerCase());
       });
       return d;
     });
     setShowImportModal(false);
+    showToast(newRows.length > 0 ? `${newRows.length} Schüler:in${newRows.length === 1 ? "" : "nen"} importiert.` : "Alle Namen bereits vorhanden – nichts importiert.");
   }
 
   function addNote(studentId) {
@@ -9279,7 +9284,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
                   <div className="font-semibold text-stone-800 leading-tight truncate">Sportzeug vergessen</div>
                   <div className="text-xs text-stone-400 truncate">{s?.name}</div>
                 </div>
-                <button onClick={() => setSportzeugDetail(null)} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
+                <button onClick={() => setSportzeugDetail(null)} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
               </div>
               <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
                 <div className="flex items-center justify-between mb-3">
@@ -9750,7 +9755,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                       <div className="font-medium text-stone-800 leading-tight truncate">{student.name}</div>
                       <div className="text-xs text-stone-400">{cls?.name} · {fach.subject} · {halbjahr}. Halbjahr</div>
                     </div>
-                    <button onClick={() => setSelectedStudent(null)} className="w-8 h-8 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
+                    <button onClick={() => setSelectedStudent(null)} className="w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
                   </div>
 
                   <div className="p-4 pt-3 space-y-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
@@ -9988,7 +9993,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                           <div className="font-semibold text-stone-800 leading-tight">Elternsprechtag</div>
                           <div className="text-xs text-stone-400 truncate">{student.name} · {fach.subject}</div>
                         </div>
-                        <button onClick={() => setShowSprechtag(false)} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
+                        <button onClick={() => setShowSprechtag(false)} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
                       </div>
                       <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4">
                         <div>
@@ -10084,7 +10089,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                     <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
                       <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
                         <div className="font-semibold text-stone-800">Einzelnoten – {student.name}</div>
-                        <button onClick={() => { setShowGradesList(false); setEditingGrade(null); }} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
+                        <button onClick={() => { setShowGradesList(false); setEditingGrade(null); }} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
                       </div>
                       <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
                       <ul className="divide-y divide-stone-100">
