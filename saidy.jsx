@@ -4197,6 +4197,9 @@ function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, se
   const [showMedicalConsent, setShowMedicalConsent] = useState(false);
   const [quickGesprId, setQuickGesprId] = useState(null);
   const [zielDraft, setZielDraft] = useState({ text: "", typ: "foerder" });
+  const [profileTab, setProfileTab] = useState("übersicht");
+  const [newTag, setNewTag] = useState("");
+  const [addingTag, setAddingTag] = useState(false);
 
   async function handlePhoto(studentId, file) {
     if (!file) return;
@@ -4226,94 +4229,163 @@ function StudentsModal({ cls, students, notes, foerderZiele, selectedStudent, se
         </div>
       </div>
     )}
-    <div className="fixed inset-0 bg-stone-900/40 flex items-center justify-center p-4 z-50" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-5 overflow-y-auto dialog" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="font-semibold text-stone-800">Schüler:innen – {cls.name}</div>
-          <button onClick={onClose} className="text-stone-400 hover:text-stone-600"><X size={18} /></button>
+    {/* TP-02 · Schülerliste als Bottom-Sheet mit Preview-Karten */}
+    <div className="fixed inset-0 bg-stone-900/50 z-50 flex flex-col justify-end" onClick={onClose}>
+      <div
+        className="bg-stone-100 rounded-t-3xl w-full flex flex-col"
+        style={{ maxHeight: "90dvh", boxShadow: "var(--shadow-xl)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Pull-Handle */}
+        <div className="flex justify-center pt-3 pb-1 shrink-0">
+          <div className="w-9 h-1 rounded-full bg-stone-300" />
         </div>
 
-        <Button onClick={onOpenAdd} className="w-full justify-center mb-3"><Plus size={15} /> Hinzufügen</Button>
-        {photoError && <p className="text-xs text-red-600 mb-2">{photoError}</p>}
+        {/* Header */}
+        <div className="flex items-start justify-between px-5 pt-2 pb-4 shrink-0">
+          <div>
+            <div className="text-xl font-bold text-stone-900 leading-tight">{cls.name}</div>
+            <div className="t-caption mt-0.5">{students.length} Schüler:innen</div>
+          </div>
+          <div className="flex items-center gap-2 pt-0.5">
+            <button
+              onClick={onOpenAdd}
+              className="flex items-center gap-1 text-sm font-semibold akzent-text akzent-ton rounded-full px-3 py-1.5 press-scale"
+            >
+              <Plus size={14} /> Hinzufügen
+            </button>
+            <button
+              onClick={onClose}
+              className="w-8 h-8 rounded-full bg-stone-200 flex items-center justify-center press-scale"
+            >
+              <X size={16} className="text-stone-500" />
+            </button>
+          </div>
+        </div>
 
-        <ul className="divide-y divide-stone-100">
+        {photoError && <p className="text-xs text-red-600 px-5 mb-2 shrink-0">{photoError}</p>}
+
+        {/* Schülerkarten */}
+        <div className="flex-1 overflow-y-auto px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] space-y-2">
           {students.map((s) => {
+            const sNotes = notes.filter((n) => n.studentId === s.id && n.type !== "gespraech").sort((a, b) => b.date.localeCompare(a.date));
+            const lastNote = sNotes[0] ?? null;
             const sZieleCount = (foerderZiele || []).filter((z) => z.studentId === s.id && !z.doneAt).length;
+            const foerderTagList = (s.foerderStatus || "").split(",").map((t) => t.trim()).filter(Boolean);
+            const daysSince = lastNote ? Math.floor((Date.now() - new Date(lastNote.date).getTime()) / 86400000) : null;
+            const dotColor = s.medicalInfo ? "krit" : foerderTagList.length > 0 ? "warn" : daysSince !== null && daysSince <= 7 ? "gut" : "neutral";
+            const lastNotePreview = lastNote?.text ? lastNote.text.replace(/\n/g, " ").slice(0, 65) : null;
+            const relTime = daysSince === null ? null : daysSince === 0 ? "heute" : daysSince === 1 ? "gestern" : daysSince < 7 ? `vor ${daysSince} Tagen` : daysSince < 30 ? `vor ${Math.floor(daysSince / 7)} Wo.` : `vor ${Math.floor(daysSince / 30)} Mon.`;
+
             return (
-              <li key={s.id}>
-                <div className="flex items-center gap-2 py-2.5">
+              <div key={s.id} className="space-y-1">
+                {/* Schülerkarte */}
+                <div className="card overflow-hidden">
                   <button
                     onClick={() => { setSelectedStudent(s.id); setProfileTab("übersicht"); }}
-                    className="flex-1 flex items-center gap-3 min-w-0 text-left"
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left press-scale"
                   >
-                    <StudentAvatar student={s} size={34} />
+                    <StudentAvatar student={s} size={44} />
                     <div className="flex-1 min-w-0">
-                      <div className="text-sm font-medium text-stone-800 truncate">{s.name}</div>
-                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                        {s.foerderStatus && (
-                          <span className="text-[10px] bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-1.5 py-0 leading-5">
-                            {s.foerderStatus.split(",")[0].trim()}{s.foerderStatus.includes(",") ? ` +${s.foerderStatus.split(",").length - 1}` : ""}
+                      {/* Name + Förderstatus-Chip */}
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="text-sm font-semibold text-stone-900 truncate">{s.name}</span>
+                        {foerderTagList.length > 0 && (
+                          <span className="chip chip-warn shrink-0">
+                            {foerderTagList[0]}{foerderTagList.length > 1 ? ` +${foerderTagList.length - 1}` : ""}
                           </span>
                         )}
-                        {s.medicalInfo && <AlertCircle size={11} className="text-amber-500 shrink-0" />}
-                        {sZieleCount > 0 && <span className="text-[10px] text-stone-400">{sZieleCount} Ziel{sZieleCount !== 1 ? "e" : ""}</span>}
+                      </div>
+                      {/* Letzte Notiz Preview */}
+                      {lastNotePreview ? (
+                        <div className="flex items-baseline gap-2">
+                          <span className="t-caption truncate flex-1">„{lastNotePreview}"</span>
+                          <span className="t-caption shrink-0">{relTime}</span>
+                        </div>
+                      ) : (
+                        <span className="t-caption">Noch keine Notizen</span>
+                      )}
+                      {/* Zusatz-Chips */}
+                      {(s.medicalInfo || sZieleCount > 0) && (
+                        <div className="flex items-center gap-1.5 mt-1.5">
+                          {s.medicalInfo && <span className="chip chip-krit">Gesundheit</span>}
+                          {sZieleCount > 0 && <span className="chip chip-akzent">{sZieleCount} offene{sZieleCount !== 1 ? " Ziele" : "s Ziel"}</span>}
+                        </div>
+                      )}
+                    </div>
+                    {/* Status + Pfeil */}
+                    <div className="flex flex-col items-center gap-1.5 shrink-0 ml-1">
+                      <span className={`dot dot-${dotColor}`} />
+                      <ChevronRight size={14} className="text-stone-300" />
+                    </div>
+                  </button>
+
+                  {/* Gespräch-Schnelleingabe */}
+                  {quickGesprId === s.id && (
+                    <div className="border-t border-stone-100 px-4 py-3 bg-stone-50">
+                      <div className="flex gap-1.5 mb-2">
+                        {GESPRAECH_TYPEN.map((t) => (
+                          <button key={t.key} type="button" onClick={() => setGespraechDraft((d) => ({ ...d, typ: t.key }))}
+                            className={`flex-1 py-1.5 rounded-xl border text-xs font-medium transition-colors ${gespraechDraft.typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 bg-white text-stone-500"}`}>
+                            {t.label}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-1.5 mb-2">
+                        {MOOD_OPTIONS.map((m) => (
+                          <button key={m.key} type="button" onClick={() => setGespraechDraft((d) => ({ ...d, mood: m.key }))}
+                            className={`flex-1 py-1.5 rounded-xl border text-base transition-colors ${gespraechDraft.mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-white"}`}
+                            title={m.label}>
+                            {m.emoji}
+                          </button>
+                        ))}
+                      </div>
+                      <div className="flex gap-2">
+                        <input
+                          autoFocus
+                          className="input-base flex-1"
+                          placeholder="Was bewegt das Kind …"
+                          maxLength={500}
+                          value={gespraechDraft.text}
+                          onChange={(e) => setGespraechDraft((d) => ({ ...d, text: e.target.value }))}
+                          onKeyDown={(e) => { if (e.key === "Enter" && gespraechDraft.text.trim()) { onAddGespraech(s.id); setQuickGesprId(null); } }}
+                        />
+                        <button type="button"
+                          onClick={() => { onAddGespraech(s.id); setQuickGesprId(null); }}
+                          disabled={!gespraechDraft.text.trim()}
+                          className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold akzent-flaeche disabled:opacity-40">
+                          ✓
+                        </button>
                       </div>
                     </div>
-                    <ChevronRight size={15} className="text-stone-300 shrink-0" />
-                  </button>
-                  <button
-                    onClick={() => { setQuickGesprId(quickGesprId === s.id ? null : s.id); setGespraechDraft({ text: "", mood: "ok", typ: "schueler" }); }}
-                    className={`p-1.5 shrink-0 text-lg leading-none ${quickGesprId === s.id ? "akzent-text" : "text-stone-300 hover:text-stone-500"}`}
-                    title="Gespräch erfassen"
-                  >💬</button>
-                  <button onClick={() => setConfirmDeleteId(s.id)} className="text-stone-300 hover:text-red-500 p-1 shrink-0">
-                    <Trash2 size={14} />
-                  </button>
+                  )}
                 </div>
 
-                {quickGesprId === s.id && (
-                  <div className="mb-2 bg-stone-50 border border-stone-200 rounded-xl p-2.5">
-                    <div className="flex gap-1 mb-1.5">
-                      {GESPRAECH_TYPEN.map((t) => (
-                        <button key={t.key} type="button" onClick={() => setGespraechDraft((d) => ({ ...d, typ: t.key }))}
-                          className={`flex-1 py-1 rounded-lg border text-xs font-medium transition-colors ${gespraechDraft.typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 bg-white text-stone-500"}`}>
-                          {t.label}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex gap-1 mb-1.5">
-                      {MOOD_OPTIONS.map((m) => (
-                        <button key={m.key} type="button" onClick={() => setGespraechDraft((d) => ({ ...d, mood: m.key }))}
-                          className={`flex-1 py-1 rounded-lg border text-base transition-colors ${gespraechDraft.mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-white"}`}
-                          title={m.label}>
-                          {m.emoji}
-                        </button>
-                      ))}
-                    </div>
-                    <div className="flex gap-1.5">
-                      <input
-                        autoFocus
-                        className="flex-1 text-sm rounded-lg border border-stone-300 px-2.5 py-1.5"
-                        placeholder="Was bewegt das Kind …"
-                        maxLength={500}
-                        value={gespraechDraft.text}
-                        onChange={(e) => setGespraechDraft((d) => ({ ...d, text: e.target.value }))}
-                        onKeyDown={(e) => { if (e.key === "Enter" && gespraechDraft.text.trim()) { onAddGespraech(s.id); setQuickGesprId(null); } }}
-                      />
-                      <button type="button"
-                        onClick={() => { onAddGespraech(s.id); setQuickGesprId(null); }}
-                        disabled={!gespraechDraft.text.trim()}
-                        className="shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium akzent-flaeche text-white disabled:opacity-40">
-                        ✓
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </li>
+                {/* Sekundäre Aktionen unter der Karte */}
+                <div className="flex items-center justify-end gap-2 px-2">
+                  <button
+                    onClick={() => { setQuickGesprId(quickGesprId === s.id ? null : s.id); setGespraechDraft({ text: "", mood: "ok", typ: "schueler" }); }}
+                    className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-colors ${quickGesprId === s.id ? "akzent-text akzent-ton font-medium" : "text-stone-400 hover:text-stone-600"}`}
+                  >
+                    💬 Gespräch
+                  </button>
+                  <button
+                    onClick={() => setConfirmDeleteId(s.id)}
+                    className="text-stone-300 hover:text-red-400 p-1 rounded-full"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
             );
           })}
-          {!students.length && <li className="py-3 text-sm text-stone-400">Noch keine Schüler:innen in dieser Klasse.</li>}
-        </ul>
+
+          {!students.length && (
+            <div className="card card-p text-center text-sm text-stone-400 py-8">
+              Noch keine Schüler:innen in dieser Klasse.
+            </div>
+          )}
+        </div>
       </div>
     </div>
 
