@@ -917,7 +917,7 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
 
 function LegalModal({ onClose }) {
   const [activeTab, setActiveTab] = useState("impressum");
-  const tabs = [["impressum", "Impressum"], ["datenschutz", "Datenschutz"]];
+  const tabs = [["impressum", "Impressum"], ["nutzung", "Nutzung"], ["datenschutz", "Datenschutz"]];
   return (
     <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={onClose}>
       <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
@@ -937,7 +937,52 @@ function LegalModal({ onClose }) {
           ))}
         </div>
         <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))] text-sm text-stone-700 leading-relaxed space-y-5">
-          {activeTab === "impressum" ? (
+          {activeTab === "nutzung" ? (
+            <>
+              <div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Zielgruppe</div>
+                <p className="text-xs text-stone-600">Saidy richtet sich ausschließlich an volljährige Lehrkräfte für den beruflichen Gebrauch. Die App ist nicht für die Nutzung durch Schülerinnen und Schüler oder Erziehungsberechtigte bestimmt.</p>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Gerätesicherheit</div>
+                <div className="space-y-2 text-xs text-stone-600">
+                  <p>Saidy speichert alle Daten lokal im Browser-Speicher. Daher gilt:</p>
+                  <div className="space-y-1.5 pl-1">
+                    <div className="flex items-start gap-2"><span className="text-red-500 font-bold shrink-0 mt-0.5">✕</span><span>Nicht auf geteilten Schulcomputern oder öffentlichen Geräten nutzen</span></div>
+                    <div className="flex items-start gap-2"><span className="text-red-500 font-bold shrink-0 mt-0.5">✕</span><span>Nicht im privaten Browser-Modus (InPrivate / Inkognito) – Daten gehen beim Schließen verloren</span></div>
+                    <div className="flex items-start gap-2"><span className="akzent-text font-bold shrink-0 mt-0.5">✓</span><span>Nur auf dem eigenen, gesperrten und passwortgeschützten Gerät verwenden</span></div>
+                    <div className="flex items-start gap-2"><span className="akzent-text font-bold shrink-0 mt-0.5">✓</span><span>Gerät sperren, wenn die App nicht aktiv genutzt wird</span></div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Backup & Datenverlust</div>
+                <div className="space-y-1.5 text-xs text-stone-600">
+                  <p>Da alle Daten nur lokal gespeichert sind, liegt Datensicherung in der Verantwortung der Lehrkraft.</p>
+                  <div className="flex items-start gap-2"><span className="akzent-text font-bold shrink-0 mt-0.5">✓</span><span>Regelmäßige Backups erstellen (Einstellungen → Backup → Sichern)</span></div>
+                  <div className="flex items-start gap-2"><span className="akzent-text font-bold shrink-0 mt-0.5">✓</span><span>Backup vor jedem Gerätewechsel oder Browser-Update</span></div>
+                  <div className="flex items-start gap-2"><span className="akzent-text font-bold shrink-0 mt-0.5">✓</span><span>Am Ende des Schuljahres Daten löschen oder sicher archivieren</span></div>
+                </div>
+              </div>
+              <div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Haftungsausschluss</div>
+                <div className="space-y-2 text-xs text-stone-600">
+                  <p>Die App wird <strong className="text-stone-800">ohne Gewähr</strong> zur Verfügung gestellt. Der Entwickler übernimmt keine Haftung für:</p>
+                  <div className="space-y-1 pl-1">
+                    <div className="flex items-start gap-2"><span className="text-stone-400 shrink-0">·</span><span>Datenverlust durch Browser-Updates, Gerätewechsel oder Cache-Leerung</span></div>
+                    <div className="flex items-start gap-2"><span className="text-stone-400 shrink-0">·</span><span>Fehlerhafte Notenberechnungen oder Anzeigefehler</span></div>
+                    <div className="flex items-start gap-2"><span className="text-stone-400 shrink-0">·</span><span>Datenschutzverstöße durch unsachgemäße Nutzung (z. B. auf geteilten Geräten)</span></div>
+                    <div className="flex items-start gap-2"><span className="text-stone-400 shrink-0">·</span><span>Ausfälle oder Datenverlust durch Drittdienste (Apple/Google Spracherkennung, GitHub Pages)</span></div>
+                    <div className="flex items-start gap-2"><span className="text-stone-400 shrink-0">·</span><span>Rechtliche Konsequenzen aus der Nutzung (z. B. Schuldatenschutz-Verletzungen)</span></div>
+                  </div>
+                  <p>Die datenschutzrechtliche Verantwortung für eingegebene Schüler- und Klassendaten liegt gemäß <strong className="text-stone-800">Art. 4 Nr. 7 DSGVO</strong> ausschließlich bei der nutzenden Lehrkraft.</p>
+                </div>
+              </div>
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-800">
+                Saidy ist ein privates Werkzeug, kein offiziell geprüftes Schulverwaltungssystem. Ob die Nutzung mit den Datenschutzrichtlinien deiner Schule und deines Bundeslandes vereinbar ist, kläre bitte mit deiner Schulleitung oder dem Datenschutzbeauftragten.
+              </div>
+            </>
+          ) : activeTab === "impressum" ? (
             <>
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Angaben gemäß § 5 TMG</div>

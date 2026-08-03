@@ -5,6 +5,35 @@ Format: Nutzersicht, auf Deutsch, für Lehrerinnen und Lehrer.
 
 ---
 
+## [1.0] – 03.08.2026
+
+### Neu
+- **Schülerprofil komplett überarbeitet**: 5 Tabs – Übersicht, Leistung, Notizen, Gespräche, Mehr. Alle Infos zu einem Kind auf einen Blick.
+- **KI-Zusammenfassung**: Automatisch generierter Kurzstatus im Übersicht-Tab – Noten, Stimmung, Aktivität der letzten 30 Tage.
+- **Intelligente Signalkarten**: Farbige Hinweise bei auffälligen Schülerverläufen (Notendurchschnitt, fehlende Einträge, Geburtstage).
+- **Leistungs-Tab**: Grafischer Notenverlauf, Fach-Aufschlüsselung und Trend (besser / stabil / schlechter).
+- **Aktivitäts-Timeline**: Chronologischer Verlauf aller Notizen, Gespräche und Noten mit Datumsgruppen.
+- **Klassen-Dashboard**: Klassen-Übersicht mit Durchschnitt, Notenverteilung, Förderbedarf-Zähler, Geburtstagen und letzter Aktivität.
+- **Sprachnotizen**: Beobachtungen per Sprache diktieren – funktioniert in Safari (Apple) und Chrome (Google).
+- **Floating Action Button**: Schnellzugriff auf „Schüler hinzufügen" und „Neue Klasse" direkt im Klassen-Tab.
+- **Animationen**: Sanfte Übergänge beim Öffnen von Profilen, Sheets und Tab-Wechseln (respektiert „Bewegung reduzieren").
+
+### Verbessert
+- Touch-Targets auf mindestens 44 px vergrößert – einfacher zu treffen auch mit Handschuhen oder bei Eile.
+- Notenfarben-Einstellung in den Einstellungen wirkt jetzt auch im Schülerprofil.
+- PWA aktualisiert sich automatisch – kein manuelles Cache-Leeren mehr nötig.
+- iOS-Statusleiste wird jetzt korrekt freigehalten (Safe-Area-Inset).
+- Sprachnotiz-Fehler werden mit klarer Meldung angezeigt statt stumm hängen zu bleiben.
+
+### Sicherheit & DSGVO
+- Sprachnotiz-Einwilligungsdialog nennt Apple (Safari) und Google (Chrome/Edge) als Datenempfänger in die USA.
+- Förderstatus-Feld mit DSGVO-Hinweis (Art. 9) und „Tags leeren"-Button.
+- Medical-Consent-Bypass geschlossen: Abbrechen defokussiert das Eingabefeld.
+- Backup-Import prüft Dateigröße vor dem Einlesen (max. 50 MB).
+- Nutzungshinweis und erweiterter Haftungsausschluss in der App hinterlegt.
+
+---
+
 ## [0.5] – 30.07.2026
 
 ### Neu
