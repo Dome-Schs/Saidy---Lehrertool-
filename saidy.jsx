@@ -4197,8 +4197,109 @@ function StudentOverviewModal({ student, faecher, grades, finalGrades, halbjahr,
   );
 }
 
+/* Canvas-Chart: Notenverlauf eines Schülers */
+function GradeChart({ grades, faecher }) {
+  const canvasRef = useRef(null);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !grades.length) return;
+    const dpr = window.devicePixelRatio || 1;
+    const W = canvas.offsetWidth;
+    const H = 140;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, W, H);
+
+    const PAD = { top: 10, right: 14, bottom: 22, left: 26 };
+    const cW = W - PAD.left - PAD.right;
+    const cH = H - PAD.top - PAD.bottom;
+
+    const sorted = [...grades].sort((a, b) => a.date.localeCompare(b.date));
+    const dates = sorted.map((g) => new Date(g.date).getTime());
+    const minDate = dates[0], maxDate = dates[dates.length - 1];
+    const dateRange = maxDate - minDate || 1;
+    const MIN_V = 0.75, MAX_V = 6;
+
+    function xOf(ms) { return PAD.left + ((ms - minDate) / dateRange) * cW; }
+    function yOf(v) { return PAD.top + ((v - MIN_V) / (MAX_V - MIN_V)) * cH; }
+
+    // Grade zone backgrounds
+    ctx.fillStyle = "rgba(88,132,88,0.05)";
+    ctx.fillRect(PAD.left, PAD.top, cW, yOf(2.5) - PAD.top);
+    ctx.fillStyle = "rgba(200,80,60,0.05)";
+    ctx.fillRect(PAD.left, yOf(3.5), cW, PAD.top + cH - yOf(3.5));
+
+    // Grid lines
+    ctx.lineWidth = 1;
+    for (const v of [2, 3, 4, 5]) {
+      const y = yOf(v);
+      ctx.strokeStyle = "#e7e5e4";
+      ctx.beginPath(); ctx.moveTo(PAD.left, y); ctx.lineTo(W - PAD.right, y); ctx.stroke();
+      ctx.fillStyle = "#c4c0bb"; ctx.font = `${9}px system-ui`; ctx.textAlign = "right";
+      ctx.fillText(String(v), PAD.left - 4, y + 3.5);
+    }
+
+    // Per-subject lines + area fills
+    const fachMap = new Map();
+    sorted.forEach((g) => { if (!fachMap.has(g.fachId)) fachMap.set(g.fachId, []); fachMap.get(g.fachId).push(g); });
+    fachMap.forEach((fg, fachId) => {
+      const fach = faecher.find((f) => f.id === fachId);
+      const color = fach?.color ?? "#4F5844";
+      const pts = [...fg].sort((a, b) => a.date.localeCompare(b.date));
+      if (pts.length >= 2) {
+        // Area
+        ctx.beginPath();
+        ctx.moveTo(xOf(new Date(pts[0].date).getTime()), yOf(MAX_V));
+        pts.forEach((g) => ctx.lineTo(xOf(new Date(g.date).getTime()), yOf(g.value)));
+        ctx.lineTo(xOf(new Date(pts[pts.length - 1].date).getTime()), yOf(MAX_V));
+        ctx.closePath();
+        ctx.fillStyle = color + "1a"; ctx.fill();
+        // Line
+        ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = "round";
+        pts.forEach((g, i) => { const x = xOf(new Date(g.date).getTime()), y = yOf(g.value); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+        ctx.stroke();
+      }
+      // Dots
+      pts.forEach((g) => {
+        const x = xOf(new Date(g.date).getTime()), y = yOf(g.value);
+        ctx.beginPath(); ctx.arc(x, y, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#fff"; ctx.fill();
+        ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+      });
+    });
+
+    // Trend line (linear regression across all grades)
+    if (sorted.length >= 3) {
+      const pts = sorted.map((g) => ({ x: new Date(g.date).getTime(), y: g.value }));
+      const n = pts.length;
+      const sx = pts.reduce((s, p) => s + p.x, 0), sy = pts.reduce((s, p) => s + p.y, 0);
+      const sxy = pts.reduce((s, p) => s + p.x * p.y, 0), sx2 = pts.reduce((s, p) => s + p.x * p.x, 0);
+      const slope = (n * sxy - sx * sy) / (n * sx2 - sx * sx);
+      const intercept = (sy - slope * sx) / n;
+      ctx.beginPath(); ctx.setLineDash([4, 4]); ctx.strokeStyle = "#c4c0bb"; ctx.lineWidth = 1.5;
+      ctx.moveTo(xOf(minDate), yOf(slope * minDate + intercept));
+      ctx.lineTo(xOf(maxDate), yOf(slope * maxDate + intercept));
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // X-axis date labels (up to 3)
+    ctx.fillStyle = "#c4c0bb"; ctx.font = `${9}px system-ui`; ctx.textAlign = "center";
+    const labelPts = sorted.length <= 4 ? sorted : [sorted[0], sorted[Math.floor(sorted.length / 2)], sorted[sorted.length - 1]];
+    const seen = new Set();
+    labelPts.forEach((g) => {
+      const ms = new Date(g.date).getTime();
+      if (seen.has(ms)) return; seen.add(ms);
+      ctx.fillText(new Date(g.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }), xOf(ms), H - 4);
+    });
+  }, [grades, faecher]);
+
+  return <canvas ref={canvasRef} style={{ width: "100%", height: "140px", display: "block" }} />;
+}
+
 /* Eigenständiges Fenster für die Schülerliste einer Klasse – bewusst getrennt von der Klassenübersicht */
-function StudentsModal({ cls, students, notes, grades, foerderZiele, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
+function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
   const [photoError, setPhotoError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showMedicalConsent, setShowMedicalConsent] = useState(false);
@@ -4735,14 +4836,123 @@ function StudentsModal({ cls, students, notes, grades, foerderZiele, selectedStu
             )}
 
             {/* ── LEISTUNG ── */}
-            {profileTab === "leistung" && (
-              <div className="p-4">
-                <div className="card p-4 text-center text-sm text-stone-400 py-10">
-                  Leistungsübersicht kommt in TP-06.
-                  <br /><button onClick={() => onOpenOverview && onOpenOverview(s.id)} className="mt-2 akzent-text text-sm font-medium">Jetzt Notenübersicht öffnen →</button>
+            {profileTab === "leistung" && (() => {
+              const sGrades = (grades || []).filter((g) => g.studentId === s.id).sort((a, b) => a.date.localeCompare(b.date));
+              const { overall: overallAvg } = calcOverall(sGrades, null);
+              const byFach = (faecher || [])
+                .filter((f) => sGrades.some((g) => g.fachId === f.id))
+                .map((f) => {
+                  const fg = sGrades.filter((g) => g.fachId === f.id);
+                  const { overall, byCat } = calcOverall(fg, f.weights || DEFAULT_WEIGHTS);
+                  return { fach: f, fg, overall, byCat };
+                })
+                .sort((a, b) => (a.overall ?? 99) - (b.overall ?? 99));
+
+              function gradeTrend() {
+                if (sGrades.length < 4) return "stabil";
+                const mid = Math.floor(sGrades.length / 2);
+                const first = sGrades.slice(0, mid).reduce((s, g) => s + g.value, 0) / mid;
+                const last = sGrades.slice(mid).reduce((s, g) => s + g.value, 0) / (sGrades.length - mid);
+                return last < first - 0.25 ? "besser" : last > first + 0.25 ? "schlechter" : "stabil";
+              }
+              const trend = gradeTrend();
+
+              return (
+                <div className="p-4 space-y-3">
+                  {/* Stats-Reihe */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="card p-3">
+                      <div className="t-caption mb-1">Gesamt Ø</div>
+                      {overallAvg != null
+                        ? <div className={`text-xl font-bold tnum ${gradeColor(overallAvg)}`}>{overallAvg.toFixed(1)}</div>
+                        : <div className="text-stone-300">–</div>}
+                    </div>
+                    <div className="card p-3">
+                      <div className="t-caption mb-1">Noten</div>
+                      <div className="text-xl font-bold tnum text-stone-800">{sGrades.length}</div>
+                    </div>
+                    <div className="card p-3">
+                      <div className="t-caption mb-1">Tendenz</div>
+                      <div className={`text-xl font-bold ${trend === "besser" ? "text-[var(--s-gut)]" : trend === "schlechter" ? "text-[var(--s-krit)]" : "text-stone-400"}`}>
+                        {trend === "besser" ? "↗" : trend === "schlechter" ? "↘" : "→"}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Canvas-Chart */}
+                  {sGrades.length >= 2 && (
+                    <div className="card p-3">
+                      <div className="t-caption mb-2">Notenverlauf</div>
+                      <GradeChart grades={sGrades} faecher={faecher || []} />
+                      {(faecher || []).filter((f) => sGrades.some((g) => g.fachId === f.id)).length > 1 && (
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {(faecher || []).filter((f) => sGrades.some((g) => g.fachId === f.id)).map((f) => (
+                            <div key={f.id} className="flex items-center gap-1">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: f.color ?? "#4F5844" }} />
+                              <span className="t-caption">{f.subject}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Fächer-Breakdown */}
+                  {byFach.length > 0 ? (
+                    <div className="card overflow-hidden">
+                      <div className="t-section px-4 pt-3 pb-1">Fächer</div>
+                      <ul className="divide-y divide-stone-100">
+                        {byFach.map(({ fach, fg, overall, byCat }) => (
+                          <li key={fach.id} className="px-4 py-3">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="w-3 h-3 rounded-full shrink-0" style={{ background: fach.color ?? "#8E8E93" }} />
+                              <span className="text-sm font-semibold text-stone-800 flex-1 truncate">{fach.subject}</span>
+                              {overall != null && (
+                                <span className={`text-sm font-bold tnum ${gradeColor(overall)}`}>Ø {overall.toFixed(1)}</span>
+                              )}
+                            </div>
+                            {overall != null && (
+                              <div className="h-1.5 rounded-full bg-stone-100 overflow-hidden mb-2">
+                                <div className="h-full rounded-full" style={{ width: `${Math.max(4, ((6 - overall) / 5) * 100)}%`, background: fach.color ?? "var(--oliv)" }} />
+                              </div>
+                            )}
+                            <div className="flex gap-3 flex-wrap mb-2">
+                              {CATS.map((cat) => byCat[cat.key] ? (
+                                <div key={cat.key} className="flex items-center gap-1">
+                                  <span className="t-caption">{cat.label}:</span>
+                                  <span className={`text-xs font-semibold tnum ${gradeColor(byCat[cat.key].avg)}`}>{byCat[cat.key].avg.toFixed(1)}</span>
+                                  <span className="t-caption">({byCat[cat.key].count}×)</span>
+                                </div>
+                              ) : null)}
+                            </div>
+                            <div className="flex flex-wrap gap-2">
+                              {[...fg].sort((a, b) => b.date.localeCompare(a.date)).map((g) => (
+                                <div key={g.id} className="flex flex-col items-center">
+                                  <span className={`text-xs font-bold tnum ${gradeColor(g.value)}`}>
+                                    {GRADE_OPTIONS.find((o) => o.value === g.value)?.label ?? g.value}
+                                  </span>
+                                  <span className="text-[9px] text-stone-300 tnum leading-none mt-0.5">
+                                    {localDate(g.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div className="card p-6 text-center">
+                      <div className="text-stone-300 text-3xl mb-2">📊</div>
+                      <div className="text-sm text-stone-400 mb-3">Noch keine Noten für {s.name}.</div>
+                      <button onClick={() => onOpenOverview && onOpenOverview(s.id)} className="text-sm akzent-text font-medium">
+                        Noten erfassen →
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* ── NOTIZEN ── */}
             {profileTab === "notizen" && (
@@ -6565,6 +6775,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
           students={students}
           notes={data.notes}
           grades={data.grades || []}
+          faecher={classFaecher}
           foerderZiele={data.foerderZiele || []}
           selectedStudent={selectedStudent}
           setSelectedStudent={setSelectedStudent}
