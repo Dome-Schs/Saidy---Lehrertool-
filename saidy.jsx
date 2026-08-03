@@ -6,7 +6,7 @@ import {
   Clock, StickyNote, ClipboardCheck, Copy, CheckCircle2, AlertCircle, AlertTriangle,
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
-  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target,
+  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target, Mic,
 } from "lucide-react";
 
 /* ---------- Konstanten ---------- */
@@ -1883,6 +1883,7 @@ const HELP_DATA = [
       { q: "Wie erfasse ich Fehlzeiten?", a: `Gehe zu Klasse → „Fehlzeiten" → „+ Fehlzeit". Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist.` },
       { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle in der Fläche – es erscheint eine Auswahlliste zum Auswählen des Kindes. Alternativ auf „Kind hinzufügen" tippen. Platzierte Kinder lassen sich frei auf der Fläche verschieben. Die Tafel oben lässt sich an jeden Rand ziehen (oben, unten, links, rechts). Einmal antippen (ohne zu schieben) markiert den Sitzplatz farbig: grün = klappt gut, amber = beobachten, rot = klappt nicht. Ein Kind entfernen: Token nach unten über den Rand der Fläche in die rote Toolbar ziehen und loslassen. „Aufräumen" richtet alle Kinder gleichzeitig in einem sauberen Raster aus. „Löschen" entfernt den gesamten Sitzplan. Am Ende „Speichern" tippen.` },
       { q: "Was zeigt die Zusammenfassung im Schülerprofil?", a: `Im Profil-Tab „Übersicht" erscheint eine automatisch generierte Zusammenfassung – erkennbar am Sparkles-Symbol. Sie fasst Stimmung, Notendurchschnitt, Tendenz, Aktivität der letzten 30 Tage, Förderbedarfe und aktive Ziele in einem Satz zusammen. Die Zusammenfassung wird lokal aus den gespeicherten Daten berechnet und nur angezeigt, wenn genügend Informationen vorliegen.` },
+      { q: "Wie funktionieren Sprachnotizen?", a: `Im Schülerprofil (Tab „Übersicht" oder „Notizen") gibt es neben dem Notiz-Eingabefeld ein Mikrofon-Symbol. Antippen startet die Aufnahme – beim ersten Mal erscheint ein kurzer Hinweis zur Datenverarbeitung. Während der Aufnahme erscheint eine Live-Vorschau des erkannten Textes. Nach der Aufnahme wird der Text automatisch ins Eingabefeld übernommen, wo er noch bearbeitet werden kann. Unterstützte Browser: Safari (iOS/macOS), Chrome und Edge. Firefox unterstützt diese Funktion nicht. Das Mikrofon-Symbol erscheint nur, wenn dein Browser Spracherkennung unterstützt.` },
       { q: "Was zeigt das Klassen-Dashboard?", a: `Im Klassen-Tab eine Klasse aufklappen → „Klassen-Dashboard" antippen. Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf-Zähler als Kacheln; eine Notenverteilungs-Leiste (Sehr gut–Gut / Befriedigend / Ausreichend+); eine „Aufmerksamkeit"-Liste mit Kindern, die einen kritischen Schnitt oder seit 14+ Tagen keinen Eintrag haben; Geburtstage in den nächsten 21 Tagen; sowie die letzten Notizen und Gespräche der Klasse als Verlaufszeile. Tippen auf ein Kind öffnet direkt sein Schülerprofil.` },
       { q: "Was sind die farbigen Signale im Schülerprofil?", a: `Direkt unter der Profilkarte erscheinen farbige Signale: Rot (kritisch), Gelb (beobachten), Grün (positiv) und Blau (Info). Sie werden automatisch aus den Daten berechnet – z. B. kritischer Notenschnitt, kein Eintrag seit mehr als 14 Tagen, negative Stimmung in Folge, Förderbedarf ohne aktives Ziel, oder Geburtstag in den nächsten 7 Tagen. Tippe auf ein Signal, um direkt zum betreffenden Tab zu springen.` },
     ],
@@ -4243,6 +4244,89 @@ function StudentOverviewModal({ student, faecher, grades, finalGrades, halbjahr,
 }
 
 /* Canvas-Chart: Notenverlauf eines Schülers */
+const VOICE_CONSENT_KEY = "saidy_voice_consent";
+
+function VoiceNoteButton({ onTranscript }) {
+  const SR = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
+  const [listening, setListening] = useState(false);
+  const [interim, setInterim] = useState("");
+  const [showConsent, setShowConsent] = useState(false);
+  const srRef = useRef(null);
+
+  if (!SR) return null;
+
+  function startRecording() {
+    const sr = new SR();
+    sr.lang = "de-DE";
+    sr.continuous = false;
+    sr.interimResults = true;
+    sr.onresult = (e) => {
+      const full = Array.from(e.results).map((r) => r[0].transcript).join("");
+      if (e.results[e.results.length - 1].isFinal) {
+        onTranscript(full.trim());
+        setInterim("");
+      } else {
+        setInterim(full);
+      }
+    };
+    sr.onend = () => { setListening(false); setInterim(""); };
+    sr.onerror = () => { setListening(false); setInterim(""); };
+    srRef.current = sr;
+    sr.start();
+    setListening(true);
+  }
+
+  function handleClick() {
+    if (listening) { srRef.current?.stop(); return; }
+    if (!localStorage.getItem(VOICE_CONSENT_KEY)) { setShowConsent(true); return; }
+    startRecording();
+  }
+
+  return (
+    <>
+      <div className="relative shrink-0">
+        {interim && (
+          <div className="absolute bottom-full right-0 mb-2 z-10 bg-stone-800 text-white text-xs rounded-xl px-3 py-2 max-w-[180px] text-right shadow-lg leading-snug">
+            {interim}
+          </div>
+        )}
+        <button
+          type="button"
+          onClick={handleClick}
+          title={listening ? "Aufnahme beenden" : "Sprachnotiz"}
+          className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${listening ? "bg-red-500 text-white" : "bg-stone-100 text-stone-400 hover:text-stone-600"}`}
+        >
+          <Mic size={15} className={listening ? "animate-pulse" : ""} />
+        </button>
+      </div>
+
+      {showConsent && (
+        <div className="fixed inset-0 z-[80] bg-stone-900/50 flex items-end" onClick={() => setShowConsent(false)}>
+          <div className="bg-white rounded-t-3xl w-full p-5 pb-[max(2rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
+            <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
+            <div className="flex items-center gap-2 mb-3">
+              <Mic size={18} className="akzent-text shrink-0" />
+              <div className="font-semibold text-stone-800">Sprachnotizen</div>
+            </div>
+            <p className="text-sm text-stone-600 leading-relaxed mb-4">
+              Saidy nutzt die integrierte Sprach-zu-Text-Funktion deines Geräts (Apple / Google). Deine Audioaufnahme wird <strong>kurzzeitig zur Transkription übertragen</strong> und danach nicht gespeichert. Nur der fertige Text wird lokal auf deinem Gerät abgelegt.
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setShowConsent(false)} className="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-600 font-medium">Abbrechen</button>
+              <button
+                onClick={() => { localStorage.setItem(VOICE_CONSENT_KEY, "1"); setShowConsent(false); startRecording(); }}
+                className="flex-1 py-2.5 rounded-xl akzent-flaeche text-white text-sm font-semibold"
+              >
+                Verstanden &amp; nutzen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 function GradeChart({ grades, faecher }) {
   const canvasRef = useRef(null);
   useEffect(() => {
@@ -4926,11 +5010,12 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
 
                 {/* Schnelleingabe: Notiz + Gespräch */}
                 <div className="card p-4 space-y-3">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
                     <input className="input-base flex-1" placeholder="Notiz hinzufügen …"
                       value={newNote} maxLength={1000}
                       onChange={(e) => setNewNote(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && onAddNote(s.id)} />
+                    <VoiceNoteButton onTranscript={(t) => setNewNote((prev) => prev ? prev + " " + t : t)} />
                     <button onClick={() => onAddNote(s.id)} disabled={!newNote.trim()}
                       className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold akzent-flaeche disabled:opacity-40">✓</button>
                   </div>
@@ -5147,12 +5232,13 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, se
             {profileTab === "notizen" && (
               <div className="p-4 space-y-3">
                 <div className="card p-4">
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 items-center">
                     <input autoFocus className="input-base flex-1"
                       placeholder="Beobachtung, Info …"
                       value={newNote} maxLength={1000}
                       onChange={(e) => setNewNote(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && onAddNote(s.id)} />
+                    <VoiceNoteButton onTranscript={(t) => setNewNote((prev) => prev ? prev + " " + t : t)} />
                     <button onClick={() => onAddNote(s.id)} disabled={!newNote.trim()}
                       className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold akzent-flaeche disabled:opacity-40">✓</button>
                   </div>
