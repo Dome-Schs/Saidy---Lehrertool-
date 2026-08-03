@@ -742,6 +742,7 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
   function handleFile(file) {
     if (!file) return;
     setError("");
+    if (file.size > 5 * 1024 * 1024) { setError("Diese Datei ist zu groß (max. 5 MB). Bitte wähle eine CSV-Exportdatei."); return; }
     Papa.parse(file, {
       header: false,
       skipEmptyLines: true,
@@ -1197,14 +1198,14 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
               <button
                 onClick={() => move(i, -1)}
                 disabled={i === 0}
-                className="w-7 h-7 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-200 disabled:opacity-30 disabled:hover:bg-transparent"
+                className="w-11 h-11 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-200 disabled:opacity-30 disabled:hover:bg-transparent"
               >
                 <ChevronLeft size={15} className="rotate-90" />
               </button>
               <button
                 onClick={() => move(i, 1)}
                 disabled={i === order.length - 1}
-                className="w-7 h-7 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-200 disabled:opacity-30 disabled:hover:bg-transparent"
+                className="w-11 h-11 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-200 disabled:opacity-30 disabled:hover:bg-transparent"
               >
                 <ChevronRight size={15} className="rotate-90" />
               </button>
@@ -1226,7 +1227,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           </div>
           <div className="flex gap-2 mb-2">
             <Button variant="subtle" onClick={() => setConfirmBackupAction("export")} className="flex-1 justify-center"><Download size={15} /> Sichern</Button>
-            <Button variant="subtle" onClick={() => setConfirmBackupAction("share")} className="flex-1 justify-center" title="Backup teilen – z. B. via AirDrop oder Dateien-App">Teilen</Button>
+            <Button variant="subtle" onClick={() => setConfirmBackupAction("share")} className="flex-1 justify-center"><Upload size={15} /> Teilen</Button>
           </div>
           <Button variant="ghost" onClick={() => importInputRef.current?.click()} className="w-full justify-center"><Upload size={15} /> Gesichertes wiederherstellen</Button>
           <input
@@ -2441,6 +2442,7 @@ export default function App() {
   function resetAllData() {
     localStorage.removeItem("saidy_medical_consent");
     localStorage.removeItem("last_backup_at");
+    localStorage.removeItem("saidy_voice_consent");
     update((d) => {
       const snapshot = { deletedAt: new Date().toISOString(), data: { ...d, deletedSnapshot: null } };
       return { ...EMPTY_DATA, deletedSnapshot: snapshot };
@@ -4131,6 +4133,7 @@ function ImportCsvModal({ className, onImport, onClose }) {
 
   function handleFile(file) {
     setError("");
+    if (file.size > 5 * 1024 * 1024) { setError("Diese Datei ist zu groß (max. 5 MB). Bitte wähle eine CSV-Exportdatei."); return; }
     const reader = new FileReader();
     reader.onload = () => {
       const text = String(reader.result);
