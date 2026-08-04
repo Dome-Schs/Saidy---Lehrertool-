@@ -2062,7 +2062,7 @@ const HELP_DATA = [
       { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle in der Fläche – es erscheint eine Auswahlliste zum Auswählen des Kindes. Alternativ auf „Kind hinzufügen" tippen. Platzierte Kinder lassen sich frei auf der Fläche verschieben. Die Tafel oben lässt sich an jeden Rand ziehen (oben, unten, links, rechts). Einmal antippen (ohne zu schieben) markiert den Sitzplatz farbig: grün = klappt gut, amber = beobachten, rot = klappt nicht. Ein Kind entfernen: Token nach unten über den Rand der Fläche in die rote Toolbar ziehen und loslassen. „Aufräumen" richtet alle Kinder gleichzeitig in einem sauberen Raster aus. „Löschen" entfernt den gesamten Sitzplan. Am Ende „Speichern" tippen.` },
       { q: "Was zeigt die Zusammenfassung im Schülerprofil?", a: `Im Profil-Tab „Übersicht" erscheint eine automatisch generierte Zusammenfassung – erkennbar am Sparkles-Symbol. Sie fasst Stimmung, Notendurchschnitt, Tendenz, Aktivität der letzten 30 Tage, Förderbedarfe und aktive Ziele in einem Satz zusammen. Die Zusammenfassung wird lokal aus den gespeicherten Daten berechnet und nur angezeigt, wenn genügend Informationen vorliegen.` },
       { q: "Wie funktionieren Sprachnotizen?", a: `Im Schülerprofil (Tab „Übersicht" oder „Notizen") gibt es neben dem Notiz-Eingabefeld ein Mikrofon-Symbol. Antippen startet die Aufnahme – beim ersten Mal erscheint ein kurzer Hinweis zur Datenverarbeitung. Während der Aufnahme erscheint eine Live-Vorschau des erkannten Textes. Nach der Aufnahme wird der Text automatisch ins Eingabefeld übernommen, wo er noch bearbeitet werden kann. Unterstützte Browser: Safari (iOS/macOS), Chrome und Edge. Firefox unterstützt diese Funktion nicht. Das Mikrofon-Symbol erscheint nur, wenn dein Browser Spracherkennung unterstützt.` },
-      { q: "Was zeigt das Klassen-Dashboard?", a: `Im Klassen-Tab eine Klasse aufklappen → „Klassen-Dashboard" antippen. Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf als Kacheln; eine Notenverteilungs-Leiste; eine Anwesenheits-Übersicht der letzten 12 Wochen als Farbfeld (je dunkler, desto mehr Kinder fehlten an dem Tag, rot heißt unentschuldigt dabei) mit Hinweis, auf welchen Wochentag die meisten Fehltage fallen; ein Punktfeld „Wen habe ich lange nicht angeschaut?" (ein Punkt je Kind, je blasser desto länger liegt der letzte Eintrag zurück); eine „Aufmerksamkeit"-Liste; Geburtstage der nächsten 21 Tage sowie die letzten Notizen und Gespräche. Tippen auf ein Kind oder einen Punkt öffnet das Schülerprofil.` },
+      { q: "Was zeigt das Klassen-Dashboard?", a: `Im Klassen-Tab eine Klasse aufklappen → „Klassen-Dashboard" antippen. Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf als Kacheln; eine Notenverteilungs-Leiste; eine Anwesenheits-Übersicht der letzten 12 Wochen als Farbfeld (je dunkler, desto mehr Kinder fehlten an dem Tag, rot heißt unentschuldigt dabei) mit Hinweis, auf welchen Wochentag die meisten Fehltage fallen; eine Liste „Lange kein Eintrag" mit den Kindern die am längsten keine Note oder Notiz bekommen haben – mit Name und Anzahl Tage, direkt antippbar; eine „Aufmerksamkeit"-Liste; Geburtstage der nächsten 21 Tage sowie die letzten Notizen und Gespräche. Tippen auf ein Kind oder einen Punkt öffnet das Schülerprofil.` },
       { q: "Was sind die farbigen Signale im Schülerprofil?", a: `Direkt unter der Profilkarte erscheinen farbige Signale: Rot (kritisch), Gelb (beobachten), Grün (positiv) und Blau (Info). Sie werden automatisch aus den Daten berechnet – z. B. kritischer Notenschnitt, kein Eintrag seit mehr als 14 Tagen, negative Stimmung in Folge, Förderbedarf ohne aktives Ziel, oder Geburtstag in den nächsten 7 Tagen. Tippe auf ein Signal, um direkt zum betreffenden Tab zu springen.` },
     ],
   },
@@ -3679,6 +3679,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
 function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings, halbjahr, setCaptureLesson, pendingLessons, now }) {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showPending, setShowPending] = useState(false);
+  const [openTestDetail, setOpenTestDetail] = useState(null);
   const todayStr = isoDate(new Date());
   const selStr = isoDate(selectedDate);
   const isToday = selStr === todayStr;
@@ -4060,42 +4061,66 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                   const pt = data.periodTimes?.[l.period];
                   const offen = isToday && fach && (pendingLessons || []).some((p) => p.fach.id === fach.id);
                   const istLetzte = isToday && fach && letzteStunde?.id === l.id;
+                  const cd = fach ? testCountdown(fach, data.timetable, data.events) : null;
+                  const pct = cd && cd.rem !== null ? Math.min(100, Math.round((cd.rem / 8) * 100)) : null;
+                  const barCls = !cd ? "" : cd.level === "krit" ? "bg-red-400" : cd.level === "warn" ? "bg-amber-400" : "bg-[var(--oliv)]";
+                  const detailOpen = openTestDetail === l.id;
                   return (
-                    <li key={l.id} className={`py-1 flex items-center justify-between text-sm gap-2 ${istLetzte ? "-mx-2 px-2 rounded-lg bg-stone-50" : ""}`}>
-                      <span className="text-stone-400 text-xs w-10 shrink-0">{pt ? pt.start : `${l.period}.`}</span>
-                      <span className="flex-1 font-medium text-stone-800 flex flex-col min-w-0">
-                        <span className="flex items-center gap-1.5 min-w-0">
-                          {fach && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? fach.color : "#C0BBA8" }} />}
-                          <span className="truncate">{fach && cls ? `${cls.name} – ${fach.subject}` : "—"}</span>
+                    <li key={l.id} className={`py-1 text-sm ${istLetzte ? "-mx-2 px-2 rounded-lg bg-stone-50" : ""}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-stone-400 text-xs w-10 shrink-0">{pt ? pt.start : `${l.period}.`}</span>
+                        <span className="flex-1 font-medium text-stone-800 flex flex-col min-w-0">
+                          <span className="flex items-center gap-1.5 min-w-0">
+                            {fach && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? fach.color : "#C0BBA8" }} />}
+                            <span className="truncate">{fach && cls ? `${cls.name} – ${fach.subject}` : "—"}</span>
+                          </span>
                           {(() => {
-                            const cd = testCountdown(fach, data.timetable, data.events);
-                            if (!cd || cd.level === "neutral" || cd.level === "info") return null;
-                            return (
-                              <span
-                                title={`${cd.label} ${cd.lang}`}
-                                className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${cd.level === "krit" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}
-                              >
-                                {cd.istHeute ? "Arbeit heute" : `noch ${cd.rem}×`}
-                              </span>
-                            );
+                            const t = fach && (data.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr);
+                            return t ? <span className="text-xs font-normal text-stone-400 truncate pl-3.5">{t.text}</span> : null;
                           })()}
                         </span>
-                        {(() => {
-                          const t = fach && (data.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr);
-                          return t ? <span className="text-xs font-normal text-stone-400 truncate pl-3.5">{t.text}</span> : null;
-                        })()}
-                      </span>
-                      {istLetzte && <span className="text-[10px] text-stone-400 shrink-0 hidden sm:inline">zuletzt</span>}
-                      {fach && cls && (
+                        {istLetzte && <span className="text-[10px] text-stone-400 shrink-0 hidden sm:inline">zuletzt</span>}
+                        {fach && cls && (
+                          <button
+                            onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
+                            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                              offen ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : "bg-stone-100 text-stone-400 hover:akzent-ton hover:akzent-text"
+                            }`}
+                            aria-label="Stunde erfassen"
+                            title="Stunde erfassen"
+                          >
+                            <ClipboardCheck size={17} />
+                          </button>
+                        )}
+                      </div>
+                      {/* Klassenarbeit-Balken: immer sichtbar wenn Termin vorhanden, Klick = Details */}
+                      {cd && (
                         <button
-                          onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
-                          className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                            offen ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : "bg-stone-100 text-stone-400 hover:akzent-ton hover:akzent-text"
-                          }`}
-                          aria-label="Stunde erfassen"
-                          title="Stunde erfassen"
+                          onClick={() => setOpenTestDetail(detailOpen ? null : l.id)}
+                          className="w-full pl-10 pr-1 mt-1.5 mb-0.5 text-left"
+                          aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
                         >
-                          <ClipboardCheck size={17} />
+                          <div className="h-px bg-stone-150 rounded-full overflow-hidden" style={{ backgroundColor: "#e7e5e4" }}>
+                            {pct !== null
+                              ? <div className={`h-full rounded-full transition-[width] ${barCls}`} style={{ width: `${pct}%` }} />
+                              : <div className="h-full w-full bg-stone-300 rounded-full" />
+                            }
+                          </div>
+                          {detailOpen && (
+                            <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-stone-500">
+                              <span className="font-medium text-stone-700">{cd.label}</span>
+                              <span>·</span>
+                              <span>{cd.istHeute ? "heute" : cd.datum}</span>
+                              {cd.rem !== null && (
+                                <>
+                                  <span>·</span>
+                                  <span className={cd.level === "krit" ? "text-red-600 font-medium" : cd.level === "warn" ? "text-amber-600 font-medium" : ""}>
+                                    {cd.rem === 0 ? "keine Übungsstunde mehr" : `noch ${cd.rem} ${cd.rem === 1 ? "Stunde" : "Stunden"}`}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          )}
                         </button>
                       )}
                     </li>
@@ -7520,9 +7545,9 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
           );
         })()}
 
-        {/* Bewertungs-Abdeckung: wen habe ich lange nicht dokumentiert?
-            Auffällige Kinder sind meist überdokumentiert, stille gar nicht – als
-            Punktfeld wird diese Lücke sichtbar, bevor die Zeugniskonferenz ansteht. */}
+        {/* Wen habe ich lange nicht dokumentiert?
+            Sortierte Liste statt anonymer Punkte – direkt mit Namen, damit sofort klar
+            ist welches Kind gemeint ist und das Profil einen Klick entfernt liegt. */}
         {students.length > 0 && (() => {
           const letzterEintrag = (id) => {
             const daten = [
@@ -7531,36 +7556,53 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
             ].filter(Boolean);
             return daten.length ? daten.reduce((m, d) => (d > m ? d : m)) : null;
           };
-          const punkte = students.map((s) => {
-            const letzte = letzterEintrag(s.id);
-            const tage = letzte ? Math.floor((today - localDate(letzte)) / 86400000) : null;
-            return { student: s, letzte, tage };
-          });
-          const lange = punkte.filter((p) => p.tage === null || p.tage > 21);
+          const liste = students
+            .map((s) => {
+              const letzte = letzterEintrag(s.id);
+              const tage = letzte ? Math.floor((today - localDate(letzte)) / 86400000) : null;
+              return { student: s, tage };
+            })
+            .sort((a, b) => {
+              // kein Eintrag → ganz oben, sonst nach Tagen absteigend
+              if (a.tage === null && b.tage === null) return 0;
+              if (a.tage === null) return -1;
+              if (b.tage === null) return 1;
+              return b.tage - a.tage;
+            });
+          const ohneEintrag = liste.filter((p) => p.tage === null);
+          const veraltet = liste.filter((p) => p.tage !== null && p.tage > 21);
+          const sichtbar = [...ohneEintrag, ...veraltet].slice(0, 6);
+          const alleOk = sichtbar.length === 0;
           return (
             <div className="card p-4">
-              <div className="t-section mb-1">Wen habe ich lange nicht angeschaut?</div>
-              <p className="text-[11px] text-stone-500 mb-3">Ein Punkt je Kind. Je blasser, desto länger liegt der letzte Eintrag zurück.</p>
-              <div className="flex flex-wrap gap-1.5">
-                {punkte.map(({ student: s, tage }) => {
-                  const deckkraft = tage === null ? 0.12 : tage <= 7 ? 1 : tage <= 14 ? 0.7 : tage <= 21 ? 0.45 : 0.22;
-                  return (
-                    <button
-                      key={s.id}
-                      onClick={() => onOpenStudent(s.id)}
-                      title={`${s.name} – ${tage === null ? "noch kein Eintrag" : tage === 0 ? "heute" : `vor ${tage} Tagen`}`}
-                      aria-label={`${s.name}, ${tage === null ? "noch kein Eintrag" : `letzter Eintrag vor ${tage} Tagen`}`}
-                      className="w-6 h-6 rounded-full shrink-0 press-scale"
-                      style={{ backgroundColor: `rgba(79,88,68,${deckkraft})` }}
-                    />
-                  );
-                })}
-              </div>
-              <p className="text-[11px] text-stone-500 mt-3">
-                {lange.length === 0
-                  ? "Alle Kinder wurden in den letzten drei Wochen dokumentiert."
-                  : `${lange.length} ${lange.length === 1 ? "Kind wartet" : "Kinder warten"} seit über drei Wochen auf einen Eintrag – antippen öffnet das Profil.`}
-              </p>
+              <div className="t-section mb-3">Lange kein Eintrag</div>
+              {alleOk ? (
+                <p className="text-[11px] text-stone-500">Alle Kinder wurden in den letzten drei Wochen dokumentiert.</p>
+              ) : (
+                <ul className="space-y-0 divide-y divide-stone-100">
+                  {sichtbar.map(({ student: s, tage }) => {
+                    const labelCls = tage === null ? "text-stone-400" : tage > 42 ? "text-red-600" : "text-amber-600";
+                    const labelTxt = tage === null ? "noch kein Eintrag" : `seit ${tage} Tagen`;
+                    return (
+                      <li key={s.id}>
+                        <button
+                          onClick={() => onOpenStudent(s.id)}
+                          className="w-full flex items-center justify-between gap-2 py-2 text-left min-h-[44px] press-scale"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <StudentAvatar student={s} size={24} />
+                            <span className="text-sm text-stone-800 truncate">{s.name}</span>
+                          </div>
+                          <span className={`text-[11px] font-medium shrink-0 ${labelCls}`}>{labelTxt}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              {sichtbar.length > 0 && (
+                <p className="text-[11px] text-stone-400 mt-2">Antippen öffnet das Schülerprofil</p>
+              )}
             </div>
           );
         })()}
