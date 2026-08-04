@@ -44,7 +44,6 @@ const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events
 
 const DASHBOARD_SECTIONS = {
   unterricht: "Unterricht",
-  klassenarbeiten: "Klassenarbeiten",
   aufgaben: "Tagesaufgaben",
   kalender: "Kalendereinträge",
   geburtstage: "Geburtstage",
@@ -3679,6 +3678,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
 function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings, halbjahr, setCaptureLesson, pendingLessons, now }) {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showPending, setShowPending] = useState(false);
+  const [openTestDetail, setOpenTestDetail] = useState(null);
   const todayStr = isoDate(new Date());
   const selStr = isoDate(selectedDate);
   const isToday = selStr === todayStr;
@@ -4060,42 +4060,66 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                   const pt = data.periodTimes?.[l.period];
                   const offen = isToday && fach && (pendingLessons || []).some((p) => p.fach.id === fach.id);
                   const istLetzte = isToday && fach && letzteStunde?.id === l.id;
+                  const cd = fach ? testCountdown(fach, data.timetable, data.events) : null;
+                  const pct = cd && cd.rem !== null ? Math.min(100, Math.round((cd.rem / 8) * 100)) : null;
+                  const barCls = !cd ? "" : cd.level === "krit" ? "bg-red-400" : cd.level === "warn" ? "bg-amber-400" : "bg-[var(--oliv)]";
+                  const detailOpen = openTestDetail === l.id;
                   return (
-                    <li key={l.id} className={`py-1 flex items-center justify-between text-sm gap-2 ${istLetzte ? "-mx-2 px-2 rounded-lg bg-stone-50" : ""}`}>
-                      <span className="text-stone-400 text-xs w-10 shrink-0">{pt ? pt.start : `${l.period}.`}</span>
-                      <span className="flex-1 font-medium text-stone-800 flex flex-col min-w-0">
-                        <span className="flex items-center gap-1.5 min-w-0">
-                          {fach && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? fach.color : "#C0BBA8" }} />}
-                          <span className="truncate">{fach && cls ? `${cls.name} – ${fach.subject}` : "—"}</span>
+                    <li key={l.id} className={`py-1 text-sm ${istLetzte ? "-mx-2 px-2 rounded-lg bg-stone-50" : ""}`}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-stone-400 text-xs w-10 shrink-0">{pt ? pt.start : `${l.period}.`}</span>
+                        <span className="flex-1 font-medium text-stone-800 flex flex-col min-w-0">
+                          <span className="flex items-center gap-1.5 min-w-0">
+                            {fach && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? fach.color : "#C0BBA8" }} />}
+                            <span className="truncate">{fach && cls ? `${cls.name} – ${fach.subject}` : "—"}</span>
+                          </span>
                           {(() => {
-                            const cd = testCountdown(fach, data.timetable, data.events);
-                            if (!cd || cd.level === "neutral" || cd.level === "info") return null;
-                            return (
-                              <span
-                                title={`${cd.label} ${cd.lang}`}
-                                className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${cd.level === "krit" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}
-                              >
-                                {cd.istHeute ? "Arbeit heute" : `noch ${cd.rem}×`}
-                              </span>
-                            );
+                            const t = fach && (data.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr);
+                            return t ? <span className="text-xs font-normal text-stone-400 truncate pl-3.5">{t.text}</span> : null;
                           })()}
                         </span>
-                        {(() => {
-                          const t = fach && (data.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr);
-                          return t ? <span className="text-xs font-normal text-stone-400 truncate pl-3.5">{t.text}</span> : null;
-                        })()}
-                      </span>
-                      {istLetzte && <span className="text-[10px] text-stone-400 shrink-0 hidden sm:inline">zuletzt</span>}
-                      {fach && cls && (
+                        {istLetzte && <span className="text-[10px] text-stone-400 shrink-0 hidden sm:inline">zuletzt</span>}
+                        {fach && cls && (
+                          <button
+                            onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
+                            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
+                              offen ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : "bg-stone-100 text-stone-400 hover:akzent-ton hover:akzent-text"
+                            }`}
+                            aria-label="Stunde erfassen"
+                            title="Stunde erfassen"
+                          >
+                            <ClipboardCheck size={17} />
+                          </button>
+                        )}
+                      </div>
+                      {/* Klassenarbeit-Balken: immer sichtbar wenn Termin vorhanden, Klick = Details */}
+                      {cd && (
                         <button
-                          onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
-                          className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                            offen ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : "bg-stone-100 text-stone-400 hover:akzent-ton hover:akzent-text"
-                          }`}
-                          aria-label="Stunde erfassen"
-                          title="Stunde erfassen"
+                          onClick={() => setOpenTestDetail(detailOpen ? null : l.id)}
+                          className="w-full pl-10 pr-1 mt-1.5 mb-0.5 text-left"
+                          aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
                         >
-                          <ClipboardCheck size={17} />
+                          <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                            {pct !== null
+                              ? <div className={`h-full rounded-full transition-[width] ${barCls}`} style={{ width: `${pct}%` }} />
+                              : <div className="h-full w-full bg-stone-200 rounded-full" />
+                            }
+                          </div>
+                          {detailOpen && (
+                            <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-stone-500">
+                              <span className="font-medium text-stone-700">{cd.label}</span>
+                              <span>·</span>
+                              <span>{cd.istHeute ? "heute" : cd.datum}</span>
+                              {cd.rem !== null && (
+                                <>
+                                  <span>·</span>
+                                  <span className={cd.level === "krit" ? "text-red-600 font-medium" : cd.level === "warn" ? "text-amber-600 font-medium" : ""}>
+                                    {cd.rem === 0 ? "keine Übungsstunde mehr" : `noch ${cd.rem} ${cd.rem === 1 ? "Stunde" : "Stunden"}`}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          )}
                         </button>
                       )}
                     </li>
@@ -4104,83 +4128,6 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
               </ul>
             </Card>
           ),
-          klassenarbeiten: (() => {
-            const anstehend = data.faecher
-              .map((f) => {
-                const cd = testCountdown(f, data.timetable, data.events);
-                if (!cd) return null;
-                const cls = data.classes.find((c) => c.id === f.classId);
-                return cls ? { fach: f, cls, cd } : null;
-              })
-              .filter(Boolean)
-              .sort((a, b) => a.fach.nextTestDate.localeCompare(b.fach.nextTestDate));
-            if (!anstehend.length) return null;
-            const today = new Date(); today.setHours(0, 0, 0, 0);
-            return (
-              <Card className="px-3 py-2.5">
-                <div className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 mb-2.5">
-                  Klassenarbeiten
-                </div>
-                <ul className="space-y-4">
-                  {anstehend.map(({ fach, cls, cd }) => {
-                    const testDate = localDate(fach.nextTestDate);
-                    const daysLeft = Math.max(0, Math.round((testDate - today) / 86400000));
-                    const datumLabel = cd.istHeute ? "heute" : daysLeft === 1 ? "morgen" : `${cd.datum}`;
-                    // Bar = "Vorbereitungstank": voller Balken = noch viel Zeit, leer = kaum noch Zeit
-                    // Bezugsgröße 8 Stunden → 100 %
-                    const pct = cd.rem === null ? null : Math.min(100, Math.round((cd.rem / 8) * 100));
-                    const barCls = cd.level === "krit" ? "bg-red-500" : cd.level === "warn" ? "bg-amber-400" : "akzent-flaeche";
-                    const numCls = cd.level === "krit" ? "text-red-600" : cd.level === "warn" ? "text-amber-600" : "akzent-text";
-                    return (
-                      <li key={fach.id}>
-                        {/* Kopfzeile: Fachname + Datum als kleine Zusatzinfo */}
-                        <div className="flex items-center justify-between gap-2 mb-1">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? fach.color : "#C0BBA8" }} />
-                            <span className="text-sm font-medium text-stone-800 truncate">{cls.name} – {fach.subject}</span>
-                          </div>
-                          <span className="text-[11px] text-stone-400 shrink-0">{datumLabel}</span>
-                        </div>
-                        {/* Test-Titel */}
-                        {cd.label && cd.label !== "Klassenarbeit" && (
-                          <p className="text-[11px] text-stone-500 pl-3.5 mb-2">{cd.label}</p>
-                        )}
-                        {/* Unterrichtsstunden als Hauptaussage */}
-                        {pct !== null ? (
-                          <>
-                            <div className="flex items-end justify-between gap-3 mb-1.5">
-                              <div className="flex items-baseline gap-1">
-                                <span className={`text-2xl font-bold tabular-nums leading-none ${numCls}`}>
-                                  {cd.rem}
-                                </span>
-                                <span className="text-xs text-stone-500 leading-none">
-                                  {cd.rem === 1 ? "Stunde noch" : "Stunden noch"}
-                                </span>
-                              </div>
-                              {cd.rem === 0 && (
-                                <span className="text-[11px] text-red-600 font-medium">keine Übungsstunde mehr</span>
-                              )}
-                            </div>
-                            <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
-                              <div
-                                className={`h-full rounded-full transition-[width] duration-500 ${barCls}`}
-                                style={{ width: `${pct}%` }}
-                              />
-                            </div>
-                          </>
-                        ) : (
-                          /* Kein Stundenplan → Datum prominent, Hinweis klein */
-                          <p className="text-[11px] text-stone-400 pl-0.5">
-                            Fach in den Stundenplan eintragen – dann zähle ich die Unterrichtsstunden
-                          </p>
-                        )}
-                      </li>
-                    );
-                  })}
-                </ul>
-              </Card>
-            );
-          })(),
           aufgaben: (
             <Card className="px-3 py-2.5">
               <div className="flex items-center justify-between mb-1.5">
