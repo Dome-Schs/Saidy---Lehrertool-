@@ -2051,7 +2051,7 @@ const HELP_DATA = [
       { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus.` },
       { q: "Was zeigt das Morgen-Briefing auf der Startseite?", a: `Beim Öffnen der App erscheint oben die Karte „Heute im Blick". Sie fasst den Tag in ganzen Sätzen zusammen – zum Beispiel: „Guten Morgen! Heute stehen 4 Stunden an – die erste um 8:00 Uhr in der 4a." Berücksichtigt werden die Stunden des Tages, knapp bevorstehende Klassenarbeiten, Termine, Geburtstage, Kinder die an mehreren der letzten Tage gefehlt haben, und noch nicht erfasste Stunden. Dringendes steht rot und zuerst; angezeigt werden drei Sätze, der Rest über „+ weitere". Alles wird auf deinem Gerät berechnet, es werden keine Daten übertragen. Mit dem × blendest du die Karte für heute aus.` },
       { q: "Wie ist die Übersichtsseite aufgebaut?", a: `Von oben nach unten: (1) Vier Kacheln mit den Kennzahlen des Tages – Stunden, noch nicht erfasste Stunden (leuchtet amber wenn etwas offen ist), Geburtstage und offene Aufgaben. Jede Kachel ist antippbar und springt in den passenden Bereich. (2) Das Morgen-Briefing „Heute im Blick". (3) Die Wochenleiste zum Wechseln des Tages. (4) Die große Unterricht-Karte mit allen Stunden des Tages. (5) Darunter zweispaltig: Aufgaben, Termine, Geburtstage, Dienste und Entschuldigungen. Die Reihenfolge der unteren Karten lässt sich in den Einstellungen unter „Übersicht (Startseite)" anpassen.` },
-      { q: "Was zeigt die Unterricht-Karte auf der Startseite?", a: `Jede Stunde des Tages als eigene Zeile: links ein Kürzel-Feld mit der Klasse (z. B. „4a"), daneben das Fach, rechts die Uhrzeit. Steht für die Stunde ein Thema, erscheint es klein darunter. Die zuletzt gehaltene Stunde und Stunden die noch nicht erfasst sind, bekommen einen farbigen Rand links. Ganz rechts das Klemmbrett-Symbol für die Schnellerfassung – es leuchtet amber, solange die Stunde noch nicht erfasst ist. Stehen mehr als drei Stunden im Plan, zeigt Saidy zunächst nur die ersten drei; über „Alle N Stunden ansehen ↓" klappst du den Rest auf.` },
+      { q: "Was zeigt die Unterricht-Karte auf der Startseite?", a: `Jede Stunde des Tages als eigene Zeile: links ein Kürzel-Feld mit der Klasse (z. B. „4a"), daneben das Fach, rechts die Uhrzeit. Steht für die Stunde ein Thema, erscheint es klein darunter. Die zuletzt gehaltene Stunde und Stunden die noch nicht erfasst sind, bekommen einen farbigen Rand links. Ein Tipp auf Klasse und Fach öffnet direkt die Notenübersicht dieses Fachs. Ganz rechts das Klemmbrett-Symbol für die Schnellerfassung – es leuchtet amber, solange die Stunde noch nicht erfasst ist. Stehen mehr als drei Stunden im Plan, zeigt Saidy zunächst nur die ersten drei; über „Alle N Stunden ansehen ↓" klappst du den Rest auf.` },
       { q: "Warum verschwindet die Navigationsleiste beim Scrollen?", a: `Damit mehr Platz für den Inhalt bleibt. Scrollst du auf einer Seite nach unten, gleitet die untere Leiste weg und stattdessen erscheint unten links ein kleines rundes Symbol – das des Bereichs in dem du gerade bist. Ein Tipp darauf holt die vollständige Leiste zurück. Scrollst du wieder nach oben, erscheint sie ohnehin von selbst. Auf dem Desktop bleibt die Seitenleiste immer sichtbar.` }
     ],
   },
@@ -3060,7 +3060,7 @@ export default function App() {
               </button>
             </div>
           )}
-          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
+          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
           {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} onRegisterFab={setFabActions} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
           {tab === "kalender" && <KalenderTab data={activeData} update={update} />}
@@ -3721,7 +3721,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
   );
 }
 
-function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings, halbjahr, setCaptureLesson, pendingLessons, now }) {
+function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, onOpenSettings, halbjahr, setCaptureLesson, pendingLessons, now }) {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showPending, setShowPending] = useState(false);
   const [openTestDetail, setOpenTestDetail] = useState(null);
@@ -4163,7 +4163,13 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                 style={highlighted ? { borderLeftColor: accentCol } : {}}
               >
                 <div className="flex items-start gap-2">
-                  <div className="flex-1 min-w-0">
+                  {/* Tipp auf Klasse/Fach öffnet die Notenübersicht des Fachs */}
+                  <button
+                    onClick={() => fach && onOpenFach?.(fach.id)}
+                    disabled={!fach}
+                    className="flex-1 min-w-0 text-left py-0.5 -my-0.5 rounded-lg disabled:cursor-default"
+                    aria-label={fach && cls ? `${cls.name} – ${fach.subject} öffnen` : undefined}
+                  >
                     <div className="flex items-center gap-1.5 min-w-0">
                       {cls && (
                         <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded akzent-ton akzent-text leading-none">
@@ -4174,7 +4180,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                       <span className="text-[10px] text-stone-400 shrink-0 ml-auto">{pt ? pt.start : `${l.period}.`}</span>
                     </div>
                     {topic && <div className="text-xs text-stone-400 mt-0.5 truncate">{topic.text}</div>}
-                  </div>
+                  </button>
                   <div className="flex items-center gap-1 shrink-0">
                     {cd && (
                       <button
