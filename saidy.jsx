@@ -42,8 +42,10 @@ const QUICK_SYMBOLS = [
 
 const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], sitzplaene: {}, deletedSnapshot: null, settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null, notenfarben: true, colorMode: false } };
 
+/* Nur die Karten im unteren 2-Spalten-Raster sind sortierbar.
+   „Unterricht" steht fest als Hauptkarte darüber, die frühere „Klassenarbeiten"-Karte
+   gibt es nicht mehr – der Countdown sitzt jetzt direkt an der jeweiligen Stunde. */
 const DASHBOARD_SECTIONS = {
-  unterricht: "Unterricht",
   aufgaben: "Tagesaufgaben",
   kalender: "Kalendereinträge",
   geburtstage: "Geburtstage",
