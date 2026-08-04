@@ -4118,53 +4118,61 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
             const today = new Date(); today.setHours(0, 0, 0, 0);
             return (
               <Card className="px-3 py-2.5">
-                <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500 mb-2.5">
+                <div className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 mb-2.5">
                   Klassenarbeiten
                 </div>
                 <ul className="space-y-4">
                   {anstehend.map(({ fach, cls, cd }) => {
                     const testDate = localDate(fach.nextTestDate);
                     const daysLeft = Math.max(0, Math.round((testDate - today) / 86400000));
+                    const datumLabel = cd.istHeute ? "heute" : daysLeft === 1 ? "morgen" : `${cd.datum}`;
                     // Bar = "Vorbereitungstank": voller Balken = noch viel Zeit, leer = kaum noch Zeit
                     // Bezugsgröße 8 Stunden → 100 %
                     const pct = cd.rem === null ? null : Math.min(100, Math.round((cd.rem / 8) * 100));
                     const barCls = cd.level === "krit" ? "bg-red-500" : cd.level === "warn" ? "bg-amber-400" : "akzent-flaeche";
                     const numCls = cd.level === "krit" ? "text-red-600" : cd.level === "warn" ? "text-amber-600" : "akzent-text";
-                    const tagLabel = cd.istHeute ? "heute" : daysLeft === 1 ? "morgen" : `${daysLeft} Tage`;
                     return (
                       <li key={fach.id}>
-                        {/* Kopfzeile: Name + Tage-Countdown */}
+                        {/* Kopfzeile: Fachname + Datum als kleine Zusatzinfo */}
                         <div className="flex items-center justify-between gap-2 mb-1">
                           <div className="flex items-center gap-1.5 min-w-0">
                             <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? fach.color : "#C0BBA8" }} />
                             <span className="text-sm font-medium text-stone-800 truncate">{cls.name} – {fach.subject}</span>
                           </div>
-                          <span className={`text-xs font-semibold shrink-0 ${numCls}`}>{tagLabel}</span>
+                          <span className="text-[11px] text-stone-400 shrink-0">{datumLabel}</span>
                         </div>
                         {/* Test-Titel */}
                         {cd.label && cd.label !== "Klassenarbeit" && (
-                          <p className="text-[11px] text-stone-500 pl-3.5 mb-1.5">{cd.label}</p>
+                          <p className="text-[11px] text-stone-500 pl-3.5 mb-2">{cd.label}</p>
                         )}
-                        {/* Fortschrittsbalken */}
+                        {/* Unterrichtsstunden als Hauptaussage */}
                         {pct !== null ? (
                           <>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-[width] duration-500 ${barCls}`}
-                                  style={{ width: `${pct}%` }}
-                                />
+                            <div className="flex items-end justify-between gap-3 mb-1.5">
+                              <div className="flex items-baseline gap-1">
+                                <span className={`text-2xl font-bold tabular-nums leading-none ${numCls}`}>
+                                  {cd.rem}
+                                </span>
+                                <span className="text-xs text-stone-500 leading-none">
+                                  {cd.rem === 1 ? "Stunde noch" : "Stunden noch"}
+                                </span>
                               </div>
-                              <span className={`text-[11px] font-semibold tabular-nums shrink-0 ${numCls}`}>
-                                {cd.rem === 0 ? "0 ×" : `${cd.rem} ×`}
-                              </span>
+                              {cd.rem === 0 && (
+                                <span className="text-[11px] text-red-600 font-medium">keine Übungsstunde mehr</span>
+                              )}
                             </div>
-                            <p className="text-[10px] text-stone-400 mt-0.5 pl-0.5">
-                              {cd.rem === 0 ? "keine Übungsstunde mehr davor" : cd.rem === 1 ? "noch 1 Unterrichtsstunde" : `noch ${cd.rem} Unterrichtsstunden`}
-                            </p>
+                            <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-[width] duration-500 ${barCls}`}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
                           </>
                         ) : (
-                          <p className="text-[11px] text-stone-400">am {cd.datum} – Fach in Stundenplan eintragen für Stunden-Countdown</p>
+                          /* Kein Stundenplan → Datum prominent, Hinweis klein */
+                          <p className="text-[11px] text-stone-400 pl-0.5">
+                            Fach in den Stundenplan eintragen – dann zähle ich die Unterrichtsstunden
+                          </p>
                         )}
                       </li>
                     );
