@@ -1994,7 +1994,7 @@ const HELP_DATA = [
       { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Saidy automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr" → „Einstellungen" → Bundesland wählen → „Schulferien eintragen".` },
       { q: "Was passiert beim ersten Start?", a: `Saidy führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
       { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus.` },
-      { q: "Was zeigt das Morgen-Briefing auf der Startseite?", a: `Beim täglichen Öffnen der App erscheint oben eine Karte „Heute im Blick" mit allen relevanten Hinweisen für den Tag: Geburtstage, bevorstehende Klassenarbeiten (≤ 5 Stunden verbleibend), heutige Termine, Schüler:innen die seit 3 oder mehr Tagen fehlen, und die Gesamtzahl offener Förderziele. Die Karte schließt sich mit dem × und erscheint am nächsten Tag neu. Sie ist nur sichtbar wenn der heutige Tag ausgewählt ist.` },
+      { q: "Was zeigt das Morgen-Briefing auf der Startseite?", a: `Beim täglichen Öffnen der App erscheint oben die Karte „Heute im Blick" – erkennbar am Sparkles-Symbol. Sie fasst den Tag in ganzen Sätzen zusammen, zum Beispiel: „Guten Morgen! Heute stehen 4 Stunden an – die erste um 8:00 Uhr in der 4a. In Mathe (4a) steht die Klassenarbeit Nr. 2 an – noch 3 Stunden Zeit zum Üben. Lea hat heute Geburtstag 🎂". Berücksichtigt werden: Unterrichtsstunden des Tages, bevorstehende Klassenarbeiten, Termine, Geburtstage, länger fehlende Kinder, noch nicht erfasste Stunden, offene Förderziele und der Backup-Status. Dringendes erscheint rot; der Backup-Hinweis ist anklickbar und führt direkt zu den Einstellungen. Die Zusammenfassung wird vollständig auf deinem Gerät aus den gespeicherten Daten berechnet – es werden keine Daten übertragen. Mit dem × schließen, am nächsten Tag erscheint sie automatisch neu.` },
     ],
   },
   {
@@ -3665,20 +3665,35 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
     setBriefingDismissed(true);
   }
 
-  const briefingItems = (() => {
+  /* Zusammenhängender Briefing-Text: aus den Tagesdaten zu ganzen Sätzen zusammengesetzt.
+     Läuft vollständig lokal – keine externe Verarbeitung. */
+  const briefingSentences = (() => {
     if (!isToday) return [];
-    const items = [];
+    const satz = [];
+    const und = (arr) => (arr.length === 1 ? arr[0] : `${arr.slice(0, -1).join(", ")} und ${arr[arr.length - 1]}`);
 
-    if (birthdays.length) {
-      items.push({
-        icon: "🎂",
-        text: birthdays.length === 1
-          ? `Geburtstag: ${birthdays[0].name}`
-          : `${birthdays.length} Geburtstage heute`,
-        urgent: false,
+    // 1. Begrüßung + Unterrichtstag
+    const stunde = (now || new Date()).getHours();
+    const gruss = stunde < 11 ? "Guten Morgen!" : stunde < 17 ? "Hallo!" : "Guten Abend!";
+    if (!dayKey) {
+      satz.push({ text: `${gruss} Heute ist Wochenende – kein Unterricht im Plan.` });
+    } else if (!dayLessons.length) {
+      satz.push({ text: `${gruss} Heute stehen keine Stunden im Plan.` });
+    } else {
+      const erste = dayLessons[0];
+      const ersteFach = data.faecher.find((f) => f.id === erste.fachId);
+      const ersteCls = ersteFach ? data.classes.find((c) => c.id === ersteFach.classId) : null;
+      const start = data.periodTimes?.[erste.period]?.start;
+      const wo = ersteCls ? ` in der ${ersteCls.name}` : "";
+      const wann = start ? ` um ${start} Uhr${wo}` : wo;
+      satz.push({
+        text: dayLessons.length === 1
+          ? `${gruss} Heute hast du eine Stunde${wann}.`
+          : `${gruss} Heute stehen ${dayLessons.length} Stunden an – die erste${wann}.`,
       });
     }
 
+    // 2. Anstehende Klassenarbeiten
     data.faecher
       .filter((f) => f.nextTestDate && f.nextTestDate >= todayStr)
       .map((f) => ({
@@ -3688,63 +3703,87 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
       }))
       .filter((x) => x.rem <= 5)
       .sort((a, b) => a.rem - b.rem)
+      .slice(0, 2)
       .forEach(({ fach, cls, rem }) => {
-        const label = fach.nextTestTitle || "Klassenarbeit";
-        const clsName = cls?.name || "";
-        items.push({
-          icon: rem === 0 ? "🚨" : rem <= 2 ? "⚠️" : "📝",
-          text: rem === 0
-            ? `${label}${clsName ? ` (${clsName})` : ""} – heute!`
-            : `${label}${clsName ? ` (${clsName})` : ""} – noch ${rem} Std.`,
-          urgent: rem <= 1,
-        });
+        const was = fach.nextTestTitle || "die Klassenarbeit";
+        const wo = `${fach.subject}${cls ? ` (${cls.name})` : ""}`;
+        if (rem === 0) {
+          satz.push({ text: `Achtung: ${was} in ${wo} ist heute.`, urgent: true });
+        } else if (rem === 1) {
+          satz.push({ text: `In ${wo} steht ${was} an – nur noch eine Stunde Zeit zum Üben.`, urgent: true });
+        } else {
+          satz.push({ text: `In ${wo} steht ${was} an – noch ${rem} Stunden Zeit zum Üben.` });
+        }
       });
 
-    dayEvents
-      .filter((e) => e.type !== "ferien" && e.type !== "frei")
-      .forEach((e) => {
-        items.push({
-          icon: "📅",
-          text: e.time ? `${e.title} um ${e.time} Uhr` : e.title,
-          urgent: false,
-        });
+    // 3. Termine des Tages
+    const termine = dayEvents.filter((e) => e.type !== "ferien" && e.type !== "frei");
+    if (termine.length) {
+      satz.push({
+        text: `Im Kalender: ${und(termine.map((e) => (e.time ? `${e.title} um ${e.time} Uhr` : e.title)))}.`,
       });
+    }
 
+    // 4. Geburtstage
+    if (birthdays.length) {
+      satz.push({
+        text: birthdays.length === 1
+          ? `${birthdays[0].name} hat heute Geburtstag 🎂`
+          : `${und(birthdays.map((s) => s.name))} haben heute Geburtstag 🎂`,
+      });
+    }
+
+    // 5. Länger fehlende Kinder
     const dreiTageAgo = isoDate(new Date(new Date(todayStr).getTime() - 3 * 86400000));
     const langFehlend = (() => {
       const byStudent = {};
       (data.absences || []).forEach((a) => {
         if (!byStudent[a.studentId]) byStudent[a.studentId] = [];
-        byStudent[a.studentId].push(a.date);
+        byStudent[a.studentId].push(a);
       });
       return Object.entries(byStudent)
-        .map(([sid, dates]) => ({
+        .map(([sid, as]) => ({
           student: data.students.find((s) => s.id === sid),
-          count: dates.filter((d) => d >= dreiTageAgo && d <= todayStr).length,
+          tage: as.filter((a) => a.date >= dreiTageAgo && a.date <= todayStr).length,
+          offen: as.some((a) => a.excuseStatus === "ausstehend" || a.excuseStatus === "eingereicht"),
         }))
-        .filter((x) => x.student && x.count >= 3)
-        .sort((a, b) => b.count - a.count);
+        .filter((x) => x.student && x.tage >= 3)
+        .sort((a, b) => b.tage - a.tage);
     })();
-    if (langFehlend.length) {
-      items.push({
-        icon: "🏥",
-        text: langFehlend.length === 1
-          ? `${langFehlend[0].student.name} seit ${langFehlend[0].count} Tagen abwesend`
-          : `${langFehlend.length} Schüler:innen seit ≥ 3 Tagen fehlend`,
-        urgent: langFehlend.some((x) => x.count >= 5),
+    if (langFehlend.length === 1) {
+      const { student, tage, offen } = langFehlend[0];
+      satz.push({
+        text: `${student.name} fehlt seit ${tage} Tagen${offen ? " – die Entschuldigung steht noch aus." : "."}`,
+        urgent: tage >= 5,
+      });
+    } else if (langFehlend.length > 1) {
+      satz.push({
+        text: `${und(langFehlend.map((x) => x.student.name))} fehlen seit mehreren Tagen.`,
+        urgent: langFehlend.some((x) => x.tage >= 5),
       });
     }
 
+    // 6. Noch nicht erfasste Stunden
+    const offeneStunden = (pendingLessons || []).length;
+    if (offeneStunden) {
+      satz.push({
+        text: offeneStunden === 1
+          ? "Eine Stunde von heute ist noch nicht erfasst."
+          : `${offeneStunden} Stunden von heute sind noch nicht erfasst.`,
+      });
+    }
+
+    // 7. Offene Förderziele
     const offeneZiele = (data.foerderZiele || []).filter((z) => !z.doneAt).length;
     if (offeneZiele > 0) {
-      items.push({
-        icon: "🎯",
-        text: `${offeneZiele} offene${offeneZiele !== 1 ? " Förderziele" : "s Förderziel"}`,
-        urgent: false,
+      satz.push({
+        text: offeneZiele === 1
+          ? "Ein Förderziel ist noch offen."
+          : `${offeneZiele} Förderziele sind noch offen.`,
       });
     }
 
-    // Backup-Status
+    // 8. Backup-Status (anklickbar)
     const lastBackupAt = (() => { try { return localStorage.getItem("last_backup_at"); } catch { return null; } })();
     const backupDaysSince = lastBackupAt ? Math.floor((Date.now() - new Date(lastBackupAt).getTime()) / 86400000) : null;
     const lastCounts = (() => { try { return JSON.parse(localStorage.getItem("saidy_backup_counts") || "null"); } catch { return null; } })();
@@ -3752,14 +3791,14 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
       ? Math.max(0, (data.grades.length - (lastCounts.grades || 0)) + (data.notes.length - (lastCounts.notes || 0)) + ((data.absences || []).length - (lastCounts.absences || 0)))
       : 0;
     if (backupDaysSince === null) {
-      items.push({ icon: "💾", text: "Noch nie gesichert – bitte Backup erstellen", urgent: true, action: onOpenSettings });
+      satz.push({ text: "Deine Daten sind noch nie gesichert worden – jetzt Backup erstellen.", urgent: true, action: onOpenSettings });
     } else if (backupDaysSince >= 7) {
-      items.push({ icon: "💾", text: `Backup vor ${backupDaysSince} Tagen – kurz sichern?`, urgent: backupDaysSince >= 14, action: onOpenSettings });
+      satz.push({ text: `Das letzte Backup ist ${backupDaysSince} Tage her – kurz sichern?`, urgent: backupDaysSince >= 14, action: onOpenSettings });
     } else if (backupChanges >= 10) {
-      items.push({ icon: "💾", text: `${backupChanges} neue Einträge seit letztem Backup`, urgent: false, action: onOpenSettings });
+      satz.push({ text: `Seit dem letzten Backup sind ${backupChanges} neue Einträge dazugekommen – sichern?`, action: onOpenSettings });
     }
 
-    return items;
+    return satz;
   })();
 
   return (
@@ -3831,33 +3870,37 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
         })()}
       </div>
 
-      {/* Morgen-Briefing */}
+      {/* Morgen-Briefing – lokal erzeugte Tageszusammenfassung */}
       {isToday && !briefingDismissed && (
-        <div className="rounded-2xl border border-stone-200 bg-white px-3.5 py-3">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-400">Heute im Blick</span>
-            <button onClick={dismissBriefing} className="text-stone-300 hover:text-stone-500 -mr-0.5" aria-label="Schließen">
+        <div className="rounded-2xl akzent-ton px-4 py-3.5">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide akzent-text">
+              <Sparkles size={12} /> Heute im Blick
+            </span>
+            <button onClick={dismissBriefing} className="text-stone-400 hover:text-stone-600 -mr-0.5 shrink-0" aria-label="Schließen">
               <X size={15} />
             </button>
           </div>
-          {briefingItems.length === 0 ? (
-            <p className="text-sm text-stone-400">Alles ruhig heute ✓</p>
+          {briefingSentences.length === 0 ? (
+            <p className="text-sm text-stone-500">Alles ruhig heute ✓</p>
           ) : (
-            <ul className="space-y-1.5">
-              {briefingItems.map((item, i) => (
-                <li
-                  key={i}
-                  className={`flex items-start gap-2 text-sm leading-snug ${item.action ? "cursor-pointer" : ""}`}
-                  onClick={item.action}
-                >
-                  <span className="shrink-0 text-base leading-none mt-0.5">{item.icon}</span>
-                  <span className={item.urgent ? "text-red-700 font-medium" : "text-stone-700"}>
-                    {item.text}
-                  </span>
-                  {item.action && <ChevronRight size={13} className="shrink-0 text-stone-300 mt-0.5 ml-auto" />}
-                </li>
+            <p className="text-sm leading-relaxed text-stone-700">
+              {briefingSentences.map((s, i) => (
+                <React.Fragment key={i}>
+                  {i > 0 && " "}
+                  {s.action ? (
+                    <button
+                      onClick={s.action}
+                      className={`text-left underline underline-offset-2 decoration-stone-400 hover:decoration-stone-600 ${s.urgent ? "text-red-700 font-medium" : "text-stone-700"}`}
+                    >
+                      {s.text}
+                    </button>
+                  ) : (
+                    <span className={s.urgent ? "text-red-700 font-medium" : ""}>{s.text}</span>
+                  )}
+                </React.Fragment>
               ))}
-            </ul>
+            </p>
           )}
         </div>
       )}
