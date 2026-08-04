@@ -1257,9 +1257,11 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
                 <Button variant="subtle" onClick={onEmailBackup} className="w-full justify-center">
                   <Mail size={15} /> Jetzt per E-Mail sichern
                 </Button>
-                <p className="text-[11px] text-stone-400 mt-1.5 leading-relaxed">
-                  Es öffnet sich die Teilen-Ansicht – wähle „Mail" und sende die Datei an <strong>{data.settings.backupEmail}</strong>.
-                </p>
+                <div className="mt-2 bg-stone-50 rounded-xl px-3 py-2 text-[11px] text-stone-500 leading-relaxed space-y-0.5">
+                  <p><strong>1.</strong> Teilen-Ansicht öffnet sich → „Mail" tippen</p>
+                  <p><strong>2.</strong> Im An-Feld: langer Druck → <em>Einsetzen</em> (Adresse ist kopiert)</p>
+                  <p><strong>3.</strong> Senden – fertig ✓</p>
+                </div>
               </>
             ) : (
               <p className="text-[11px] text-stone-400 leading-relaxed">
@@ -2553,15 +2555,21 @@ export default function App() {
   }
 
   async function emailBackup() {
+    const email = data.settings?.backupEmail || "";
     const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data: { ...data, deletedSnapshot: null } };
     const json = JSON.stringify(payload, null, 2);
     const stamp = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
     const fileName = `Saidy-Backup-${stamp}.json`;
+    // E-Mail in Zwischenablage kopieren, damit sie im Mail-Entwurf einfach eingesetzt werden kann
+    if (email) {
+      try { await navigator.clipboard.writeText(email); } catch {}
+    }
     try {
       const file = new File([json], fileName, { type: "application/json" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Saidy-Backup", text: `Backup senden an: ${data.settings?.backupEmail || ""}` });
+        await navigator.share({ files: [file], title: "Saidy-Backup" });
         recordBackup();
+        if (email) showToast(`📋 Adresse kopiert: ${email} – im Mail-Entwurf einfügen`);
         return;
       }
     } catch (e) {
@@ -2569,7 +2577,6 @@ export default function App() {
     }
     // Fallback: download + open mailto
     exportBackup();
-    const email = data.settings?.backupEmail || "";
     if (email) {
       setTimeout(() => {
         window.open(`mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(`Saidy Backup ${stamp}`)}&body=${encodeURIComponent("Bitte diese E-Mail mit der angehängten Backup-Datei an mich selbst senden.")}`, "_blank");
