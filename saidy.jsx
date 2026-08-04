@@ -1921,7 +1921,7 @@ function demoData() {
     faecher: [
       { id: fachMatheId, classId, subject: "Mathematik", color: COLOR_PALETTE[0], room: "0.107", weights: DEFAULT_WEIGHTS, nextTestDate: isoDate(addDays(heute, 3)), nextTestTitle: "Bruchrechnen" },
       { id: fachSportId, classId, subject: "Sport", color: COLOR_PALETTE[2], room: "Sporthalle", weights: { muendlich: 100, schriftlich: 0 }, nextTestDate: isoDate(addDays(heute, 10)), nextTestTitle: "Bundesjugendspiele" },
-      { id: fachSport7aId, classId: class2Id, subject: "Sport", color: COLOR_PALETTE[2], room: "Sporthalle", weights: { muendlich: 100, schriftlich: 0 } },
+      { id: fachSport7aId, classId: class2Id, subject: "Sport", color: COLOR_PALETTE[2], room: "Sporthalle", weights: { muendlich: 100, schriftlich: 0 }, nextTestDate: isoDate(addDays(heute, 6)), nextTestTitle: "Leichtathletik-Test" },
     ],
     students,
     subjectColors: { Mathematik: COLOR_PALETTE[0], Sport: COLOR_PALETTE[2] },
