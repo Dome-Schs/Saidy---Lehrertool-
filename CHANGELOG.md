@@ -5,6 +5,39 @@ Format: Nutzersicht, auf Deutsch, für Lehrerinnen und Lehrer.
 
 ---
 
+## [1.2] – 04.08.2026
+
+### Neu
+- **Neue Übersichtsseite**: Ganz oben stehen vier Kacheln mit den wichtigsten Zahlen des Tages – Stunden heute, noch nicht erfasste Stunden, offene Entschuldigungen und aktive Förderziele. Darunter erscheint jede Unterrichtsstunde als eigene Karte mit Zeitspanne, Klassenkürzel, Fach, Stundenthema und Fortschrittsbalken. Am Ende der Seite liegen Termine, Geburtstage und To-dos nebeneinander in einer Reihe.
+- **Fortschrittsbalken am Thema**: Jede Stundenkarte zeigt, wie weit das aktuelle Thema schon behandelt ist – zum Beispiel „3 / 6 Stunden". Gezählt werden alle bereits gehaltenen Stunden, bei denen dasselbe Stundenthema notiert wurde, plus die Stunden, die bis zur Klassenarbeit noch bleiben. Der Balken lebt also davon, dass das Stundenthema beim Erfassen eingetragen wird. Ist kein Thema notiert, zeigt er nur, wie viele Stunden bis zur Arbeit noch übrig sind.
+- **Grüner Plus-Knopf in der Mitte der unteren Leiste**: Fünf Schnellerfassungen von jeder Stelle der App aus – Stunde erfassen (die passende Stunde ist bereits vorausgewählt), Gespräch notieren (Kind, Art des Gesprächs mit Schüler/Eltern/Förderung, Stimmung und Text), Notiz zu einem Kind, Aufgabe und Termin.
+
+### Verbessert
+- Der Countdown bis zur Klassenarbeit steht jetzt direkt an der jeweiligen Unterrichtsstunde. Die separate Klassenarbeiten-Karte auf der Übersicht ist dafür entfallen – die Information steht dort, wo sie gebraucht wird.
+- „Lange kein Eintrag" im Klassen-Dashboard nennt jetzt die Namen der Kinder und wie viele Tage der letzte Eintrag zurückliegt, statt nur blasse Punkte zu zeigen. Man sieht sofort, wen man ansprechen sollte.
+- Ein Tipp auf Klasse oder Fach in der Unterrichtsliste öffnet direkt die Notenübersicht des Fachs – ein Umweg über das Menü entfällt.
+- Die untere Navigationsleiste blendet sich beim Scrollen aus, damit mehr vom Bildschirm für Inhalte bleibt. Ein kleines Symbol unten links holt sie jederzeit zurück.
+- „Aufgaben" ist aus der unteren Hauptleiste ins Mehr-Menü umgezogen und zusätzlich über den Plus-Knopf erreichbar. Die Hauptleiste bleibt dadurch übersichtlich.
+
+### Für die „Was ist neu?"-Ansicht in der App
+
+```json
+{
+  "version": "1.2",
+  "date": "04.08.2026",
+  "title": "Neue Übersicht und Schnellerfassung per Plus-Knopf",
+  "highlights": [
+    "Die Übersichtsseite ist neu: vier Kacheln mit den Zahlen des Tages und darunter jede Unterrichtsstunde als eigene Karte mit Thema und Fortschritt.",
+    "Der grüne Plus-Knopf unten in der Mitte erfasst in Sekunden eine Stunde, ein Gespräch, eine Notiz, eine Aufgabe oder einen Termin.",
+    "Der Fortschrittsbalken zeigt, wie viele Stunden ein Thema schon gelaufen ist und wie viele bis zur Klassenarbeit bleiben – sobald das Stundenthema notiert ist.",
+    "Der Countdown zur Klassenarbeit steht jetzt direkt an der Stunde, und ein Tipp auf Klasse oder Fach öffnet sofort die Notenübersicht.",
+    "Beim Scrollen blendet sich die untere Leiste aus; ein Symbol unten links holt sie zurück."
+  ]
+}
+```
+
+---
+
 ## [1.1] – 04.08.2026
 
 ### Neu
