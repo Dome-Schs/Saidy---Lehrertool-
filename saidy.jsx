@@ -2051,6 +2051,8 @@ const HELP_DATA = [
       { q: "Was zeigt das Morgen-Briefing auf der Startseite?", a: `Beim Öffnen der App erscheint oben die Karte „Heute im Blick". Sie fasst den Tag in ganzen Sätzen zusammen – zum Beispiel: „Guten Morgen! Heute stehen 4 Stunden an – die erste um 8:00 Uhr in der 4a." Berücksichtigt werden die Stunden des Tages, knapp bevorstehende Klassenarbeiten, Termine, Geburtstage, Kinder die an mehreren der letzten Tage gefehlt haben, und noch nicht erfasste Stunden. Dringendes steht rot und zuerst; angezeigt werden drei Sätze, der Rest über „+ weitere". Alles wird auf deinem Gerät berechnet, es werden keine Daten übertragen. Mit dem × blendest du die Karte für heute aus.` },
       { q: "Wie ist die Übersichtsseite aufgebaut?", a: `Von oben nach unten: (1) Vier Kennzahl-Kacheln – Stunden heute, noch nicht erfasste Stunden, offene Entschuldigungen und aktive Förderziele. Die Reihe lässt sich seitlich schieben, jede Kachel ist antippbar und springt in den passenden Bereich. Kacheln mit offenen Punkten färben sich amber. (2) Das Morgen-Briefing „Heute im Blick". (3) Die Wochenleiste zum Wechseln des Tages. (4) „Dein Unterricht heute" – jede Stunde als eigene Karte, daneben der Knopf „Stundenplan". (5) Eine Dreierreihe mit Terminen, Geburtstagen und To-dos. (6) Ganz unten Dienste und Entschuldigungen; nur deren Reihenfolge lässt sich in den Einstellungen unter „Übersicht (Startseite)" ändern – alles darüber hat einen festen Platz.` },
       { q: "Was zeigt eine Stundenkarte auf der Startseite?", a: `Links Anfangs- und Endzeit, daneben das Klassenkürzel (z. B. „4a") und das Fach; darunter steht der Titel der nächsten Klassenarbeit, falls einer hinterlegt ist. Rechts das Stundenthema und – sobald ein Klassenarbeitstermin existiert – ein Fortschrittsbalken. Er füllt sich, je weiter ihr im Thema seid: „3 / 6 Stunden" heißt, drei Stunden habt ihr für dieses Thema schon gehalten, sechs sind es bis zur Arbeit insgesamt. Daneben steht, in wie vielen Stunden geschrieben wird. Die Farbe wechselt von oliv über amber zu rot, je knapper es wird. Die zuletzt gehaltene und noch nicht erfasste Stunden bekommen einen farbigen Rand links. Ein Tipp auf Klasse und Fach öffnet die Notenübersicht des Fachs, ein Tipp auf den Balken die Details zur Arbeit. Ganz rechts das Klemmbrett für die Schnellerfassung – es leuchtet amber, solange die Stunde nicht erfasst ist. Ab fünf Stunden zeigt Saidy zunächst vier und blendet den Rest über „Alle N Stunden ansehen" ein.` },
+      { q: "Was macht der grüne Plus-Knopf in der Mitte?", a: `Er ist der Schnellzugriff zum Erfassen und funktioniert aus jedem Bereich heraus. Ein Tipp öffnet fünf Einträge: „Stunde erfassen" springt direkt in die Schnellerfassung – Saidy wählt dabei selbst die passende Stunde, zuerst eine noch nicht erfasste, sonst die zuletzt gehaltene von heute. „Gespräch notieren" und „Notiz zu einem Kind" fragen zuerst nach dem Kind (einfach den Namen tippen) und dann nach dem Text; beim Gespräch kommen Art (Schüler, Eltern, Förder) und Stimmung dazu. „Aufgabe" und „Termin" legen einen To-do beziehungsweise einen Kalendereintrag an. Bist du gerade in einem Bereich mit eigener Aktion – etwa im Klassen-Tab – steht diese zusätzlich ganz oben in der Liste.` },
+      { q: "Wo finde ich die Aufgaben in der unteren Leiste?", a: `Die Leiste zeigt Übersicht, Klassen, den Plus-Knopf, Noten und „Mehr". Die Aufgaben sind unter „Mehr" zu finden – zusammen mit Stundenplan, Kalender, Suche, Einstellungen und Hilfe. Eine neue Aufgabe legst du schneller über den grünen Plus-Knopf an.` },
       { q: "Warum verschwindet die Navigationsleiste beim Scrollen?", a: `Damit mehr Platz für den Inhalt bleibt. Scrollst du auf einer Seite nach unten, gleitet die untere Leiste weg und stattdessen erscheint unten links ein kleines rundes Symbol – das des Bereichs in dem du gerade bist. Ein Tipp darauf holt die vollständige Leiste zurück. Scrollst du wieder nach oben, erscheint sie ohnehin von selbst. Auf dem Desktop bleibt die Seitenleiste immer sichtbar.` }
     ],
   },
@@ -2208,6 +2210,149 @@ function HilfeItem({ item, open, toggle, showCategory }) {
   );
 }
 
+/* Schnellerfassung vom Plus-Knopf aus: erst das Kind wählen, dann Notiz oder Gespräch
+   eintragen. Beides landet in `notes` – ein Gespräch zusätzlich mit Typ und Stimmung,
+   genau wie im Schülerprofil. So muss man sich nicht erst durch Klasse und Profil klicken. */
+function QuickAddNoteModal({ data, modus, onSave, onClose }) {
+  const istGespraech = modus === "gespraech";
+  const [studentId, setStudentId] = useState(null);
+  const [query, setQuery] = useState("");
+  const [text, setText] = useState("");
+  const [typ, setTyp] = useState("schueler");
+  const [mood, setMood] = useState("ok");
+  const inputRef = useRef(null);
+  useEffect(() => { inputRef.current?.focus(); }, [studentId]);
+
+  const student = data.students.find((s) => s.id === studentId) || null;
+  const q = query.trim().toLowerCase();
+  const treffer = (q
+    ? data.students.filter((s) => s.name.toLowerCase().includes(q))
+    : data.students
+  )
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, "de"))
+    .slice(0, 40);
+
+  function speichern() {
+    if (!student || !text.trim()) return;
+    onSave({ studentId: student.id, text: text.trim(), istGespraech, typ, mood });
+  }
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[70]" onClick={onClose}>
+      <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
+          <div className="font-semibold text-stone-800">
+            {istGespraech ? "Gespräch notieren" : "Notiz zu einem Kind"}
+          </div>
+          <button onClick={onClose} className="w-11 h-11 -mr-3 rounded-full text-stone-400 hover:text-stone-600 flex items-center justify-center">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))]">
+          {!student ? (
+            <>
+              <input
+                ref={inputRef}
+                className={inputCls}
+                placeholder="Kind suchen …"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              {!data.students.length ? (
+                <p className="text-sm text-stone-500 mt-4">Noch keine Schüler:innen angelegt.</p>
+              ) : (
+                <ul className="mt-3 divide-y divide-stone-100 max-h-[45vh] overflow-y-auto">
+                  {treffer.map((s) => {
+                    const cls = data.classes.find((c) => c.id === s.classId);
+                    return (
+                      <li key={s.id}>
+                        <button
+                          onClick={() => { setStudentId(s.id); setQuery(""); }}
+                          className="w-full flex items-center gap-2.5 py-2.5 text-left"
+                        >
+                          <StudentAvatar student={s} size={28} />
+                          <span className="flex-1 text-sm text-stone-800 truncate">{s.name}</span>
+                          {cls && <span className="text-xs text-stone-400 shrink-0">{cls.name}</span>}
+                        </button>
+                      </li>
+                    );
+                  })}
+                  {!treffer.length && <li className="py-3 text-sm text-stone-500">Kein Kind gefunden.</li>}
+                </ul>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2.5 mb-4">
+                <StudentAvatar student={student} size={32} />
+                <span className="flex-1 text-sm font-medium text-stone-800 truncate">{student.name}</span>
+                <button onClick={() => setStudentId(null)} className="text-xs akzent-text hover:underline shrink-0">
+                  Anderes Kind
+                </button>
+              </div>
+
+              {istGespraech && (
+                <>
+                  <Field label="Art des Gesprächs">
+                    <div className="flex gap-1.5">
+                      {GESPRAECH_TYPEN.map((t) => (
+                        <button
+                          key={t.key}
+                          onClick={() => setTyp(t.key)}
+                          className={`flex-1 py-2 rounded-xl border text-xs font-medium transition-colors ${
+                            typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 bg-white text-stone-500"
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Stimmung">
+                    <div className="flex gap-1.5">
+                      {MOOD_OPTIONS.map((m) => (
+                        <button
+                          key={m.key}
+                          onClick={() => setMood(m.key)}
+                          title={m.label}
+                          aria-label={m.label}
+                          className={`flex-1 py-2 rounded-xl border text-base transition-colors ${
+                            mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-white"
+                          }`}
+                        >
+                          {m.emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+                </>
+              )}
+
+              <Field label={istGespraech ? "Notiz zum Gespräch" : "Notiz"}>
+                <textarea
+                  ref={inputRef}
+                  className={`${inputCls} min-h-[6rem] resize-none`}
+                  placeholder={istGespraech ? "Worum ging es?" : "Was ist dir aufgefallen?"}
+                  value={text}
+                  maxLength={1000}
+                  onChange={(e) => setText(e.target.value)}
+                />
+              </Field>
+
+              <div className="flex gap-2 mt-5">
+                <Button variant="ghost" onClick={onClose} className="flex-1 justify-center">Abbrechen</Button>
+                <Button onClick={speichern} disabled={!text.trim()} className="flex-1 justify-center">Speichern</Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GlobalSearchModal({ data, onSelectStudent, onClose }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
@@ -2318,6 +2463,8 @@ export default function App() {
   const [showUntisImport, setShowUntisImport] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [quickAdd, setQuickAdd] = useState(null);       // "notiz" | "gespraech" | "aufgabe"
+  const [kalenderAutoForm, setKalenderAutoForm] = useState(false); // Kalender mit offenem Formular öffnen
   const [navCollapsed, setNavCollapsed] = useState(false);
   const mainRef = useRef(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -2726,6 +2873,74 @@ export default function App() {
     { key: "noten", label: "Noten & Berichte", icon: GraduationCap },
   ];
 
+  /* Notiz oder Gespräch aus der Schnellerfassung ablegen – dasselbe Format wie im Profil */
+  function saveQuickNote({ studentId, text, istGespraech, typ, mood }) {
+    update((d) => {
+      d.notes = d.notes || [];
+      d.notes.push(
+        istGespraech
+          ? { id: uid(), studentId, date: isoDate(new Date()), text, type: "gespraech", mood, gesprTyp: typ || "schueler" }
+          : { id: uid(), studentId, date: isoDate(new Date()), text }
+      );
+      return d;
+    });
+    setQuickAdd(null);
+    showToast(istGespraech ? "Gespräch gespeichert." : "Notiz gespeichert.");
+  }
+
+  function saveQuickTask(payload) {
+    update((d) => {
+      d.taskLists = d.taskLists || [];
+      d.tasks = d.tasks || [];
+      let listId = payload.listId;
+      if (payload.newList) {
+        const id = uid();
+        d.taskLists.push({ id, name: payload.newList.name, icon: payload.newList.icon || "" });
+        listId = id;
+      }
+      d.tasks.push({ id: uid(), title: payload.title, color: payload.color, listId, dueDate: payload.dueDate, done: false });
+      return d;
+    });
+    setQuickAdd(null);
+    showToast("Aufgabe angelegt.");
+  }
+
+  /* Für „Stunde erfassen" die naheliegendste Stunde wählen: zuerst eine noch offene,
+     sonst die zuletzt gehaltene von heute. Gibt es beides nicht, führt der Weg
+     zur Übersicht – dort steht der ganze Tag. */
+  function startQuickCapture() {
+    const offen = (pendingLessons || [])[0];
+    if (offen) {
+      setCaptureLesson({ fach: offen.fach, cls: offen.cls, date: isoDate(new Date()) });
+      return;
+    }
+    const heuteKey = DAYS[(new Date().getDay() + 6) % 7];
+    const heuteStunden = (data.timetable || [])
+      .filter((t) => t.day === heuteKey)
+      .sort((a, b) => a.period - b.period);
+    const nowHM = formatHM(now || new Date());
+    const kandidat =
+      heuteStunden.filter((l) => (data.periodTimes?.[l.period]?.start || "") <= nowHM).pop() || heuteStunden[0];
+    const fach = kandidat && data.faecher.find((f) => f.id === kandidat.fachId);
+    const cls = fach && data.classes.find((c) => c.id === fach.classId);
+    if (fach && cls) {
+      setCaptureLesson({ fach, cls, date: isoDate(new Date()) });
+    } else {
+      goTo("dashboard");
+      showToast("Heute steht keine Stunde im Plan.");
+    }
+  }
+
+  /* Aktionen des Plus-Knopfs. Bereichsspezifische Aktionen (z. B. „Neue Klasse")
+     hängen sich über onRegisterFab vorne an. */
+  const globalFabActions = [
+    { label: "Stunde erfassen", icon: ClipboardCheck, onClick: startQuickCapture },
+    { label: "Gespräch notieren", icon: MessageSquare, onClick: () => setQuickAdd("gespraech") },
+    { label: "Notiz zu einem Kind", icon: StickyNote, onClick: () => setQuickAdd("notiz") },
+    { label: "Aufgabe", icon: ListChecks, onClick: () => setQuickAdd("aufgabe") },
+    { label: "Termin", icon: CalendarDays, onClick: () => { setKalenderAutoForm(true); goTo("kalender"); } },
+  ];
+
   if (!loaded) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center app-bg gap-4">
@@ -3062,7 +3277,7 @@ export default function App() {
           {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
           {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} onRegisterFab={setFabActions} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
-          {tab === "kalender" && <KalenderTab data={activeData} update={update} />}
+          {tab === "kalender" && <KalenderTab data={activeData} update={update} autoOpenForm={kalenderAutoForm} onAutoFormConsumed={() => setKalenderAutoForm(false)} />}
           {tab === "aufgaben" && <AufgabenTab data={activeData} update={update} />}
           {tab === "noten" && <NotenTab data={activeData} update={update} halbjahr={halbjahr} initialFachId={notenFachId} onConsumeInitial={() => setNotenFachId(null)} />}
 
@@ -3120,8 +3335,10 @@ export default function App() {
 
       {/* Feste untere Navigation (nur mobil) – scrollt weg wenn tief gescrollt */}
       <nav className={`md:hidden fixed inset-x-0 bottom-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-transform duration-200 ${navCollapsed ? "translate-y-full" : "translate-y-0"}`}>
+        {/* Übersicht · Klassen · [+] · Noten · Mehr – „Aufgaben" liegt im Mehr-Menü
+            und ist zusätzlich über den Plus-Knopf erreichbar. */}
         <div className="flex items-stretch justify-around px-2 pt-2 pb-1">
-          {[tabs[0], tabs[1], tabs[4], tabs[5]].map((t) => {
+          {[tabs[0], tabs[1]].map((t) => {
             const Icon = t.icon;
             const active = tab === t.key;
             return (
@@ -3134,19 +3351,54 @@ export default function App() {
                   <Icon size={20} strokeWidth={active ? 2.4 : 2} className={active ? "akzent-text" : "text-stone-400"} />
                 </span>
                 <span className={`text-[10px] leading-none ${active ? "akzent-text font-semibold" : "text-stone-400"}`}>
-                  {t.key === "klassen" ? "Klassen" : t.key === "noten" ? "Noten" : t.label}
+                  {t.key === "klassen" ? "Klassen" : t.label}
                 </span>
               </button>
             );
           })}
+
+          {/* Plus in der Mitte – hebt sich über die Leiste hinaus */}
+          <div className="flex-1 flex justify-center">
+            <button
+              onClick={() => { setFabOpen((o) => !o); setShowMore(false); }}
+              className="w-14 h-14 -mt-5 rounded-full akzent-flaeche text-white flex items-center justify-center press-scale shrink-0"
+              style={{ boxShadow: "0 6px 20px rgba(79,88,68,0.45)" }}
+              aria-label="Neu erfassen"
+              aria-expanded={fabOpen}
+            >
+              <Plus
+                size={26}
+                className="text-white"
+                style={{ transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
+              />
+            </button>
+          </div>
+
+          {[tabs[5]].map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => { setTab(t.key); setNavCollapsed(false); setShowMore(false); }}
+                className="flex-1 flex flex-col items-center gap-1"
+              >
+                <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${active ? "akzent-ton" : ""}`}>
+                  <Icon size={20} strokeWidth={active ? 2.4 : 2} className={active ? "akzent-text" : "text-stone-400"} />
+                </span>
+                <span className={`text-[10px] leading-none ${active ? "akzent-text font-semibold" : "text-stone-400"}`}>Noten</span>
+              </button>
+            );
+          })}
+
           <button
-            onClick={() => { setShowMore(true); setNavCollapsed(false); }}
+            onClick={() => { setShowMore(true); setNavCollapsed(false); setFabOpen(false); }}
             className="flex-1 flex flex-col items-center gap-1"
           >
-            <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${["stundenplan", "kalender"].includes(tab) ? "akzent-ton" : ""}`}>
-              <MoreHorizontal size={20} strokeWidth={2.2} className={["stundenplan", "kalender"].includes(tab) ? "akzent-text" : "text-stone-400"} />
+            <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${["stundenplan", "kalender", "aufgaben"].includes(tab) ? "akzent-ton" : ""}`}>
+              <MoreHorizontal size={20} strokeWidth={2.2} className={["stundenplan", "kalender", "aufgaben"].includes(tab) ? "akzent-text" : "text-stone-400"} />
             </span>
-            <span className={`text-[10px] leading-none ${["stundenplan", "kalender"].includes(tab) ? "akzent-text font-semibold" : "text-stone-400"}`}>Mehr</span>
+            <span className={`text-[10px] leading-none ${["stundenplan", "kalender", "aufgaben"].includes(tab) ? "akzent-text font-semibold" : "text-stone-400"}`}>Mehr</span>
           </button>
         </div>
       </nav>
@@ -3174,7 +3426,7 @@ export default function App() {
           <div className="bg-white rounded-t-3xl w-full p-4 pb-[max(2rem,env(safe-area-inset-bottom))] anim-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
             <div className="grid grid-cols-2 gap-3">
-              {[tabs[2], tabs[3]].map((t) => {
+              {[tabs[2], tabs[3], tabs[4]].map((t) => {
                 const Icon = t.icon;
                 const active = tab === t.key;
                 return (
@@ -3225,21 +3477,21 @@ export default function App() {
       )}
 
       {/* Floating Action Button (nur mobil, nur wenn Aktionen registriert) */}
-      {fabActions.length > 0 && !showMore && (
+      {/* Aktionsliste über dem Plus-Knopf. Bereichsspezifische Einträge (z. B. „Neue Klasse")
+          stehen vorn, danach die überall verfügbaren Schnellerfassungen. */}
+      {fabOpen && !showMore && (
         <>
-          {fabOpen && (
-            <div className="md:hidden fixed inset-0 z-[44]" onClick={() => setFabOpen(false)} />
-          )}
+          <div className="md:hidden fixed inset-0 bg-stone-900/20 z-[44]" onClick={() => setFabOpen(false)} />
           <div
-            className="md:hidden fixed z-[45] flex flex-col items-end gap-2.5"
-            style={{ bottom: "calc(env(safe-area-inset-bottom) + 82px)", right: "1rem" }}
+            className="md:hidden fixed z-[45] left-0 right-0 px-4 flex flex-col items-center gap-2"
+            style={{ bottom: "calc(env(safe-area-inset-bottom) + 90px)" }}
           >
-            {fabOpen && fabActions.map(({ label, icon: Icon, onClick }, i) => (
+            {[...fabActions, ...globalFabActions].map(({ label, icon: Icon, onClick }, i) => (
               <button
                 key={label}
-                onClick={() => { onClick(); setFabOpen(false); }}
-                className="flex items-center gap-2.5 bg-white border border-stone-100 shadow-lg px-4 py-2.5 rounded-full text-sm font-medium text-stone-800 press-scale anim-item"
-                style={{ animationDelay: `${i * 40}ms`, animationFillMode: "both" }}
+                onClick={() => { setFabOpen(false); onClick(); }}
+                className="w-full max-w-xs flex items-center gap-2.5 bg-white border border-stone-100 shadow-lg px-4 py-2.5 rounded-full text-sm font-medium text-stone-800 press-scale anim-item"
+                style={{ animationDelay: `${i * 35}ms`, animationFillMode: "both" }}
               >
                 <span className="w-7 h-7 rounded-full akzent-flaeche flex items-center justify-center flex-shrink-0">
                   <Icon size={13} className="text-white" />
@@ -3247,20 +3499,15 @@ export default function App() {
                 {label}
               </button>
             ))}
-            <button
-              onClick={() => setFabOpen((o) => !o)}
-              className="w-14 h-14 rounded-full akzent-flaeche text-white flex items-center justify-center press-scale"
-              style={{ boxShadow: "0 6px 20px rgba(79,88,68,0.45)" }}
-              aria-label="Aktionen"
-            >
-              <Plus
-                size={26}
-                className="text-white"
-                style={{ transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
-              />
-            </button>
           </div>
         </>
+      )}
+
+      {quickAdd === "aufgabe" && (
+        <TaskModal data={data} initial={null} defaultListId="" onSave={saveQuickTask} onClose={() => setQuickAdd(null)} />
+      )}
+      {(quickAdd === "notiz" || quickAdd === "gespraech") && (
+        <QuickAddNoteModal data={activeData} modus={quickAdd} onSave={saveQuickNote} onClose={() => setQuickAdd(null)} />
       )}
 
       {/* Toast-Meldung */}
@@ -8571,7 +8818,7 @@ function isEventOnDate(event, ds) {
   return false;
 }
 
-function KalenderTab({ data, update }) {
+function KalenderTab({ data, update, autoOpenForm, onAutoFormConsumed }) {
   const [view, setView] = useState("liste"); // "liste" | "monat"
   const [monthCursor, setMonthCursor] = useState(() => { const d = new Date(); d.setDate(1); return d; });
   const [filterDate, setFilterDate] = useState(null);
@@ -8583,6 +8830,13 @@ function KalenderTab({ data, update }) {
   const [recurrence, setRecurrence] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showAllFerien, setShowAllFerien] = useState(false);
+
+  // Über den Plus-Knopf aufgerufen: Eingabefeld direkt geöffnet zeigen
+  useEffect(() => {
+    if (!autoOpenForm) return;
+    setShowForm(true);
+    onAutoFormConsumed?.();
+  }, [autoOpenForm, onAutoFormConsumed]);
 
   const isColor = data.settings?.colorMode === true;
   const typeLabels = { termin: "Termin", erinnerung: "Erinnerung", ferien: "Ferien" };
