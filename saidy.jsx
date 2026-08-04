@@ -42,13 +42,12 @@ const QUICK_SYMBOLS = [
 
 const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], sitzplaene: {}, deletedSnapshot: null, settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null, notenfarben: true, colorMode: false } };
 
-/* Nur die Karten im unteren 2-Spalten-Raster sind sortierbar.
-   „Unterricht" steht fest als Hauptkarte darüber, die frühere „Klassenarbeiten"-Karte
-   gibt es nicht mehr – der Countdown sitzt jetzt direkt an der jeweiligen Stunde. */
+/* Sortierbar sind nur die Karten im unteren Raster.
+   Fest sitzen: „Unterricht" als Hauptkarte sowie die Dreierreihe aus Terminen,
+   Geburtstagen und To-dos – deren Platz ergibt sich aus dem Seitenaufbau.
+   Die frühere „Klassenarbeiten"-Karte gibt es nicht mehr, der Countdown
+   sitzt jetzt direkt an der jeweiligen Stunde. */
 const DASHBOARD_SECTIONS = {
-  aufgaben: "Tagesaufgaben",
-  kalender: "Kalendereinträge",
-  geburtstage: "Geburtstage",
   dienste: "Dienste",
   fehlzeiten: "Offene Entschuldigungen",
 };
@@ -1216,7 +1215,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             </li>
           ))}
         </ul>
-        <p className="text-xs text-stone-400 mb-4">Legt fest, in welcher Reihenfolge Unterricht, Tagesaufgaben, Kalendereinträge und Geburtstage auf der Übersicht erscheinen.</p>
+        <p className="text-xs text-stone-400 mb-4">Legt fest, in welcher Reihenfolge die unteren Karten auf der Übersicht erscheinen. Kennzahlen, Unterricht sowie Termine, Geburtstage und To-dos haben einen festen Platz.</p>
 
         <div className="pt-5 border-t border-stone-100">
           <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Datensicherung</div>
@@ -2050,8 +2049,8 @@ const HELP_DATA = [
       { q: "Was passiert beim ersten Start?", a: `Saidy führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
       { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus.` },
       { q: "Was zeigt das Morgen-Briefing auf der Startseite?", a: `Beim Öffnen der App erscheint oben die Karte „Heute im Blick". Sie fasst den Tag in ganzen Sätzen zusammen – zum Beispiel: „Guten Morgen! Heute stehen 4 Stunden an – die erste um 8:00 Uhr in der 4a." Berücksichtigt werden die Stunden des Tages, knapp bevorstehende Klassenarbeiten, Termine, Geburtstage, Kinder die an mehreren der letzten Tage gefehlt haben, und noch nicht erfasste Stunden. Dringendes steht rot und zuerst; angezeigt werden drei Sätze, der Rest über „+ weitere". Alles wird auf deinem Gerät berechnet, es werden keine Daten übertragen. Mit dem × blendest du die Karte für heute aus.` },
-      { q: "Wie ist die Übersichtsseite aufgebaut?", a: `Von oben nach unten: (1) Vier Kacheln mit den Kennzahlen des Tages – Stunden, noch nicht erfasste Stunden (leuchtet amber wenn etwas offen ist), Geburtstage und offene Aufgaben. Jede Kachel ist antippbar und springt in den passenden Bereich. (2) Das Morgen-Briefing „Heute im Blick". (3) Die Wochenleiste zum Wechseln des Tages. (4) Die große Unterricht-Karte mit allen Stunden des Tages. (5) Darunter zweispaltig: Aufgaben, Termine, Geburtstage, Dienste und Entschuldigungen. Die Reihenfolge der unteren Karten lässt sich in den Einstellungen unter „Übersicht (Startseite)" anpassen.` },
-      { q: "Was zeigt die Unterricht-Karte auf der Startseite?", a: `Jede Stunde des Tages als eigene Zeile: links ein Kürzel-Feld mit der Klasse (z. B. „4a"), daneben das Fach, rechts die Uhrzeit. Steht für die Stunde ein Thema, erscheint es klein darunter. Die zuletzt gehaltene Stunde und Stunden die noch nicht erfasst sind, bekommen einen farbigen Rand links. Ein Tipp auf Klasse und Fach öffnet direkt die Notenübersicht dieses Fachs. Ganz rechts das Klemmbrett-Symbol für die Schnellerfassung – es leuchtet amber, solange die Stunde noch nicht erfasst ist. Stehen mehr als drei Stunden im Plan, zeigt Saidy zunächst nur die ersten drei; über „Alle N Stunden ansehen ↓" klappst du den Rest auf.` },
+      { q: "Wie ist die Übersichtsseite aufgebaut?", a: `Von oben nach unten: (1) Vier Kennzahl-Kacheln – Stunden heute, noch nicht erfasste Stunden, offene Entschuldigungen und aktive Förderziele. Die Reihe lässt sich seitlich schieben, jede Kachel ist antippbar und springt in den passenden Bereich. Kacheln mit offenen Punkten färben sich amber. (2) Das Morgen-Briefing „Heute im Blick". (3) Die Wochenleiste zum Wechseln des Tages. (4) „Dein Unterricht heute" – jede Stunde als eigene Karte, daneben der Knopf „Stundenplan". (5) Eine Dreierreihe mit Terminen, Geburtstagen und To-dos. (6) Ganz unten Dienste und Entschuldigungen; nur deren Reihenfolge lässt sich in den Einstellungen unter „Übersicht (Startseite)" ändern – alles darüber hat einen festen Platz.` },
+      { q: "Was zeigt eine Stundenkarte auf der Startseite?", a: `Links Anfangs- und Endzeit, daneben das Klassenkürzel (z. B. „4a") und das Fach; darunter steht der Titel der nächsten Klassenarbeit, falls einer hinterlegt ist. Rechts das Stundenthema und – sobald ein Klassenarbeitstermin existiert – ein Fortschrittsbalken. Er füllt sich, je weiter ihr im Thema seid: „3 / 6 Stunden" heißt, drei Stunden habt ihr für dieses Thema schon gehalten, sechs sind es bis zur Arbeit insgesamt. Daneben steht, in wie vielen Stunden geschrieben wird. Die Farbe wechselt von oliv über amber zu rot, je knapper es wird. Die zuletzt gehaltene und noch nicht erfasste Stunden bekommen einen farbigen Rand links. Ein Tipp auf Klasse und Fach öffnet die Notenübersicht des Fachs, ein Tipp auf den Balken die Details zur Arbeit. Ganz rechts das Klemmbrett für die Schnellerfassung – es leuchtet amber, solange die Stunde nicht erfasst ist. Ab fünf Stunden zeigt Saidy zunächst vier und blendet den Rest über „Alle N Stunden ansehen" ein.` },
       { q: "Warum verschwindet die Navigationsleiste beim Scrollen?", a: `Damit mehr Platz für den Inhalt bleibt. Scrollst du auf einer Seite nach unten, gleitet die untere Leiste weg und stattdessen erscheint unten links ein kleines rundes Symbol – das des Bereichs in dem du gerade bist. Ein Tipp darauf holt die vollständige Leiste zurück. Scrollst du wieder nach oben, erscheint sie ohnehin von selbst. Auf dem Desktop bleibt die Seitenleiste immer sichtbar.` }
     ],
   },
@@ -3922,6 +3921,73 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
   const briefingVisible = showAllBriefing ? briefingSorted : briefingSorted.slice(0, 3);
   const briefingHidden = briefingSorted.length - briefingVisible.length;
 
+  /* Kennzahlen der oberen Kachelreihe – alles aus vorhandenen Daten, keine Platzhalter */
+  const offeneZiele = (data.foerderZiele || []).filter((z) => !z.doneAt).length;
+  const offeneEntschuldigungen = (data.absences || []).filter(
+    (a) => a.excuseStatus === "ausstehend" || a.excuseStatus === "eingereicht"
+  ).length;
+  const kachelKlassen = new Set(dayLessons.map((l) => data.faecher.find((f) => f.id === l.fachId)?.classId).filter(Boolean)).size;
+
+  const kacheln = [
+    {
+      icon: Clock,
+      label: "Heute unterrichtest du",
+      value: dayLessons.length,
+      sub: dayLessons.length === 1 ? "Stunde" : "Stunden",
+      warn: false,
+      onClick: () => onNavigate?.("stundenplan"),
+    },
+    {
+      icon: ClipboardCheck,
+      label: "Noch nicht erfasst",
+      value: (pendingLessons || []).length,
+      sub: kachelKlassen ? `in ${kachelKlassen} ${kachelKlassen === 1 ? "Klasse" : "Klassen"}` : "heute",
+      warn: !!(pendingLessons || []).length,
+      onClick: () => (pendingLessons || []).length ? setShowPending((v) => !v) : onNavigate?.("stundenplan"),
+    },
+    {
+      icon: FileText,
+      label: "Entschuldigungen",
+      value: offeneEntschuldigungen,
+      sub: "offen",
+      warn: offeneEntschuldigungen > 0,
+      onClick: () => onNavigate?.("klassen"),
+    },
+    {
+      icon: Target,
+      label: "Förderziele laufen",
+      value: offeneZiele,
+      sub: "aktiv",
+      warn: false,
+      onClick: () => onNavigate?.("klassen"),
+    },
+  ];
+
+  /* Eine Stunde für die Unterrichtsliste aufbereiten: Fach, Klasse, Zeiten, Thema
+     und – falls ein Klassenarbeitstermin hinterlegt ist – der Lernfortschritt.
+     „Gehalten" zählt die Stunden, in denen schon dasselbe Thema notiert wurde;
+     zusammen mit den Reststunden ergibt das die Gesamtzahl für den Balken. */
+  function lessonInfo(l) {
+    const fach = data.faecher.find((f) => f.id === l.fachId);
+    const cls = fach ? data.classes.find((c) => c.id === fach.classId) : null;
+    const pt = data.periodTimes?.[l.period];
+    const topic = fach ? (data.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr) : null;
+    const cd = fach ? testCountdown(fach, data.timetable, data.events) : null;
+    let gehalten = null, gesamt = null;
+    if (cd && cd.rem !== null && topic?.text) {
+      gehalten = (data.lessonTopics || []).filter(
+        (x) => x.fachId === fach.id && x.date <= selStr && x.text === topic.text
+      ).length;
+      gesamt = gehalten + cd.rem;
+    }
+    const pct = gesamt ? Math.round((gehalten / gesamt) * 100) : cd && cd.rem !== null ? Math.max(0, 100 - Math.min(100, Math.round((cd.rem / 8) * 100))) : null;
+    return {
+      fach, cls, pt, topic, cd, gehalten, gesamt, pct,
+      offen: isToday && fach && (pendingLessons || []).some((p) => p.fach.id === fach.id),
+      istLetzte: isToday && fach && letzteStunde?.id === l.id,
+    };
+  }
+
   return (
     <div className="space-y-3">
       {/* Zeile 1: Wordmark + Icon-Actions */}
@@ -3963,15 +4029,21 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
         </div>
       </div>
 
-      {/* Zeile 2: Wochentag groß + Datum + optionaler Ferien-Countdown */}
+      {/* Begrüßung: kleine Zeile über dem großen Wochentag – wie im Entwurf */}
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight leading-none" style={{ color: "var(--ink)" }}>
-            {selectedDate.toLocaleDateString("de-DE", { weekday: "long" })}
-          </h1>
-          <p className="text-xs text-stone-400 mt-0.5">
-            {selectedDate.toLocaleDateString("de-DE", { day: "numeric", month: "long" })}
+          <p className="text-xs text-stone-400 leading-none mb-1">
+            {(() => {
+              const h = (now || new Date()).getHours();
+              return h < 11 ? "Guten Morgen," : h < 17 ? "Hallo," : "Guten Abend,";
+            })()}
           </p>
+          <h1 className="text-2xl font-bold tracking-tight leading-none" style={{ color: "var(--ink)" }}>
+            {selectedDate.toLocaleDateString("de-DE", { weekday: "long" })}
+            <span className="text-stone-300 font-semibold text-lg ml-2">
+              {selectedDate.toLocaleDateString("de-DE", { day: "numeric", month: "long" })}
+            </span>
+          </h1>
         </div>
         {data.settings?.showFerienCountdown && (() => {
           const cd = nextFerienCountdown(data.events, data.settings?.countdownSchooldaysOnly);
@@ -3991,43 +4063,30 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
         })()}
       </div>
 
-      {/* 4 Stat-Kacheln */}
-      <div className="grid grid-cols-4 gap-1.5">
-        {[
-          {
-            value: dayLessons.length,
-            label: "Stunden",
-            onClick: () => onNavigate?.("stundenplan"),
-            alert: false,
-          },
-          {
-            value: (pendingLessons || []).length,
-            label: "Offen",
-            onClick: () => (pendingLessons || []).length ? setShowPending((v) => !v) : undefined,
-            alert: !!(pendingLessons || []).length,
-          },
-          {
-            value: birthdays.length,
-            label: birthdays.length === 1 ? "Geburtstag" : "Geburtstage",
-            onClick: () => onNavigate?.("klassen"),
-            alert: false,
-          },
-          {
-            value: openTasks.length,
-            label: "Aufgaben",
-            onClick: () => onNavigate?.("aufgaben"),
-            alert: false,
-          },
-        ].map(({ value, label, onClick, alert }) => (
-          <button
-            key={label}
-            onClick={onClick}
-            className="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl bg-white border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.05)] hover:border-stone-200 transition-colors"
-          >
-            <span className={`text-xl font-bold leading-none tabular-nums ${alert ? "text-amber-500" : "akzent-text"}`}>{value}</span>
-            <span className="text-[9px] text-stone-400 mt-1 leading-tight text-center">{label}</span>
-          </button>
-        ))}
+      {/* Kennzahl-Kacheln – horizontal scrollbar, damit sie auch auf schmalen Geräten lesbar bleiben */}
+      <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5 chip-scroll">
+        {kacheln.map((k) => {
+          const Icon = k.icon;
+          const aktiv = k.warn && k.value > 0;
+          return (
+            <button
+              key={k.label}
+              onClick={k.onClick}
+              className="shrink-0 w-[9.25rem] text-left bg-white rounded-2xl border border-stone-100 px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors"
+            >
+              <div className="flex items-start gap-2 mb-2">
+                <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${aktiv ? "bg-amber-100" : "akzent-ton"}`}>
+                  <Icon size={14} className={aktiv ? "text-amber-700" : "akzent-text"} />
+                </span>
+                <span className="text-[11px] text-stone-500 leading-tight pt-0.5">{k.label}</span>
+              </div>
+              <div className={`text-[26px] font-bold leading-none tabular-nums ${aktiv ? "text-amber-600" : "akzent-text"}`}>
+                {k.value}
+              </div>
+              <div className="text-[11px] text-stone-400 mt-1">{k.sub}</div>
+            </button>
+          );
+        })}
       </div>
 
       {/* Morgen-Briefing – lokal erzeugte Tageszusammenfassung */}
@@ -4128,218 +4187,246 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
         )}
       </div>
 
-      {/* Unterricht – vollbreite Hauptkarte, neu gestaltet */}
-      <Card className="px-3 py-2.5">
-        <div className="flex items-center justify-between mb-2">
-          <button onClick={() => onNavigate?.("stundenplan")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-            Unterricht <ChevronRight size={10} />
-          </button>
-          {dayLessons.length > 3 && (
-            <button onClick={() => setShowAllLessons((v) => !v)} className="text-[11px] akzent-text">
-              {showAllLessons ? "Weniger" : `Alle ${dayLessons.length} ansehen ↓`}
-            </button>
-          )}
+      {/* Abschnittsüberschrift mit Akzentstrich + Sprung in den Stundenplan */}
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <div>
+          <h2 className="text-base font-bold text-stone-800 leading-tight">
+            {isToday ? "Dein Unterricht heute" : "Dein Unterricht"}
+          </h2>
+          <span className="block w-7 h-[3px] rounded-full akzent-flaeche mt-1" />
         </div>
-        {!dayKey && <p className="text-xs text-stone-500 pb-1">Wochenende – kein regulärer Unterricht</p>}
-        {dayKey && !dayLessons.length && <p className="text-xs text-stone-500 pb-1">Keine Stunden im Plan</p>}
-        <ul>
-          {(showAllLessons ? dayLessons : dayLessons.slice(0, 3)).map((l) => {
-            const fach = data.faecher.find((f) => f.id === l.fachId);
-            const cls = fach ? data.classes.find((c) => c.id === fach.classId) : null;
-            const pt = data.periodTimes?.[l.period];
-            const offen = isToday && fach && (pendingLessons || []).some((p) => p.fach.id === fach.id);
-            const istLetzte = isToday && fach && letzteStunde?.id === l.id;
-            const cd = fach ? testCountdown(fach, data.timetable, data.events) : null;
-            const pct = cd && cd.rem !== null ? Math.min(100, Math.round((cd.rem / 8) * 100)) : null;
-            const barCls = !cd ? "" : cd.level === "krit" ? "bg-red-400" : cd.level === "warn" ? "bg-amber-400" : "bg-[var(--oliv)]";
-            const detailOpen = openTestDetail === l.id;
-            const topic = fach && (data.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr);
-            const accentCol = fach ? (isColor ? fach.color : "var(--oliv)") : "var(--oliv)";
-            const highlighted = offen || istLetzte;
-            return (
-              <li
-                key={l.id}
-                className={`py-2 text-sm border-b border-stone-100 last:border-b-0 ${highlighted ? "border-l-2 -ml-3 pl-2.5" : ""}`}
-                style={highlighted ? { borderLeftColor: accentCol } : {}}
+        <button
+          onClick={() => onNavigate?.("stundenplan")}
+          className="shrink-0 flex items-center gap-1.5 bg-white border border-stone-200 rounded-full pl-2.5 pr-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-300 transition-colors"
+        >
+          <CalendarDays size={13} className="text-stone-400" />
+          Stundenplan
+        </button>
+      </div>
+
+      {/* Stunden – jede als eigene Karte */}
+      {!dayKey && <Card className="px-3 py-3 text-xs text-stone-500">Wochenende – kein regulärer Unterricht</Card>}
+      {dayKey && !dayLessons.length && <Card className="px-3 py-3 text-xs text-stone-500">Keine Stunden im Plan</Card>}
+      <div className="space-y-2">
+        {(showAllLessons ? dayLessons : dayLessons.slice(0, 4)).map((l) => {
+          const { fach, cls, pt, topic, cd, gehalten, gesamt, pct, offen, istLetzte } = lessonInfo(l);
+          const detailOpen = openTestDetail === l.id;
+          const hervor = offen || istLetzte;
+          const accentCol = fach ? (isColor ? fach.color : "var(--oliv)") : "var(--oliv)";
+          const barCol = !cd ? "var(--oliv)" : cd.level === "krit" ? "#ef4444" : cd.level === "warn" ? "#f59e0b" : "var(--oliv)";
+          return (
+            <Card key={l.id} className="overflow-hidden p-0">
+              <div
+                className={`flex items-stretch ${hervor ? "border-l-[3px]" : "border-l-[3px] border-l-transparent"}`}
+                style={hervor ? { borderLeftColor: accentCol } : {}}
               >
-                <div className="flex items-start gap-2">
-                  {/* Tipp auf Klasse/Fach öffnet die Notenübersicht des Fachs */}
-                  <button
-                    onClick={() => fach && onOpenFach?.(fach.id)}
-                    disabled={!fach}
-                    className="flex-1 min-w-0 text-left py-0.5 -my-0.5 rounded-lg disabled:cursor-default"
-                    aria-label={fach && cls ? `${cls.name} – ${fach.subject} öffnen` : undefined}
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      {cls && (
-                        <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded akzent-ton akzent-text leading-none">
-                          {cls.name}
-                        </span>
-                      )}
-                      <span className="font-semibold text-stone-800 truncate">{fach?.subject || "—"}</span>
-                      <span className="text-[10px] text-stone-400 shrink-0 ml-auto">{pt ? pt.start : `${l.period}.`}</span>
-                    </div>
-                    {topic && <div className="text-xs text-stone-400 mt-0.5 truncate">{topic.text}</div>}
-                  </button>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {cd && (
-                      <button
-                        onClick={() => setOpenTestDetail(detailOpen ? null : l.id)}
-                        className={`text-[11px] font-semibold px-1 ${cd.level === "krit" ? "text-red-500" : cd.level === "warn" ? "text-amber-500" : "text-stone-400"}`}
-                        title={cd.label}
-                      >
-                        {cd.rem === null ? "KA" : cd.rem === 0 ? "Heute!" : `${cd.rem}×`}
-                      </button>
-                    )}
-                    {fach && cls && (
-                      <button
-                        onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                          offen ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-400"
-                        }`}
-                        aria-label="Stunde erfassen"
-                      >
-                        <ClipboardCheck size={14} />
-                      </button>
-                    )}
+                {/* Zeitspalte */}
+                <div className="shrink-0 w-[3.5rem] py-2.5 pl-2 pr-1">
+                  <div className="text-[13px] font-semibold text-stone-800 tabular-nums leading-tight whitespace-nowrap">
+                    {pt ? pt.start : `${l.period}.`}
                   </div>
+                  {pt?.end && <div className="text-[11px] text-stone-400 tabular-nums leading-tight whitespace-nowrap">–{pt.end}</div>}
                 </div>
-                {cd && (
-                  <button
-                    onClick={() => setOpenTestDetail(detailOpen ? null : l.id)}
-                    className="w-full mt-1.5 mb-0.5 text-left"
-                    aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
-                  >
-                    <div className="h-px rounded-full overflow-hidden" style={{ backgroundColor: "#e7e5e4" }}>
-                      {pct !== null
-                        ? <div className={`h-full rounded-full transition-[width] ${barCls}`} style={{ width: `${pct}%` }} />
-                        : <div className="h-full w-full bg-stone-300 rounded-full" />
-                      }
-                    </div>
-                    {detailOpen && (
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-stone-500">
-                        <span className="font-medium text-stone-700">{cd.label}</span>
-                        <span>·</span>
-                        <span>{cd.istHeute ? "heute" : cd.datum}</span>
-                        {cd.rem !== null && (
-                          <>
-                            <span>·</span>
-                            <span className={cd.level === "krit" ? "text-red-600 font-medium" : cd.level === "warn" ? "text-amber-600 font-medium" : ""}>
-                              {cd.rem === 0 ? "keine Übungsstunde mehr" : `noch ${cd.rem} ${cd.rem === 1 ? "Stunde" : "Stunden"}`}
-                            </span>
-                          </>
-                        )}
-                      </div>
+
+                <div className="w-px bg-stone-100 my-2.5 shrink-0" />
+
+                {/* Klasse, Fach, Einheit – öffnet das Fach */}
+                <button
+                  onClick={() => fach && onOpenFach?.(fach.id)}
+                  disabled={!fach}
+                  className="shrink-0 w-[6.8rem] text-left py-2.5 px-1.5 disabled:cursor-default"
+                  aria-label={fach && cls ? `${cls.name} – ${fach.subject} öffnen` : undefined}
+                >
+                  <div className="flex items-center gap-1 min-w-0">
+                    {cls && (
+                      <span className="shrink-0 text-[10px] font-bold px-1 py-0.5 rounded bg-stone-100 text-stone-600 leading-none">
+                        {cls.name}
+                      </span>
                     )}
+                    <span className="font-bold text-stone-800 text-[12px] truncate">{fach?.subject || "—"}</span>
+                  </div>
+                  {cd?.label && <div className="text-[10px] text-stone-400 mt-1 leading-tight line-clamp-2 break-words">{cd.label}</div>}
+                </button>
+
+                {/* Thema + Lernfortschritt */}
+                <div className="flex-1 min-w-0 py-2.5 pr-1">
+                  {topic ? (
+                    <div className="text-[11px] text-stone-500 truncate mb-1.5">Thema: {topic.text}</div>
+                  ) : (
+                    <div className="text-[11px] text-stone-300 truncate mb-1.5">Kein Thema notiert</div>
+                  )}
+                  {cd && pct !== null && (
+                    <button
+                      onClick={() => setOpenTestDetail(detailOpen ? null : l.id)}
+                      className="w-full text-left"
+                      aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
+                    >
+                      <div className="relative h-1.5 rounded-full" style={{ backgroundColor: "#e7e5e4" }}>
+                        <div className="absolute inset-y-0 left-0 rounded-full transition-[width]" style={{ width: `${pct}%`, backgroundColor: barCol }} />
+                        <span
+                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white border-2"
+                          style={{ left: `${pct}%`, borderColor: barCol }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between gap-2 mt-1.5">
+                        <span className="text-[10px] text-stone-400 shrink-0 tabular-nums">
+                          {gesamt !== null ? (
+                            <><span className="font-bold" style={{ color: barCol }}>{gehalten}</span> / {gesamt} Stunden</>
+                          ) : (
+                            <span className="font-bold" style={{ color: barCol }}>{cd.rem === 0 ? "letzte Stunde" : `noch ${cd.rem}`}</span>
+                          )}
+                        </span>
+                        <span className="text-[10px] truncate text-right leading-tight" style={{ color: barCol }}>
+                          {cd.istHeute
+                            ? "KA heute"
+                            : cd.rem === null
+                              ? `KA ${cd.datum}`
+                              : `KA in ${cd.rem} ${cd.rem === 1 ? "Stunde" : "Stunden"}`}
+                        </span>
+                      </div>
+                      {detailOpen && (
+                        <div className="mt-1.5 text-[10px] text-stone-500">
+                          {cd.label} · {cd.istHeute ? "heute" : cd.datum}
+                          {cd.rem !== null && ` · ${cd.rem === 0 ? "keine Übungsstunde mehr" : `${cd.rem} ${cd.rem === 1 ? "Übungsstunde" : "Übungsstunden"} übrig`}`}
+                        </div>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* Schnellerfassung */}
+                {fach && cls && (
+                  <button
+                    onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
+                    className={`shrink-0 w-9 flex items-center justify-center transition-colors ${
+                      offen ? "text-amber-600" : "text-stone-300 hover:text-stone-500"
+                    }`}
+                    aria-label="Stunde erfassen"
+                    title="Stunde erfassen"
+                  >
+                    {offen ? <ClipboardCheck size={16} /> : <ChevronRight size={16} />}
                   </button>
                 )}
-              </li>
-            );
-          })}
-        </ul>
-        {!showAllLessons && dayLessons.length > 3 && (
-          <button
-            onClick={() => setShowAllLessons(true)}
-            className="w-full mt-2 py-1.5 text-center text-[11px] akzent-text hover:underline"
-          >
-            Alle {dayLessons.length} Stunden ansehen ↓
-          </button>
-        )}
-      </Card>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
 
-      {/* Rest-Kacheln im 2-Spalten-Raster */}
+      {dayLessons.length > 4 && (
+        <button
+          onClick={() => setShowAllLessons((v) => !v)}
+          className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-stone-500 hover:akzent-text transition-colors"
+        >
+          {showAllLessons ? "Weniger anzeigen" : `Alle ${dayLessons.length} Stunden ansehen`}
+          <ChevronDown size={14} className={showAllLessons ? "rotate-180 transition-transform" : "transition-transform"} />
+        </button>
+      )}
+
+      {/* Dreierreihe: Termine, Geburtstage, Aufgaben */}
+      <div className="grid grid-cols-3 gap-2 items-stretch">
+        {/* Termine */}
+        <Card className="px-2.5 py-2.5 flex flex-col">
+          <div className="flex items-center gap-1 mb-2">
+            <span className="w-4 h-4 rounded akzent-ton flex items-center justify-center shrink-0">
+              <CalendarDays size={10} className="akzent-text" />
+            </span>
+            <span className="text-[10px] font-semibold text-stone-700 truncate min-w-0">Termine</span>
+          </div>
+          {dayEvents.length ? (
+            <ul className="space-y-1.5">
+              {dayEvents.slice(0, 3).map((e) => (
+                <li key={e.id} className="min-w-0">
+                  <div className="text-[11px] text-stone-700 truncate leading-tight">{e.title}</div>
+                  {e.time && <div className="text-[10px] text-stone-400 tabular-nums">{e.time}</div>}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[11px] text-stone-400">Nichts geplant</p>
+          )}
+          <button onClick={() => onNavigate?.("kalender")} className="mt-auto pt-2 text-[10px] font-medium akzent-text text-left">
+            Alle Termine →
+          </button>
+        </Card>
+
+        {/* Geburtstage */}
+        <Card className="px-2.5 py-2.5 flex flex-col">
+          <div className="flex items-center gap-1 mb-2">
+            <span className="w-4 h-4 rounded akzent-ton flex items-center justify-center shrink-0">
+              <PartyPopper size={10} className="akzent-text" />
+            </span>
+            <span className="text-[10px] font-semibold text-stone-700 truncate min-w-0">Geburtstage</span>
+          </div>
+          {birthdays.length || kommendeGeburtstage.length ? (
+            <ul className="space-y-1.5">
+              {birthdays.slice(0, 2).map((s) => {
+                const info = birthdayInfo(s, selectedDate);
+                return (
+                  <li key={s.id} className="flex items-center gap-1.5 min-w-0">
+                    <StudentAvatar student={s} size={18} />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-medium text-stone-800 truncate leading-tight">{s.name.split(" ")[0]}</div>
+                      {info?.alter != null && <div className="text-[10px] text-stone-400">{info.alter} Jahre</div>}
+                    </div>
+                  </li>
+                );
+              })}
+              {kommendeGeburtstage.slice(0, birthdays.length ? 1 : 3).map(({ s, info }) => (
+                <li key={s.id} className="flex items-center gap-1.5 min-w-0">
+                  <StudentAvatar student={s} size={18} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] text-stone-600 truncate leading-tight">{s.name.split(" ")[0]}</div>
+                    <div className="text-[10px] text-stone-400 tabular-nums">
+                      {info.next.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[11px] text-stone-400">Keine in 3 Wochen</p>
+          )}
+          <button onClick={() => onNavigate?.("klassen")} className="mt-auto pt-2 text-[10px] font-medium akzent-text text-left">
+            Alle Geburtstage →
+          </button>
+        </Card>
+
+        {/* Aufgaben */}
+        <Card className="px-2.5 py-2.5 flex flex-col">
+          <div className="flex items-center gap-1 mb-2">
+            <span className="w-4 h-4 rounded akzent-ton flex items-center justify-center shrink-0">
+              <ListChecks size={10} className="akzent-text" />
+            </span>
+            <span className="text-[10px] font-semibold text-stone-700 truncate min-w-0">To-dos</span>
+            {!!openTasks.length && <span className="ml-auto text-[10px] text-stone-400 shrink-0">{openTasks.length}</span>}
+          </div>
+          {openTasks.length ? (
+            <ul className="space-y-1.5">
+              {openTasks.slice(0, 3).map((t) => (
+                <li key={t.id} className="flex items-start gap-1.5">
+                  <button
+                    onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
+                    className="w-3.5 h-3.5 rounded-full border-2 shrink-0 mt-0.5"
+                    style={{ borderColor: isColor ? t.color : "#A8A29E" }}
+                    aria-label="Erledigt"
+                  />
+                  <span className="text-[11px] text-stone-700 leading-tight line-clamp-2">{t.title}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[11px] text-stone-400">Nichts offen</p>
+          )}
+          <button onClick={() => onNavigate?.("aufgaben")} className="mt-auto pt-2 text-[10px] font-medium akzent-text text-left">
+            Alle Aufgaben →
+          </button>
+        </Card>
+      </div>
+
+      {/* Weitere Karten – Reihenfolge aus den Einstellungen */}
       {(() => {
         const sections = {
-          aufgaben: (
-            <Card className="px-3 py-2.5 h-full">
-              <div className="flex items-center justify-between mb-1.5">
-                <button onClick={() => onNavigate?.("aufgaben")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                  Aufgaben {!!openTasks.length && <span className="text-stone-300">({openTasks.length})</span>} <ChevronRight size={10} />
-                </button>
-                <button onClick={() => onNavigate?.("aufgaben")} className="text-sm text-stone-300 hover:akzent-text shrink-0 leading-none">+</button>
-              </div>
-              {openTasks.length ? (
-                <ul className="space-y-0">
-                  {openTasks.map((t) => (
-                    <li key={t.id} className="flex items-center gap-2 py-1">
-                      <button
-                        onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
-                        className="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors"
-                        style={{ borderColor: isColor ? t.color : "#A8A29E", backgroundColor: "transparent" }}
-                        aria-label="Erledigt"
-                      >
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isColor ? t.color : "#A8A29E", opacity: 0.3 }} />
-                      </button>
-                      <span className="text-sm text-stone-700 truncate">{t.title}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-stone-500">Nichts offen</p>
-              )}
-            </Card>
-          ),
-          kalender: (
-            <Card className="px-3 py-2.5 h-full">
-              <div className="flex items-center justify-between mb-1.5">
-                <button onClick={() => onNavigate?.("kalender")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                  Termine <ChevronRight size={10} />
-                </button>
-                <button onClick={() => onNavigate?.("kalender")} className="text-sm text-stone-300 hover:akzent-text shrink-0 leading-none">+</button>
-              </div>
-              {dayEvents.length ? (
-                <ul className="space-y-1.5">
-                  {dayEvents.map((e) => (
-                    <li key={e.id} className="text-sm flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isColor ? (e.type === "ferien" ? "#10b981" : (e.color || "#c9702f")) : "#A8A29E" }} />
-                      <span className="text-stone-700 truncate">{e.title}</span>
-                      {e.time && <span className="text-stone-400 text-xs ml-auto shrink-0">{e.time}</span>}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-stone-500">Nichts geplant</p>
-              )}
-            </Card>
-          ),
-          geburtstage: (
-            <Card className="px-3 py-2.5 h-full">
-              <button onClick={() => onNavigate?.("klassen")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">
-                Geburtstage <ChevronRight size={10} />
-              </button>
-              {birthdays.length || kommendeGeburtstage.length ? (
-                <ul className="space-y-2">
-                  {birthdays.map((s) => {
-                    const info = birthdayInfo(s, selectedDate);
-                    return (
-                      <li key={s.id} className="text-sm flex items-center gap-1.5">
-                        <span className="text-[9px] font-semibold uppercase tracking-wider shrink-0" style={{ color: isColor ? "#C0392B" : "#4F5844" }}>heute</span>
-                        <span className="text-stone-900 font-medium truncate">{s.name}</span>
-                        {info?.alter != null && (
-                          <span className="ml-auto shrink-0 tnum text-xs font-semibold text-stone-500">
-                            {info.alter}
-                          </span>
-                        )}
-                      </li>
-                    );
-                  })}
-                  {kommendeGeburtstage.map(({ s, info }) => (
-                    <li key={s.id} className="text-sm flex items-center gap-1.5">
-                      <span className="text-[10px] text-stone-400 shrink-0 tnum">
-                        {info.next.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
-                      </span>
-                      <span className="text-stone-600 truncate">{s.name}</span>
-                      {info.alter != null && (
-                        <span className="ml-auto shrink-0 tnum text-xs text-stone-400">{info.alter}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-stone-500">Keine in den nächsten 3 Wochen</p>
-              )}
-            </Card>
-          ),
           dienste: (
             <Card className="px-3 py-2.5 h-full">
               <div className="flex items-center justify-between mb-1.5">
@@ -4402,11 +4489,9 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
             })).filter((e) => e.student).sort((a, b) => a.student.name.localeCompare(b.student.name, "de"));
             return (
               <Card className="px-3 py-2.5 h-full">
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                    Entschuldig.
-                    {ausstehend.length > 0 && <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
-                  </div>
+                <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">
+                  Entschuldigungen
+                  {ausstehend.length > 0 && <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
                 </div>
                 {!studentEntries.length
                   ? <p className="text-xs text-stone-500">Alle erledigt 👍</p>
@@ -4429,9 +4514,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
 
         const gespeichert = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
         const order = [
-          ...gespeichert.filter((k) => k !== "unterricht" && sections[k]),
+          ...gespeichert.filter((k) => sections[k]),
           ...Object.keys(sections).filter((k) => !gespeichert.includes(k) && sections[k]),
         ];
+        if (!order.length) return null;
 
         return (
           <div className="grid grid-cols-2 gap-2 items-start">
