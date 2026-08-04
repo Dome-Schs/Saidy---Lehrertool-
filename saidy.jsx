@@ -44,6 +44,7 @@ const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events
 
 const DASHBOARD_SECTIONS = {
   unterricht: "Unterricht",
+  klassenarbeiten: "Klassenarbeiten",
   aufgaben: "Tagesaufgaben",
   kalender: "Kalendereinträge",
   geburtstage: "Geburtstage",
@@ -2073,6 +2074,7 @@ const HELP_DATA = [
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Klemmbrett-Symbol neben einer Stunde auf der Startseite öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Gespräche eintragen kannst. Die Notenbuttons sind immer direkt sichtbar. Weitere Aktionen (Notiz, Gespräch, Vergessen) erscheinen nach Antippen des ···-Symbols neben dem Namen. Hat ein Kind bereits eine Notiz oder einen Auffälligkeits-Eintrag, leuchtet das ···-Symbol grün.` },
       { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Saidy an, wie viele Unterrichtsstunden bis dahin noch bleiben. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Saidy die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
+      { q: "Was zeigt die Klassenarbeiten-Karte auf der Startseite?", a: `Die Karte „Klassenarbeiten" auf der Übersicht listet alle anstehenden Klassenarbeiten und Tests auf einen Blick. Für jede Arbeit siehst du: den verbleibenden Tagen bis zum Termin (z. B. „5 Tage"), einen Balken der zeigt wie viel Vorbereitungszeit noch bleibt – voller Balken bedeutet viel Zeit, leerer Balken bedeutet kaum noch Zeit – sowie die genaue Zahl der verbleibenden Unterrichtsstunden. Die Farbe wechselt von grün zu orange zu rot, je näher der Termin rückt. Die Karte erscheint nur, wenn du für mindestens ein Fach einen Test-Termin eingetragen hast. Die Reihenfolge der Karten lässt sich in den Einstellungen anpassen.` },
       { q: "Wie finde ich heraus, bei welchem Thema die Klasse Lücken hat?", a: `Beim Eintragen einer schriftlichen Note kannst du ein Thema angeben, z. B. „Bruchrechnung". Bereits verwendete Themen werden beim Tippen vorgeschlagen – nimm die Vorschläge, dann bleibt die Auswertung sauber. Auch die Schnellerfassung übernimmt das oben eingetragene Stundenthema automatisch, wenn du dort schriftliche Noten vergibst. In der Fachansicht („Noten & Berichte" → Klasse → Fach) erscheint dann die Karte „Wissensgebiete": Alle Themen mit dem Klassenschnitt, das schwächste zuerst. Ein langer Balken bedeutet gut beherrscht. Tippst du ein Thema an, siehst du, welche Kinder dort Lücken haben – daraus wird direkt eine Fördergruppe.` },
       { q: "Wie sehe ich, wie weit ich mit den Zeugnisnoten bin?", a: `In der Zeugnisphase (Januar, Februar, Juni, Juli) zeigt jede Klassenkarte unter „Noten & Berichte" einen Fortschrittsbalken: wie viele Zeugnisnoten von wie vielen bereits gesetzt sind und wie viele noch offen sind. Über mehrere Klassen hinweg siehst du so auf einen Blick, wo noch Arbeit liegt. Ist alles vollständig, wird der Balken grün.` },
       { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button „Zeugnisnote". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
@@ -4102,6 +4104,75 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
               </ul>
             </Card>
           ),
+          klassenarbeiten: (() => {
+            const anstehend = data.faecher
+              .map((f) => {
+                const cd = testCountdown(f, data.timetable, data.events);
+                if (!cd) return null;
+                const cls = data.classes.find((c) => c.id === f.classId);
+                return cls ? { fach: f, cls, cd } : null;
+              })
+              .filter(Boolean)
+              .sort((a, b) => a.fach.nextTestDate.localeCompare(b.fach.nextTestDate));
+            if (!anstehend.length) return null;
+            const today = new Date(); today.setHours(0, 0, 0, 0);
+            return (
+              <Card className="px-3 py-2.5">
+                <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500 mb-2.5">
+                  Klassenarbeiten
+                </div>
+                <ul className="space-y-4">
+                  {anstehend.map(({ fach, cls, cd }) => {
+                    const testDate = localDate(fach.nextTestDate);
+                    const daysLeft = Math.max(0, Math.round((testDate - today) / 86400000));
+                    // Bar = "Vorbereitungstank": voller Balken = noch viel Zeit, leer = kaum noch Zeit
+                    // Bezugsgröße 8 Stunden → 100 %
+                    const pct = cd.rem === null ? null : Math.min(100, Math.round((cd.rem / 8) * 100));
+                    const barCls = cd.level === "krit" ? "bg-red-500" : cd.level === "warn" ? "bg-amber-400" : "akzent-flaeche";
+                    const numCls = cd.level === "krit" ? "text-red-600" : cd.level === "warn" ? "text-amber-600" : "akzent-text";
+                    const tagLabel = cd.istHeute ? "heute" : daysLeft === 1 ? "morgen" : `${daysLeft} Tage`;
+                    return (
+                      <li key={fach.id}>
+                        {/* Kopfzeile: Name + Tage-Countdown */}
+                        <div className="flex items-center justify-between gap-2 mb-1">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? fach.color : "#C0BBA8" }} />
+                            <span className="text-sm font-medium text-stone-800 truncate">{cls.name} – {fach.subject}</span>
+                          </div>
+                          <span className={`text-xs font-semibold shrink-0 ${numCls}`}>{tagLabel}</span>
+                        </div>
+                        {/* Test-Titel */}
+                        {cd.label && cd.label !== "Klassenarbeit" && (
+                          <p className="text-[11px] text-stone-500 pl-3.5 mb-1.5">{cd.label}</p>
+                        )}
+                        {/* Fortschrittsbalken */}
+                        {pct !== null ? (
+                          <>
+                            <div className="flex items-center gap-2">
+                              <div className="flex-1 h-2 bg-stone-100 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-[width] duration-500 ${barCls}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                              <span className={`text-[11px] font-semibold tabular-nums shrink-0 ${numCls}`}>
+                                {cd.rem === 0 ? "0 ×" : `${cd.rem} ×`}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-stone-400 mt-0.5 pl-0.5">
+                              {cd.rem === 0 ? "keine Übungsstunde mehr davor" : cd.rem === 1 ? "noch 1 Unterrichtsstunde" : `noch ${cd.rem} Unterrichtsstunden`}
+                            </p>
+                          </>
+                        ) : (
+                          <p className="text-[11px] text-stone-400">am {cd.datum} – Fach in Stundenplan eintragen für Stunden-Countdown</p>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </Card>
+            );
+          })(),
           aufgaben: (
             <Card className="px-3 py-2.5">
               <div className="flex items-center justify-between mb-1.5">
