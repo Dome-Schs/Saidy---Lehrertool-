@@ -2314,6 +2314,8 @@ export default function App() {
   const [showUntisImport, setShowUntisImport] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [navCollapsed, setNavCollapsed] = useState(false);
+  const mainRef = useRef(null);
   const [showHelp, setShowHelp] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [fabActions, setFabActions] = useState([]); // [{label, icon, onClick}]
@@ -2326,15 +2328,37 @@ export default function App() {
   const toastTimer = useRef(null);
   const [notenFachId, setNotenFachId] = useState(null); // Vorauswahl für den Noten-Tab
 
+  // Scroll-Listener: Nav-Leiste einblenden/ausblenden
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    let prevY = 0;
+    function handleScroll() {
+      const y = el.scrollTop;
+      if (y > 60 && y > prevY) setNavCollapsed(true);
+      else if (y < prevY - 8 || y < 20) setNavCollapsed(false);
+      prevY = y;
+    }
+    el.addEventListener("scroll", handleScroll, { passive: true });
+    return () => el.removeEventListener("scroll", handleScroll);
+  }, []);
+  // Tab-Wechsel: immer nach oben scrollen + Nav aufklappen
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0;
+    setNavCollapsed(false);
+  }, [tab]);
+
   // Wechselt den Bereich und optional den Unterreiter (z. B. direkt zu den Diensten)
   const goTo = useCallback((ziel, unterreiter) => {
     setTab(ziel);
+    setNavCollapsed(false);
     if (unterreiter) setKlassenSubTab(unterreiter);
   }, []);
   // Direkt in die Notenübersicht eines bestimmten Fachs springen
   const goToFach = useCallback((fachId) => {
     setNotenFachId(fachId);
     setTab("noten");
+    setNavCollapsed(false);
   }, []);
   const navigateToStudent = useCallback((studentId) => {
     setShowSearch(false);
@@ -2993,7 +3017,7 @@ export default function App() {
         </aside>
 
         {/* Inhalt */}
-        <main className="flex-1 md:ml-56 overflow-y-auto px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-[calc(env(safe-area-inset-bottom)+80px)] md:pb-8 md:px-8 md:pt-8 max-w-5xl">
+        <main ref={mainRef} className="flex-1 md:ml-56 overflow-y-auto px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-[calc(env(safe-area-inset-bottom)+80px)] md:pb-8 md:px-8 md:pt-8 max-w-5xl">
           {saveState === "error" && (
             <div className="mb-5 flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm">
               <span className="text-red-600 shrink-0">⚠</span>
@@ -3090,8 +3114,8 @@ export default function App() {
         </main>
       </div>
 
-      {/* Feste untere Navigation (nur mobil) */}
-      <nav className="md:hidden fixed inset-x-0 bottom-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]">
+      {/* Feste untere Navigation (nur mobil) – scrollt weg wenn tief gescrollt */}
+      <nav className={`md:hidden fixed inset-x-0 bottom-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-transform duration-200 ${navCollapsed ? "translate-y-full" : "translate-y-0"}`}>
         <div className="flex items-stretch justify-around px-2 pt-2 pb-1">
           {[tabs[0], tabs[1], tabs[4], tabs[5]].map((t) => {
             const Icon = t.icon;
@@ -3099,7 +3123,7 @@ export default function App() {
             return (
               <button
                 key={t.key}
-                onClick={() => { setTab(t.key); setShowMore(false); }}
+                onClick={() => { setTab(t.key); setNavCollapsed(false); setShowMore(false); }}
                 className="flex-1 flex flex-col items-center gap-1"
               >
                 <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${active ? "akzent-ton" : ""}`}>
@@ -3112,7 +3136,7 @@ export default function App() {
             );
           })}
           <button
-            onClick={() => setShowMore(true)}
+            onClick={() => { setShowMore(true); setNavCollapsed(false); }}
             className="flex-1 flex flex-col items-center gap-1"
           >
             <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${["stundenplan", "kalender"].includes(tab) ? "akzent-ton" : ""}`}>
@@ -3122,6 +3146,23 @@ export default function App() {
           </button>
         </div>
       </nav>
+
+      {/* Kleines Aktiv-Icon unten-links wenn Nav weggescrollt ist */}
+      <button
+        onClick={() => setNavCollapsed(false)}
+        aria-label="Navigation einblenden"
+        className={`md:hidden fixed left-4 z-40 w-12 h-12 rounded-full akzent-ton shadow-lg flex items-center justify-center transition-all duration-200 ${
+          navCollapsed
+            ? "bottom-[calc(env(safe-area-inset-bottom)+16px)] opacity-100 scale-100"
+            : "bottom-0 opacity-0 scale-75 pointer-events-none"
+        }`}
+      >
+        {(() => {
+          const activeTabObj = tabs.find((t) => t.key === tab) || tabs[0];
+          const Icon = activeTabObj.icon;
+          return <Icon size={20} strokeWidth={2.4} className="akzent-text" />;
+        })()}
+      </button>
 
       {/* Mehr-Menü (mobil) */}
       {showMore && (
