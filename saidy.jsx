@@ -3679,6 +3679,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showPending, setShowPending] = useState(false);
   const [openTestDetail, setOpenTestDetail] = useState(null);
+  const [showAllLessons, setShowAllLessons] = useState(false);
   const todayStr = isoDate(new Date());
   const selStr = isoDate(selectedDate);
   const isToday = selStr === todayStr;
@@ -3876,7 +3877,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
   const briefingHidden = briefingSorted.length - briefingVisible.length;
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {/* Zeile 1: Wordmark + Icon-Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 select-none">
@@ -3942,6 +3943,45 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
             </span>
           );
         })()}
+      </div>
+
+      {/* 4 Stat-Kacheln */}
+      <div className="grid grid-cols-4 gap-1.5">
+        {[
+          {
+            value: dayLessons.length,
+            label: "Stunden",
+            onClick: () => onNavigate?.("stundenplan"),
+            alert: false,
+          },
+          {
+            value: (pendingLessons || []).length,
+            label: "Offen",
+            onClick: () => (pendingLessons || []).length ? setShowPending((v) => !v) : undefined,
+            alert: !!(pendingLessons || []).length,
+          },
+          {
+            value: birthdays.length,
+            label: birthdays.length === 1 ? "Geburtstag" : "Geburtstage",
+            onClick: () => onNavigate?.("klassen"),
+            alert: false,
+          },
+          {
+            value: openTasks.length,
+            label: "Aufgaben",
+            onClick: () => onNavigate?.("aufgaben"),
+            alert: false,
+          },
+        ].map(({ value, label, onClick, alert }) => (
+          <button
+            key={label}
+            onClick={onClick}
+            className="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl bg-white border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.05)] hover:border-stone-200 transition-colors"
+          >
+            <span className={`text-xl font-bold leading-none tabular-nums ${alert ? "text-amber-500" : "akzent-text"}`}>{value}</span>
+            <span className="text-[9px] text-stone-400 mt-1 leading-tight text-center">{label}</span>
+          </button>
+        ))}
       </div>
 
       {/* Morgen-Briefing – lokal erzeugte Tageszusammenfassung */}
@@ -4042,94 +4082,124 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
         )}
       </div>
 
-      {(() => {
-        const sections = {
-          unterricht: (
-            <Card className="px-3 py-2.5">
-              <div className="flex items-center justify-between mb-1.5">
-                <button onClick={() => onNavigate?.("stundenplan")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                  Unterricht <ChevronRight size={10} />
-                </button>
-              </div>
-              {!dayKey && <p className="text-xs text-stone-500 mb-2">Wochenende – kein regulärer Stundenplan</p>}
-              {dayKey && !dayLessons.length && <p className="text-xs text-stone-500 mb-2">Keine Stunden im Plan</p>}
-              <ul className="divide-y divide-stone-100">
-                {dayLessons.map((l) => {
-                  const fach = data.faecher.find((f) => f.id === l.fachId);
-                  const cls = fach ? data.classes.find((c) => c.id === fach.classId) : null;
-                  const pt = data.periodTimes?.[l.period];
-                  const offen = isToday && fach && (pendingLessons || []).some((p) => p.fach.id === fach.id);
-                  const istLetzte = isToday && fach && letzteStunde?.id === l.id;
-                  const cd = fach ? testCountdown(fach, data.timetable, data.events) : null;
-                  const pct = cd && cd.rem !== null ? Math.min(100, Math.round((cd.rem / 8) * 100)) : null;
-                  const barCls = !cd ? "" : cd.level === "krit" ? "bg-red-400" : cd.level === "warn" ? "bg-amber-400" : "bg-[var(--oliv)]";
-                  const detailOpen = openTestDetail === l.id;
-                  return (
-                    <li key={l.id} className={`py-1 text-sm ${istLetzte ? "-mx-2 px-2 rounded-lg bg-stone-50" : ""}`}>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-stone-400 text-xs w-10 shrink-0">{pt ? pt.start : `${l.period}.`}</span>
-                        <span className="flex-1 font-medium text-stone-800 flex flex-col min-w-0">
-                          <span className="flex items-center gap-1.5 min-w-0">
-                            {fach && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? fach.color : "#C0BBA8" }} />}
-                            <span className="truncate">{fach && cls ? `${cls.name} – ${fach.subject}` : "—"}</span>
-                          </span>
-                          {(() => {
-                            const t = fach && (data.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr);
-                            return t ? <span className="text-xs font-normal text-stone-400 truncate pl-3.5">{t.text}</span> : null;
-                          })()}
+      {/* Unterricht – vollbreite Hauptkarte, neu gestaltet */}
+      <Card className="px-3 py-2.5">
+        <div className="flex items-center justify-between mb-2">
+          <button onClick={() => onNavigate?.("stundenplan")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+            Unterricht <ChevronRight size={10} />
+          </button>
+          {dayLessons.length > 3 && (
+            <button onClick={() => setShowAllLessons((v) => !v)} className="text-[11px] akzent-text">
+              {showAllLessons ? "Weniger" : `Alle ${dayLessons.length} ansehen ↓`}
+            </button>
+          )}
+        </div>
+        {!dayKey && <p className="text-xs text-stone-500 pb-1">Wochenende – kein regulärer Unterricht</p>}
+        {dayKey && !dayLessons.length && <p className="text-xs text-stone-500 pb-1">Keine Stunden im Plan</p>}
+        <ul>
+          {(showAllLessons ? dayLessons : dayLessons.slice(0, 3)).map((l) => {
+            const fach = data.faecher.find((f) => f.id === l.fachId);
+            const cls = fach ? data.classes.find((c) => c.id === fach.classId) : null;
+            const pt = data.periodTimes?.[l.period];
+            const offen = isToday && fach && (pendingLessons || []).some((p) => p.fach.id === fach.id);
+            const istLetzte = isToday && fach && letzteStunde?.id === l.id;
+            const cd = fach ? testCountdown(fach, data.timetable, data.events) : null;
+            const pct = cd && cd.rem !== null ? Math.min(100, Math.round((cd.rem / 8) * 100)) : null;
+            const barCls = !cd ? "" : cd.level === "krit" ? "bg-red-400" : cd.level === "warn" ? "bg-amber-400" : "bg-[var(--oliv)]";
+            const detailOpen = openTestDetail === l.id;
+            const topic = fach && (data.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr);
+            const accentCol = fach ? (isColor ? fach.color : "var(--oliv)") : "var(--oliv)";
+            const highlighted = offen || istLetzte;
+            return (
+              <li
+                key={l.id}
+                className={`py-2 text-sm border-b border-stone-100 last:border-b-0 ${highlighted ? "border-l-2 -ml-3 pl-2.5" : ""}`}
+                style={highlighted ? { borderLeftColor: accentCol } : {}}
+              >
+                <div className="flex items-start gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      {cls && (
+                        <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded akzent-ton akzent-text leading-none">
+                          {cls.name}
                         </span>
-                        {istLetzte && <span className="text-[10px] text-stone-400 shrink-0 hidden sm:inline">zuletzt</span>}
-                        {fach && cls && (
-                          <button
-                            onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
-                            className={`shrink-0 w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
-                              offen ? "bg-amber-100 text-amber-700 hover:bg-amber-200" : "bg-stone-100 text-stone-400 hover:akzent-ton hover:akzent-text"
-                            }`}
-                            aria-label="Stunde erfassen"
-                            title="Stunde erfassen"
-                          >
-                            <ClipboardCheck size={17} />
-                          </button>
+                      )}
+                      <span className="font-semibold text-stone-800 truncate">{fach?.subject || "—"}</span>
+                      <span className="text-[10px] text-stone-400 shrink-0 ml-auto">{pt ? pt.start : `${l.period}.`}</span>
+                    </div>
+                    {topic && <div className="text-xs text-stone-400 mt-0.5 truncate">{topic.text}</div>}
+                  </div>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {cd && (
+                      <button
+                        onClick={() => setOpenTestDetail(detailOpen ? null : l.id)}
+                        className={`text-[11px] font-semibold px-1 ${cd.level === "krit" ? "text-red-500" : cd.level === "warn" ? "text-amber-500" : "text-stone-400"}`}
+                        title={cd.label}
+                      >
+                        {cd.rem === null ? "KA" : cd.rem === 0 ? "Heute!" : `${cd.rem}×`}
+                      </button>
+                    )}
+                    {fach && cls && (
+                      <button
+                        onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
+                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
+                          offen ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-400"
+                        }`}
+                        aria-label="Stunde erfassen"
+                      >
+                        <ClipboardCheck size={14} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+                {cd && (
+                  <button
+                    onClick={() => setOpenTestDetail(detailOpen ? null : l.id)}
+                    className="w-full mt-1.5 mb-0.5 text-left"
+                    aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
+                  >
+                    <div className="h-px rounded-full overflow-hidden" style={{ backgroundColor: "#e7e5e4" }}>
+                      {pct !== null
+                        ? <div className={`h-full rounded-full transition-[width] ${barCls}`} style={{ width: `${pct}%` }} />
+                        : <div className="h-full w-full bg-stone-300 rounded-full" />
+                      }
+                    </div>
+                    {detailOpen && (
+                      <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-stone-500">
+                        <span className="font-medium text-stone-700">{cd.label}</span>
+                        <span>·</span>
+                        <span>{cd.istHeute ? "heute" : cd.datum}</span>
+                        {cd.rem !== null && (
+                          <>
+                            <span>·</span>
+                            <span className={cd.level === "krit" ? "text-red-600 font-medium" : cd.level === "warn" ? "text-amber-600 font-medium" : ""}>
+                              {cd.rem === 0 ? "keine Übungsstunde mehr" : `noch ${cd.rem} ${cd.rem === 1 ? "Stunde" : "Stunden"}`}
+                            </span>
+                          </>
                         )}
                       </div>
-                      {/* Klassenarbeit-Balken: immer sichtbar wenn Termin vorhanden, Klick = Details */}
-                      {cd && (
-                        <button
-                          onClick={() => setOpenTestDetail(detailOpen ? null : l.id)}
-                          className="w-full pl-10 pr-1 mt-1.5 mb-0.5 text-left"
-                          aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
-                        >
-                          <div className="h-px bg-stone-150 rounded-full overflow-hidden" style={{ backgroundColor: "#e7e5e4" }}>
-                            {pct !== null
-                              ? <div className={`h-full rounded-full transition-[width] ${barCls}`} style={{ width: `${pct}%` }} />
-                              : <div className="h-full w-full bg-stone-300 rounded-full" />
-                            }
-                          </div>
-                          {detailOpen && (
-                            <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-stone-500">
-                              <span className="font-medium text-stone-700">{cd.label}</span>
-                              <span>·</span>
-                              <span>{cd.istHeute ? "heute" : cd.datum}</span>
-                              {cd.rem !== null && (
-                                <>
-                                  <span>·</span>
-                                  <span className={cd.level === "krit" ? "text-red-600 font-medium" : cd.level === "warn" ? "text-amber-600 font-medium" : ""}>
-                                    {cd.rem === 0 ? "keine Übungsstunde mehr" : `noch ${cd.rem} ${cd.rem === 1 ? "Stunde" : "Stunden"}`}
-                                  </span>
-                                </>
-                              )}
-                            </div>
-                          )}
-                        </button>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </Card>
-          ),
+                    )}
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+        {!showAllLessons && dayLessons.length > 3 && (
+          <button
+            onClick={() => setShowAllLessons(true)}
+            className="w-full mt-2 py-1.5 text-center text-[11px] akzent-text hover:underline"
+          >
+            Alle {dayLessons.length} Stunden ansehen ↓
+          </button>
+        )}
+      </Card>
+
+      {/* Rest-Kacheln im 2-Spalten-Raster */}
+      {(() => {
+        const sections = {
           aufgaben: (
-            <Card className="px-3 py-2.5">
+            <Card className="px-3 py-2.5 h-full">
               <div className="flex items-center justify-between mb-1.5">
                 <button onClick={() => onNavigate?.("aufgaben")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
                   Aufgaben {!!openTasks.length && <span className="text-stone-300">({openTasks.length})</span>} <ChevronRight size={10} />
@@ -4158,7 +4228,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
             </Card>
           ),
           kalender: (
-            <Card className="px-3 py-2.5">
+            <Card className="px-3 py-2.5 h-full">
               <div className="flex items-center justify-between mb-1.5">
                 <button onClick={() => onNavigate?.("kalender")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
                   Termine <ChevronRight size={10} />
@@ -4181,7 +4251,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
             </Card>
           ),
           geburtstage: (
-            <Card className="px-3 py-2.5">
+            <Card className="px-3 py-2.5 h-full">
               <button onClick={() => onNavigate?.("klassen")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">
                 Geburtstage <ChevronRight size={10} />
               </button>
@@ -4190,43 +4260,41 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                   {birthdays.map((s) => {
                     const info = birthdayInfo(s, selectedDate);
                     return (
-                      <li key={s.id} className="text-sm flex items-center gap-2.5">
-                        <span className="text-[10px] font-semibold uppercase tracking-wider w-11 shrink-0" style={{ color: isColor ? "#C0392B" : "#4F5844" }}>heute</span>
+                      <li key={s.id} className="text-sm flex items-center gap-1.5">
+                        <span className="text-[9px] font-semibold uppercase tracking-wider shrink-0" style={{ color: isColor ? "#C0392B" : "#4F5844" }}>heute</span>
                         <span className="text-stone-900 font-medium truncate">{s.name}</span>
                         {info?.alter != null && (
-                          <span className="ml-auto shrink-0 tnum text-sm font-semibold" style={{ color: isColor ? "#C0392B" : "#78716C" }}>
-                            {info.alter}<span className="text-[10px] font-normal text-stone-400 ml-0.5">Jahre</span>
+                          <span className="ml-auto shrink-0 tnum text-xs font-semibold text-stone-500">
+                            {info.alter}
                           </span>
                         )}
                       </li>
                     );
                   })}
                   {kommendeGeburtstage.map(({ s, info }) => (
-                    <li key={s.id} className="text-sm flex items-center gap-2.5">
-                      <span className="text-[11px] text-stone-400 w-11 shrink-0 tnum">
+                    <li key={s.id} className="text-sm flex items-center gap-1.5">
+                      <span className="text-[10px] text-stone-400 shrink-0 tnum">
                         {info.next.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
                       </span>
                       <span className="text-stone-600 truncate">{s.name}</span>
                       {info.alter != null && (
-                        <span className="ml-auto shrink-0 tnum text-sm text-stone-500">
-                          {info.alter}<span className="text-[11px] text-stone-500 ml-0.5">Jahre</span>
-                        </span>
+                        <span className="ml-auto shrink-0 tnum text-xs text-stone-400">{info.alter}</span>
                       )}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-stone-500">Keine in den nächsten drei Wochen</p>
+                <p className="text-xs text-stone-500">Keine in den nächsten 3 Wochen</p>
               )}
             </Card>
           ),
           dienste: (
-            <Card className="px-3 py-2.5">
+            <Card className="px-3 py-2.5 h-full">
               <div className="flex items-center justify-between mb-1.5">
                 <button onClick={() => onNavigate?.("klassen", "dienste")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
                   Dienste <ChevronRight size={10} />
                 </button>
-                <span className="text-[11px] text-stone-500">{currentSchoolWeek().label}</span>
+                <span className="text-[10px] text-stone-400">{currentSchoolWeek().label}</span>
               </div>
               {(() => {
                 const alleDienste = data.duties || [];
@@ -4242,18 +4310,18 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                       const { map } = computeDutyAssignments(cDuties, cStudents);
                       return (
                         <div key={c.id}>
-                          <div className="text-[11px] font-medium text-stone-400 mb-1">{c.name}</div>
+                          <div className="text-[10px] font-medium text-stone-400 mb-0.5">{c.name}</div>
                           <ul className="space-y-1">
                             {cDuties.map((duty) => {
                               const kinder = (map[duty.id] || [])
                                 .map((id) => data.students.find((s) => s.id === id))
                                 .filter(Boolean);
                               return (
-                                <li key={duty.id} className="flex items-start gap-2 text-sm">
-                                  <span className="w-1.5 h-4 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: isColor ? duty.color : "#4F5844" }} />
+                                <li key={duty.id} className="flex items-start gap-1.5 text-xs">
+                                  <span className="w-1 h-3.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: isColor ? duty.color : "#4F5844" }} />
                                   <span className="text-stone-700 shrink-0">{duty.name}</span>
-                                  <span className="flex-1 text-right text-stone-500 text-xs">
-                                    {kinder.length ? kinder.map((s) => s.name).join(", ") : "—"}
+                                  <span className="flex-1 text-right text-stone-400 truncate">
+                                    {kinder.length ? kinder.map((s) => s.name.split(" ")[0]).join(", ") : "—"}
                                   </span>
                                 </li>
                               );
@@ -4265,7 +4333,6 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                   </div>
                 );
               })()}
-
             </Card>
           ),
           fehlzeiten: (() => {
@@ -4282,41 +4349,40 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
               absences: as.sort((a, b) => b.date.localeCompare(a.date)),
             })).filter((e) => e.student).sort((a, b) => a.student.name.localeCompare(b.student.name, "de"));
             return (
-              <Card className="px-3 py-2.5">
+              <Card className="px-3 py-2.5 h-full">
                 <div className="flex items-center justify-between mb-1.5">
                   <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                    Entschuldigungen
-                    {ausstehend.length > 0 && <span className="ml-1 text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
+                    Entschuldig.
+                    {ausstehend.length > 0 && <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
                   </div>
                 </div>
                 {!studentEntries.length
-                  ? <p className="text-xs text-stone-500">Alle Entschuldigungen erledigt 👍</p>
+                  ? <p className="text-xs text-stone-500">Alle erledigt 👍</p>
                   : (
                     <ul className="divide-y divide-stone-100">
-                      {studentEntries.slice(0, 5).map(({ student, absences: sa }) => (
-                        <li key={student.id} className="py-2 flex items-center gap-2 text-sm">
-                          <StudentAvatar student={student} size={22} />
-                          <span className="flex-1 text-stone-700 truncate">{student.name}</span>
-                          <span className="text-xs text-amber-700 font-medium shrink-0">{sa.length}×</span>
-                          <span className="text-xs text-stone-400 shrink-0">{new Date(sa[0].date).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}</span>
+                      {studentEntries.slice(0, 4).map(({ student, absences: sa }) => (
+                        <li key={student.id} className="py-1.5 flex items-center gap-1.5 text-xs">
+                          <StudentAvatar student={student} size={18} />
+                          <span className="flex-1 text-stone-700 truncate">{student.name.split(" ")[0]}</span>
+                          <span className="text-amber-700 font-medium shrink-0">{sa.length}×</span>
                         </li>
                       ))}
-                      {studentEntries.length > 5 && <li className="pt-1.5 text-xs text-stone-500">… und {studentEntries.length - 5} weitere</li>}
+                      {studentEntries.length > 4 && <li className="pt-1 text-[10px] text-stone-400">+{studentEntries.length - 4} weitere</li>}
                     </ul>
                   )}
               </Card>
             );
           })(),
         };
-        const gespeichert = data.settings?.dashboardOrder || Object.keys(sections);
-        // Neu hinzugekommene Karten anhängen, falls die gespeicherte Reihenfolge sie noch nicht kennt
-        const order = [...gespeichert, ...Object.keys(sections).filter((k) => !gespeichert.includes(k))].filter((k) => sections[k]);
 
-        /* Die Reihenfolge wird ausschließlich in den Einstellungen gepflegt.
-           Drag & Drop stand hier zwar zur Verfügung, feuert aber in iOS Safari nicht –
-           auf der Hauptplattform war der Modus damit funktionslos. */
+        const gespeichert = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
+        const order = [
+          ...gespeichert.filter((k) => k !== "unterricht" && sections[k]),
+          ...Object.keys(sections).filter((k) => !gespeichert.includes(k) && sections[k]),
+        ];
+
         return (
-          <div className="grid md:grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 items-start">
             {order.map((key) => (sections[key] ? <div key={key}>{sections[key]}</div> : null))}
           </div>
         );
