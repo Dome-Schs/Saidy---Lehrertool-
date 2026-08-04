@@ -5,6 +5,39 @@ Format: Nutzersicht, auf Deutsch, für Lehrerinnen und Lehrer.
 
 ---
 
+## [1.1] – 04.08.2026
+
+### Neu
+- **Morgen-Briefing „Heute im Blick"**: Beim Öffnen der App fasst Saidy den Tag in ganzen Sätzen zusammen – Stunden des Tages, knapp bevorstehende Klassenarbeiten, Termine, Geburtstage, Kinder die mehrfach gefehlt haben und noch nicht erfasste Stunden. Dringendes steht rot und zuerst; angezeigt werden drei Sätze, der Rest lässt sich aufklappen. Alles wird auf dem Gerät berechnet.
+- **Wissensgebiete mit Kind-Aufschlüsselung**: Ein Tipp auf ein Thema zeigt jetzt, welche Kinder dort Lücken haben – aus der Statistik „Bruchrechnung Ø 3,8" wird eine konkrete Fördergruppe. Bereits verwendete Themen werden beim Tippen vorgeschlagen, und die Schnellerfassung übernimmt das Stundenthema automatisch für schriftliche Noten.
+- **Anwesenheits-Übersicht im Klassen-Dashboard**: Die letzten 12 Wochen als Farbfeld. Je dunkler ein Tag, desto mehr Kinder haben gefehlt; rot heißt, es war eine unentschuldigte Fehlzeit dabei. Darunter steht, auf welchen Wochentag die meisten Fehltage fallen – Häufungen, die eine Liste nicht zeigt.
+- **„Wen habe ich lange nicht angeschaut?"**: Ein Punkt je Kind, je blasser desto länger liegt der letzte Eintrag zurück. Macht sichtbar, welche stillen Kinder in der Dokumentation untergehen, bevor die Zeugniskonferenz ansteht.
+- **Zeugnis-Fortschrittsbalken**: In der Zeugnisphase zeigt jede Klassenkarte, wie viele Zeugnisnoten schon gesetzt sind. Über mehrere Klassen hinweg auf einen Blick vergleichbar.
+- **Freitags-Erinnerung ans Backup**: Optional in den Einstellungen zu aktivieren. Sie erscheint, wenn Saidy an einem Freitag geöffnet wird und das letzte Backup mindestens drei Tage her ist.
+
+### Verbessert
+- Die Backup-Erinnerung meldet sich jetzt auch, wenn seit der letzten Sicherung viel dazugekommen ist, und nennt konkret wie viele neue Noten, Notizen und Fehlzeiten das sind.
+- Der Countdown bis zur Klassenarbeit zieht Ferien und schulfreie Tage ab und zählt den Prüfungstag nicht mehr als Übungsstunde. Er erscheint erst, wenn es zeitlich eng wird.
+- Steht ein Fach nicht im Stundenplan, zeigt Saidy das Datum der Arbeit statt einer Stundenzahl – vorher stand dort fälschlich „Heute!".
+- Fehlzeiten werden nach Kalendertagen gezählt. Nach einem WebUntis-Import wurde ein Krankheitstag mit sechs Stunden vorher als „fehlt seit 6 Tagen" angezeigt.
+- Wissensgebiete-Balken laufen jetzt in die gleiche Richtung wie überall sonst in der App: lang bedeutet sicher beherrscht.
+- Leere Zustände und Zusatzangaben sind deutlich besser lesbar (höherer Kontrast).
+- Das Umsortieren der Startseiten-Karten ist jetzt nur noch in den Einstellungen – per Ziehen funktionierte es auf dem iPhone ohnehin nicht.
+
+### Behoben
+- Ein Tippfehler im Jahr der Klassenarbeit (z. B. 9999) konnte die App dauerhaft einfrieren.
+- Ein Thema mit bestimmten Namen wie „constructor" führte zu einer weißen Seite, die auch nach dem Neuladen blieb.
+- Ließen sich die gespeicherten Daten beim Start nicht lesen, zeigte Saidy stillschweigend Demodaten und überschrieb kurz darauf den echten Bestand. Jetzt erscheint stattdessen eine Wiederherstellen-Ansicht, und es wird nichts überschrieben.
+- Ein Backup im privaten Modus oder bei vollem Speicher galt als nicht erstellt, obwohl die Datei da war.
+
+### Sicherheit & DSGVO
+- **Backup per E-Mail entfernt.** Es widersprach dem Hinweis der App, Backups nicht per E-Mail zu versenden, und war als einziger Weg ohne Bestätigung erreichbar. Stattdessen erklärt Saidy jetzt den einfachsten sicheren Weg: „Teilen" → „In Dateien sichern" → „Auf meinem iPhone".
+- Beim Wiederherstellen werden Einstellungen aus der Datei nicht mehr blind übernommen.
+- Der Entschuldigungsstatus einzelner Kinder steht nicht mehr auf dem Startbildschirm.
+- „Alle Daten löschen" räumt jetzt auch die zuletzt hinzugekommenen Browser-Einträge mit auf.
+
+---
+
 ## [1.0] – 03.08.2026
 
 ### Neu

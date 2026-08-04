@@ -6,7 +6,7 @@ import {
   Clock, StickyNote, ClipboardCheck, Copy, CheckCircle2, AlertCircle, AlertTriangle,
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
-  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target, Mic, Mail,
+  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target, Mic,
 } from "lucide-react";
 
 /* ---------- Konstanten ---------- */
@@ -59,6 +59,8 @@ const IMPORT_INTERVALS = [
   { label: "Monatlich", days: 30 },
 ];
 
+const WEEKDAY_KURZ = ["Mo", "Di", "Mi", "Do", "Fr"];
+const WEEKDAY_LANG = ["Montage", "Dienstage", "Mittwoche", "Donnerstage", "Freitage"];
 const EXCUSE_STATUS = {
   ausstehend: { label: "Entschuldigung fehlt noch", color: "#B45309" },
   eingereicht: { label: "Eingereicht", color: "#1D4ED8" },
@@ -1048,7 +1050,7 @@ function LegalModal({ onClose }) {
 }
 
 /* Einstellungen: Reihenfolge der Dashboard-Karten per Pfeiltasten anpassen */
-function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onEmailBackup, onImport, onReset, onClose, onOpenUntisImport }) {
+function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onImport, onReset, onClose, onOpenUntisImport }) {
   const gespeicherteReihenfolge = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
   const order = [
     ...gespeicherteReihenfolge.filter((k) => DASHBOARD_SECTIONS[k]),
@@ -1242,62 +1244,48 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             Backup sicher aufbewahren (nur eigenes Gerät oder Schul-Server). Nicht mehr benötigte Backups löschen.
           </p>
 
-          {/* E-Mail Backup */}
-          <div className="mt-4 border-t border-stone-100 pt-3">
-            <div className="text-xs font-medium text-stone-500 mb-2">Backup per E-Mail</div>
-            <input
-              className={`${inputCls} mb-2`}
-              type="email"
-              placeholder="Deine E-Mail-Adresse (z. B. name@schule.de)"
-              value={data.settings?.backupEmail || ""}
-              onChange={(e) => setSetting("backupEmail", e.target.value || null)}
-            />
-            {data.settings?.backupEmail ? (
-              <>
-                <Button variant="subtle" onClick={onEmailBackup} className="w-full justify-center">
-                  <Mail size={15} /> Jetzt per E-Mail sichern
-                </Button>
-                <div className="mt-2 bg-stone-50 rounded-xl px-3 py-2 text-[11px] text-stone-500 leading-relaxed space-y-0.5">
-                  <p><strong>1.</strong> Teilen-Ansicht öffnet sich → „Mail" tippen</p>
-                  <p><strong>2.</strong> Im An-Feld: langer Druck → <em>Einsetzen</em> (Adresse ist kopiert)</p>
-                  <p><strong>3.</strong> Senden – fertig ✓</p>
-                </div>
-              </>
-            ) : (
-              <p className="text-[11px] text-stone-400 leading-relaxed">
-                E-Mail eintragen, dann kannst du Backups direkt aus Saidy an dich selbst versenden – kein Suchen, kein Vergessen.
-              </p>
-            )}
+          {/* Empfohlener Weg: auf dem Gerät ablegen statt verschicken */}
+          <div className="mt-3 bg-stone-50 rounded-xl px-3 py-2.5">
+            <div className="text-xs font-medium text-stone-600 mb-1">Am einfachsten: auf dem Gerät ablegen</div>
+            <p className="text-[11px] text-stone-500 leading-relaxed">
+              „Teilen" → <strong>In Dateien sichern</strong> → <strong>Auf meinem iPhone</strong>. Ein Schritt, kein Tippen,
+              und die Daten verlassen dein Gerät nicht. Verschicke Backups nicht per E-Mail oder Messenger –
+              sie enthalten alle Schülerdaten im Klartext.
+            </p>
           </div>
 
-          {/* Wöchentliche Erinnerung */}
+          {/* Freitags-Erinnerung */}
           {"Notification" in window && (
             <div className="mt-4 border-t border-stone-100 pt-3">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-stone-500">Freitags-Erinnerung</div>
-                  <div className="text-[11px] text-stone-400 mt-0.5">Benachrichtigung wenn seit 3+ Tagen kein Backup</div>
+                  <div className="text-[11px] text-stone-400 mt-0.5">
+                    Erinnert dich freitags beim Öffnen von Saidy, wenn dein letztes Backup älter als 3 Tage ist.
+                  </div>
                 </div>
-                <button
-                  onClick={async () => {
+                <Toggle
+                  checked={!!data.settings?.backupNotifications}
+                  onChange={async () => {
                     if (data.settings?.backupNotifications) {
                       setSetting("backupNotifications", false);
-                    } else {
+                      return;
+                    }
+                    try {
                       const perm = await Notification.requestPermission();
-                      if (perm === "granted") {
-                        setSetting("backupNotifications", true);
-                        new Notification("Saidy – Erinnerungen aktiv", { body: "Du wirst freitags daran erinnert, dein Backup zu erneuern." });
-                      }
+                      if (perm !== "granted") return;
+                      setSetting("backupNotifications", true);
+                      notify("Saidy – Erinnerung aktiv", "Du wirst freitags daran erinnert, dein Backup zu erneuern.");
+                    } catch {
+                      // Manche Browser (u. a. ältere Android-WebViews) werfen hier – Schalter bleibt dann aus
                     }
                   }}
-                  className={`relative shrink-0 w-11 h-6 rounded-full transition-colors ${data.settings?.backupNotifications ? "akzent-flaeche" : "bg-stone-200"}`}
-                  aria-label="Freitags-Erinnerung"
-                >
-                  <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${data.settings?.backupNotifications ? "left-6" : "left-1"}`} />
-                </button>
+                />
               </div>
               {Notification.permission === "denied" && (
-                <p className="text-[11px] text-amber-700 mt-1.5">Benachrichtigungen sind im Browser blockiert. Bitte in den Browser-Einstellungen erlauben.</p>
+                <p className="text-[11px] text-amber-700 mt-1.5">
+                  Benachrichtigungen sind im Browser blockiert. Du kannst sie in den Browser-Einstellungen für diese Seite wieder erlauben.
+                </p>
               )}
             </div>
           )}
@@ -1594,21 +1582,86 @@ function computePendingLessons(data, now) {
     .sort((a, b) => b.period - a.period); // neueste Stunde zuerst
 }
 
-function remainingLessonsForFach(fachId, testDateStr, timetable) {
+/* Benachrichtigung sicher senden. Auf Android Chrome wirft `new Notification()` einen
+   „Illegal constructor" – dort sind nur Service-Worker-Benachrichtigungen erlaubt.
+   Das Icon wird relativ zum Deployment-Pfad aufgelöst (GitHub Pages liegt im Unterordner).
+   Schlägt alles fehl, bleibt es folgenlos – eine Benachrichtigung ist nie kritisch. */
+function notify(title, body) {
+  try {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    const icon = new URL("icon-192.png", document.baseURI).href;
+    if (navigator.serviceWorker?.ready) {
+      navigator.serviceWorker.ready
+        .then((reg) => reg.showNotification(title, { body, icon }))
+        .catch(() => { try { new Notification(title, { body, icon }); } catch { /* ignoriert */ } });
+      return;
+    }
+    new Notification(title, { body, icon });
+  } catch { /* ignoriert */ }
+}
+
+/* Verbleibende Unterrichtsstunden eines Fachs bis zur nächsten Klassenarbeit.
+   Gezählt wird von heute bis zum Vortag der Arbeit – der Prüfungstag selbst ist
+   keine Übungsstunde mehr. Ferien und schulfreie Tage zählen nicht mit.
+   Rückgabe null bedeutet „keine Aussage möglich": Fach steht nicht im Stundenplan
+   oder das Datum ist ungültig. Null darf NICHT als „heute" interpretiert werden –
+   ob die Arbeit heute ist, ergibt sich allein aus dem Datum. */
+function remainingLessonsForFach(fachId, testDateStr, timetable, events) {
   const slots = (timetable || []).filter((t) => t.fachId === fachId);
-  if (!slots.length || !testDateStr) return 0;
+  if (!slots.length) return null;
+  const testDate = localDate(testDateStr);
+  if (isNaN(testDate)) return null;
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const testDate = new Date(testDateStr + "T00:00:00");
+  const freieZeiten = (events || []).filter((e) => e.type === "ferien" || e.type === "frei");
+  const istFrei = (iso) => freieZeiten.some((e) => e.date <= iso && iso <= (e.endDate || e.date));
   let count = 0;
   const cursor = new Date(today);
-  cursor.setDate(cursor.getDate() + 1);
-  while (cursor <= testDate) {
+  let safety = 0; // Schutz vor Tippfehlern im Jahr (z. B. 9999) – max. gut ein Schuljahr
+  while (cursor < testDate && safety++ < 400) {
     const dayKey = DAYS[(cursor.getDay() + 6) % 7];
-    if (dayKey) count += slots.filter((t) => t.day === dayKey).length;
+    if (dayKey && !istFrei(isoDate(cursor))) count += slots.filter((t) => t.day === dayKey).length;
     cursor.setDate(cursor.getDate() + 1);
   }
   return count;
+}
+
+/* Bereits vergebene Themen eines Fachs – als Vorschlagsliste, damit „Bruchrechnung"
+   und „bruchrechnung" nicht als zwei getrennte Wissensgebiete auseinanderlaufen. */
+function bekannteThemen(grades, fachId) {
+  const gesehen = Object.create(null);
+  (grades || []).forEach((g) => {
+    if (g.fachId !== fachId || typeof g.topic !== "string") return;
+    const t = g.topic.trim();
+    if (t) gesehen[t.toLowerCase()] = t;
+  });
+  return Object.keys(gesehen).map((k) => gesehen[k]).sort((a, b) => a.localeCompare(b, "de"));
+}
+
+/* Aufbereiteter Klassenarbeits-Countdown für die Anzeige.
+   Liefert null, wenn nichts anzuzeigen ist (kein Termin oder Termin vorbei). */
+function testCountdown(fach, timetable, events) {
+  if (!fach?.nextTestDate) return null;
+  const todayStr = isoDate(new Date());
+  if (fach.nextTestDate < todayStr) return null;
+  const istHeute = fach.nextTestDate === todayStr;
+  const rem = remainingLessonsForFach(fach.id, fach.nextTestDate, timetable, events);
+  const datum = localDate(fach.nextTestDate).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+  return {
+    istHeute,
+    rem, // null = Fach steht nicht im Stundenplan, Stunden nicht zählbar
+    datum,
+    label: fach.nextTestTitle || "Klassenarbeit",
+    level: istHeute ? "krit" : rem === null ? "info" : rem <= 1 ? "krit" : rem <= 3 ? "warn" : "neutral",
+    kurz: istHeute ? "heute" : rem === null ? datum : `noch ${rem}×`,
+    lang: istHeute
+      ? "ist heute"
+      : rem === null
+        ? `am ${datum} – trag das Fach in den Stundenplan ein, dann zähle ich die Stunden`
+        : rem === 0
+          ? `am ${datum} – davor liegt keine Unterrichtsstunde mehr`
+          : `noch ${rem} ${rem === 1 ? "Unterrichtsstunde" : "Unterrichtsstunden"} Zeit zum Üben`,
+  };
 }
 
 function demoData() {
@@ -1994,7 +2047,7 @@ const HELP_DATA = [
       { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Saidy automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr" → „Einstellungen" → Bundesland wählen → „Schulferien eintragen".` },
       { q: "Was passiert beim ersten Start?", a: `Saidy führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
       { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus.` },
-      { q: "Was zeigt das Morgen-Briefing auf der Startseite?", a: `Beim täglichen Öffnen der App erscheint oben die Karte „Heute im Blick" – erkennbar am Sparkles-Symbol. Sie fasst den Tag in ganzen Sätzen zusammen, zum Beispiel: „Guten Morgen! Heute stehen 4 Stunden an – die erste um 8:00 Uhr in der 4a. In Mathe (4a) steht die Klassenarbeit Nr. 2 an – noch 3 Stunden Zeit zum Üben. Lea hat heute Geburtstag 🎂". Berücksichtigt werden: Unterrichtsstunden des Tages, bevorstehende Klassenarbeiten, Termine, Geburtstage, länger fehlende Kinder, noch nicht erfasste Stunden, offene Förderziele und der Backup-Status. Dringendes erscheint rot; der Backup-Hinweis ist anklickbar und führt direkt zu den Einstellungen. Die Zusammenfassung wird vollständig auf deinem Gerät aus den gespeicherten Daten berechnet – es werden keine Daten übertragen. Mit dem × schließen, am nächsten Tag erscheint sie automatisch neu.` },
+      { q: "Was zeigt das Morgen-Briefing auf der Startseite?", a: `Beim Öffnen der App erscheint oben die Karte „Heute im Blick". Sie fasst den Tag in ganzen Sätzen zusammen – zum Beispiel: „Guten Morgen! Heute stehen 4 Stunden an – die erste um 8:00 Uhr in der 4a." Berücksichtigt werden die Stunden des Tages, knapp bevorstehende Klassenarbeiten, Termine, Geburtstage, Kinder die an mehreren der letzten Tage gefehlt haben, und noch nicht erfasste Stunden. Dringendes steht rot und zuerst; angezeigt werden drei Sätze, der Rest über „+ weitere". Alles wird auf deinem Gerät berechnet, es werden keine Daten übertragen. Mit dem × blendest du die Karte für heute aus.` }
     ],
   },
   {
@@ -2008,20 +2061,21 @@ const HELP_DATA = [
       { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle in der Fläche – es erscheint eine Auswahlliste zum Auswählen des Kindes. Alternativ auf „Kind hinzufügen" tippen. Platzierte Kinder lassen sich frei auf der Fläche verschieben. Die Tafel oben lässt sich an jeden Rand ziehen (oben, unten, links, rechts). Einmal antippen (ohne zu schieben) markiert den Sitzplatz farbig: grün = klappt gut, amber = beobachten, rot = klappt nicht. Ein Kind entfernen: Token nach unten über den Rand der Fläche in die rote Toolbar ziehen und loslassen. „Aufräumen" richtet alle Kinder gleichzeitig in einem sauberen Raster aus. „Löschen" entfernt den gesamten Sitzplan. Am Ende „Speichern" tippen.` },
       { q: "Was zeigt die Zusammenfassung im Schülerprofil?", a: `Im Profil-Tab „Übersicht" erscheint eine automatisch generierte Zusammenfassung – erkennbar am Sparkles-Symbol. Sie fasst Stimmung, Notendurchschnitt, Tendenz, Aktivität der letzten 30 Tage, Förderbedarfe und aktive Ziele in einem Satz zusammen. Die Zusammenfassung wird lokal aus den gespeicherten Daten berechnet und nur angezeigt, wenn genügend Informationen vorliegen.` },
       { q: "Wie funktionieren Sprachnotizen?", a: `Im Schülerprofil (Tab „Übersicht" oder „Notizen") gibt es neben dem Notiz-Eingabefeld ein Mikrofon-Symbol. Antippen startet die Aufnahme – beim ersten Mal erscheint ein kurzer Hinweis zur Datenverarbeitung. Während der Aufnahme erscheint eine Live-Vorschau des erkannten Textes. Nach der Aufnahme wird der Text automatisch ins Eingabefeld übernommen, wo er noch bearbeitet werden kann. Unterstützte Browser: Safari (iOS/macOS), Chrome und Edge. Firefox unterstützt diese Funktion nicht. Das Mikrofon-Symbol erscheint nur, wenn dein Browser Spracherkennung unterstützt.` },
-      { q: "Was zeigt das Klassen-Dashboard?", a: `Im Klassen-Tab eine Klasse aufklappen → „Klassen-Dashboard" antippen. Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf-Zähler als Kacheln; eine Notenverteilungs-Leiste (Sehr gut–Gut / Befriedigend / Ausreichend+); eine „Aufmerksamkeit"-Liste mit Kindern, die einen kritischen Schnitt oder seit 14+ Tagen keinen Eintrag haben; Geburtstage in den nächsten 21 Tagen; sowie die letzten Notizen und Gespräche der Klasse als Verlaufszeile. Tippen auf ein Kind öffnet direkt sein Schülerprofil.` },
+      { q: "Was zeigt das Klassen-Dashboard?", a: `Im Klassen-Tab eine Klasse aufklappen → „Klassen-Dashboard" antippen. Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf als Kacheln; eine Notenverteilungs-Leiste; eine Anwesenheits-Übersicht der letzten 12 Wochen als Farbfeld (je dunkler, desto mehr Kinder fehlten an dem Tag, rot heißt unentschuldigt dabei) mit Hinweis, auf welchen Wochentag die meisten Fehltage fallen; ein Punktfeld „Wen habe ich lange nicht angeschaut?" (ein Punkt je Kind, je blasser desto länger liegt der letzte Eintrag zurück); eine „Aufmerksamkeit"-Liste; Geburtstage der nächsten 21 Tage sowie die letzten Notizen und Gespräche. Tippen auf ein Kind oder einen Punkt öffnet das Schülerprofil.` },
       { q: "Was sind die farbigen Signale im Schülerprofil?", a: `Direkt unter der Profilkarte erscheinen farbige Signale: Rot (kritisch), Gelb (beobachten), Grün (positiv) und Blau (Info). Sie werden automatisch aus den Daten berechnet – z. B. kritischer Notenschnitt, kein Eintrag seit mehr als 14 Tagen, negative Stimmung in Folge, Förderbedarf ohne aktives Ziel, oder Geburtstag in den nächsten 7 Tagen. Tippe auf ein Signal, um direkt zum betreffenden Tab zu springen.` },
     ],
   },
   {
     category: "Noten & Berichte",
     items: [
-      { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten & Berichte", wähle Klasse und Fach. Tippe auf eine:n Schüler:in und dann auf „+ Note". Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
-      { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aller Noten. Schriftliche Noten werden standardmäßig doppelt gewichtet. Die berechnete Note erscheint in der Notenübersicht.` },
+      { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten & Berichte", wähle Klasse und Fach. Tippe auf eine:n Schüler:in – in der Karte „Neue Note" Kategorie und Note wählen und auf „+" tippen. Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
+      { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aus mündlichen und schriftlichen Noten. Voreingestellt ist 50 zu 50 Prozent – änderbar unter „Klassen & Schüler" → Reiter „Fächer" → Zahnrad beim Fach → „Gewichtung der Noten". Einzelne Noten lassen sich zusätzlich stärker gewichten (Faktor beim Bearbeiten der Note). Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
-      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Blitz-Symbol nach einer Stunde öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Gespräche eintragen kannst. Die Notenbuttons sind immer direkt sichtbar. Weitere Aktionen (Notiz, Gespräch, Vergessen) erscheinen nach Antippen des ···-Symbols neben dem Namen. Hat ein Kind bereits eine Notiz oder einen Auffälligkeits-Eintrag, leuchtet das ···-Symbol grün.` },
-      { q: "Was ist der Stunden-Timer in der Schnellerfassung?", a: `Wenn für ein Fach ein Termin für die nächste Klassenarbeit eingetragen ist, zeigt die Schnellerfassung ganz oben an, wie viele Unterrichtsstunden laut Stundenplan noch bis zu diesem Termin verbleiben – farbcodiert: grün (genug Zeit), amber (bald), rot (dringend). Der Timer erscheint auch als kleines Badge neben dem Fach in der Tagesübersicht auf der Startseite. Den Termin eingeben: „Noten & Berichte" → Fach antippen → Stift-Symbol → „Nächste Klassenarbeit / Test".` },
-      { q: "Was ist Themen-Tagging bei schriftlichen Noten?", a: `Beim Erfassen einer schriftlichen Note (Kategorie „Schriftlich") kannst du ein optionales Thema eingeben, z. B. „Bruchrechnung" oder „Kommasetzung". In der Fachansicht unter „Noten & Berichte" → Klasse → Fach erscheint dann die Karte „Wissensgebiete" mit einer Übersicht aller getaggten Themen und dem Klassenschnitt pro Thema – schlecht abschneidende Themen erscheinen zuerst. So werden Wissenslücken auf Klassenebene sichtbar.` },
-      { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button "Zeugnis". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
+      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Klemmbrett-Symbol neben einer Stunde auf der Startseite öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Gespräche eintragen kannst. Die Notenbuttons sind immer direkt sichtbar. Weitere Aktionen (Notiz, Gespräch, Vergessen) erscheinen nach Antippen des ···-Symbols neben dem Namen. Hat ein Kind bereits eine Notiz oder einen Auffälligkeits-Eintrag, leuchtet das ···-Symbol grün.` },
+      { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Saidy an, wie viele Unterrichtsstunden bis dahin noch bleiben. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Saidy die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
+      { q: "Wie finde ich heraus, bei welchem Thema die Klasse Lücken hat?", a: `Beim Eintragen einer schriftlichen Note kannst du ein Thema angeben, z. B. „Bruchrechnung". Bereits verwendete Themen werden beim Tippen vorgeschlagen – nimm die Vorschläge, dann bleibt die Auswertung sauber. Auch die Schnellerfassung übernimmt das oben eingetragene Stundenthema automatisch, wenn du dort schriftliche Noten vergibst. In der Fachansicht („Noten & Berichte" → Klasse → Fach) erscheint dann die Karte „Wissensgebiete": Alle Themen mit dem Klassenschnitt, das schwächste zuerst. Ein langer Balken bedeutet gut beherrscht. Tippst du ein Thema an, siehst du, welche Kinder dort Lücken haben – daraus wird direkt eine Fördergruppe.` },
+      { q: "Wie sehe ich, wie weit ich mit den Zeugnisnoten bin?", a: `In der Zeugnisphase (Januar, Februar, Juni, Juli) zeigt jede Klassenkarte unter „Noten & Berichte" einen Fortschrittsbalken: wie viele Zeugnisnoten von wie vielen bereits gesetzt sind und wie viele noch offen sind. Über mehrere Klassen hinweg siehst du so auf einen Blick, wo noch Arbeit liegt. Ist alles vollständig, wird der Balken grün.` },
+      { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button „Zeugnisnote". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
       { q: "Wo kann ich Gespräche mit Schüler:innen erfassen?", a: `An drei Stellen: (1) In der Klassenliste neben jedem Kind das 💬-Symbol antippen. (2) Im Schnellerfassungs-Modus nach dem Unterricht. (3) Direkt in der Notenansicht: Kind antippen – die Detailansicht zeigt oben eine Karte „Gespräch & Stimmung" mit Typ-Wahl (Schüler / Eltern / Förder), Stimmungsskala (😄😊😐😕😟) und Notizfeld. Alle erfassten Gespräche erscheinen auch bei Elternsprechtag-Vorbereitung.` },
     ],
   },
@@ -2044,10 +2098,10 @@ const HELP_DATA = [
   {
     category: "Backup & Daten",
     items: [
-      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung" → „Sichern" (Datei speichern) oder „Teilen" (z. B. per AirDrop). Neu: Du kannst auch deine E-Mail-Adresse eintragen und das Backup direkt per E-Mail an dich selbst senden.` },
-      { q: "Wie funktioniert das E-Mail-Backup?", a: `Trage in den Einstellungen unter „Backup per E-Mail" deine E-Mail-Adresse ein. Mit dem Button „Jetzt per E-Mail sichern" öffnet sich die Teilen-Ansicht. Wähle dort „Mail" – die Backup-Datei ist bereits angehängt. Einfach abschicken und in der eigenen Inbox gesichert.` },
-      { q: "Wie aktiviere ich die Freitags-Erinnerung?", a: `In den Einstellungen unter „Datensicherung" → „Freitags-Erinnerung" den Schalter aktivieren. Saidy zeigt dann jeden Freitag eine Benachrichtigung, wenn seit mehr als 3 Tagen kein Backup erstellt wurde. Beim ersten Aktivieren fragt der Browser nach der Benachrichtigungs-Erlaubnis.` },
-      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung" → „Gesichertes wiederherstellen" und wähle deine Backup-Datei.` },
+      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung". Dort erscheint zuerst ein kurzer Datenschutz-Hinweis, den du bestätigst. Danach: „Sichern" legt die Datei im Download-Ordner ab, „Teilen" öffnet die Teilen-Ansicht (z. B. für „In Dateien sichern" oder AirDrop).` },
+      { q: "Wie sichere ich am einfachsten auf dem iPhone oder iPad?", a: `Einstellungen → „Datensicherung" → „Teilen" antippen. In der Teilen-Ansicht dann „In Dateien sichern" wählen und „Auf meinem iPhone" (oder iPad) als Ort. Ein Schritt, kein Tippen – und die Daten verlassen dein Gerät nicht. Verschicke Backups nicht per E-Mail oder Messenger: Die Datei enthält alle Schülerdaten im Klartext, und der Versand über einen privaten Mailanbieter ist für Schülerdaten in der Regel nicht zulässig.` },
+      { q: "Wie aktiviere ich die Freitags-Erinnerung?", a: `In den Einstellungen unter „Datensicherung" → „Freitags-Erinnerung" den Schalter aktivieren. Beim ersten Mal fragt der Browser nach der Erlaubnis für Benachrichtigungen. Wichtig zu wissen: Die Erinnerung erscheint, wenn du Saidy an einem Freitag öffnest und dein letztes Backup mindestens 3 Tage her ist. Saidy läuft nicht im Hintergrund – öffnest du die App freitags nicht, kommt auch keine Erinnerung. Verlass dich also nicht allein darauf.` },
+      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung" → „Gesichertes wiederherstellen" und wähle deine Backup-Datei. Achtung: Die aktuell gespeicherten Daten werden dabei ersetzt – am besten vorher einmal „Sichern". Sollten sich die Daten beim Start einmal nicht lesen lassen, zeigt Saidy direkt einen Wiederherstellen-Knopf und überschreibt nichts.` },
       { q: "Wo werden meine Daten gespeichert?", a: `Alle Daten bleiben ausschließlich auf deinem Gerät (lokaler Browser-Speicher). Es werden keine Daten an Server übertragen.` },
       { q: "Warum bekomme ich eine Backup-Erinnerung?", a: `Saidy erinnert automatisch wenn seit 7 Tagen kein Backup erstellt wurde oder wenn seit dem letzten Backup 10 oder mehr neue Einträge (Noten, Notizen, Fehlzeiten) hinzugekommen sind. Das Morgen-Briefing zeigt ebenfalls einen Hinweis, wenn Backup fällig ist.` },
     ],
@@ -2250,6 +2304,8 @@ function GlobalSearchModal({ data, onSelectStudent, onClose }) {
 export default function App() {
   const [data, setData] = useState(EMPTY_DATA);
   const [loaded, setLoaded] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false); // gespeicherte Daten unlesbar – Autosave blockieren
+  const recoveryInputRef = useRef(null);
   const [tab, setTab] = useState("dashboard");
   const [saveState, setSaveState] = useState("idle"); // idle | saving | saved
   const [halbjahr, setHalbjahr] = useState(currentHalbjahr());
@@ -2376,58 +2432,53 @@ export default function App() {
           }
           setData(parsed);
           if (!parsed.settings?.bundesland) setShowOnboarding(true);
-          if ((parsed.classes || []).length > 0) {
-            const lastBackup = localStorage.getItem("last_backup_at");
-            const lastCounts = (() => { try { return JSON.parse(localStorage.getItem("saidy_backup_counts") || "null"); } catch { return null; } })();
-            const curCounts = {
-              grades: (parsed.grades || []).length,
-              notes: (parsed.notes || []).length,
-              absences: (parsed.absences || []).length,
-            };
-            const changes = lastCounts ? {
-              grades: Math.max(0, curCounts.grades - (lastCounts.grades || 0)),
-              notes: Math.max(0, curCounts.notes - (lastCounts.notes || 0)),
-              absences: Math.max(0, curCounts.absences - (lastCounts.absences || 0)),
-            } : { grades: 0, notes: 0, absences: 0 };
-            const totalChanges = changes.grades + changes.notes + changes.absences;
-            setChangesSinceBackup(changes);
-            if (!lastBackup) {
-              setBackupReminderDays(0);
-            } else {
-              const daysSince = Math.floor((Date.now() - new Date(lastBackup).getTime()) / (1000 * 60 * 60 * 24));
-              if (daysSince >= 7 || totalChanges >= 10) setBackupReminderDays(daysSince);
-            }
-            // Freitags-Erinnerung via Notification API
-            if (parsed.settings?.backupNotifications && "Notification" in window && Notification.permission === "granted") {
-              const isFriday = new Date().getDay() === 5;
-              const daysSince = lastBackup ? Math.floor((Date.now() - new Date(lastBackup).getTime()) / 86400000) : 99;
-              if (isFriday && daysSince >= 3) {
+          /* Eigener try-Block: ein Fehler in der Backup-Erinnerung darf nicht dazu führen,
+             dass der äußere catch greift und die echten Daten durch Demodaten ersetzt. */
+          try {
+            if ((parsed.classes || []).length > 0) {
+              const lastBackup = localStorage.getItem("last_backup_at");
+              const lastCounts = (() => { try { return JSON.parse(localStorage.getItem("saidy_backup_counts") || "null"); } catch { return null; } })();
+              const zahl = (v) => (typeof v === "number" && isFinite(v) ? v : 0);
+              const changes = lastCounts && typeof lastCounts === "object" ? {
+                grades: Math.max(0, (parsed.grades || []).length - zahl(lastCounts.grades)),
+                notes: Math.max(0, (parsed.notes || []).length - zahl(lastCounts.notes)),
+                absences: Math.max(0, (parsed.absences || []).length - zahl(lastCounts.absences)),
+              } : { grades: 0, notes: 0, absences: 0 };
+              const totalChanges = changes.grades + changes.notes + changes.absences;
+              setChangesSinceBackup(changes);
+              const daysSince = lastBackup ? Math.floor((Date.now() - new Date(lastBackup).getTime()) / 86400000) : null;
+              if (daysSince === null || !isFinite(daysSince)) {
+                setBackupReminderDays(0);
+              } else if (daysSince >= 7 || totalChanges >= 10) {
+                setBackupReminderDays(daysSince);
+              }
+              // Freitags-Erinnerung – greift nur, wenn Saidy an dem Tag geöffnet wird
+              if (parsed.settings?.backupNotifications && new Date().getDay() === 5 && (daysSince === null || daysSince >= 3)) {
                 setTimeout(() => {
-                  new Notification("Saidy – Backup nicht vergessen", {
-                    body: daysSince === 0 ? "Noch kein Backup gespeichert!" : `Letztes Backup vor ${daysSince} Tagen. Jetzt kurz sichern?`,
-                    icon: "/icon-192.png",
-                  });
+                  notify(
+                    "Saidy – Backup nicht vergessen",
+                    daysSince === null ? "Du hast noch nie ein Backup gemacht. Jetzt nachholen?" : `Letztes Backup vor ${daysSince} Tagen. Jetzt kurz sichern?`
+                  );
                 }, 1500);
               }
             }
-          }
+          } catch { /* Erinnerung ist unkritisch – Daten sind bereits geladen */ }
         } else {
           setData(demoData());
           setShowOnboarding(true);
         }
       } catch (e) {
-        setData(demoData());
-        setShowOnboarding(true);
-        if (e instanceof SyntaxError) {
-          setTimeout(() => setToast("⚠ Gespeicherte Daten beschädigt – Demodaten werden angezeigt. Bitte ein Backup einspielen."), 800);
-        }
+        /* Gespeicherte Daten sind unlesbar. Auf keinen Fall Demodaten setzen – der
+           Autosave würde sie 500 ms später über den Originalbestand schreiben. */
+        setLoadFailed(true);
+        setToast("⚠ Gespeicherte Daten konnten nicht gelesen werden. Bitte ein Backup einspielen – es wurde nichts überschrieben.");
       }
       setLoaded(true);
     })();
   }, []);
 
   useEffect(() => {
-    if (!loaded) return;
+    if (!loaded || loadFailed) return; // nie über einen unlesbaren Bestand schreiben
     setSaveState("saving");
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
@@ -2508,13 +2559,18 @@ export default function App() {
     toastTimer.current = setTimeout(() => setToast(null), 3500);
   }
 
+  /* Backup vermerken. localStorage kann werfen (Safari-Privatmodus, volles Kontingent) –
+     die Oberfläche muss trotzdem zurückgesetzt werden, sonst mahnt Saidy weiter,
+     obwohl gerade gesichert wurde. */
   function recordBackup() {
-    localStorage.setItem("last_backup_at", new Date().toISOString());
-    localStorage.setItem("saidy_backup_counts", JSON.stringify({
-      grades: data.grades.length,
-      notes: data.notes.length,
-      absences: (data.absences || []).length,
-    }));
+    try {
+      localStorage.setItem("last_backup_at", new Date().toISOString());
+      localStorage.setItem("saidy_backup_counts", JSON.stringify({
+        grades: data.grades.length,
+        notes: data.notes.length,
+        absences: (data.absences || []).length,
+      }));
+    } catch { /* ignoriert – Erinnerung erscheint dann beim nächsten Start erneut */ }
     setBackupReminderDays(null);
     setChangesSinceBackup({ grades: 0, notes: 0, absences: 0 });
   }
@@ -2554,40 +2610,15 @@ export default function App() {
     exportBackup();
   }
 
-  async function emailBackup() {
-    const email = data.settings?.backupEmail || "";
-    const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data: { ...data, deletedSnapshot: null } };
-    const json = JSON.stringify(payload, null, 2);
-    const stamp = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
-    const fileName = `Saidy-Backup-${stamp}.json`;
-    // E-Mail in Zwischenablage kopieren, damit sie im Mail-Entwurf einfach eingesetzt werden kann
-    if (email) {
-      try { await navigator.clipboard.writeText(email); } catch {}
-    }
-    try {
-      const file = new File([json], fileName, { type: "application/json" });
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Saidy-Backup" });
-        recordBackup();
-        if (email) showToast(`📋 Adresse kopiert: ${email} – im Mail-Entwurf einfügen`);
-        return;
-      }
-    } catch (e) {
-      if (e?.name === "AbortError") return;
-    }
-    // Fallback: download + open mailto
-    exportBackup();
-    if (email) {
-      setTimeout(() => {
-        window.open(`mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(`Saidy Backup ${stamp}`)}&body=${encodeURIComponent("Bitte diese E-Mail mit der angehängten Backup-Datei an mich selbst senden.")}`, "_blank");
-      }, 800);
-    }
-  }
-
   function resetAllData() {
-    localStorage.removeItem("saidy_medical_consent");
-    localStorage.removeItem("last_backup_at");
-    localStorage.removeItem("saidy_voice_consent");
+    try {
+      ["saidy_medical_consent", "last_backup_at", "saidy_voice_consent", "saidy_backup_counts", "saidy_briefing_dismissed"]
+        .forEach((k) => localStorage.removeItem(k));
+      // Altlasten aus der früheren Variante mit einem Schlüssel pro Tag
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("saidy_briefing_"))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch { /* ignoriert */ }
     update((d) => {
       const snapshot = { deletedAt: new Date().toISOString(), data: { ...d, deletedSnapshot: null } };
       return { ...EMPTY_DATA, deletedSnapshot: snapshot };
@@ -2620,6 +2651,27 @@ export default function App() {
             parentPhone: typeof s.parentPhone === "string" ? s.parentPhone.slice(0, 100) : s.parentPhone,
           }));
         }
+        /* Einstellungen aus einer fremden Datei nicht blind übernehmen: `merged` ist ein
+           flacher Spread, `settings` würde also komplett ersetzt. Nur bekannte Felder
+           durchlassen, alles andere auf die Vorgaben zurückfallen. */
+        const impSettings = (typeof imported.settings === "object" && imported.settings) || {};
+        merged.settings = {
+          ...(EMPTY_DATA.settings || {}),
+          ...impSettings,
+          backupNotifications: impSettings.backupNotifications === true,
+          dashboardOrder: Array.isArray(impSettings.dashboardOrder)
+            ? impSettings.dashboardOrder.filter((k) => typeof k === "string")
+            : (EMPTY_DATA.settings || {}).dashboardOrder,
+        };
+        const kurz = (v, n) => (typeof v === "string" ? v.slice(0, n) : null);
+        merged.grades = (Array.isArray(merged.grades) ? merged.grades : []).map((g) => ({
+          ...g, topic: kurz(g.topic, 100), title: kurz(g.title, 200),
+        }));
+        merged.faecher = (Array.isArray(merged.faecher) ? merged.faecher : []).map((f) => ({
+          ...f,
+          nextTestTitle: kurz(f.nextTestTitle, 100),
+          nextTestDate: typeof f.nextTestDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(f.nextTestDate) ? f.nextTestDate : null,
+        }));
         setData(merged);
         recordBackup();
         onResult?.({ ok: true, msg: "Backup erfolgreich geladen." });
@@ -2650,6 +2702,38 @@ export default function App() {
       <div className="min-h-screen flex flex-col items-center justify-center app-bg gap-4">
         <SaidyLogoMark size={72} />
         <div className="text-stone-400 text-sm">Lade Daten …</div>
+      </div>
+    );
+  }
+
+  /* Gespeicherte Daten unlesbar: nichts überschreiben, sondern den Weg zurück anbieten.
+     Der Originalbestand bleibt unangetastet im Browser-Speicher liegen. */
+  if (loadFailed) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center app-bg p-6">
+        <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm p-6 text-center">
+          <AlertTriangle size={32} className="text-amber-500 mx-auto mb-3" />
+          <div className="font-semibold text-stone-800 mb-2">Daten konnten nicht gelesen werden</div>
+          <p className="text-sm text-stone-600 leading-relaxed mb-1">
+            Deine gespeicherten Daten sind beschädigt oder stammen aus einer neueren Version.
+          </p>
+          <p className="text-sm text-stone-600 leading-relaxed mb-5">
+            <strong>Es wurde nichts überschrieben.</strong> Spiel eine Datensicherung ein – oder schließe die Seite
+            und versuche es auf einem anderen Gerät.
+          </p>
+          <Button onClick={() => recoveryInputRef.current?.click()} className="w-full justify-center">
+            <Upload size={15} /> Gesichertes wiederherstellen
+          </Button>
+          <input
+            ref={recoveryInputRef} type="file" accept="application/json,.json" className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) importBackup(f, (res) => { if (res.ok) setLoadFailed(false); else setToast(res.msg); });
+              e.target.value = "";
+            }}
+          />
+          {toast && <p className="text-xs text-red-600 mt-3">{toast}</p>}
+        </div>
       </div>
     );
   }
@@ -2961,7 +3045,6 @@ export default function App() {
               setHalbjahr={setHalbjahr}
               onExport={exportBackup}
               onShare={shareBackup}
-              onEmailBackup={emailBackup}
               onImport={importBackup}
               onReset={resetAllData}
               onClose={() => setShowSettings(false)}
@@ -3273,10 +3356,13 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
 
   function setGrade(studentId, raw) {
     const value = raw === "" ? null : Number(raw);
+    /* Bei schriftlichen Noten wandert das Stundenthema als Themen-Tag mit an die Note –
+       sonst bliebe die Wissensgebiete-Auswertung leer, obwohl oben ein Thema gepflegt wurde. */
+    const themaTag = category === "schriftlich" && topic.trim() ? topic.trim().slice(0, 100) : null;
     update((d) => {
       d.grades = d.grades.filter((g) => !(g.quick && g.fachId === fach.id && g.studentId === studentId && g.date === date && g.category === category));
       if (value != null) {
-        d.grades.push({ id: uid(), studentId, classId: fach.classId, fachId: fach.id, category, value, factor: 1, title: "Schnellerfassung", date, halbjahr, quick: true });
+        d.grades.push({ id: uid(), studentId, classId: fach.classId, fachId: fach.id, category, value, factor: 1, title: "Schnellerfassung", date, halbjahr, quick: true, ...(themaTag ? { topic: themaTag } : {}) });
       }
       return d;
     });
@@ -3348,22 +3434,18 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
 
         <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
 
-          {/* Stunden-Timer: zeigt verbleibende Stunden bis zur nächsten Klassenarbeit */}
-          {fach.nextTestDate && (() => {
-            const testDate = new Date(fach.nextTestDate + "T00:00:00");
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            if (testDate < today) return null;
-            const remaining = remainingLessonsForFach(fach.id, fach.nextTestDate, data.timetable);
-            const testLabel = fach.nextTestTitle || "nächster Test";
-            const urgent = remaining <= 1;
-            const warning = remaining <= 3;
+          {/* Stunden-Timer: nur zeigen, wenn es zeitlich eng wird */}
+          {(() => {
+            const cd = testCountdown(fach, data.timetable, data.events);
+            if (!cd || cd.level === "neutral") return null;
+            const krit = cd.level === "krit";
+            const warn = cd.level === "warn";
             return (
-              <div className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 mb-3 text-xs ${urgent ? "bg-red-50 border-red-200" : warning ? "bg-amber-50 border-amber-200" : "bg-stone-50 border-stone-200"}`}>
-                <Clock size={14} className={`shrink-0 ${urgent ? "text-red-500" : warning ? "text-amber-500" : "text-stone-400"}`} />
-                <span className={`flex-1 font-medium truncate ${urgent ? "text-red-700" : warning ? "text-amber-700" : "text-stone-600"}`}>{testLabel}</span>
-                <span className={`shrink-0 font-bold tabular-nums ${urgent ? "text-red-700" : warning ? "text-amber-700" : "text-stone-500"}`}>
-                  {remaining === 0 ? "Heute!" : `Noch ${remaining} Std.`}
+              <div className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 mb-3 text-xs ${krit ? "bg-red-50 border-red-200" : warn ? "bg-amber-50 border-amber-200" : "bg-stone-50 border-stone-200"}`}>
+                <Clock size={14} className={`shrink-0 ${krit ? "text-red-500" : warn ? "text-amber-500" : "text-stone-400"}`} />
+                <span className={`flex-1 font-medium truncate ${krit ? "text-red-700" : warn ? "text-amber-700" : "text-stone-600"}`}>{cd.label}</span>
+                <span className={`shrink-0 font-bold ${krit ? "text-red-700" : warn ? "text-amber-700" : "text-stone-500"}`}>
+                  {cd.istHeute ? "heute" : cd.rem === null ? cd.datum : `noch ${cd.rem} Std.`}
                 </span>
               </div>
             );
@@ -3595,9 +3677,6 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
 function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings, halbjahr, setCaptureLesson, pendingLessons, now }) {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showPending, setShowPending] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [dragOverKey, setDragOverKey] = useState(null);
-  const dragKey = useRef(null);
   const todayStr = isoDate(new Date());
   const selStr = isoDate(selectedDate);
   const isToday = selStr === todayStr;
@@ -3657,11 +3736,21 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
   const showImportReminder = daysSinceLast === null || daysSinceLast >= importInterval;
   const isColor = data.settings?.colorMode === true;
 
+  /* Ein einziger Schlüssel mit dem Datum als Wert – nicht ein Schlüssel pro Tag,
+     der sich über die Schuljahre im selben Speicher wie die Schülerfotos ansammelt. */
   const [briefingDismissed, setBriefingDismissed] = useState(() => {
-    try { return localStorage.getItem(`saidy_briefing_${todayStr}`) === "1"; } catch { return false; }
+    try { return localStorage.getItem("saidy_briefing_dismissed") === todayStr; } catch { return false; }
   });
+  const [showAllBriefing, setShowAllBriefing] = useState(false);
+  // Bleibt die PWA über Nacht offen (Tablet im Klassenraum), erscheint das Briefing am neuen Tag wieder
+  useEffect(() => {
+    let gesehen = null;
+    try { gesehen = localStorage.getItem("saidy_briefing_dismissed"); } catch {}
+    setBriefingDismissed(gesehen === todayStr);
+    setShowAllBriefing(false);
+  }, [todayStr]);
   function dismissBriefing() {
-    try { localStorage.setItem(`saidy_briefing_${todayStr}`, "1"); } catch {}
+    try { localStorage.setItem("saidy_briefing_dismissed", todayStr); } catch {}
     setBriefingDismissed(true);
   }
 
@@ -3693,27 +3782,20 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
       });
     }
 
-    // 2. Anstehende Klassenarbeiten
+    // 2. Anstehende Klassenarbeiten – nur wenn es zeitlich eng wird
     data.faecher
-      .filter((f) => f.nextTestDate && f.nextTestDate >= todayStr)
-      .map((f) => ({
-        fach: f,
-        cls: data.classes.find((c) => c.id === f.classId),
-        rem: remainingLessonsForFach(f.id, f.nextTestDate, data.timetable),
-      }))
-      .filter((x) => x.rem <= 5)
-      .sort((a, b) => a.rem - b.rem)
+      .map((f) => ({ fach: f, cls: data.classes.find((c) => c.id === f.classId), cd: testCountdown(f, data.timetable, data.events) }))
+      .filter((x) => x.cd && (x.cd.level === "krit" || x.cd.level === "warn"))
+      .sort((a, b) => (a.cd.istHeute ? -1 : b.cd.istHeute ? 1 : a.cd.rem - b.cd.rem))
       .slice(0, 2)
-      .forEach(({ fach, cls, rem }) => {
-        const was = fach.nextTestTitle || "die Klassenarbeit";
+      .forEach(({ fach, cls, cd }) => {
         const wo = `${fach.subject}${cls ? ` (${cls.name})` : ""}`;
-        if (rem === 0) {
-          satz.push({ text: `Achtung: ${was} in ${wo} ist heute.`, urgent: true });
-        } else if (rem === 1) {
-          satz.push({ text: `In ${wo} steht ${was} an – nur noch eine Stunde Zeit zum Üben.`, urgent: true });
-        } else {
-          satz.push({ text: `In ${wo} steht ${was} an – noch ${rem} Stunden Zeit zum Üben.` });
-        }
+        satz.push({
+          text: cd.istHeute
+            ? `Heute schreibt ${cls ? cls.name : "die Klasse"} „${cd.label}" in ${fach.subject}.`
+            : `In ${wo} steht „${cd.label}" an – ${cd.lang}.`,
+          urgent: cd.level === "krit",
+        });
       });
 
     // 3. Termine des Tages
@@ -3733,33 +3815,36 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
       });
     }
 
-    // 5. Länger fehlende Kinder
-    const dreiTageAgo = isoDate(new Date(new Date(todayStr).getTime() - 3 * 86400000));
+    /* 5. Länger fehlende Kinder.
+       Gezählt werden verschiedene Kalendertage, nicht Fehlzeit-Einträge – der WebUntis-Import
+       legt pro Unterrichtsstunde einen Datensatz an, ein Krankheitstag ergäbe sonst „6 Tage".
+       Der Entschuldigungsstatus steht bewusst NICHT hier: er ist sensibel und der
+       Startbildschirm liegt im Klassenraum offen. Details per Tipp in der Klassenansicht. */
+    const fensterStart = isoDate(addDays(localDate(todayStr), -4));
     const langFehlend = (() => {
       const byStudent = {};
       (data.absences || []).forEach((a) => {
-        if (!byStudent[a.studentId]) byStudent[a.studentId] = [];
-        byStudent[a.studentId].push(a);
+        if (a.date < fensterStart || a.date > todayStr) return;
+        if (!byStudent[a.studentId]) byStudent[a.studentId] = new Set();
+        byStudent[a.studentId].add(a.date);
       });
       return Object.entries(byStudent)
-        .map(([sid, as]) => ({
-          student: data.students.find((s) => s.id === sid),
-          tage: as.filter((a) => a.date >= dreiTageAgo && a.date <= todayStr).length,
-          offen: as.some((a) => a.excuseStatus === "ausstehend" || a.excuseStatus === "eingereicht"),
-        }))
+        .map(([sid, dates]) => ({ student: data.students.find((s) => s.id === sid), tage: dates.size }))
         .filter((x) => x.student && x.tage >= 3)
         .sort((a, b) => b.tage - a.tage);
     })();
     if (langFehlend.length === 1) {
-      const { student, tage, offen } = langFehlend[0];
+      const { student, tage } = langFehlend[0];
       satz.push({
-        text: `${student.name} fehlt seit ${tage} Tagen${offen ? " – die Entschuldigung steht noch aus." : "."}`,
-        urgent: tage >= 5,
+        text: `${student.name} hat an ${tage} der letzten 5 Tage gefehlt.`,
+        urgent: tage >= 4,
+        action: () => onNavigate?.("klassen"),
       });
     } else if (langFehlend.length > 1) {
       satz.push({
-        text: `${und(langFehlend.map((x) => x.student.name))} fehlen seit mehreren Tagen.`,
-        urgent: langFehlend.some((x) => x.tage >= 5),
+        text: `${langFehlend.length} Kinder haben an mehreren der letzten Tage gefehlt.`,
+        urgent: langFehlend.some((x) => x.tage >= 4),
+        action: () => onNavigate?.("klassen"),
       });
     }
 
@@ -3773,33 +3858,20 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
       });
     }
 
-    // 7. Offene Förderziele
-    const offeneZiele = (data.foerderZiele || []).filter((z) => !z.doneAt).length;
-    if (offeneZiele > 0) {
-      satz.push({
-        text: offeneZiele === 1
-          ? "Ein Förderziel ist noch offen."
-          : `${offeneZiele} Förderziele sind noch offen.`,
-      });
-    }
-
-    // 8. Backup-Status (anklickbar)
-    const lastBackupAt = (() => { try { return localStorage.getItem("last_backup_at"); } catch { return null; } })();
-    const backupDaysSince = lastBackupAt ? Math.floor((Date.now() - new Date(lastBackupAt).getTime()) / 86400000) : null;
-    const lastCounts = (() => { try { return JSON.parse(localStorage.getItem("saidy_backup_counts") || "null"); } catch { return null; } })();
-    const backupChanges = lastCounts
-      ? Math.max(0, (data.grades.length - (lastCounts.grades || 0)) + (data.notes.length - (lastCounts.notes || 0)) + ((data.absences || []).length - (lastCounts.absences || 0)))
-      : 0;
-    if (backupDaysSince === null) {
-      satz.push({ text: "Deine Daten sind noch nie gesichert worden – jetzt Backup erstellen.", urgent: true, action: onOpenSettings });
-    } else if (backupDaysSince >= 7) {
-      satz.push({ text: `Das letzte Backup ist ${backupDaysSince} Tage her – kurz sichern?`, urgent: backupDaysSince >= 14, action: onOpenSettings });
-    } else if (backupChanges >= 10) {
-      satz.push({ text: `Seit dem letzten Backup sind ${backupChanges} neue Einträge dazugekommen – sichern?`, action: onOpenSettings });
-    }
+    /* Backup-Status und Förderziele stehen bewusst nicht im Briefing:
+       Der Backup-Hinweis hat bereits ein eigenes Band über dem Dashboard,
+       offene Förderziele sind kein Tagesgeschehen. */
 
     return satz;
   })();
+
+  /* Dringendes zuerst, Begrüßung bleibt vorn. Standardmäßig nur die ersten drei Sätze –
+     alles auf einmal liest zwischen Tür und Angel niemand. */
+  const briefingSorted = briefingSentences.length
+    ? [briefingSentences[0], ...briefingSentences.slice(1).sort((a, b) => (b.urgent ? 1 : 0) - (a.urgent ? 1 : 0))]
+    : [];
+  const briefingVisible = showAllBriefing ? briefingSorted : briefingSorted.slice(0, 3);
+  const briefingHidden = briefingSorted.length - briefingVisible.length;
 
   return (
     <div className="space-y-2">
@@ -3871,38 +3943,44 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
       </div>
 
       {/* Morgen-Briefing – lokal erzeugte Tageszusammenfassung */}
-      {isToday && !briefingDismissed && (
-        <div className="rounded-2xl akzent-ton px-4 py-3.5">
+      {isToday && !briefingDismissed && !!briefingSorted.length && (
+        <Card className="px-4 py-3.5 border-l-2 akzent-rand">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide akzent-text">
-              <Sparkles size={12} /> Heute im Blick
-            </span>
-            <button onClick={dismissBriefing} className="text-stone-400 hover:text-stone-600 -mr-0.5 shrink-0" aria-label="Schließen">
-              <X size={15} />
+            <span className="text-[11px] font-semibold uppercase tracking-wide akzent-text">Heute im Blick</span>
+            <button
+              onClick={dismissBriefing}
+              className="w-11 h-11 -mr-3 -mt-3 flex items-center justify-center text-stone-400 hover:text-stone-600 shrink-0"
+              aria-label="Briefing für heute ausblenden"
+            >
+              <X size={16} />
             </button>
           </div>
-          {briefingSentences.length === 0 ? (
-            <p className="text-sm text-stone-500">Alles ruhig heute ✓</p>
-          ) : (
-            <p className="text-sm leading-relaxed text-stone-700">
-              {briefingSentences.map((s, i) => (
-                <React.Fragment key={i}>
-                  {i > 0 && " "}
-                  {s.action ? (
-                    <button
-                      onClick={s.action}
-                      className={`text-left underline underline-offset-2 decoration-stone-400 hover:decoration-stone-600 ${s.urgent ? "text-red-700 font-medium" : "text-stone-700"}`}
-                    >
-                      {s.text}
-                    </button>
-                  ) : (
-                    <span className={s.urgent ? "text-red-700 font-medium" : ""}>{s.text}</span>
-                  )}
-                </React.Fragment>
-              ))}
-            </p>
+          <p className="text-sm leading-relaxed text-stone-700">
+            {briefingVisible.map((s, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && " "}
+                {s.action ? (
+                  <button
+                    onClick={s.action}
+                    className={`text-left underline underline-offset-2 decoration-stone-400 hover:decoration-stone-600 ${s.urgent ? "text-red-700 font-medium" : "text-stone-700"}`}
+                  >
+                    {s.text}
+                  </button>
+                ) : (
+                  <span className={s.urgent ? "text-red-700 font-medium" : ""}>{s.text}</span>
+                )}
+              </React.Fragment>
+            ))}
+          </p>
+          {(briefingHidden > 0 || showAllBriefing) && (
+            <button
+              onClick={() => setShowAllBriefing((v) => !v)}
+              className="mt-1.5 text-xs akzent-text hover:underline min-h-[44px] flex items-center"
+            >
+              {showAllBriefing ? "weniger anzeigen" : `+ ${briefingHidden} weitere`}
+            </button>
           )}
-        </div>
+        </Card>
       )}
 
       {/* Aufklappbare Liste der nachzutragenden Stunden */}
@@ -3967,12 +4045,12 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
           unterricht: (
             <Card className="px-3 py-2.5">
               <div className="flex items-center justify-between mb-1.5">
-                <button onClick={() => onNavigate?.("stundenplan")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                <button onClick={() => onNavigate?.("stundenplan")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
                   Unterricht <ChevronRight size={10} />
                 </button>
               </div>
-              {!dayKey && <p className="text-xs text-stone-300 mb-2">Wochenende – kein regulärer Stundenplan</p>}
-              {dayKey && !dayLessons.length && <p className="text-xs text-stone-300 mb-2">Keine Stunden im Plan</p>}
+              {!dayKey && <p className="text-xs text-stone-500 mb-2">Wochenende – kein regulärer Stundenplan</p>}
+              {dayKey && !dayLessons.length && <p className="text-xs text-stone-500 mb-2">Keine Stunden im Plan</p>}
               <ul className="divide-y divide-stone-100">
                 {dayLessons.map((l) => {
                   const fach = data.faecher.find((f) => f.id === l.fachId);
@@ -3987,16 +4065,15 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                         <span className="flex items-center gap-1.5 min-w-0">
                           {fach && <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? fach.color : "#C0BBA8" }} />}
                           <span className="truncate">{fach && cls ? `${cls.name} – ${fach.subject}` : "—"}</span>
-                          {fach?.nextTestDate && (() => {
-                            const testDate = new Date(fach.nextTestDate + "T00:00:00");
-                            const now = new Date(); now.setHours(0, 0, 0, 0);
-                            if (testDate < now) return null;
-                            const rem = remainingLessonsForFach(fach.id, fach.nextTestDate, data.timetable);
-                            const urgent = rem <= 1;
-                            const warning = rem <= 3;
+                          {(() => {
+                            const cd = testCountdown(fach, data.timetable, data.events);
+                            if (!cd || cd.level === "neutral" || cd.level === "info") return null;
                             return (
-                              <span className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${urgent ? "bg-red-100 text-red-700" : warning ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-500"}`}>
-                                {rem === 0 ? "Heute!" : `${rem} Std.`}
+                              <span
+                                title={`${cd.label} ${cd.lang}`}
+                                className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold shrink-0 ${cd.level === "krit" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"}`}
+                              >
+                                {cd.istHeute ? "Arbeit heute" : `noch ${cd.rem}×`}
                               </span>
                             );
                           })()}
@@ -4028,7 +4105,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
           aufgaben: (
             <Card className="px-3 py-2.5">
               <div className="flex items-center justify-between mb-1.5">
-                <button onClick={() => onNavigate?.("aufgaben")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                <button onClick={() => onNavigate?.("aufgaben")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
                   Aufgaben {!!openTasks.length && <span className="text-stone-300">({openTasks.length})</span>} <ChevronRight size={10} />
                 </button>
                 <button onClick={() => onNavigate?.("aufgaben")} className="text-sm text-stone-300 hover:akzent-text shrink-0 leading-none">+</button>
@@ -4050,14 +4127,14 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-stone-300">Nichts offen</p>
+                <p className="text-xs text-stone-500">Nichts offen</p>
               )}
             </Card>
           ),
           kalender: (
             <Card className="px-3 py-2.5">
               <div className="flex items-center justify-between mb-1.5">
-                <button onClick={() => onNavigate?.("kalender")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                <button onClick={() => onNavigate?.("kalender")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
                   Termine <ChevronRight size={10} />
                 </button>
                 <button onClick={() => onNavigate?.("kalender")} className="text-sm text-stone-300 hover:akzent-text shrink-0 leading-none">+</button>
@@ -4073,13 +4150,13 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-stone-300">Nichts geplant</p>
+                <p className="text-xs text-stone-500">Nichts geplant</p>
               )}
             </Card>
           ),
           geburtstage: (
             <Card className="px-3 py-2.5">
-              <button onClick={() => onNavigate?.("klassen")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400 mb-1.5">
+              <button onClick={() => onNavigate?.("klassen")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">
                 Geburtstage <ChevronRight size={10} />
               </button>
               {birthdays.length || kommendeGeburtstage.length ? (
@@ -4106,29 +4183,29 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                       <span className="text-stone-600 truncate">{s.name}</span>
                       {info.alter != null && (
                         <span className="ml-auto shrink-0 tnum text-sm text-stone-500">
-                          {info.alter}<span className="text-[10px] text-stone-300 ml-0.5">Jahre</span>
+                          {info.alter}<span className="text-[11px] text-stone-500 ml-0.5">Jahre</span>
                         </span>
                       )}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <p className="text-xs text-stone-300">Keine in den nächsten drei Wochen</p>
+                <p className="text-xs text-stone-500">Keine in den nächsten drei Wochen</p>
               )}
             </Card>
           ),
           dienste: (
             <Card className="px-3 py-2.5">
               <div className="flex items-center justify-between mb-1.5">
-                <button onClick={() => onNavigate?.("klassen", "dienste")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                <button onClick={() => onNavigate?.("klassen", "dienste")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
                   Dienste <ChevronRight size={10} />
                 </button>
-                <span className="text-[10px] text-stone-300">{currentSchoolWeek().label}</span>
+                <span className="text-[11px] text-stone-500">{currentSchoolWeek().label}</span>
               </div>
               {(() => {
                 const alleDienste = data.duties || [];
                 if (!alleDienste.length) {
-                  return <p className="text-xs text-stone-300">Keine Dienste angelegt</p>;
+                  return <p className="text-xs text-stone-500">Keine Dienste angelegt</p>;
                 }
                 return (
                   <div className="space-y-2">
@@ -4181,13 +4258,13 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
             return (
               <Card className="px-3 py-2.5">
                 <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-400">
+                  <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
                     Entschuldigungen
                     {ausstehend.length > 0 && <span className="ml-1 text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
                   </div>
                 </div>
                 {!studentEntries.length
-                  ? <p className="text-xs text-stone-300">Alle Entschuldigungen erledigt 👍</p>
+                  ? <p className="text-xs text-stone-500">Alle Entschuldigungen erledigt 👍</p>
                   : (
                     <ul className="divide-y divide-stone-100">
                       {studentEntries.slice(0, 5).map(({ student, absences: sa }) => (
@@ -4198,7 +4275,7 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                           <span className="text-xs text-stone-400 shrink-0">{new Date(sa[0].date).toLocaleDateString("de-DE", { day: "numeric", month: "short" })}</span>
                         </li>
                       ))}
-                      {studentEntries.length > 5 && <li className="pt-1.5 text-xs text-stone-400">… und {studentEntries.length - 5} weitere</li>}
+                      {studentEntries.length > 5 && <li className="pt-1.5 text-xs text-stone-500">… und {studentEntries.length - 5} weitere</li>}
                     </ul>
                   )}
               </Card>
@@ -4209,68 +4286,13 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
         // Neu hinzugekommene Karten anhängen, falls die gespeicherte Reihenfolge sie noch nicht kennt
         const order = [...gespeichert, ...Object.keys(sections).filter((k) => !gespeichert.includes(k))].filter((k) => sections[k]);
 
-        function handleDragStart(e, key) {
-          dragKey.current = key;
-          e.dataTransfer.effectAllowed = "move";
-        }
-        function handleDragOver(e, key) {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = "move";
-          if (dragOverKey !== key) setDragOverKey(key);
-        }
-        function handleDrop(key) {
-          const from = dragKey.current;
-          if (!from || from === key) return;
-          const fi = order.indexOf(from);
-          const ti = order.indexOf(key);
-          const newOrder = [...order];
-          newOrder.splice(fi, 1);
-          newOrder.splice(ti, 0, from);
-          update((d) => { d.settings = { ...(d.settings || {}), dashboardOrder: newOrder }; return d; });
-          dragKey.current = null;
-          setDragOverKey(null);
-        }
-        function handleDragEnd() {
-          dragKey.current = null;
-          setDragOverKey(null);
-        }
-
+        /* Die Reihenfolge wird ausschließlich in den Einstellungen gepflegt.
+           Drag & Drop stand hier zwar zur Verfügung, feuert aber in iOS Safari nicht –
+           auf der Hauptplattform war der Modus damit funktionslos. */
         return (
-          <>
-            <div className="flex justify-end -mt-1 mb-1">
-              <button
-                onClick={() => { setEditMode((v) => !v); setDragOverKey(null); }}
-                className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full transition-colors ${editMode ? "akzent-flaeche" : "text-stone-400 hover:text-stone-600"}`}
-              >
-                <GripVertical size={12} />
-                {editMode ? "Fertig" : "Anpassen"}
-              </button>
-            </div>
-            <div className="grid md:grid-cols-2 gap-2">
-              {order.map((key) => {
-                if (!sections[key]) return null;
-                const isOver = editMode && dragOverKey === key;
-                return (
-                  <div
-                    key={key}
-                    draggable={editMode}
-                    onDragStart={editMode ? (e) => handleDragStart(e, key) : undefined}
-                    onDragOver={editMode ? (e) => handleDragOver(e, key) : undefined}
-                    onDrop={editMode ? () => handleDrop(key) : undefined}
-                    onDragEnd={editMode ? handleDragEnd : undefined}
-                    className={`relative transition-shadow ${editMode ? "cursor-grab active:cursor-grabbing" : ""} ${isOver ? "ring-2 ring-[var(--oliv)] rounded-xl" : ""}`}
-                  >
-                    {editMode && (
-                      <div className="absolute top-3.5 right-3.5 z-10 text-stone-300 pointer-events-none">
-                        <GripVertical size={15} />
-                      </div>
-                    )}
-                    {sections[key]}
-                  </div>
-                );
-              })}
-            </div>
-          </>
+          <div className="grid md:grid-cols-2 gap-2">
+            {order.map((key) => (sections[key] ? <div key={key}>{sections[key]}</div> : null))}
+          </div>
         );
       })()}
 
@@ -4422,10 +4444,16 @@ function FachModal({ data, initial, onSave, onClose }) {
                 className={`${inputCls} flex-1`}
                 type="date"
                 value={nextTestDate}
+                min={isoDate(new Date())}
+                max={isoDate(addDays(new Date(), 365))}
                 onChange={(e) => setNextTestDate(e.target.value)}
               />
               {nextTestDate && (
-                <button onClick={() => { setNextTestDate(""); setNextTestTitle(""); }} className="text-stone-400 hover:text-red-500 shrink-0">
+                <button
+                  onClick={() => { setNextTestDate(""); setNextTestTitle(""); }}
+                  className="w-11 h-11 flex items-center justify-center text-stone-400 hover:text-red-500 shrink-0"
+                  aria-label="Termin entfernen"
+                >
                   <X size={16} />
                 </button>
               )}
@@ -4439,7 +4467,16 @@ function FachModal({ data, initial, onSave, onClose }) {
                 maxLength={100}
               />
             )}
-            <p className="text-xs text-stone-400 mt-1.5">Zeigt in der Schnellerfassung an, wie viele Stunden bis zur nächsten Arbeit verbleiben.</p>
+            {/* Abgelaufener Termin bleibt sonst unbemerkt am Fach hängen */}
+            {initial?.nextTestDate && initial.nextTestDate < isoDate(new Date()) && (
+              <p className="text-xs text-amber-700 mt-1.5">
+                Der Termin vom {localDate(initial.nextTestDate).toLocaleDateString("de-DE")} ist vorbei – trag den nächsten ein.
+              </p>
+            )}
+            <p className="text-xs text-stone-500 mt-1.5">
+              Zeigt auf der Übersicht und in der Schnellerfassung, wie viele Unterrichtsstunden bis dahin bleiben.
+              Ferien werden abgezogen. Klappt nur, wenn das Fach im Stundenplan steht.
+            </p>
           </Field>
         </div>
 
@@ -7227,7 +7264,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   );
 }
 
-function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele, onOpenStudent, onClose }) {
+function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele, absences, onOpenStudent, onClose }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const cutoff14Iso = (() => { const d = new Date(today); d.setDate(d.getDate() - 14); return d.toISOString().slice(0, 10); })();
 
@@ -7334,9 +7371,120 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
                 </div>
               ))}
             </div>
-            <div className="text-[10px] text-stone-300 mt-3">{withAvg.length} von {students.length} Schüler:innen mit Noten</div>
+            <div className="text-[11px] text-stone-500 mt-3">{withAvg.length} von {students.length} Schüler:innen mit Noten</div>
           </div>
         )}
+
+        {/* Anwesenheit der letzten 12 Wochen.
+            Eine Liste verbirgt Periodizität – als Fläche wird sichtbar, ob sich Fehltage
+            auf bestimmte Wochentage häufen oder nach den Ferien einbrechen. */}
+        {(() => {
+          const eigene = (absences || []).filter((a) => students.some((s) => s.id === a.studentId));
+          if (!eigene.length) return null;
+          const proTag = Object.create(null);
+          eigene.forEach((a) => {
+            if (!proTag[a.date]) proTag[a.date] = { kinder: new Set(), unentschuldigt: false };
+            proTag[a.date].kinder.add(a.studentId);
+            if (a.excuseStatus === "unentschuldigt") proTag[a.date].unentschuldigt = true;
+          });
+          const wochenStart = startOfWeek(today);
+          const wochen = Array.from({ length: 12 }, (_, i) => addDays(wochenStart, -7 * (11 - i)));
+          const maxKinder = Math.max(1, ...Object.keys(proTag).map((d) => proTag[d].kinder.size));
+          const proWochentag = [0, 1, 2, 3, 4].map((tag) =>
+            wochen.reduce((summe, w) => summe + (proTag[isoDate(addDays(w, tag))]?.kinder.size || 0), 0)
+          );
+          const spitzenTag = proWochentag.indexOf(Math.max(...proWochentag));
+          const gesamt = proWochentag.reduce((a, b) => a + b, 0);
+          return (
+            <div className="card p-4">
+              <div className="t-section mb-1">Anwesenheit · letzte 12 Wochen</div>
+              <p className="text-[11px] text-stone-500 mb-3">Je dunkler, desto mehr Kinder haben an diesem Tag gefehlt. Rot = unentschuldigt dabei.</p>
+              <div className="overflow-x-auto -mx-1 px-1">
+                <div className="flex gap-1 min-w-max">
+                  <div className="flex flex-col gap-1 pr-1 shrink-0">
+                    {WEEKDAY_KURZ.map((d) => (
+                      <div key={d} className="h-4 text-[10px] text-stone-500 leading-4 w-5 text-right">{d}</div>
+                    ))}
+                  </div>
+                  {wochen.map((w, wi) => (
+                    <div key={wi} className="flex flex-col gap-1">
+                      {[0, 1, 2, 3, 4].map((tag) => {
+                        const iso = isoDate(addDays(w, tag));
+                        const eintrag = proTag[iso];
+                        const anzahl = eintrag?.kinder.size || 0;
+                        const staerke = anzahl ? 0.25 + 0.75 * (anzahl / maxKinder) : 0;
+                        return (
+                          <div
+                            key={tag}
+                            title={anzahl ? `${localDate(iso).toLocaleDateString("de-DE")}: ${anzahl} ${anzahl === 1 ? "Kind" : "Kinder"}${eintrag.unentschuldigt ? ", unentschuldigt dabei" : ""}` : localDate(iso).toLocaleDateString("de-DE")}
+                            className="w-4 h-4 rounded-[3px]"
+                            style={{
+                              backgroundColor: anzahl
+                                ? eintrag.unentschuldigt
+                                  ? `rgba(185,28,28,${staerke})`
+                                  : `rgba(79,88,68,${staerke})`
+                                : "#F0EEE8",
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {gesamt > 0 && (
+                <p className="text-[11px] text-stone-500 mt-3">
+                  Die meisten Fehltage fallen auf {WEEKDAY_LANG[spitzenTag]} ({proWochentag[spitzenTag]} von {gesamt}).
+                </p>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Bewertungs-Abdeckung: wen habe ich lange nicht dokumentiert?
+            Auffällige Kinder sind meist überdokumentiert, stille gar nicht – als
+            Punktfeld wird diese Lücke sichtbar, bevor die Zeugniskonferenz ansteht. */}
+        {students.length > 0 && (() => {
+          const letzterEintrag = (id) => {
+            const daten = [
+              ...notes.filter((n) => n.studentId === id).map((n) => n.date),
+              ...grades.filter((g) => g.studentId === id).map((g) => g.date),
+            ].filter(Boolean);
+            return daten.length ? daten.reduce((m, d) => (d > m ? d : m)) : null;
+          };
+          const punkte = students.map((s) => {
+            const letzte = letzterEintrag(s.id);
+            const tage = letzte ? Math.floor((today - localDate(letzte)) / 86400000) : null;
+            return { student: s, letzte, tage };
+          });
+          const lange = punkte.filter((p) => p.tage === null || p.tage > 21);
+          return (
+            <div className="card p-4">
+              <div className="t-section mb-1">Wen habe ich lange nicht angeschaut?</div>
+              <p className="text-[11px] text-stone-500 mb-3">Ein Punkt je Kind. Je blasser, desto länger liegt der letzte Eintrag zurück.</p>
+              <div className="flex flex-wrap gap-1.5">
+                {punkte.map(({ student: s, tage }) => {
+                  const deckkraft = tage === null ? 0.12 : tage <= 7 ? 1 : tage <= 14 ? 0.7 : tage <= 21 ? 0.45 : 0.22;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => onOpenStudent(s.id)}
+                      title={`${s.name} – ${tage === null ? "noch kein Eintrag" : tage === 0 ? "heute" : `vor ${tage} Tagen`}`}
+                      aria-label={`${s.name}, ${tage === null ? "noch kein Eintrag" : `letzter Eintrag vor ${tage} Tagen`}`}
+                      className="w-6 h-6 rounded-full shrink-0 press-scale"
+                      style={{ backgroundColor: `rgba(79,88,68,${deckkraft})` }}
+                    />
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-stone-500 mt-3">
+                {lange.length === 0
+                  ? "Alle Kinder wurden in den letzten drei Wochen dokumentiert."
+                  : `${lange.length} ${lange.length === 1 ? "Kind wartet" : "Kinder warten"} seit über drei Wochen auf einen Eintrag – antippen öffnet das Profil.`}
+              </p>
+            </div>
+          );
+        })()}
 
         {/* Aufmerksamkeit */}
         {needAttention.length > 0 && (
@@ -7858,6 +8006,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
             grades={dashGrades}
             faecher={dashFaecher}
             foerderZiele={data.foerderZiele || []}
+            absences={(data.absences || []).filter((a) => dashStudents.some((s) => s.id === a.studentId))}
             onOpenStudent={(studentId) => {
               setKlassenDashboardId(null);
               setSelectedClass(klassenDashboardId);
@@ -8820,7 +8969,9 @@ function BulkGradeModal({ fach, cls, students, halbjahr, isColor = true, onSave,
           </select>
           <input className={inputCls} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           {category === "schriftlich" && (
-            <input className={`${inputCls} col-span-2`} placeholder="Thema (optional), z. B. Bruchrechnung" value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={100} />
+            <>
+              <input className={`${inputCls} col-span-2`} list="saidy-themen-noten" placeholder="Thema (optional), z. B. Bruchrechnung" value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={100} />
+            </>
           )}
           <Field label="Faktor (z. B. x2 für Klassenarbeiten)">
             <input className={inputCls} type="number" step="0.5" min="0.5" value={factor} onChange={(e) => setFactor(Number(e.target.value))} />
@@ -9781,6 +9932,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
   const [editingGrade, setEditingGrade] = useState(null);
   const [gesprNDraft, setGesprNDraft] = useState({ text: "", mood: "ok", typ: "schueler" });
   const [showSprechtagPicker, setShowSprechtagPicker] = useState(false);
+  const [openTopic, setOpenTopic] = useState(null); // aufgeklapptes Wissensgebiet (Kind-Aufschlüsselung)
 
   const fach = data.faecher.find((f) => f.id === selectedFach);
   const cls = fach ? data.classes.find((c) => c.id === fach.classId) : null;
@@ -9945,6 +10097,12 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
 
   return (
     <div className="space-y-6">
+      {/* Vorschlagsliste für Themen – einmal je Fach, von allen Eingabefeldern genutzt */}
+      {fach && (
+        <datalist id="saidy-themen-noten">
+          {bekannteThemen(data.grades, fach.id).map((t) => <option key={t} value={t} />)}
+        </datalist>
+      )}
       {/* Deutlicher Zurück-Weg, eine Ebene nach oben */}
       {(selectedClass || fach || selectedStudent) && (
         <button
@@ -10012,14 +10170,29 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-stone-500">{cStudents.length} Schüler:innen</div>
-                    {zeugnisphase && !!cFaecher.length && (
-                      <div className="text-xs text-stone-400">
-                        {offen === 0 ? "Zeugnisnoten vollständig" : `${offen} Zeugnisnote${offen === 1 ? "" : "n"} offen`}
-                      </div>
-                    )}
                   </div>
                   <ChevronRight size={18} className="text-stone-300 shrink-0" />
                 </div>
+
+                {/* Zeugnis-Fortschritt: in der Zeugnisphase über mehrere Klassen hinweg
+                    in einer halben Sekunde vergleichbar – als Zahlenreihe nicht. */}
+                {zeugnisphase && !!zeugnisSoll && (
+                  <div className="mb-3">
+                    <div className="flex items-baseline justify-between mb-1">
+                      <span className="text-xs text-stone-500">Zeugnisnoten</span>
+                      <span className="text-xs text-stone-600 tabular-nums">
+                        {zeugnisIst} von {zeugnisSoll}
+                        {offen > 0 && <span className="text-stone-400"> · {offen} offen</span>}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-[width] duration-500 ${offen === 0 ? "bg-[var(--s-gut)]" : "akzent-flaeche"}`}
+                        style={{ width: `${Math.round((zeugnisIst / zeugnisSoll) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex flex-wrap gap-1.5">
                   {cFaecher.map((f) => (
@@ -10108,44 +10281,108 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
             </div>
           )}
 
-          {/* Themen-Auswertung: Wissensgebiete aus schriftlichen Noten mit Themen-Tag */}
+          {/* Wissensgebiete: schriftliche Noten nach Thema gruppiert.
+              Ein Tipp auf ein Thema zeigt, welche Kinder dort Lücken haben – aus einer
+              Statistik wird so eine Fördergruppe. */}
           {(() => {
-            const allGrades = data.grades.filter((g) => g.fachId === fach.id && g.halbjahr === halbjahr && g.category === "schriftlich" && g.topic);
-            if (!allGrades.length) return null;
-            const byTopic = {};
-            allGrades.forEach((g) => {
-              if (!byTopic[g.topic]) byTopic[g.topic] = [];
-              byTopic[g.topic].push(g.value);
+            const schriftlich = data.grades.filter((g) => g.fachId === fach.id && g.halbjahr === halbjahr && g.category === "schriftlich");
+            if (!schriftlich.length) return null;
+            const getaggt = schriftlich.filter((g) => typeof g.topic === "string" && g.topic.trim());
+            const kopf = (
+              <div className="flex items-center gap-1.5 mb-2.5">
+                <BarChart2 size={14} className="text-stone-400" />
+                <span className="text-xs font-semibold uppercase tracking-wide text-stone-500">Wissensgebiete</span>
+              </div>
+            );
+            // Henne-Ei: ohne getaggte Note wüsste niemand, dass es die Auswertung gibt
+            if (!getaggt.length) {
+              return (
+                <Card className="px-4 py-3">
+                  {kopf}
+                  <p className="text-sm text-stone-500 leading-relaxed">
+                    Vergib beim Eintragen schriftlicher Noten ein Thema (z. B. „Bruchrechnung") –
+                    dann siehst du hier, wo die Klasse Lücken hat.
+                  </p>
+                </Card>
+              );
+            }
+            /* Object.create(null): ein Thema wie „constructor" oder „__proto__" würde bei einem
+               normalen Objekt die geerbte Property treffen und die App zum Absturz bringen.
+               Kleinschreibung als Schlüssel, damit „Bruchrechnung" und „bruchrechnung" zusammenfallen. */
+            const byTopic = Object.create(null);
+            getaggt.forEach((g) => {
+              const key = g.topic.trim().toLowerCase();
+              if (!byTopic[key]) byTopic[key] = { label: g.topic.trim(), eintraege: [] };
+              byTopic[key].eintraege.push(g);
             });
-            const topics = Object.entries(byTopic).map(([topic, vals]) => ({
-              topic,
-              avg: vals.reduce((a, b) => a + b, 0) / vals.length,
-              count: vals.length,
-            })).sort((a, b) => b.avg - a.avg); // schlechteste zuerst
+            const topics = Object.keys(byTopic)
+              .map((key) => {
+                const { label, eintraege } = byTopic[key];
+                return { key, label, eintraege, avg: eintraege.reduce((a, g) => a + g.value, 0) / eintraege.length, count: eintraege.length };
+              })
+              .sort((a, b) => b.avg - a.avg); // schwächstes Thema zuerst
             return (
               <Card className="px-4 py-3">
-                <div className="flex items-center gap-1.5 mb-2.5">
-                  <BarChart2 size={14} className="text-stone-400" />
-                  <span className="text-xs font-semibold uppercase tracking-wide text-stone-400">Wissensgebiete</span>
-                  <span className="text-[10px] text-stone-300 ml-1">schriftlich</span>
-                </div>
-                <ul className="space-y-2">
-                  {topics.map(({ topic, avg, count }) => {
-                    const pct = Math.round(((avg - 1) / 5) * 100);
-                    const barColor = avg <= 2 ? "bg-emerald-400" : avg <= 3 ? "bg-amber-400" : avg <= 4 ? "bg-orange-400" : "bg-red-400";
+                {kopf}
+                <ul className="space-y-2.5">
+                  {topics.map(({ key, label, avg, count, eintraege }) => {
+                    // Balkenlänge = Kompetenz: lang bedeutet überall in der App „gut"
+                    const pct = Math.max(4, Math.round(((6 - avg) / 5) * 100));
+                    const offen = openTopic === key;
+                    // Aufschlüsselung: welches Kind steht in diesem Thema wie da
+                    const proKind = offen
+                      ? students
+                          .map((s) => {
+                            const eigene = eintraege.filter((g) => g.studentId === s.id);
+                            if (!eigene.length) return null;
+                            return { student: s, avg: eigene.reduce((a, g) => a + g.value, 0) / eigene.length, anzahl: eigene.length };
+                          })
+                          .filter(Boolean)
+                          .sort((a, b) => b.avg - a.avg)
+                      : [];
                     return (
-                      <li key={topic} className="flex items-center gap-2 text-sm">
-                        <span className="flex-1 text-stone-700 truncate min-w-0">{topic}</span>
-                        <div className="w-24 h-1.5 bg-stone-100 rounded-full overflow-hidden shrink-0">
-                          <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
-                        </div>
-                        <span className={`text-xs font-bold w-8 text-right tabular-nums shrink-0 ${gradeColor(avg, colored)}`}>{gradeLabel(avg)}</span>
-                        <span className="text-[10px] text-stone-300 w-10 text-right shrink-0">{count} Note{count !== 1 ? "n" : ""}</span>
+                      <li key={key}>
+                        <button
+                          onClick={() => setOpenTopic(offen ? null : key)}
+                          className="w-full text-left min-h-[44px] py-1"
+                          aria-expanded={offen}
+                        >
+                          <div className="flex items-baseline gap-2">
+                            <span className="flex-1 text-sm text-stone-700 min-w-0 break-words">{label}</span>
+                            <span className={`text-sm font-bold tabular-nums shrink-0 ${gradeColor(avg, colored)}`}>{gradeLabel(avg)}</span>
+                            <ChevronDown size={13} className={`text-stone-400 shrink-0 transition-transform ${offen ? "rotate-180" : ""}`} />
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <div className="flex-1 h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full akzent-flaeche" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="text-[11px] text-stone-500 shrink-0 tabular-nums">{count} Note{count !== 1 ? "n" : ""}</span>
+                          </div>
+                        </button>
+                        {offen && (
+                          <ul className="mt-1.5 mb-1 pl-3 border-l-2 border-stone-100 space-y-1">
+                            {proKind.map(({ student: s, avg: sAvg, anzahl }) => (
+                              <li key={s.id}>
+                                <button
+                                  onClick={() => setSelectedStudent(s.id)}
+                                  className="w-full flex items-center gap-2 text-sm min-h-[44px] text-left"
+                                >
+                                  <span className={`w-2 h-2 rounded-full shrink-0 ${sAvg <= 2 ? "bg-emerald-400" : sAvg <= 3.4 ? "bg-amber-400" : "bg-red-400"}`} />
+                                  <span className="flex-1 text-stone-700 truncate">{s.name}</span>
+                                  {anzahl > 1 && <span className="text-[11px] text-stone-400 shrink-0">{anzahl}×</span>}
+                                  <span className={`text-xs font-semibold tabular-nums shrink-0 ${gradeColor(sAvg, colored)}`}>{gradeLabel(sAvg)}</span>
+                                </button>
+                              </li>
+                            ))}
+                          </ul>
+                        )}
                       </li>
                     );
                   })}
                 </ul>
-                <p className="text-[10px] text-stone-300 mt-2.5">Ø aller Schüler:innen mit Themen-Tag in diesem Halbjahr</p>
+                <p className="text-[11px] text-stone-500 mt-2.5">
+                  Ø aller Kinder · dieses Halbjahr · langer Balken = sicher beherrscht. Thema antippen zeigt die einzelnen Kinder.
+                </p>
               </Card>
             );
           })()}
@@ -10216,7 +10453,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                     </div>
                     <input className={inputCls} placeholder="Bezeichnung, z. B. Stundenbeteiligung" value={gradeTitle} onChange={(e) => setGradeTitle(e.target.value)} maxLength={200} />
                     {category === "schriftlich" && (
-                      <input className={inputCls} placeholder="Thema (optional), z. B. Bruchrechnung" value={gradeTopic} onChange={(e) => setGradeTopic(e.target.value)} maxLength={100} />
+                      <input className={inputCls} list="saidy-themen-noten" placeholder="Thema (optional), z. B. Bruchrechnung" value={gradeTopic} onChange={(e) => setGradeTopic(e.target.value)} maxLength={100} />
                     )}
                     <div className="flex gap-2">
                       <input className={`${inputCls} flex-1`} type="date" value={gdate} onChange={(e) => setGdate(e.target.value)} />
@@ -10552,6 +10789,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                               {g.category === "schriftlich" && (
                                 <input
                                   className={inputCls}
+                                  list="saidy-themen-noten"
                                   placeholder="Thema (optional), z. B. Bruchrechnung"
                                   value={g.topic || ""}
                                   onChange={(e) => updateGrade(g.id, { topic: e.target.value.trim() || null })}
