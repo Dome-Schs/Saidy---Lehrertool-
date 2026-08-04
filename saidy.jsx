@@ -4099,10 +4099,10 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings
                           className="w-full pl-10 pr-1 mt-1.5 mb-0.5 text-left"
                           aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
                         >
-                          <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                          <div className="h-px bg-stone-150 rounded-full overflow-hidden" style={{ backgroundColor: "#e7e5e4" }}>
                             {pct !== null
                               ? <div className={`h-full rounded-full transition-[width] ${barCls}`} style={{ width: `${pct}%` }} />
-                              : <div className="h-full w-full bg-stone-200 rounded-full" />
+                              : <div className="h-full w-full bg-stone-300 rounded-full" />
                             }
                           </div>
                           {detailOpen && (
