@@ -59,6 +59,8 @@ const IMPORT_INTERVALS = [
   { label: "Monatlich", days: 30 },
 ];
 
+const WEEKDAY_KURZ = ["Mo", "Di", "Mi", "Do", "Fr"];
+const WEEKDAY_LANG = ["Montage", "Dienstage", "Mittwoche", "Donnerstage", "Freitage"];
 const EXCUSE_STATUS = {
   ausstehend: { label: "Entschuldigung fehlt noch", color: "#B45309" },
   eingereicht: { label: "Eingereicht", color: "#1D4ED8" },
@@ -2059,7 +2061,7 @@ const HELP_DATA = [
       { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle in der Fläche – es erscheint eine Auswahlliste zum Auswählen des Kindes. Alternativ auf „Kind hinzufügen" tippen. Platzierte Kinder lassen sich frei auf der Fläche verschieben. Die Tafel oben lässt sich an jeden Rand ziehen (oben, unten, links, rechts). Einmal antippen (ohne zu schieben) markiert den Sitzplatz farbig: grün = klappt gut, amber = beobachten, rot = klappt nicht. Ein Kind entfernen: Token nach unten über den Rand der Fläche in die rote Toolbar ziehen und loslassen. „Aufräumen" richtet alle Kinder gleichzeitig in einem sauberen Raster aus. „Löschen" entfernt den gesamten Sitzplan. Am Ende „Speichern" tippen.` },
       { q: "Was zeigt die Zusammenfassung im Schülerprofil?", a: `Im Profil-Tab „Übersicht" erscheint eine automatisch generierte Zusammenfassung – erkennbar am Sparkles-Symbol. Sie fasst Stimmung, Notendurchschnitt, Tendenz, Aktivität der letzten 30 Tage, Förderbedarfe und aktive Ziele in einem Satz zusammen. Die Zusammenfassung wird lokal aus den gespeicherten Daten berechnet und nur angezeigt, wenn genügend Informationen vorliegen.` },
       { q: "Wie funktionieren Sprachnotizen?", a: `Im Schülerprofil (Tab „Übersicht" oder „Notizen") gibt es neben dem Notiz-Eingabefeld ein Mikrofon-Symbol. Antippen startet die Aufnahme – beim ersten Mal erscheint ein kurzer Hinweis zur Datenverarbeitung. Während der Aufnahme erscheint eine Live-Vorschau des erkannten Textes. Nach der Aufnahme wird der Text automatisch ins Eingabefeld übernommen, wo er noch bearbeitet werden kann. Unterstützte Browser: Safari (iOS/macOS), Chrome und Edge. Firefox unterstützt diese Funktion nicht. Das Mikrofon-Symbol erscheint nur, wenn dein Browser Spracherkennung unterstützt.` },
-      { q: "Was zeigt das Klassen-Dashboard?", a: `Im Klassen-Tab eine Klasse aufklappen → „Klassen-Dashboard" antippen. Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf-Zähler als Kacheln; eine Notenverteilungs-Leiste (Sehr gut–Gut / Befriedigend / Ausreichend+); eine „Aufmerksamkeit"-Liste mit Kindern, die einen kritischen Schnitt oder seit 14+ Tagen keinen Eintrag haben; Geburtstage in den nächsten 21 Tagen; sowie die letzten Notizen und Gespräche der Klasse als Verlaufszeile. Tippen auf ein Kind öffnet direkt sein Schülerprofil.` },
+      { q: "Was zeigt das Klassen-Dashboard?", a: `Im Klassen-Tab eine Klasse aufklappen → „Klassen-Dashboard" antippen. Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf als Kacheln; eine Notenverteilungs-Leiste; eine Anwesenheits-Übersicht der letzten 12 Wochen als Farbfeld (je dunkler, desto mehr Kinder fehlten an dem Tag, rot heißt unentschuldigt dabei) mit Hinweis, auf welchen Wochentag die meisten Fehltage fallen; ein Punktfeld „Wen habe ich lange nicht angeschaut?" (ein Punkt je Kind, je blasser desto länger liegt der letzte Eintrag zurück); eine „Aufmerksamkeit"-Liste; Geburtstage der nächsten 21 Tage sowie die letzten Notizen und Gespräche. Tippen auf ein Kind oder einen Punkt öffnet das Schülerprofil.` },
       { q: "Was sind die farbigen Signale im Schülerprofil?", a: `Direkt unter der Profilkarte erscheinen farbige Signale: Rot (kritisch), Gelb (beobachten), Grün (positiv) und Blau (Info). Sie werden automatisch aus den Daten berechnet – z. B. kritischer Notenschnitt, kein Eintrag seit mehr als 14 Tagen, negative Stimmung in Folge, Förderbedarf ohne aktives Ziel, oder Geburtstag in den nächsten 7 Tagen. Tippe auf ein Signal, um direkt zum betreffenden Tab zu springen.` },
     ],
   },
@@ -2072,6 +2074,7 @@ const HELP_DATA = [
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Klemmbrett-Symbol neben einer Stunde auf der Startseite öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Gespräche eintragen kannst. Die Notenbuttons sind immer direkt sichtbar. Weitere Aktionen (Notiz, Gespräch, Vergessen) erscheinen nach Antippen des ···-Symbols neben dem Namen. Hat ein Kind bereits eine Notiz oder einen Auffälligkeits-Eintrag, leuchtet das ···-Symbol grün.` },
       { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Saidy an, wie viele Unterrichtsstunden bis dahin noch bleiben. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Saidy die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
       { q: "Wie finde ich heraus, bei welchem Thema die Klasse Lücken hat?", a: `Beim Eintragen einer schriftlichen Note kannst du ein Thema angeben, z. B. „Bruchrechnung". Bereits verwendete Themen werden beim Tippen vorgeschlagen – nimm die Vorschläge, dann bleibt die Auswertung sauber. Auch die Schnellerfassung übernimmt das oben eingetragene Stundenthema automatisch, wenn du dort schriftliche Noten vergibst. In der Fachansicht („Noten & Berichte" → Klasse → Fach) erscheint dann die Karte „Wissensgebiete": Alle Themen mit dem Klassenschnitt, das schwächste zuerst. Ein langer Balken bedeutet gut beherrscht. Tippst du ein Thema an, siehst du, welche Kinder dort Lücken haben – daraus wird direkt eine Fördergruppe.` },
+      { q: "Wie sehe ich, wie weit ich mit den Zeugnisnoten bin?", a: `In der Zeugnisphase (Januar, Februar, Juni, Juli) zeigt jede Klassenkarte unter „Noten & Berichte" einen Fortschrittsbalken: wie viele Zeugnisnoten von wie vielen bereits gesetzt sind und wie viele noch offen sind. Über mehrere Klassen hinweg siehst du so auf einen Blick, wo noch Arbeit liegt. Ist alles vollständig, wird der Balken grün.` },
       { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button „Zeugnisnote". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
       { q: "Wo kann ich Gespräche mit Schüler:innen erfassen?", a: `An drei Stellen: (1) In der Klassenliste neben jedem Kind das 💬-Symbol antippen. (2) Im Schnellerfassungs-Modus nach dem Unterricht. (3) Direkt in der Notenansicht: Kind antippen – die Detailansicht zeigt oben eine Karte „Gespräch & Stimmung" mit Typ-Wahl (Schüler / Eltern / Förder), Stimmungsskala (😄😊😐😕😟) und Notizfeld. Alle erfassten Gespräche erscheinen auch bei Elternsprechtag-Vorbereitung.` },
     ],
@@ -7261,7 +7264,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   );
 }
 
-function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele, onOpenStudent, onClose }) {
+function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele, absences, onOpenStudent, onClose }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const cutoff14Iso = (() => { const d = new Date(today); d.setDate(d.getDate() - 14); return d.toISOString().slice(0, 10); })();
 
@@ -7371,6 +7374,117 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
             <div className="text-[11px] text-stone-500 mt-3">{withAvg.length} von {students.length} Schüler:innen mit Noten</div>
           </div>
         )}
+
+        {/* Anwesenheit der letzten 12 Wochen.
+            Eine Liste verbirgt Periodizität – als Fläche wird sichtbar, ob sich Fehltage
+            auf bestimmte Wochentage häufen oder nach den Ferien einbrechen. */}
+        {(() => {
+          const eigene = (absences || []).filter((a) => students.some((s) => s.id === a.studentId));
+          if (!eigene.length) return null;
+          const proTag = Object.create(null);
+          eigene.forEach((a) => {
+            if (!proTag[a.date]) proTag[a.date] = { kinder: new Set(), unentschuldigt: false };
+            proTag[a.date].kinder.add(a.studentId);
+            if (a.excuseStatus === "unentschuldigt") proTag[a.date].unentschuldigt = true;
+          });
+          const wochenStart = startOfWeek(today);
+          const wochen = Array.from({ length: 12 }, (_, i) => addDays(wochenStart, -7 * (11 - i)));
+          const maxKinder = Math.max(1, ...Object.keys(proTag).map((d) => proTag[d].kinder.size));
+          const proWochentag = [0, 1, 2, 3, 4].map((tag) =>
+            wochen.reduce((summe, w) => summe + (proTag[isoDate(addDays(w, tag))]?.kinder.size || 0), 0)
+          );
+          const spitzenTag = proWochentag.indexOf(Math.max(...proWochentag));
+          const gesamt = proWochentag.reduce((a, b) => a + b, 0);
+          return (
+            <div className="card p-4">
+              <div className="t-section mb-1">Anwesenheit · letzte 12 Wochen</div>
+              <p className="text-[11px] text-stone-500 mb-3">Je dunkler, desto mehr Kinder haben an diesem Tag gefehlt. Rot = unentschuldigt dabei.</p>
+              <div className="overflow-x-auto -mx-1 px-1">
+                <div className="flex gap-1 min-w-max">
+                  <div className="flex flex-col gap-1 pr-1 shrink-0">
+                    {WEEKDAY_KURZ.map((d) => (
+                      <div key={d} className="h-4 text-[10px] text-stone-500 leading-4 w-5 text-right">{d}</div>
+                    ))}
+                  </div>
+                  {wochen.map((w, wi) => (
+                    <div key={wi} className="flex flex-col gap-1">
+                      {[0, 1, 2, 3, 4].map((tag) => {
+                        const iso = isoDate(addDays(w, tag));
+                        const eintrag = proTag[iso];
+                        const anzahl = eintrag?.kinder.size || 0;
+                        const staerke = anzahl ? 0.25 + 0.75 * (anzahl / maxKinder) : 0;
+                        return (
+                          <div
+                            key={tag}
+                            title={anzahl ? `${localDate(iso).toLocaleDateString("de-DE")}: ${anzahl} ${anzahl === 1 ? "Kind" : "Kinder"}${eintrag.unentschuldigt ? ", unentschuldigt dabei" : ""}` : localDate(iso).toLocaleDateString("de-DE")}
+                            className="w-4 h-4 rounded-[3px]"
+                            style={{
+                              backgroundColor: anzahl
+                                ? eintrag.unentschuldigt
+                                  ? `rgba(185,28,28,${staerke})`
+                                  : `rgba(79,88,68,${staerke})`
+                                : "#F0EEE8",
+                            }}
+                          />
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              {gesamt > 0 && (
+                <p className="text-[11px] text-stone-500 mt-3">
+                  Die meisten Fehltage fallen auf {WEEKDAY_LANG[spitzenTag]} ({proWochentag[spitzenTag]} von {gesamt}).
+                </p>
+              )}
+            </div>
+          );
+        })()}
+
+        {/* Bewertungs-Abdeckung: wen habe ich lange nicht dokumentiert?
+            Auffällige Kinder sind meist überdokumentiert, stille gar nicht – als
+            Punktfeld wird diese Lücke sichtbar, bevor die Zeugniskonferenz ansteht. */}
+        {students.length > 0 && (() => {
+          const letzterEintrag = (id) => {
+            const daten = [
+              ...notes.filter((n) => n.studentId === id).map((n) => n.date),
+              ...grades.filter((g) => g.studentId === id).map((g) => g.date),
+            ].filter(Boolean);
+            return daten.length ? daten.reduce((m, d) => (d > m ? d : m)) : null;
+          };
+          const punkte = students.map((s) => {
+            const letzte = letzterEintrag(s.id);
+            const tage = letzte ? Math.floor((today - localDate(letzte)) / 86400000) : null;
+            return { student: s, letzte, tage };
+          });
+          const lange = punkte.filter((p) => p.tage === null || p.tage > 21);
+          return (
+            <div className="card p-4">
+              <div className="t-section mb-1">Wen habe ich lange nicht angeschaut?</div>
+              <p className="text-[11px] text-stone-500 mb-3">Ein Punkt je Kind. Je blasser, desto länger liegt der letzte Eintrag zurück.</p>
+              <div className="flex flex-wrap gap-1.5">
+                {punkte.map(({ student: s, tage }) => {
+                  const deckkraft = tage === null ? 0.12 : tage <= 7 ? 1 : tage <= 14 ? 0.7 : tage <= 21 ? 0.45 : 0.22;
+                  return (
+                    <button
+                      key={s.id}
+                      onClick={() => onOpenStudent(s.id)}
+                      title={`${s.name} – ${tage === null ? "noch kein Eintrag" : tage === 0 ? "heute" : `vor ${tage} Tagen`}`}
+                      aria-label={`${s.name}, ${tage === null ? "noch kein Eintrag" : `letzter Eintrag vor ${tage} Tagen`}`}
+                      className="w-6 h-6 rounded-full shrink-0 press-scale"
+                      style={{ backgroundColor: `rgba(79,88,68,${deckkraft})` }}
+                    />
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-stone-500 mt-3">
+                {lange.length === 0
+                  ? "Alle Kinder wurden in den letzten drei Wochen dokumentiert."
+                  : `${lange.length} ${lange.length === 1 ? "Kind wartet" : "Kinder warten"} seit über drei Wochen auf einen Eintrag – antippen öffnet das Profil.`}
+              </p>
+            </div>
+          );
+        })()}
 
         {/* Aufmerksamkeit */}
         {needAttention.length > 0 && (
@@ -7892,6 +8006,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
             grades={dashGrades}
             faecher={dashFaecher}
             foerderZiele={data.foerderZiele || []}
+            absences={(data.absences || []).filter((a) => dashStudents.some((s) => s.id === a.studentId))}
             onOpenStudent={(studentId) => {
               setKlassenDashboardId(null);
               setSelectedClass(klassenDashboardId);
@@ -10055,14 +10170,29 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                   </span>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm text-stone-500">{cStudents.length} Schüler:innen</div>
-                    {zeugnisphase && !!cFaecher.length && (
-                      <div className="text-xs text-stone-400">
-                        {offen === 0 ? "Zeugnisnoten vollständig" : `${offen} Zeugnisnote${offen === 1 ? "" : "n"} offen`}
-                      </div>
-                    )}
                   </div>
                   <ChevronRight size={18} className="text-stone-300 shrink-0" />
                 </div>
+
+                {/* Zeugnis-Fortschritt: in der Zeugnisphase über mehrere Klassen hinweg
+                    in einer halben Sekunde vergleichbar – als Zahlenreihe nicht. */}
+                {zeugnisphase && !!zeugnisSoll && (
+                  <div className="mb-3">
+                    <div className="flex items-baseline justify-between mb-1">
+                      <span className="text-xs text-stone-500">Zeugnisnoten</span>
+                      <span className="text-xs text-stone-600 tabular-nums">
+                        {zeugnisIst} von {zeugnisSoll}
+                        {offen > 0 && <span className="text-stone-400"> · {offen} offen</span>}
+                      </span>
+                    </div>
+                    <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-[width] duration-500 ${offen === 0 ? "bg-[var(--s-gut)]" : "akzent-flaeche"}`}
+                        style={{ width: `${Math.round((zeugnisIst / zeugnisSoll) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="flex flex-wrap gap-1.5">
                   {cFaecher.map((f) => (
