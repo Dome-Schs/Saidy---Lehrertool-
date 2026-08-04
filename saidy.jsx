@@ -6,7 +6,7 @@ import {
   Clock, StickyNote, ClipboardCheck, Copy, CheckCircle2, AlertCircle, AlertTriangle,
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
-  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target, Mic,
+  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target, Mic, Mail,
 } from "lucide-react";
 
 /* ---------- Konstanten ---------- */
@@ -1048,7 +1048,7 @@ function LegalModal({ onClose }) {
 }
 
 /* Einstellungen: Reihenfolge der Dashboard-Karten per Pfeiltasten anpassen */
-function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onImport, onReset, onClose, onOpenUntisImport }) {
+function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onEmailBackup, onImport, onReset, onClose, onOpenUntisImport }) {
   const gespeicherteReihenfolge = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
   const order = [
     ...gespeicherteReihenfolge.filter((k) => DASHBOARD_SECTIONS[k]),
@@ -1241,6 +1241,64 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             <ShieldCheck size={13} className="shrink-0 mt-0.5" />
             Backup sicher aufbewahren (nur eigenes Gerät oder Schul-Server). Nicht mehr benötigte Backups löschen.
           </p>
+
+          {/* E-Mail Backup */}
+          <div className="mt-4 border-t border-stone-100 pt-3">
+            <div className="text-xs font-medium text-stone-500 mb-2">Backup per E-Mail</div>
+            <input
+              className={`${inputCls} mb-2`}
+              type="email"
+              placeholder="Deine E-Mail-Adresse (z. B. name@schule.de)"
+              value={data.settings?.backupEmail || ""}
+              onChange={(e) => setSetting("backupEmail", e.target.value || null)}
+            />
+            {data.settings?.backupEmail ? (
+              <>
+                <Button variant="subtle" onClick={onEmailBackup} className="w-full justify-center">
+                  <Mail size={15} /> Jetzt per E-Mail sichern
+                </Button>
+                <p className="text-[11px] text-stone-400 mt-1.5 leading-relaxed">
+                  Es öffnet sich die Teilen-Ansicht – wähle „Mail" und sende die Datei an <strong>{data.settings.backupEmail}</strong>.
+                </p>
+              </>
+            ) : (
+              <p className="text-[11px] text-stone-400 leading-relaxed">
+                E-Mail eintragen, dann kannst du Backups direkt aus Saidy an dich selbst versenden – kein Suchen, kein Vergessen.
+              </p>
+            )}
+          </div>
+
+          {/* Wöchentliche Erinnerung */}
+          {"Notification" in window && (
+            <div className="mt-4 border-t border-stone-100 pt-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-xs font-medium text-stone-500">Freitags-Erinnerung</div>
+                  <div className="text-[11px] text-stone-400 mt-0.5">Benachrichtigung wenn seit 3+ Tagen kein Backup</div>
+                </div>
+                <button
+                  onClick={async () => {
+                    if (data.settings?.backupNotifications) {
+                      setSetting("backupNotifications", false);
+                    } else {
+                      const perm = await Notification.requestPermission();
+                      if (perm === "granted") {
+                        setSetting("backupNotifications", true);
+                        new Notification("Saidy – Erinnerungen aktiv", { body: "Du wirst freitags daran erinnert, dein Backup zu erneuern." });
+                      }
+                    }
+                  }}
+                  className={`relative shrink-0 w-11 h-6 rounded-full transition-colors ${data.settings?.backupNotifications ? "akzent-flaeche" : "bg-stone-200"}`}
+                  aria-label="Freitags-Erinnerung"
+                >
+                  <span className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all ${data.settings?.backupNotifications ? "left-6" : "left-1"}`} />
+                </button>
+              </div>
+              {Notification.permission === "denied" && (
+                <p className="text-[11px] text-amber-700 mt-1.5">Benachrichtigungen sind im Browser blockiert. Bitte in den Browser-Einstellungen erlauben.</p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="pt-5 border-t border-stone-100">
@@ -1984,10 +2042,12 @@ const HELP_DATA = [
   {
     category: "Backup & Daten",
     items: [
-      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Backup" → „Sichern" (Datei speichern) oder „Teilen" (z. B. per AirDrop).` },
-      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr" → „Einstellungen" → „Backup" → „Gesichertes wiederherstellen" und wähle deine Backup-Datei.` },
+      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung" → „Sichern" (Datei speichern) oder „Teilen" (z. B. per AirDrop). Neu: Du kannst auch deine E-Mail-Adresse eintragen und das Backup direkt per E-Mail an dich selbst senden.` },
+      { q: "Wie funktioniert das E-Mail-Backup?", a: `Trage in den Einstellungen unter „Backup per E-Mail" deine E-Mail-Adresse ein. Mit dem Button „Jetzt per E-Mail sichern" öffnet sich die Teilen-Ansicht. Wähle dort „Mail" – die Backup-Datei ist bereits angehängt. Einfach abschicken und in der eigenen Inbox gesichert.` },
+      { q: "Wie aktiviere ich die Freitags-Erinnerung?", a: `In den Einstellungen unter „Datensicherung" → „Freitags-Erinnerung" den Schalter aktivieren. Saidy zeigt dann jeden Freitag eine Benachrichtigung, wenn seit mehr als 3 Tagen kein Backup erstellt wurde. Beim ersten Aktivieren fragt der Browser nach der Benachrichtigungs-Erlaubnis.` },
+      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung" → „Gesichertes wiederherstellen" und wähle deine Backup-Datei.` },
       { q: "Wo werden meine Daten gespeichert?", a: `Alle Daten bleiben ausschließlich auf deinem Gerät (lokaler Browser-Speicher). Es werden keine Daten an Server übertragen.` },
-      { q: "Warum bekomme ich eine Backup-Erinnerung?", a: `Saidy erinnert nach 7 Tagen ohne Backup. Da die Daten nur lokal gespeichert sind, schützt ein regelmäßiges Backup vor Datenverlust.` },
+      { q: "Warum bekomme ich eine Backup-Erinnerung?", a: `Saidy erinnert automatisch wenn seit 7 Tagen kein Backup erstellt wurde oder wenn seit dem letzten Backup 10 oder mehr neue Einträge (Noten, Notizen, Fehlzeiten) hinzugekommen sind. Das Morgen-Briefing zeigt ebenfalls einen Hinweis, wenn Backup fällig ist.` },
     ],
   },
   {
@@ -2202,6 +2262,7 @@ export default function App() {
   const [focusStudentId, setFocusStudentId] = useState(null);
   const [klassenSubTab, setKlassenSubTab] = useState("klassen");
   const [backupReminderDays, setBackupReminderDays] = useState(null); // null=kein Banner, 0=nie gesichert, >0=Tage seit letztem Backup
+  const [changesSinceBackup, setChangesSinceBackup] = useState({ grades: 0, notes: 0, absences: 0 });
   const [toast, setToast] = useState(null);
   const toastTimer = useRef(null);
   const [notenFachId, setNotenFachId] = useState(null); // Vorauswahl für den Noten-Tab
@@ -2315,11 +2376,37 @@ export default function App() {
           if (!parsed.settings?.bundesland) setShowOnboarding(true);
           if ((parsed.classes || []).length > 0) {
             const lastBackup = localStorage.getItem("last_backup_at");
+            const lastCounts = (() => { try { return JSON.parse(localStorage.getItem("saidy_backup_counts") || "null"); } catch { return null; } })();
+            const curCounts = {
+              grades: (parsed.grades || []).length,
+              notes: (parsed.notes || []).length,
+              absences: (parsed.absences || []).length,
+            };
+            const changes = lastCounts ? {
+              grades: Math.max(0, curCounts.grades - (lastCounts.grades || 0)),
+              notes: Math.max(0, curCounts.notes - (lastCounts.notes || 0)),
+              absences: Math.max(0, curCounts.absences - (lastCounts.absences || 0)),
+            } : { grades: 0, notes: 0, absences: 0 };
+            const totalChanges = changes.grades + changes.notes + changes.absences;
+            setChangesSinceBackup(changes);
             if (!lastBackup) {
               setBackupReminderDays(0);
             } else {
               const daysSince = Math.floor((Date.now() - new Date(lastBackup).getTime()) / (1000 * 60 * 60 * 24));
-              if (daysSince >= 7) setBackupReminderDays(daysSince);
+              if (daysSince >= 7 || totalChanges >= 10) setBackupReminderDays(daysSince);
+            }
+            // Freitags-Erinnerung via Notification API
+            if (parsed.settings?.backupNotifications && "Notification" in window && Notification.permission === "granted") {
+              const isFriday = new Date().getDay() === 5;
+              const daysSince = lastBackup ? Math.floor((Date.now() - new Date(lastBackup).getTime()) / 86400000) : 99;
+              if (isFriday && daysSince >= 3) {
+                setTimeout(() => {
+                  new Notification("Saidy – Backup nicht vergessen", {
+                    body: daysSince === 0 ? "Noch kein Backup gespeichert!" : `Letztes Backup vor ${daysSince} Tagen. Jetzt kurz sichern?`,
+                    icon: "/icon-192.png",
+                  });
+                }, 1500);
+              }
             }
           }
         } else {
@@ -2421,7 +2508,13 @@ export default function App() {
 
   function recordBackup() {
     localStorage.setItem("last_backup_at", new Date().toISOString());
+    localStorage.setItem("saidy_backup_counts", JSON.stringify({
+      grades: data.grades.length,
+      notes: data.notes.length,
+      absences: (data.absences || []).length,
+    }));
     setBackupReminderDays(null);
+    setChangesSinceBackup({ grades: 0, notes: 0, absences: 0 });
   }
 
   function exportBackup() {
@@ -2457,6 +2550,31 @@ export default function App() {
       if (e?.name === "AbortError") return;
     }
     exportBackup();
+  }
+
+  async function emailBackup() {
+    const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data: { ...data, deletedSnapshot: null } };
+    const json = JSON.stringify(payload, null, 2);
+    const stamp = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
+    const fileName = `Saidy-Backup-${stamp}.json`;
+    try {
+      const file = new File([json], fileName, { type: "application/json" });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: "Saidy-Backup", text: `Backup senden an: ${data.settings?.backupEmail || ""}` });
+        recordBackup();
+        return;
+      }
+    } catch (e) {
+      if (e?.name === "AbortError") return;
+    }
+    // Fallback: download + open mailto
+    exportBackup();
+    const email = data.settings?.backupEmail || "";
+    if (email) {
+      setTimeout(() => {
+        window.open(`mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(`Saidy Backup ${stamp}`)}&body=${encodeURIComponent("Bitte diese E-Mail mit der angehängten Backup-Datei an mich selbst senden.")}`, "_blank");
+      }, 800);
+    }
   }
 
   function resetAllData() {
@@ -2792,25 +2910,36 @@ export default function App() {
             </div>
           )}
           {backupReminderDays !== null && (
-            <div className="mb-5 flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm">
-              <Download size={16} className="text-amber-600 shrink-0" />
-              <span className="flex-1 text-stone-700">
-                {backupReminderDays === 0
-                  ? "Noch kein Backup gespeichert – sichere deine Daten kurz."
-                  : `Letztes Backup vor ${backupReminderDays} Tagen – Zeit für ein neues.`}
-              </span>
+            <div className="mb-5 flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm">
+              <Download size={16} className="text-amber-600 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-stone-700">
+                  {backupReminderDays === 0
+                    ? "Noch kein Backup gespeichert – sichere deine Daten kurz."
+                    : `Letztes Backup vor ${backupReminderDays} Tagen.`}
+                </p>
+                {(() => {
+                  const parts = [];
+                  if (changesSinceBackup.grades > 0) parts.push(`${changesSinceBackup.grades} neue Note${changesSinceBackup.grades !== 1 ? "n" : ""}`);
+                  if (changesSinceBackup.notes > 0) parts.push(`${changesSinceBackup.notes} neue Notiz${changesSinceBackup.notes !== 1 ? "en" : ""}`);
+                  if (changesSinceBackup.absences > 0) parts.push(`${changesSinceBackup.absences} neue Fehlzeit${changesSinceBackup.absences !== 1 ? "en" : ""}`);
+                  return parts.length > 0 ? (
+                    <p className="text-xs text-amber-700 mt-0.5">{parts.join(", ")} seitdem eingetragen.</p>
+                  ) : null;
+                })()}
+              </div>
               <button
                 onClick={() => { setShowSettings(true); setBackupReminderDays(null); }}
-                className="text-xs font-medium text-amber-700 hover:text-amber-900 underline underline-offset-2 shrink-0"
+                className="text-xs font-medium text-amber-700 hover:text-amber-900 underline underline-offset-2 shrink-0 mt-0.5"
               >
                 Jetzt sichern
               </button>
-              <button onClick={() => setBackupReminderDays(null)} className="text-stone-400 hover:text-stone-600 shrink-0">
+              <button onClick={() => setBackupReminderDays(null)} className="text-stone-400 hover:text-stone-600 shrink-0 mt-0.5">
                 <X size={15} />
               </button>
             </div>
           )}
-          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenUntisImport={() => setShowUntisImport(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
+          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
           {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} onRegisterFab={setFabActions} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
           {tab === "kalender" && <KalenderTab data={activeData} update={update} />}
@@ -2825,6 +2954,7 @@ export default function App() {
               setHalbjahr={setHalbjahr}
               onExport={exportBackup}
               onShare={shareBackup}
+              onEmailBackup={emailBackup}
               onImport={importBackup}
               onReset={resetAllData}
               onClose={() => setShowSettings(false)}
@@ -3455,7 +3585,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
   );
 }
 
-function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setCaptureLesson, pendingLessons, now }) {
+function Dashboard({ data, update, onNavigate, onOpenUntisImport, onOpenSettings, halbjahr, setCaptureLesson, pendingLessons, now }) {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showPending, setShowPending] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -3607,6 +3737,21 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
       });
     }
 
+    // Backup-Status
+    const lastBackupAt = (() => { try { return localStorage.getItem("last_backup_at"); } catch { return null; } })();
+    const backupDaysSince = lastBackupAt ? Math.floor((Date.now() - new Date(lastBackupAt).getTime()) / 86400000) : null;
+    const lastCounts = (() => { try { return JSON.parse(localStorage.getItem("saidy_backup_counts") || "null"); } catch { return null; } })();
+    const backupChanges = lastCounts
+      ? Math.max(0, (data.grades.length - (lastCounts.grades || 0)) + (data.notes.length - (lastCounts.notes || 0)) + ((data.absences || []).length - (lastCounts.absences || 0)))
+      : 0;
+    if (backupDaysSince === null) {
+      items.push({ icon: "💾", text: "Noch nie gesichert – bitte Backup erstellen", urgent: true, action: onOpenSettings });
+    } else if (backupDaysSince >= 7) {
+      items.push({ icon: "💾", text: `Backup vor ${backupDaysSince} Tagen – kurz sichern?`, urgent: backupDaysSince >= 14, action: onOpenSettings });
+    } else if (backupChanges >= 10) {
+      items.push({ icon: "💾", text: `${backupChanges} neue Einträge seit letztem Backup`, urgent: false, action: onOpenSettings });
+    }
+
     return items;
   })();
 
@@ -3693,11 +3838,16 @@ function Dashboard({ data, update, onNavigate, onOpenUntisImport, halbjahr, setC
           ) : (
             <ul className="space-y-1.5">
               {briefingItems.map((item, i) => (
-                <li key={i} className="flex items-start gap-2 text-sm leading-snug">
+                <li
+                  key={i}
+                  className={`flex items-start gap-2 text-sm leading-snug ${item.action ? "cursor-pointer" : ""}`}
+                  onClick={item.action}
+                >
                   <span className="shrink-0 text-base leading-none mt-0.5">{item.icon}</span>
                   <span className={item.urgent ? "text-red-700 font-medium" : "text-stone-700"}>
                     {item.text}
                   </span>
+                  {item.action && <ChevronRight size={13} className="shrink-0 text-stone-300 mt-0.5 ml-auto" />}
                 </li>
               ))}
             </ul>
