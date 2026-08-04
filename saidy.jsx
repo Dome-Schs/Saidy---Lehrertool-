@@ -1919,8 +1919,8 @@ function demoData() {
       { id: class2Id, name: "7a" },
     ],
     faecher: [
-      { id: fachMatheId, classId, subject: "Mathematik", color: COLOR_PALETTE[0], room: "0.107", weights: DEFAULT_WEIGHTS, nextTestDate: isoDate(addDays(heute, 12)), nextTestTitle: "Klassenarbeit Nr. 2" },
-      { id: fachSportId, classId, subject: "Sport", color: COLOR_PALETTE[2], room: "Sporthalle", weights: { muendlich: 100, schriftlich: 0 } },
+      { id: fachMatheId, classId, subject: "Mathematik", color: COLOR_PALETTE[0], room: "0.107", weights: DEFAULT_WEIGHTS, nextTestDate: isoDate(addDays(heute, 3)), nextTestTitle: "Bruchrechnen" },
+      { id: fachSportId, classId, subject: "Sport", color: COLOR_PALETTE[2], room: "Sporthalle", weights: { muendlich: 100, schriftlich: 0 }, nextTestDate: isoDate(addDays(heute, 10)), nextTestTitle: "Bundesjugendspiele" },
       { id: fachSport7aId, classId: class2Id, subject: "Sport", color: COLOR_PALETTE[2], room: "Sporthalle", weights: { muendlich: 100, schriftlich: 0 } },
     ],
     students,
