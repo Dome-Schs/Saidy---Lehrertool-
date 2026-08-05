@@ -2492,7 +2492,10 @@ export default function App() {
     }
     el.addEventListener("scroll", handleScroll, { passive: true });
     return () => el.removeEventListener("scroll", handleScroll);
-  }, []);
+    /* `loaded` muss in die Abhängigkeiten: solange die Daten laden, gibt App einen
+       Ladebildschirm zurück und <main> existiert noch gar nicht. Ohne diesen Eintrag
+       liefe der Effekt genau einmal ins Leere und der Listener hinge nie am Element. */
+  }, [loaded]);
   // Tab-Wechsel: immer nach oben scrollen + Nav aufklappen
   useEffect(() => {
     if (mainRef.current) mainRef.current.scrollTop = 0;
@@ -3334,7 +3337,7 @@ export default function App() {
       </div>
 
       {/* Feste untere Navigation (nur mobil) – scrollt weg wenn tief gescrollt */}
-      <nav className={`md:hidden fixed inset-x-0 bottom-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-transform duration-200 ${navCollapsed ? "translate-y-full" : "translate-y-0"}`}>
+      <nav className={`md:hidden fixed inset-x-0 bottom-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 ${fabOpen ? "z-[46]" : "z-40"} pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-transform duration-200 ${navCollapsed ? "translate-y-[calc(100%+1.5rem)]" : "translate-y-0"}`}>
         {/* Übersicht · Klassen · [+] · Noten · Mehr – „Aufgaben" liegt im Mehr-Menü
             und ist zusätzlich über den Plus-Knopf erreichbar. */}
         <div className="flex items-stretch justify-around px-2 pt-2 pb-1">
@@ -4001,7 +4004,14 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
     .filter((e) => (e.endDate ? e.date <= selStr && selStr <= e.endDate : e.date === selStr))
     .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
 
-  const openTasks = (data.tasks || []).filter((t) => !t.done).slice(0, 6);
+  /* Für die Termine-Karte ohne Ferien und schulfreie Tage – sonst füllt sich die Karte
+     in den Ferien mit „Sommerferien" an jedem einzelnen Tag. Das Briefing filtert genauso. */
+  const terminEvents = dayEvents.filter((e) => e.type !== "ferien" && e.type !== "frei");
+
+  /* Vollstaendige Liste behalten - die Karten schneiden selbst zu, sonst zeigt
+     der Zaehler in der Dreierreihe hoechstens 6 statt der echten Zahl. */
+  const alleOffenenTasks = (data.tasks || []).filter((t) => !t.done);
+  const openTasks = alleOffenenTasks.slice(0, 6);
 
   const birthdays = data.students.filter((s) => s.birthday && s.birthday.slice(5) === selStr.slice(5));
 
@@ -4168,17 +4178,28 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
   const briefingVisible = showAllBriefing ? briefingSorted : briefingSorted.slice(0, 3);
   const briefingHidden = briefingSorted.length - briefingVisible.length;
 
-  /* Kennzahlen der oberen Kachelreihe – alles aus vorhandenen Daten, keine Platzhalter */
-  const offeneZiele = (data.foerderZiele || []).filter((z) => !z.doneAt).length;
+  /* Kennzahlen der oberen Kachelreihe – alles aus vorhandenen Daten, keine Platzhalter.
+     Bei den Zielen zählen nur Förderziele (nicht die kurzlebigen Wochenziele) und nur
+     solche aus dem letzten halben Jahr – ein vergessenes Ziel aus dem Vorjahr soll die
+     Zahl nicht dauerhaft aufblähen. */
+  const zielFenster = isoDate(addDays(new Date(), -183));
+  const offeneZiele = (data.foerderZiele || []).filter(
+    (z) => !z.doneAt && z.typ !== "wochen" && (z.createdAt || "") >= zielFenster
+  );
+  const zielKinder = new Set(offeneZiele.map((z) => z.studentId)).size;
   const offeneEntschuldigungen = (data.absences || []).filter(
     (a) => a.excuseStatus === "ausstehend" || a.excuseStatus === "eingereicht"
   ).length;
-  const kachelKlassen = new Set(dayLessons.map((l) => data.faecher.find((f) => f.id === l.fachId)?.classId).filter(Boolean)).size;
+
+  /* Die Klassenangabe gehört zur Zahl der offenen Stunden – also zu heute,
+     nicht zum gerade angetippten Wochentag. */
+  const offeneKlassen = new Set((pendingLessons || []).map((p) => p.cls?.id).filter(Boolean)).size;
 
   const kacheln = [
     {
       icon: Clock,
-      label: "Heute unterrichtest du",
+      // Der Wert folgt dem gewählten Tag, deshalb muss die Beschriftung das auch tun
+      label: isToday ? "Heute unterrichtest du" : `${selectedDate.toLocaleDateString("de-DE", { weekday: "long" })} unterrichtest du`,
       value: dayLessons.length,
       sub: dayLessons.length === 1 ? "Stunde" : "Stunden",
       warn: false,
@@ -4188,9 +4209,14 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
       icon: ClipboardCheck,
       label: "Noch nicht erfasst",
       value: (pendingLessons || []).length,
-      sub: kachelKlassen ? `in ${kachelKlassen} ${kachelKlassen === 1 ? "Klasse" : "Klassen"}` : "heute",
+      sub: offeneKlassen ? `in ${offeneKlassen} ${offeneKlassen === 1 ? "Klasse" : "Klassen"}` : "heute",
       warn: !!(pendingLessons || []).length,
-      onClick: () => (pendingLessons || []).length ? setShowPending((v) => !v) : onNavigate?.("stundenplan"),
+      /* Die Liste darunter erscheint nur am heutigen Tag – sonst bliebe der Tipp wirkungslos */
+      onClick: () => {
+        if (!(pendingLessons || []).length) return onNavigate?.("stundenplan");
+        if (!isToday) setSelectedDate(new Date());
+        setShowPending((v) => !v);
+      },
     },
     {
       icon: FileText,
@@ -4202,9 +4228,9 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
     },
     {
       icon: Target,
-      label: "Förderziele laufen",
-      value: offeneZiele,
-      sub: "aktiv",
+      label: "Aktive Förderziele",
+      value: offeneZiele.length,
+      sub: zielKinder ? `bei ${zielKinder} ${zielKinder === 1 ? "Kind" : "Kindern"}` : "keine offen",
       warn: false,
       onClick: () => onNavigate?.("klassen"),
     },
@@ -4222,9 +4248,21 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
     const cd = fach ? testCountdown(fach, data.timetable, data.events) : null;
     let gehalten = null, gesamt = null;
     if (cd && cd.rem !== null && topic?.text) {
-      gehalten = (data.lessonTopics || []).filter(
-        (x) => x.fachId === fach.id && x.date <= selStr && x.text === topic.text
-      ).length;
+      /* Themen werden pro Fach und Tag nur einmal notiert, die Reststunden zählen
+         dagegen jeden Stundenplan-Eintrag einzeln. Ein Tag mit Doppelstunde muss
+         deshalb auch als zwei gehaltene Stunden zählen, sonst vergleicht der Balken
+         zwei verschiedene Einheiten und erreicht nie das Ende.
+         Groß-/Kleinschreibung und Leerzeichen bleiben außen vor, damit „Bruchrechnung"
+         und „bruchrechnung " nicht als zwei Themen gelten. */
+      const gleich = (t) => (t || "").trim().toLowerCase();
+      const thema = gleich(topic.text);
+      gehalten = (data.lessonTopics || [])
+        .filter((x) => x.fachId === fach.id && x.date <= selStr && gleich(x.text) === thema)
+        .reduce((summe, x) => {
+          const tag = DAYS[(localDate(x.date).getDay() + 6) % 7];
+          const stundenAnDemTag = (data.timetable || []).filter((t) => t.fachId === fach.id && t.day === tag).length;
+          return summe + Math.max(1, stundenAnDemTag);
+        }, 0);
       gesamt = gehalten + cd.rem;
     }
     const pct = gesamt ? Math.round((gehalten / gesamt) * 100) : cd && cd.rem !== null ? Math.max(0, 100 - Math.min(100, Math.round((cd.rem / 8) * 100))) : null;
@@ -4580,9 +4618,9 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
             </span>
             <span className="text-[10px] font-semibold text-stone-700 truncate min-w-0">Termine</span>
           </div>
-          {dayEvents.length ? (
+          {terminEvents.length ? (
             <ul className="space-y-1.5">
-              {dayEvents.slice(0, 3).map((e) => (
+              {terminEvents.slice(0, 3).map((e) => (
                 <li key={e.id} className="min-w-0">
                   <div className="text-[11px] text-stone-700 truncate leading-tight">{e.title}</div>
                   {e.time && <div className="text-[10px] text-stone-400 tabular-nums">{e.time}</div>}
@@ -4646,7 +4684,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
               <ListChecks size={10} className="akzent-text" />
             </span>
             <span className="text-[10px] font-semibold text-stone-700 truncate min-w-0">To-dos</span>
-            {!!openTasks.length && <span className="ml-auto text-[10px] text-stone-400 shrink-0">{openTasks.length}</span>}
+            {!!alleOffenenTasks.length && <span className="ml-auto text-[10px] text-stone-400 shrink-0">{alleOffenenTasks.length}</span>}
           </div>
           {openTasks.length ? (
             <ul className="space-y-1.5">
@@ -4654,10 +4692,11 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
                 <li key={t.id} className="flex items-start gap-1.5">
                   <button
                     onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
-                    className="w-3.5 h-3.5 rounded-full border-2 shrink-0 mt-0.5"
-                    style={{ borderColor: isColor ? t.color : "#A8A29E" }}
-                    aria-label="Erledigt"
-                  />
+                    className="w-9 h-9 -m-2.5 shrink-0 flex items-center justify-center"
+                    aria-label={`"${t.title}" als erledigt markieren`}
+                  >
+                    <span className="w-3.5 h-3.5 rounded-full border-2 block" style={{ borderColor: isColor ? t.color : "#A8A29E" }} />
+                  </button>
                   <span className="text-[11px] text-stone-700 leading-tight line-clamp-2">{t.title}</span>
                 </li>
               ))}
