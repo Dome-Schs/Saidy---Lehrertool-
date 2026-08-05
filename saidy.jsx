@@ -528,6 +528,140 @@ function telHref(raw) {
   return /\d/.test(clean) ? `tel:${clean.replace(/\s/g, "")}` : null;
 }
 
+/* ---------- Einwilligung fuer Gesundheitsdaten (Art. 9 DSGVO) ----------
+   Die Einwilligung der Erziehungsberechtigten gilt immer fuer ein bestimmtes
+   Kind, nie pauschal fuer die ganze Klasse. Deshalb wird sie pro studentId
+   vermerkt. Der alte globale Schluessel „saidy_medical_consent" wird beim
+   ersten Zugriff auf die Kinder uebertragen, bei denen bereits Gesundheits-
+   daten stehen - fuer die hatte die Lehrkraft die Einwilligung ja schon
+   bestaetigt. Neue Kinder werden weiterhin einzeln gefragt.
+   Bewusst in localStorage und nicht im Backup: die Bestaetigung gehoert zu
+   diesem Geraet und dieser Lehrkraft, nicht in eine weitergegebene Datei. */
+const MEDICAL_CONSENT_KEY = "saidy_medical_consent_ids";
+const MEDICAL_CONSENT_ALT = "saidy_medical_consent";
+
+function medicalConsentIds() {
+  try {
+    const roh = JSON.parse(localStorage.getItem(MEDICAL_CONSENT_KEY) || "[]");
+    return Array.isArray(roh) ? roh.filter((x) => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+function hatMedicalConsent(studentId) {
+  return !!studentId && medicalConsentIds().includes(studentId);
+}
+
+function setMedicalConsent(studentId) {
+  if (!studentId) return;
+  try {
+    const ids = medicalConsentIds();
+    if (!ids.includes(studentId)) localStorage.setItem(MEDICAL_CONSENT_KEY, JSON.stringify([...ids, studentId]));
+  } catch { /* privater Modus */ }
+}
+
+/* Einmalige Uebernahme der alten pauschalen Bestaetigung auf die Kinder,
+   bei denen schon Gesundheitsdaten hinterlegt sind. */
+function migriereMedicalConsent(students) {
+  try {
+    if (!localStorage.getItem(MEDICAL_CONSENT_ALT)) return;
+    const bereits = medicalConsentIds();
+    const dazu = (students || [])
+      .filter((s) => s?.id && typeof s.medicalInfo === "string" && s.medicalInfo.trim() && !bereits.includes(s.id))
+      .map((s) => s.id);
+    localStorage.setItem(MEDICAL_CONSENT_KEY, JSON.stringify([...bereits, ...dazu]));
+    localStorage.removeItem(MEDICAL_CONSENT_ALT);
+  } catch { /* privater Modus */ }
+}
+
+/* ---------- Sanitisierung importierter Datensicherungen ----------
+   Eine fremde oder beschaedigte Backup-Datei darf weder den Speicher
+   sprengen noch Werte einschleusen, die an heiklen Stellen landen
+   (Farben gehen in style-Attribute, Datumsfelder in Vergleiche).
+   Grundsatz: bekannte Felder pruefen und kuerzen, den Rest unangetastet
+   durchreichen - Felder zu verwerfen wuerde beim Wiederherstellen
+   womoeglich echte Daten loeschen. */
+
+const S_TEXT = (v, n) => (typeof v === "string" ? v.slice(0, n) : typeof v === "number" ? v : null);
+/* Das Muster allein reicht nicht: „2026-13-45" und „9999-99-99" haben die
+   richtige Form, sind aber keine Daten. Ein zu grosses Jahr hat frueher schon
+   die App eingefroren, deshalb hier echte Bereichspruefung samt Rueckrechnung
+   (faengt auch den 31. Februar, der sonst still in den Maerz rutscht). */
+const S_DATUM = (v) => {
+  if (typeof v !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return null;
+  const [j, m, t] = v.split("-").map(Number);
+  if (j < 1900 || j > 2200 || m < 1 || m > 12 || t < 1 || t > 31) return null;
+  const d = new Date(j, m - 1, t);
+  return d.getFullYear() === j && d.getMonth() === m - 1 && d.getDate() === t ? v : null;
+};
+const S_ZEIT = (v) => {
+  if (typeof v !== "string" || !/^\d{2}:\d{2}$/.test(v)) return null;
+  const [h, min] = v.split(":").map(Number);
+  return h <= 23 && min <= 59 ? v : null;
+};
+const S_LISTE = (v) => (Array.isArray(v) ? v : []);
+/* Farben landen direkt in style={{ backgroundColor: ... }}. Ein Wert wie
+   url(https://…) wuerde von dort aus nachladen - das widerspricht dem
+   Versprechen, dass Saidy nichts nach aussen sendet. */
+const S_FARBE = (v) => (typeof v === "string" && /^#[0-9a-fA-F]{3,8}$/.test(v) ? v : null);
+/* Schluessel wie __proto__ oder constructor haben in Nutzdaten nichts zu
+   suchen und haben frueher schon zu weissen Seiten gefuehrt. */
+const S_HEIKEL = new Set(["__proto__", "constructor", "prototype"]);
+const S_SAUBER = (o) => {
+  if (!o || typeof o !== "object") return {};
+  const raus = {};
+  for (const k of Object.keys(o)) if (!S_HEIKEL.has(k)) raus[k] = o[k];
+  return raus;
+};
+/* Obergrenze pro Sammlung. So hoch angesetzt, dass keine reale Lehrkraft
+   sie erreicht - gekuerzt wird nur bei absurden Dateien, und das wird
+   danach gemeldet statt still hinzunehmen. */
+const S_MAX = 100000;
+
+function sanitizeImport(imported) {
+  const gekuerzt = [];
+  const map = (name, fn) => {
+    let arr = S_LISTE(imported[name]);
+    if (arr.length > S_MAX) { gekuerzt.push(name); arr = arr.slice(0, S_MAX); }
+    return arr.filter((x) => x && typeof x === "object").map((x) => fn(S_SAUBER(x)));
+  };
+
+  const raus = {
+    classes: map("classes", (c) => ({ ...c, name: S_TEXT(c.name, 100), deletedAt: S_DATUM(c.deletedAt) })),
+    notes: map("notes", (n) => ({
+      ...n, text: S_TEXT(n.text, 5000), date: S_DATUM(n.date),
+      type: S_TEXT(n.type, 30), mood: S_TEXT(n.mood, 30), gesprTyp: S_TEXT(n.gesprTyp, 30),
+    })),
+    incidents: map("incidents", (i) => ({ ...i, label: S_TEXT(i.label, 100), date: S_DATUM(i.date), note: S_TEXT(i.note, 2000) })),
+    absences: map("absences", (a) => ({
+      ...a, date: S_DATUM(a.date), reason: S_TEXT(a.reason, 500),
+      excuseStatus: Object.keys(EXCUSE_STATUS).includes(a.excuseStatus) ? a.excuseStatus : "ausstehend",
+      source: S_TEXT(a.source, 50),
+    })),
+    events: map("events", (e) => ({
+      ...e, title: S_TEXT(e.title, 200), date: S_DATUM(e.date), time: S_ZEIT(e.time),
+      type: S_TEXT(e.type, 50), color: S_FARBE(e.color), done: e.done === true,
+    })),
+    timetable: map("timetable", (t) => ({
+      ...t, day: WEEKDAY_KURZ.includes(t.day) ? t.day : null,
+      period: Number.isInteger(t.period) && t.period >= 0 && t.period <= 20 ? t.period : null,
+    })).filter((t) => t.day && t.period !== null),
+    tasks: map("tasks", (t) => ({ ...t, title: S_TEXT(t.title, 300), color: S_FARBE(t.color), dueDate: S_DATUM(t.dueDate), done: t.done === true })),
+    taskLists: map("taskLists", (l) => ({ ...l, name: S_TEXT(l.name, 100), icon: S_TEXT(l.icon, 50) })),
+    lessonTopics: map("lessonTopics", (t) => ({ ...t, text: S_TEXT(t.text, 300), date: S_DATUM(t.date) })),
+    duties: map("duties", (d) => ({
+      ...d, name: S_TEXT(d.name, 100), color: S_FARBE(d.color),
+      queue: S_LISTE(d.queue).filter((x) => typeof x === "string"),
+      done: S_LISTE(d.done).filter((x) => typeof x === "string"),
+      log: S_LISTE(d.log).slice(0, 5000),
+      slots: Number.isInteger(d.slots) && d.slots > 0 && d.slots <= 40 ? d.slots : 1,
+    })),
+    finalGrades: map("finalGrades", (f) => ({ ...f, value: typeof f.value === "number" ? f.value : null })),
+  };
+  return { daten: raus, gekuerzt };
+}
+
 /* ---------- Foto-Verarbeitung & Avatar ---------- */
 
 function resizeImageFile(file, size = 128) {
@@ -3043,6 +3177,9 @@ export default function App() {
             parsed.taskLists = parsed.taskLists || [];
           }
           setData(parsed);
+          /* Alte pauschale Art-9-Bestaetigung auf die betroffenen Kinder uebertragen,
+             damit sie nach dem Update nicht erneut fuer jedes Kind abgefragt wird. */
+          migriereMedicalConsent(parsed.students);
           if (!parsed.settings?.bundesland) setShowOnboarding(true);
           /* Eigener try-Block: ein Fehler in der Backup-Erinnerung darf nicht dazu führen,
              dass der äußere catch greift und die echten Daten durch Demodaten ersetzt. */
@@ -3228,7 +3365,7 @@ export default function App() {
 
   function resetAllData() {
     try {
-      ["saidy_medical_consent", "last_backup_at", "saidy_voice_consent", "saidy_backup_counts", "saidy_briefing_dismissed"]
+      [MEDICAL_CONSENT_KEY, MEDICAL_CONSENT_ALT, "last_backup_at", "saidy_voice_consent", "saidy_backup_counts", "saidy_briefing_dismissed"]
         .forEach((k) => localStorage.removeItem(k));
       // Altlasten aus der früheren Variante mit einem Schlüssel pro Tag
       Object.keys(localStorage)
@@ -3259,19 +3396,28 @@ export default function App() {
           return;
         }
         const merged = { ...EMPTY_DATA, ...imported };
+        /* Alle uebrigen Sammlungen pruefen (Notizen, Vorfaelle, Fehlzeiten,
+           Termine, Stundenplan, Klassen, Aufgaben, Dienste, Themen). Vorher
+           liefen die ungeprueft durch. */
+        const { daten: geprueft, gekuerzt } = sanitizeImport(imported);
+        Object.assign(merged, geprueft);
         // Sanitize: photo URLs must be data URIs; reject http/blob/other schemes; cap string field lengths
         if (Array.isArray(merged.students)) {
-          merged.students = merged.students.map((s) => ({
-            ...s,
-            /* Nur Rasterformate zulassen. „data:image/" allein liesse auch
-               data:image/svg+xml durch - und SVG kann Skripte enthalten.
-               Eigene Fotos kommen aus resizeImageFile immer als JPEG. */
-            photo: typeof s.photo === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(s.photo) ? s.photo : "",
-            name: typeof s.name === "string" ? s.name.slice(0, 200) : s.name,
-            medicalInfo: typeof s.medicalInfo === "string" ? s.medicalInfo.slice(0, 2000) : s.medicalInfo,
-            foerderStatus: typeof s.foerderStatus === "string" ? s.foerderStatus.slice(0, 500) : s.foerderStatus,
-            parentPhone: typeof s.parentPhone === "string" ? s.parentPhone.slice(0, 100) : s.parentPhone,
-          }));
+          merged.students = merged.students
+            .filter((s) => s && typeof s === "object")
+            .map((s) => ({
+              ...S_SAUBER(s),
+              /* Nur Rasterformate zulassen. „data:image/" allein liesse auch
+                 data:image/svg+xml durch - und SVG kann Skripte enthalten.
+                 Eigene Fotos kommen aus resizeImageFile immer als JPEG. */
+              photo: typeof s.photo === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(s.photo) ? s.photo : "",
+              name: typeof s.name === "string" ? s.name.slice(0, 200) : s.name,
+              medicalInfo: typeof s.medicalInfo === "string" ? s.medicalInfo.slice(0, 2000) : s.medicalInfo,
+              foerderStatus: typeof s.foerderStatus === "string" ? s.foerderStatus.slice(0, 500) : s.foerderStatus,
+              parentPhone: typeof s.parentPhone === "string" ? s.parentPhone.slice(0, 100) : s.parentPhone,
+              birthday: S_DATUM(s.birthday),
+              deletedAt: S_DATUM(s.deletedAt),
+            }));
         }
         /* Einstellungen aus einer fremden Datei nicht blind übernehmen: `merged` ist ein
            flacher Spread, `settings` würde also komplett ersetzt. Nur bekannte Felder
@@ -3289,14 +3435,28 @@ export default function App() {
         merged.grades = (Array.isArray(merged.grades) ? merged.grades : []).map((g) => ({
           ...g, topic: kurz(g.topic, 100), title: kurz(g.title, 200),
         }));
-        merged.faecher = (Array.isArray(merged.faecher) ? merged.faecher : []).map((f) => ({
-          ...f,
-          nextTestTitle: kurz(f.nextTestTitle, 100),
-          nextTestDate: typeof f.nextTestDate === "string" && /^\d{4}-\d{2}-\d{2}$/.test(f.nextTestDate) ? f.nextTestDate : null,
-        }));
+        merged.faecher = (Array.isArray(merged.faecher) ? merged.faecher : [])
+          .filter((f) => f && typeof f === "object")
+          .map((f) => ({
+            ...S_SAUBER(f),
+            subject: kurz(f.subject, 80),
+            room: kurz(f.room, 40),
+            color: S_FARBE(f.color),
+            nextTestTitle: kurz(f.nextTestTitle, 100),
+            /* S_DATUM statt Mustervergleich: ein Jahr wie 9999 hat frueher die
+               App eingefroren und wuerde die reine Formpruefung passieren. */
+            nextTestDate: S_DATUM(f.nextTestDate),
+          }));
         setData(merged);
         recordBackup();
-        onResult?.({ ok: true, msg: "Backup erfolgreich geladen." });
+        /* Gekuerzte Sammlungen nicht verschweigen - sonst fehlen nach dem
+           Wiederherstellen still Eintraege. */
+        onResult?.({
+          ok: true,
+          msg: gekuerzt.length
+            ? `Backup geladen. Sehr grosse Bereiche wurden gekürzt: ${gekuerzt.join(", ")}.`
+            : "Backup erfolgreich geladen.",
+        });
       } catch (e) {
         console.warn("[Saidy] Backup-Import fehlgeschlagen:", e);
         onResult?.({ ok: false, msg: "Die Datei konnte nicht gelesen werden." });
@@ -6404,7 +6564,9 @@ function GradeChart({ grades, faecher }) {
 function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, absences, incidents, settings, notenfarben, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
   const [photoError, setPhotoError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
-  const [showMedicalConsent, setShowMedicalConsent] = useState(false);
+  /* Haelt die studentId, fuer die gerade die Einwilligung erfragt wird - die
+     Bestaetigung gilt nur fuer dieses eine Kind. */
+  const [showMedicalConsent, setShowMedicalConsent] = useState(null);
   const [quickGesprId, setQuickGesprId] = useState(null);
   const [zielDraft, setZielDraft] = useState({ text: "", typ: "foerder" });
   const [profileTab, setProfileTab] = useState("übersicht");
@@ -6507,21 +6669,30 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
 
   return (
     <>
-    {showMedicalConsent && (
-      <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setShowMedicalConsent(false)}>
-        <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
-          <div className="flex items-center gap-2 mb-3">
-            <ShieldCheck size={20} className="text-amber-600 shrink-0" />
-            <div className="font-semibold text-stone-800">Gesundheitsdaten (Art. 9 DSGVO)</div>
-          </div>
-          <p className="text-sm text-stone-600 mb-4">Gesundheitsinformationen sind besonders geschützte Daten. Sie dürfen nur mit <strong>schriftlicher Einwilligung</strong> der Erziehungsberechtigten gespeichert werden.</p>
-          <div className="flex gap-2">
-            <Button variant="ghost" onClick={() => { setShowMedicalConsent(false); document.activeElement?.blur(); }} className="flex-1 justify-center">Abbrechen</Button>
-            <Button onClick={() => { localStorage.setItem("saidy_medical_consent", "1"); setShowMedicalConsent(false); }} className="flex-1 justify-center">Verstanden</Button>
+    {showMedicalConsent && (() => {
+      const kind = students.find((s) => s.id === showMedicalConsent);
+      const vorname = kind?.name?.split(" ")[0] || "dieses Kind";
+      return (
+        <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setShowMedicalConsent(null)}>
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-3">
+              <ShieldCheck size={20} className="text-amber-600 shrink-0" />
+              <div className="font-semibold text-stone-800">Gesundheitsdaten (Art. 9 DSGVO)</div>
+            </div>
+            <p className="text-sm text-stone-600 mb-2">
+              Gesundheitsinformationen sind besonders geschützte Daten. Sie dürfen nur mit <strong>schriftlicher Einwilligung</strong> der Erziehungsberechtigten gespeichert werden.
+            </p>
+            <p className="text-sm text-stone-600 mb-4">
+              Liegt dir die Einwilligung für <strong>{vorname}</strong> vor? Die Bestätigung gilt nur für dieses Kind – bei jedem weiteren wird erneut gefragt.
+            </p>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={() => { setShowMedicalConsent(null); document.activeElement?.blur(); }} className="flex-1 justify-center">Abbrechen</Button>
+              <Button onClick={() => { setMedicalConsent(showMedicalConsent); setShowMedicalConsent(null); }} className="flex-1 justify-center">Ja, liegt vor</Button>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      );
+    })()}
     {/* TP-02 · Schülerliste als Bottom-Sheet mit Preview-Karten */}
     <div className="fixed inset-0 bg-stone-900/50 z-50 flex flex-col justify-end" onClick={onClose}>
       <div
@@ -7526,7 +7697,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
                       placeholder="z. B. Nussallergie, Asthma-Spray in der Tasche …"
                       value={s.medicalInfo || ""}
                       onChange={(e) => onUpdateField(s.id, "medicalInfo", e.target.value)}
-                      onFocus={() => { if (!localStorage.getItem("saidy_medical_consent") && !s.medicalInfo) setShowMedicalConsent(true); }}
+                      onFocus={() => { if (!hatMedicalConsent(s.id) && !s.medicalInfo) setShowMedicalConsent(s.id); }}
                       rows={3} maxLength={2000} className="input-base w-full resize-none"
                     />
                     <p className="text-[11px] text-amber-600 mt-1 flex items-start gap-1">
