@@ -1663,6 +1663,77 @@ function bekannteThemen(grades, fachId) {
   return Object.keys(gesehen).map((k) => gesehen[k]).sort((a, b) => a.localeCompare(b, "de"));
 }
 
+/* Klassenradar: pro Klasse berechnete Auffaelligkeitssignale fuer die Uebersicht.
+   Drei Regeln, jeweils Warn- und Krit-Stufe. Wenn keine Regel greift, hat die Klasse
+   keine Signale und taucht in der Radar-Kachel gar nicht auf.
+
+   Zeitfenster fuer alle Signale: 14 Tage. Kurz genug, dass Alt-Ereignisse nicht die
+   Wahrnehmung verzerren; lang genug, dass Trends sichtbar werden. */
+function computeKlassenradar(data, klasse, todayStr) {
+  const fensterStart = isoDate(addDays(localDate(todayStr), -14));
+  const klassenSchueler = (data.students || []).filter((s) => s.classId === klasse.id && !s.deletedAt);
+  const schuelerIds = new Set(klassenSchueler.map((s) => s.id));
+  const signale = [];
+
+  // Signal 1: haeufige Klassenbucheintraege (incidents wie „Sportzeug vergessen").
+  // Warn ab 3 in 14 Tagen, krit ab 5.
+  const incs = (data.incidents || []).filter(
+    (i) => schuelerIds.has(i.studentId) && i.date >= fensterStart && i.date <= todayStr
+  );
+  if (incs.length >= 3) {
+    signale.push({
+      typ: "incidents",
+      level: incs.length >= 5 ? "krit" : "warn",
+      kurz: `${incs.length} Klassenbuch-Einträge`,
+    });
+  }
+
+  // Signal 2: Klassenschnitt in einem Fach schlechter als 3,5 (schulnahe Schwelle).
+  // Nur Faecher mit mindestens 3 Noten - sonst Rauschen. Krit ab 4,0.
+  let schlechtestesFach = null;
+  (data.faecher || []).filter((f) => f.classId === klasse.id).forEach((fach) => {
+    const noten = (data.grades || []).filter(
+      (g) => g.fachId === fach.id && typeof g.value === "number" && schuelerIds.has(g.studentId)
+    );
+    if (noten.length < 3) return;
+    const wSumme = noten.reduce((acc, g) => acc + (g.factor || 1), 0);
+    const summe = noten.reduce((acc, g) => acc + g.value * (g.factor || 1), 0);
+    const schnitt = summe / wSumme;
+    if (schnitt >= 3.5 && (!schlechtestesFach || schnitt > schlechtestesFach.schnitt)) {
+      schlechtestesFach = { fach: fach.subject, schnitt };
+    }
+  });
+  if (schlechtestesFach) {
+    signale.push({
+      typ: "noten",
+      level: schlechtestesFach.schnitt >= 4.0 ? "krit" : "warn",
+      kurz: `${schlechtestesFach.fach}: ⌀ ${schlechtestesFach.schnitt.toFixed(1)}`,
+    });
+  }
+
+  // Signal 3: schwache Stimmung in Gespraechen - gezaehlt werden Kinder (nicht Eintraege),
+  // damit ein Kind mit drei schlechten Gespraechen die Statistik nicht dominiert.
+  // Warn ab 4 Kindern, krit ab 6.
+  const stimmungKinder = new Set();
+  (data.notes || []).forEach((n) => {
+    if (n.type !== "gespraech") return;
+    if (n.date < fensterStart || n.date > todayStr) return;
+    if (!schuelerIds.has(n.studentId)) return;
+    if (n.mood === "nicht_so_gut" || n.mood === "schlecht") stimmungKinder.add(n.studentId);
+  });
+  if (stimmungKinder.size >= 4) {
+    signale.push({
+      typ: "stimmung",
+      level: stimmungKinder.size >= 6 ? "krit" : "warn",
+      kurz: `${stimmungKinder.size} Kinder mit tiefer Stimmung`,
+    });
+  }
+
+  const rang = { krit: 0, warn: 1 };
+  signale.sort((a, b) => (rang[a.level] ?? 9) - (rang[b.level] ?? 9));
+  return signale;
+}
+
 /* Vorschlaege fuer das Stundenthema-Feld in der Schnellerfassung. Zieht Themen aus
    frueheren Stunden (lessonTopics) UND aus schriftlichen Noten (grades) zusammen -
    beide Quellen fuellen sich gegenseitig, damit ein Thema, das man in einer Klassen-
@@ -2108,6 +2179,7 @@ const HELP_DATA = [
       { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle in der Fläche – es erscheint eine Auswahlliste zum Auswählen des Kindes. Alternativ auf „Kind hinzufügen" tippen. Platzierte Kinder lassen sich frei auf der Fläche verschieben. Die Tafel oben lässt sich an jeden Rand ziehen (oben, unten, links, rechts). Einmal antippen (ohne zu schieben) markiert den Sitzplatz farbig: grün = klappt gut, amber = beobachten, rot = klappt nicht. Ein Kind entfernen: Token nach unten über den Rand der Fläche in die rote Toolbar ziehen und loslassen. „Aufräumen" richtet alle Kinder gleichzeitig in einem sauberen Raster aus. „Löschen" entfernt den gesamten Sitzplan. Am Ende „Speichern" tippen.` },
       { q: "Was zeigt die Zusammenfassung im Schülerprofil?", a: `Im Profil-Tab „Übersicht" erscheint eine automatisch generierte Zusammenfassung – erkennbar am Sparkles-Symbol. Sie fasst Stimmung, Notendurchschnitt, Tendenz, Aktivität der letzten 30 Tage, Förderbedarfe und aktive Ziele in einem Satz zusammen. Die Zusammenfassung wird lokal aus den gespeicherten Daten berechnet und nur angezeigt, wenn genügend Informationen vorliegen.` },
       { q: "Wie funktionieren Sprachnotizen?", a: `Im Schülerprofil (Tab „Übersicht" oder „Notizen") gibt es neben dem Notiz-Eingabefeld ein Mikrofon-Symbol. Antippen startet die Aufnahme – beim ersten Mal erscheint ein kurzer Hinweis zur Datenverarbeitung. Während der Aufnahme erscheint eine Live-Vorschau des erkannten Textes. Nach der Aufnahme wird der Text automatisch ins Eingabefeld übernommen, wo er noch bearbeitet werden kann. Unterstützte Browser: Safari (iOS/macOS), Chrome und Edge. Firefox unterstützt diese Funktion nicht. Das Mikrofon-Symbol erscheint nur, wenn dein Browser Spracherkennung unterstützt.` },
+      { q: "Was ist der Klassenradar auf der Übersicht?", a: `Eine kompakte Kachel, die anzeigt, welche Klassen gerade Aufmerksamkeit brauchen. Sie erscheint nur, wenn mindestens eine Klasse auffällt – ist alles ruhig, verschwindet die Karte. Drei Signale werden über die letzten 14 Tage berechnet: (1) häufige Klassenbucheinträge – ab 3 in 14 Tagen Warnung, ab 5 kritisch; (2) Klassenschnitt in einem Fach schlechter als 3,5 – ab 3,5 Warnung, ab 4,0 kritisch (nur ab 3 Noten im Fach, sonst Rauschen); (3) mindestens 4 Kinder mit „nicht so gut" oder „schlecht" in Gesprächen – ab 4 Warnung, ab 6 kritisch. Pro Klasse steht das dringendste Signal, mit „+N", wenn mehr da ist. Ein Tipp öffnet direkt das Klassen-Dashboard mit allen Details.` },
       { q: "Was zeigt das Klassen-Dashboard?", a: `Im Klassen-Tab eine Klasse aufklappen → „Klassen-Dashboard" antippen. Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf als Kacheln; eine Notenverteilungs-Leiste; eine Anwesenheits-Übersicht der letzten 12 Wochen als Farbfeld (je dunkler, desto mehr Kinder fehlten an dem Tag, rot heißt unentschuldigt dabei) mit Hinweis, auf welchen Wochentag die meisten Fehltage fallen; eine Liste „Lange kein Eintrag" mit den Kindern die am längsten keine Note oder Notiz bekommen haben – mit Name und Anzahl Tage, direkt antippbar; eine „Aufmerksamkeit"-Liste; Geburtstage der nächsten 21 Tage sowie die letzten Notizen und Gespräche. Tippen auf ein Kind oder einen Punkt öffnet das Schülerprofil.` },
       { q: "Was sind die farbigen Signale im Schülerprofil?", a: `Direkt unter der Profilkarte erscheinen farbige Signale: Rot (kritisch), Gelb (beobachten), Grün (positiv) und Blau (Info). Sie werden automatisch aus den Daten berechnet – z. B. kritischer Notenschnitt, kein Eintrag seit mehr als 14 Tagen, negative Stimmung in Folge, Förderbedarf ohne aktives Ziel, oder Geburtstag in den nächsten 7 Tagen. Tippe auf ein Signal, um direkt zum betreffenden Tab zu springen.` },
     ],
@@ -2522,6 +2594,7 @@ export default function App() {
   const [fabActions, setFabActions] = useState([]); // [{label, icon, onClick}]
   const [showSearch, setShowSearch] = useState(false);
   const [focusStudentId, setFocusStudentId] = useState(null);
+  const [focusKlassenDashboardId, setFocusKlassenDashboardId] = useState(null);
   const [klassenSubTab, setKlassenSubTab] = useState("klassen");
   const [backupReminderDays, setBackupReminderDays] = useState(null); // null=kein Banner, 0=nie gesichert, >0=Tage seit letztem Backup
   const [changesSinceBackup, setChangesSinceBackup] = useState({ grades: 0, notes: 0, absences: 0 });
@@ -3361,8 +3434,8 @@ export default function App() {
               </button>
             </div>
           )}
-          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
-          {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} onRegisterFab={setFabActions} />}
+          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenKlassenDashboard={(classId) => { setFocusKlassenDashboardId(classId); goTo("klassen"); }} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
+          {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} focusKlassenDashboardId={focusKlassenDashboardId} onFocusKlassenDashboardConsumed={() => setFocusKlassenDashboardId(null)} onRegisterFab={setFabActions} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
           {tab === "kalender" && <KalenderTab data={activeData} update={update} autoOpenForm={kalenderAutoForm} onAutoFormConsumed={() => setKalenderAutoForm(false)} />}
           {tab === "aufgaben" && <AufgabenTab data={activeData} update={update} />}
@@ -4162,7 +4235,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
   );
 }
 
-function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, onOpenSettings, halbjahr, setCaptureLesson, pendingLessons, now }) {
+function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboard, onOpenUntisImport, onOpenSettings, halbjahr, setCaptureLesson, pendingLessons, now }) {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showPending, setShowPending] = useState(false);
   const [openTestDetail, setOpenTestDetail] = useState(null);
@@ -4932,6 +5005,52 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
           </button>
         </Card>
       </div>
+
+      {/* Klassenradar - listet Klassen mit Auffaelligkeitssignalen. Zeigt sich nur,
+          wenn mindestens eine Klasse ein Signal hat; sonst verschwindet die ganze Karte. */}
+      {(() => {
+        const radar = (data.classes || [])
+          .map((c) => ({ klasse: c, signale: computeKlassenradar(data, c, todayStr) }))
+          .filter((x) => x.signale.length)
+          .sort((a, b) => {
+            const rang = { krit: 0, warn: 1 };
+            const ra = rang[a.signale[0].level] ?? 9;
+            const rb = rang[b.signale[0].level] ?? 9;
+            return ra - rb;
+          });
+        if (!radar.length) return null;
+        return (
+          <Card className="px-3 py-2.5">
+            <div className="flex items-center gap-1.5 mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Klassenradar</span>
+            </div>
+            <ul className="divide-y divide-stone-100">
+              {radar.map(({ klasse, signale }) => {
+                const erst = signale[0];
+                const rest = signale.length - 1;
+                const dotCls = erst.level === "krit"
+                  ? (isColor ? "bg-red-500" : "bg-stone-600")
+                  : (isColor ? "bg-amber-500" : "bg-stone-400");
+                return (
+                  <li key={klasse.id}>
+                    <button
+                      onClick={() => onOpenKlassenDashboard?.(klasse.id)}
+                      className="w-full flex items-center gap-2 py-2 text-left"
+                      aria-label={`${klasse.name}: ${erst.kurz}${rest ? ` und ${rest} weitere` : ""}`}
+                    >
+                      <span className={`w-2 h-2 rounded-full shrink-0 ${dotCls}`} />
+                      <span className="shrink-0 text-[11px] font-bold text-stone-700 w-8">{klasse.name}</span>
+                      <span className="flex-1 text-xs text-stone-700 truncate">{erst.kurz}</span>
+                      {rest > 0 && <span className="text-[10px] text-stone-400 shrink-0">+{rest}</span>}
+                      <ChevronRight size={12} className="text-stone-300 shrink-0" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+        );
+      })()}
 
       {/* Weitere Karten – Reihenfolge aus den Einstellungen */}
       {(() => {
@@ -8327,7 +8446,7 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
   );
 }
 
-function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed, onRegisterFab }) {
+function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed, focusKlassenDashboardId, onFocusKlassenDashboardConsumed, onRegisterFab }) {
   const [selectedClass, setSelectedClass] = useState(data.classes[0]?.id ?? null);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -8368,6 +8487,17 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
     setSelectedStudent(focusStudentId);
     onFocusConsumed?.();
   }, [focusStudentId]);
+
+  /* Deep-Link vom Klassenradar auf der Uebersicht: oeffnet das KlassenDashboard
+     der gewaehlten Klasse direkt, ohne Zwischenklick. */
+  useEffect(() => {
+    if (!focusKlassenDashboardId) return;
+    const c = data.classes.find((x) => x.id === focusKlassenDashboardId);
+    if (!c) return;
+    setSubTab?.("klassen");
+    setKlassenDashboardId(focusKlassenDashboardId);
+    onFocusKlassenDashboardConsumed?.();
+  }, [focusKlassenDashboardId]);
 
   const cls = data.classes.find((c) => c.id === selectedClass);
   const classFaecher = data.faecher.filter((f) => f.classId === selectedClass);
