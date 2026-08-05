@@ -3737,8 +3737,25 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
     setGesprExpanded(null);
   }
 
+  /* Beim Schliessen alle offenen Gespraechs-Drafts mitspeichern, statt sie
+     stillschweigend zu verwerfen. Wer den Text getippt hat, will ihn nicht durch
+     einen Fehltipp neben das Sheet oder ein zu frueh gedruecktes „Fertig" verlieren.
+     Notizen speichern schon per onBlur - hier fehlte der Auto-Save nur bei Gespraechen. */
+  function schliessenMitRettung() {
+    const offene = Object.entries(gesprTexts).filter(([, t]) => (t || "").trim());
+    if (offene.length) {
+      update((d) => {
+        offene.forEach(([studentId, t]) => {
+          d.notes.push({ id: uid(), studentId, date, text: t.trim(), type: "gespraech", mood: gesprMood, gesprTyp });
+        });
+        return d;
+      });
+    }
+    onClose();
+  }
+
   return (
-    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={schliessenMitRettung}>
       <div className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet overflow-x-hidden" onClick={(e) => e.stopPropagation()}>
 
         {/* Kopf bleibt beim Scrollen sichtbar */}
@@ -3747,7 +3764,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
             <div className="font-semibold text-stone-800 leading-tight">Schnellerfassung</div>
             <div className="text-xs text-stone-400 truncate">{cls?.name} · {fach.subject}</div>
           </div>
-          <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0">
+          <button onClick={schliessenMitRettung} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0">
             <X size={16} />
           </button>
         </div>
@@ -3987,7 +4004,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
             {!students.length && <li className="py-3 text-sm text-stone-400">Keine Schüler:innen in dieser Klasse.</li>}
           </ul>
 
-          <Button onClick={onClose} className="w-full justify-center mt-4">Fertig</Button>
+          <Button onClick={schliessenMitRettung} className="w-full justify-center mt-4">Fertig</Button>
         </div>
       </div>
     </div>
