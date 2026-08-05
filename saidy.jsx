@@ -5561,9 +5561,12 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         </Card>
       )}
 
-      {/* Kennzahl-Kacheln - drei kompakte Kacheln nebeneinander. Icon links,
-          Label und grosse Zahl rechts. Stunden-Kachel entfaellt, weil die Info
-          eh im Stundenplan steht. */}
+      {/* Kennzahl-Kacheln - drei kompakte Kacheln nebeneinander, Inhalt waagerecht
+          und senkrecht zentriert. Der Nullfall (Haken) ist niedriger als der
+          Zahlfall (Zahl + Unterzeile); ohne justify-center saesse der kuerzere
+          Inhalt oben und liesse unten Luft, weil das Raster alle Kacheln auf die
+          Hoehe der hoechsten zieht. Die Abstaende kommen aus gap statt aus
+          Einzelmargins, damit der Rhythmus in beiden Faellen gleich bleibt. */}
       <div className="grid grid-cols-3 gap-2">
         {kacheln.map((k) => {
           const Icon = k.icon;
@@ -5572,25 +5575,27 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             <button
               key={k.label}
               onClick={k.onClick}
-              className="w-full text-left bg-white rounded-2xl border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors flex flex-col items-start px-2.5 py-2.5"
+              className="w-full h-full text-center bg-white rounded-2xl border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors flex flex-col items-center justify-center gap-1 px-2 py-3"
             >
               <span className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${aktiv && isColor ? "bg-amber-100" : "akzent-ton"}`}>
                 <Icon size={13} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
               </span>
-              <div className="text-[10px] text-stone-500 leading-tight mt-1.5 truncate w-full">{k.label}</div>
+              {/* Zwei Zeilen erlaubt: „Entschuldigungen" und „Stunden nachtragen"
+                  wuerden auf Handybreite sonst abgeschnitten. */}
+              <div className="text-[10px] text-stone-500 leading-tight line-clamp-2">{k.label}</div>
               {/* Kacheln mit Wert 0 zeigen einen kleinen Haken statt einer riesigen 0 –
                   eine 0 wirkte sonst wie ein Fehler- oder Leerzustand. */}
               {k.value === 0 ? (
-                <div className="flex items-center gap-1 mt-1.5 text-stone-400">
+                <div className="flex items-center justify-center gap-1 text-stone-400">
                   <Check size={14} strokeWidth={2.5} />
                   <span className="text-[11px]">nichts offen</span>
                 </div>
               ) : (
                 <>
-                  <div className={`text-[22px] font-bold leading-none tabular-nums mt-1 ${aktiv && isColor ? "text-amber-600" : "akzent-text"}`}>
+                  <div className={`text-[22px] font-bold leading-none tabular-nums ${aktiv && isColor ? "text-amber-600" : "akzent-text"}`}>
                     {k.value}
                   </div>
-                  <div className="text-[10px] text-stone-400 mt-0.5 truncate w-full">{k.sub}</div>
+                  <div className="text-[10px] text-stone-400 leading-tight line-clamp-1 w-full">{k.sub}</div>
                 </>
               )}
             </button>
