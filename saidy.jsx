@@ -4773,12 +4773,12 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
                       className="w-full text-left"
                       aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
                     >
-                      <div className="relative h-1.5 rounded-full" style={{ backgroundColor: "#e7e5e4" }}>
+                      {/* Fortschrittsbalken - schmale Schiene mit farbiger Fuellung.
+                          Kein Slider-Knubbel: der Balken ist nicht ziehbar, ein Knubbel
+                          weckt falsche Erwartungen und sitzt bei pct=0 halb links neben
+                          der leeren Schiene, was nach Renderfehler aussieht. */}
+                      <div className="relative h-1 rounded-full overflow-hidden" style={{ backgroundColor: "var(--linie)" }}>
                         <div className="absolute inset-y-0 left-0 rounded-full transition-[width]" style={{ width: `${pct}%`, backgroundColor: barCol }} />
-                        <span
-                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-white border-2"
-                          style={{ left: `${pct}%`, borderColor: barCol }}
-                        />
                       </div>
                       <div className="flex items-center justify-between gap-2 mt-1.5">
                         <span className="text-[10px] text-stone-400 shrink-0 tabular-nums">
