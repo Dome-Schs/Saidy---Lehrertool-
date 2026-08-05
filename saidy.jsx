@@ -7,6 +7,7 @@ import {
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
   Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target, Mic,
+  Lightbulb, BookOpen,
 } from "lucide-react";
 
 /* ---------- Konstanten ---------- */
@@ -1249,6 +1250,25 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           })}
         </div>
 
+        {/* Unterrichtstipp-Kachel abschaltbar. Grundstock im Code, spaeter kommen eigene
+            Karten dazu (Editor/Import); die Auswahl kann jederzeit wieder eingeschaltet werden. */}
+        <div className="pt-5 border-t border-stone-100">
+          <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Unterrichtstipps</div>
+          <p className="text-xs text-stone-500 mb-3">
+            Zeigt ganz unten auf der Übersicht einen Unterrichtstipp des Tages – ein Tipp aus dem Wissenspool. Aktuell {TIPP_KARTEN.length} Karten von Grundschul- bis Sekundarstufe.
+          </p>
+          <label className="flex items-center gap-2.5 py-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              className="w-4 h-4"
+              style={{ accentColor: "#4F5844" }}
+              checked={data.settings?.tippsAn !== false}
+              onChange={(e) => setSetting("tippsAn", e.target.checked)}
+            />
+            <span className="text-sm text-stone-700">Tipp des Tages auf der Übersicht anzeigen</span>
+          </label>
+        </div>
+
         <div className="pt-5 border-t border-stone-100">
           <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Datensicherung</div>
           <p className="text-xs text-stone-500 mb-3">
@@ -2183,6 +2203,160 @@ function OnboardingModal({ onSave, onDone, onSkip }) {
 /* ---------- Hilfe-Inhalte ----------
    WICHTIG: Wird ein neues Feature eingebaut oder ein bestehender Workflow geändert,
    muss HELP_DATA hier entsprechend aktualisiert werden. */
+/* Unterrichtstipps als Wissenskarten. Grundstock vom Nutzer geliefert (100 Karten),
+   spaeter erweiterbar per Editor/Import. Duplikate wurden verschmolzen - die spaetere,
+   ausfuehrlichere Karte gewinnt jeweils.
+
+   Kapitel-Struktur folgt dem Plan des Nutzers (9 Kapitel), die feineren "Kategorien"
+   bleiben als Schlagwort erhalten und speisen die Filter der Wissensbibliothek. */
+const TIPP_KAPITEL = [
+  "Classroom Management",
+  "Kommunikation & Gesprächsführung",
+  "Unterrichtsmethoden",
+  "Motivation & Aktivierung",
+  "Klassenklima & Beziehung",
+  "Organisation & Lehreralltag",
+  "Leistungsbewertung & Feedback",
+  "Referendariat & Berufseinstieg",
+  "Lehrergesundheit & Selbstmanagement",
+];
+
+/* Zuordnung feine Kategorie -> Kapitel. Neue Kategorien fallen in "Unterrichtsmethoden",
+   sofern nicht anders zugeordnet - so bleiben spaetere Erweiterungen sichtbar. */
+const KATEGORIE_ZU_KAPITEL = {
+  "Classroom Management": "Classroom Management",
+  "Klassenraumgestaltung": "Classroom Management",
+  "Unterrichtsgespräch": "Kommunikation & Gesprächsführung",
+  "Gesprächsführung": "Kommunikation & Gesprächsführung",
+  "Kommunikation": "Kommunikation & Gesprächsführung",
+  "Elternarbeit": "Kommunikation & Gesprächsführung",
+  "Unterrichtsmethoden": "Unterrichtsmethoden",
+  "Kooperatives Lernen": "Unterrichtsmethoden",
+  "Unterrichtseinstieg": "Unterrichtsmethoden",
+  "Unterrichtsabschluss": "Unterrichtsmethoden",
+  "Visualisierung": "Unterrichtsmethoden",
+  "Differenzierung": "Unterrichtsmethoden",
+  "Diskussion": "Unterrichtsmethoden",
+  "Reflexion": "Unterrichtsmethoden",
+  "Stationenlernen": "Unterrichtsmethoden",
+  "Problemorientiertes Lernen": "Unterrichtsmethoden",
+  "Lernstrategien": "Unterrichtsmethoden",
+  "Projektarbeit": "Unterrichtsmethoden",
+  "Didaktik": "Unterrichtsmethoden",
+  "Motivation": "Motivation & Aktivierung",
+  "Aktivierung": "Motivation & Aktivierung",
+  "Partizipation": "Motivation & Aktivierung",
+  "Selbstständiges Lernen": "Motivation & Aktivierung",
+  "Beziehungsarbeit": "Klassenklima & Beziehung",
+  "Klassenklima": "Klassenklima & Beziehung",
+  "Konfliktmanagement": "Klassenklima & Beziehung",
+  "Unterrichtsorganisation": "Organisation & Lehreralltag",
+  "Unterrichtsplanung": "Organisation & Lehreralltag",
+  "Professionalisierung": "Organisation & Lehreralltag",
+  "Lehrerrolle": "Organisation & Lehreralltag",
+  "Organisation": "Organisation & Lehreralltag",
+  "Professionelles Handeln": "Organisation & Lehreralltag",
+  "Feedback": "Leistungsbewertung & Feedback",
+  "Diagnostik": "Leistungsbewertung & Feedback",
+};
+
+/* Feste Grundkarten - der Editor speichert eigene Karten separat in data.settings,
+   damit ein spaeteres Update dieses Grundstocks eigene Eintraege nicht ueberschreibt. */
+const TIPP_KARTEN = [
+  { id: 1, titel: "Investiere Zeit in die ersten zwei Wochen", warum: "Die ersten Unterrichtswochen legen den Grundstein für Routinen, Regeln und das Klassenklima. Gut eingeübte Abläufe sparen im Laufe des Schuljahres Zeit und reduzieren Unterrichtsstörungen.", umsetzung: ["Rituale täglich wiederholen.", "Erwartungen klar formulieren.", "Abläufe gemeinsam üben.", "Positives Verhalten sofort verstärken."], merksatz: "Ein guter Start erleichtert das ganze Schuljahr.", kategorie: "Classroom Management" },
+  { id: 2, titel: "Wenige Regeln wirken stärker als viele", warum: "Zu viele Regeln sind schwer zu merken und konsequent umzusetzen. Wenige Kernregeln schaffen Orientierung und Verlässlichkeit.", umsetzung: ["Beschränke dich auf 3–5 Kernregeln.", "Formuliere sie positiv und verständlich.", "Erkläre den Sinn jeder Regel.", "Wiederhole sie regelmäßig."], merksatz: "Klarheit entsteht durch Einfachheit.", kategorie: "Classroom Management" },
+  { id: 3, titel: "Übe Regeln statt sie nur zu erklären", warum: "Regeln werden erst durch wiederholtes Anwenden zu Routinen. Reines Erklären reicht selten aus.", umsetzung: ["Situationen gemeinsam nachspielen.", "Verhalten vormachen lassen.", "Mehrfach üben.", "Gelungenes Verhalten sofort loben."], merksatz: "Regeln entstehen durch Übung.", kategorie: "Classroom Management" },
+  { id: 4, titel: "Rituale schaffen Sicherheit", warum: "Wiederkehrende Abläufe geben Orientierung, reduzieren Unsicherheit und schaffen mehr Zeit für das Lernen.", umsetzung: ["Einheitlichen Stundenbeginn etablieren.", "Feste Abschlussroutine nutzen.", "Übergänge ritualisieren.", "Rituale konsequent beibehalten."], merksatz: "Routinen entlasten alle.", kategorie: "Classroom Management" },
+  { id: 5, titel: "Blickkontakt wirkt oft besser als Ermahnen", warum: "Viele kleinere Störungen lassen sich durch nonverbale Signale unterbrechen, ohne den Unterricht zu unterbrechen.", umsetzung: ["Blickkontakt aufnehmen.", "Kurz warten.", "Bei Bedarf Nähe herstellen.", "Erst danach verbal eingreifen."], merksatz: "Nonverbale Signale wirken oft stärker als Worte.", kategorie: "Classroom Management" },
+  { id: 6, titel: "Nutze Nähe statt Lautstärke", warum: "Die räumliche Nähe zur störenden Person genügt häufig, um Aufmerksamkeit zurückzugewinnen.", umsetzung: ["Ruhig zum Arbeitsplatz gehen.", "Weiter unterrichten.", "Diskussion vermeiden.", "Gespräch bei Bedarf später führen."], merksatz: "Nähe beruhigt – Lautstärke eskaliert.", kategorie: "Classroom Management" },
+  { id: 7, titel: "Sprich leiser statt lauter", warum: "Eine ruhige Stimme signalisiert Sicherheit und Kontrolle. Lautes Sprechen erhöht häufig die Anspannung.", umsetzung: ["Stimme bewusst senken.", "Langsam sprechen.", "Pausen zulassen.", "Ruhige Körpersprache zeigen."], merksatz: "Ruhe ist ansteckend.", kategorie: "Classroom Management" },
+  { id: 8, titel: "Reagiere früh auf Störungen", warum: "Frühzeitige, kleine Interventionen verhindern oft, dass sich Störungen ausweiten.", umsetzung: ["Früh Blickkontakt aufnehmen.", "Kurz intervenieren.", "Nicht abwarten.", "Danach direkt weiterarbeiten."], merksatz: "Früh handeln verhindert Eskalation.", kategorie: "Classroom Management" },
+  { id: 9, titel: "Suche zuerst die Ursache", warum: "Störungen können viele Ursachen haben – von Überforderung bis Langeweile. Wer die Ursache kennt, kann angemessen reagieren.", umsetzung: ["Situation beobachten.", "Mögliche Ursache überlegen.", "Passende Maßnahme wählen.", "Nach der Stunde das Gespräch suchen."], merksatz: "Erst verstehen – dann handeln.", kategorie: "Classroom Management" },
+  { id: 10, titel: "Konsequenz braucht Beziehung", warum: "Konsequenzen werden eher akzeptiert, wenn Schülerinnen und Schüler sich gleichzeitig respektiert und fair behandelt fühlen.", umsetzung: ["Verhalten statt Person ansprechen.", "Ruhig bleiben.", "Konsequenzen nachvollziehbar erklären.", "Nach dem Konflikt wieder positiv in Kontakt treten."], merksatz: "Konsequenz und Wertschätzung gehören zusammen.", kategorie: "Classroom Management" },
+  { id: 11, titel: "Lobe konkret statt allgemein", warum: "Pauschales Lob wie „Gut gemacht!\" motiviert kurzfristig, zeigt aber nicht, welches Verhalten erfolgreich war. Konkretes Feedback hilft Schülerinnen und Schülern, gute Strategien zu wiederholen.", umsetzung: ["Beschreibe genau, was gelungen ist.", "Beziehe dich auf Verhalten oder Strategie.", "Erkläre, warum es gut war.", "Nutze Lob zeitnah."], merksatz: "Konkretes Lob fördert gezieltes Lernen.", kategorie: "Feedback" },
+  { id: 12, titel: "Verstärke positives Verhalten bewusst", warum: "Wer positives Verhalten wahrnimmt und anspricht, fördert genau dieses Verhalten. Aufmerksamkeit für Gelungenes wirkt oft nachhaltiger als ständige Korrekturen.", umsetzung: ["Erwünschtes Verhalten benennen.", "Kleine Fortschritte anerkennen.", "Positives häufiger erwähnen als Störungen.", "Ehrlich und authentisch bleiben."], merksatz: "Beachtung verstärkt Verhalten.", kategorie: "Classroom Management" },
+  { id: 13, titel: "Warte nach einer Frage mindestens drei Sekunden", warum: "Viele Lernende benötigen Zeit zum Nachdenken. Eine kurze Wartezeit erhöht die Qualität der Antworten und beteiligt mehr Schülerinnen und Schüler. Auch im Plenumsgespräch: Wer sofort Antworten erwartet, erreicht oft nur die schnellsten Lernenden.", umsetzung: ["Frage stellen.", "Drei bis fünf Sekunden schweigen.", "Blickkontakt halten.", "Notizen erlauben.", "Erst danach jemanden aufrufen."], merksatz: "Denkzeit ist Lernzeit.", kategorie: "Unterrichtsgespräch" },
+  { id: 14, titel: "Arbeitsaufträge müssen glasklar sein", warum: "Unklare Aufgaben führen zu Rückfragen und Unruhe. Klare Anweisungen schaffen Sicherheit und sparen Zeit.", umsetzung: ["Auftrag kurz formulieren.", "Ziel nennen.", "Zeitrahmen angeben.", "Verständnis überprüfen."], merksatz: "Klarheit verhindert Chaos.", kategorie: "Unterrichtsorganisation" },
+  { id: 15, titel: "Zeige den Arbeitsauftrag sichtbar an", warum: "Mündliche Informationen werden leicht vergessen. Ein sichtbarer Auftrag entlastet das Arbeitsgedächtnis und reduziert Nachfragen.", umsetzung: ["Auftrag an Tafel oder Bildschirm schreiben.", "Arbeitsschritte nummerieren.", "Zeit ergänzen.", "Während der Arbeitsphase sichtbar lassen."], merksatz: "Sichtbarkeit schafft Orientierung.", kategorie: "Unterrichtsorganisation" },
+  { id: 16, titel: "Hole Aufmerksamkeit mit festen Signalen zurück", warum: "Feste Signale sind effizienter als wiederholte Aufforderungen und werden mit der Zeit zur Routine.", umsetzung: ["Ein eindeutiges Signal vereinbaren.", "Signal regelmäßig üben.", "Erst sprechen, wenn Ruhe eingekehrt ist.", "Konsequenz bewahren."], merksatz: "Routinen sparen Worte.", kategorie: "Classroom Management" },
+  { id: 17, titel: "Übergänge brauchen Planung", warum: "Viele Störungen entstehen beim Wechsel zwischen Unterrichtsphasen. Klare Übergänge schaffen Ruhe und Struktur.", umsetzung: ["Übergang ankündigen.", "Nächsten Schritt erklären.", "Material vorbereiten lassen.", "Erst starten, wenn alle bereit sind."], merksatz: "Gute Übergänge halten den Unterricht im Fluss.", kategorie: "Classroom Management" },
+  { id: 18, titel: "Nutze die Sitzordnung als pädagogisches Werkzeug", warum: "Die Sitzordnung beeinflusst Konzentration, Zusammenarbeit und Kommunikation. Sie sollte bewusst geplant werden.", umsetzung: ["Störende Konstellationen vermeiden.", "Unterstützende Lernpartner zusammensetzen.", "Sicht auf Tafel und Lehrkraft beachten.", "Regelmäßig überprüfen."], merksatz: "Sitzordnung gestaltet Unterricht mit.", kategorie: "Klassenraumgestaltung" },
+  { id: 19, titel: "Sei im Klassenraum präsent", warum: "Lehrkräfte, die sich im Raum bewegen und aufmerksam sind, erkennen Schwierigkeiten früher und wirken störungspräventiv.", umsetzung: ["Durch den Raum gehen.", "Alle Bereiche im Blick behalten.", "Nähe zu Lernenden suchen.", "Nicht dauerhaft am Pult bleiben."], merksatz: "Präsenz schafft Sicherheit.", kategorie: "Classroom Management" },
+  { id: 20, titel: "Schließe jede Stunde mit einer Reflexion ab", warum: "Ein klarer Abschluss hilft, Inhalte zu sichern und schafft Orientierung für die nächste Stunde. Reflexion macht den eigenen Lernprozess bewusst wahrnehmbar.", umsetzung: ["Wichtigste Erkenntnis zusammenfassen.", "Eine Reflexionsfrage stellen.", "Lernfortschritt einschätzen lassen.", "Ausblick auf die nächste Stunde geben."], merksatz: "Ein guter Abschluss bleibt im Gedächtnis.", kategorie: "Unterrichtsabschluss" },
+  { id: 21, titel: "Aktiviere Vorwissen vor jedem neuen Thema", warum: "Neues Wissen wird leichter verstanden, wenn es an bereits vorhandenes Wissen anknüpft. Das erhöht die Lernbereitschaft und erleichtert das Verstehen.", umsetzung: ["Stelle eine Einstiegsfrage.", "Sammle Vorwissen an der Tafel.", "Nutze Bilder oder Gegenstände als Impuls.", "Lass Vermutungen formulieren."], merksatz: "Neues Lernen beginnt mit Bekanntem.", kategorie: "Unterrichtsmethoden" },
+  { id: 22, titel: "Sprich weniger – lass mehr arbeiten", warum: "Lernen entsteht durch aktives Denken und Handeln. Je mehr Zeit Schülerinnen und Schüler selbst arbeiten, desto nachhaltiger lernen sie.", umsetzung: ["Erklärungen kurz halten.", "Schnell in Arbeitsphasen wechseln.", "Offene Aufgaben stellen.", "Ergebnisse gemeinsam reflektieren."], merksatz: "Wer arbeitet, lernt. Wer nur zuhört, vergisst schneller.", kategorie: "Unterrichtsmethoden" },
+  { id: 23, titel: "Eine gute Frage ist mehr wert als eine schnelle Antwort", warum: "Offene Fragen regen zum Denken an und fördern tiefere Lernprozesse als reine Wissensabfragen.", umsetzung: ["Warum-Fragen stellen.", "Nach Begründungen fragen.", "Mehrere Lösungswege zulassen.", "Nachfragen statt vorsagen."], merksatz: "Fragen öffnen Denken.", kategorie: "Unterrichtsgespräch" },
+  { id: 24, titel: "Plane Bewegung bewusst ein", warum: "Kurze Bewegungsphasen steigern Aufmerksamkeit und Konzentration – besonders nach längeren Sitzphasen.", umsetzung: ["Mini-Bewegungspausen einbauen.", "Lernspiele mit Bewegung nutzen.", "Partnerwechsel ermöglichen.", "Stehphasen einplanen."], merksatz: "Bewegung aktiviert das Gehirn.", kategorie: "Aktivierung" },
+  { id: 25, titel: "Nutze Think – Pair – Share", warum: "Diese Methode aktiviert alle Lernenden. Jeder denkt zunächst selbst nach, tauscht sich anschließend mit einer Partnerin oder einem Partner aus und bringt danach die Ergebnisse ins Plenum ein. So beteiligen sich deutlich mehr Schülerinnen und Schüler.", umsetzung: ["Stelle eine offene Frage.", "Gib 1–2 Minuten Denkzeit.", "Lasse Partnergespräche führen.", "Sammle anschließend Ergebnisse im Plenum."], merksatz: "Erst denken – dann reden.", kategorie: "Kooperatives Lernen" },
+  { id: 26, titel: "Lass Fehler sichtbar werden", warum: "Fehler liefern wichtige Informationen über den Lernstand. Eine konstruktive Fehlerkultur fördert Lernprozesse.", umsetzung: ["Fehler gemeinsam analysieren.", "Nach Lösungswegen fragen.", "Verbesserungen würdigen.", "Fehler nicht bloßstellen."], merksatz: "Fehler sind Lernchancen.", kategorie: "Feedback" },
+  { id: 27, titel: "Nutze Exit-Tickets am Stundenende", warum: "Exit-Tickets liefern dir eine schnelle Rückmeldung über den Lernstand und helfen bei der Planung der nächsten Stunde.", umsetzung: ["Eine bis drei Fragen vorbereiten.", "Kurz vor Stundenende beantworten lassen.", "Antworten auswerten.", "Nächste Stunde darauf aufbauen."], merksatz: "Unterricht endet mit Feedback.", kategorie: "Diagnostik" },
+  { id: 28, titel: "Gib Schülerinnen und Schülern Wahlmöglichkeiten", warum: "Selbstbestimmung erhöht Motivation und Verantwortungsgefühl. Schon kleine Wahlmöglichkeiten können die Lernbereitschaft steigern.", umsetzung: ["Aufgaben auswählen lassen.", "Reihenfolge selbst bestimmen lassen.", "Präsentationsformen variieren.", "Schwierigkeitsgrade anbieten.", "Sozialform wählen lassen."], merksatz: "Mitbestimmung motiviert.", kategorie: "Motivation" },
+  { id: 29, titel: "Plane genügend Pufferzeit ein", warum: "Unterricht verläuft selten exakt nach Plan. Zeitreserven verhindern Hektik und schaffen Raum für Fragen.", umsetzung: ["Aufgaben realistisch planen.", "Nicht jede Minute verplanen.", "Reserveaufgaben bereithalten.", "Zeit regelmäßig überprüfen."], merksatz: "Puffer schaffen Gelassenheit.", kategorie: "Unterrichtsorganisation" },
+  { id: 30, titel: "Reflektiere jede Unterrichtsstunde", warum: "Kurze Reflexionen helfen, erfolgreiche Elemente zu erkennen und Unterricht kontinuierlich weiterzuentwickeln.", umsetzung: ["Was lief gut?", "Was war schwierig?", "Was ändere ich nächstes Mal?", "Notizen direkt nach der Stunde machen."], merksatz: "Guter Unterricht wächst durch Reflexion.", kategorie: "Professionalisierung" },
+  { id: 31, titel: "Starte jede Stunde mit einem klaren Ziel", warum: "Lernende arbeiten motivierter und zielgerichteter, wenn sie wissen, worauf sie hinarbeiten. Ein transparentes Lernziel erhöht die Orientierung und den Lernerfolg.", umsetzung: ["Formuliere das Lernziel in einfacher Sprache.", "Schreibe es sichtbar an.", "Beziehe dich während der Stunde darauf.", "Greife es im Abschluss wieder auf."], merksatz: "Wer das Ziel kennt, findet leichter den Weg.", kategorie: "Unterrichtsplanung" },
+  { id: 32, titel: "Beginne mit einem aktivierenden Einstieg", warum: "Ein guter Einstieg weckt Interesse und aktiviert Vorwissen. Dadurch fällt der Einstieg in das Thema leichter.", umsetzung: ["Nutze ein Bild oder Objekt.", "Stelle eine überraschende Frage.", "Erzähle eine kurze Geschichte.", "Starte mit einem kleinen Rätsel."], merksatz: "Ein guter Anfang weckt Neugier.", kategorie: "Unterrichtseinstieg" },
+  { id: 33, titel: "Aktiviere alle – nicht nur die Freiwilligen", warum: "Wenn immer dieselben Schülerinnen und Schüler antworten, bleiben viele passiv. Methoden, die alle einbeziehen, fördern die Beteiligung.", umsetzung: ["Erst Denkzeit geben.", "Partneraustausch ermöglichen.", "Zufällig auswählen.", "Alle Antworten wertschätzen."], merksatz: "Beteiligung beginnt bei allen.", kategorie: "Aktivierung" },
+  { id: 34, titel: "Eine Aufgabe nach der anderen", warum: "Zu viele Informationen auf einmal überfordern das Arbeitsgedächtnis. Schrittweise Arbeitsaufträge erhöhen die Erfolgswahrscheinlichkeit.", umsetzung: ["Aufgaben nummerieren.", "Nur den nächsten Schritt erklären.", "Nach jedem Schritt kurz überprüfen.", "Erst dann weitermachen."], merksatz: "Kleine Schritte führen sicher ans Ziel.", kategorie: "Unterrichtsorganisation" },
+  { id: 35, titel: "Visualisiere wichtige Informationen", warum: "Sichtbare Informationen entlasten das Gedächtnis und helfen besonders Lernenden, die Inhalte besser zu strukturieren.", umsetzung: ["Stichpunkte statt Fließtext.", "Farben gezielt einsetzen.", "Symbole verwenden.", "Ergebnisse sichtbar hängen lassen."], merksatz: "Was sichtbar ist, bleibt leichter im Kopf.", kategorie: "Visualisierung" },
+  { id: 36, titel: "Lass Schülerinnen und Schüler erklären", warum: "Wer Inhalte erklärt, muss sie selbst verstehen und strukturieren. Das vertieft das Lernen.", umsetzung: ["Partner erklären lassen.", "Gruppen präsentieren lassen.", "Expertenrollen vergeben.", "Verständnisfragen zulassen."], merksatz: "Erklären vertieft Verstehen.", kategorie: "Kooperatives Lernen" },
+  { id: 37, titel: "Plane Erfolgserlebnisse ein", warum: "Erfolgreiche Erfahrungen stärken Motivation und Selbstvertrauen. Kleine Fortschritte sind oft wirksamer als große Ziele.", umsetzung: ["Mit einer leichten Aufgabe beginnen.", "Fortschritte sichtbar machen.", "Zwischenerfolge würdigen.", "Lernfortschritte dokumentieren."], merksatz: "Erfolg motiviert zu weiterem Lernen.", kategorie: "Motivation" },
+  { id: 38, titel: "Nutze offene Aufgaben", warum: "Offene Aufgaben ermöglichen unterschiedliche Lösungswege und fördern kreatives sowie vertieftes Denken.", umsetzung: ["Mehrere Lösungen zulassen.", "Begründungen einfordern.", "Vergleiche ermöglichen.", "Diskussionen anregen."], merksatz: "Gute Aufgaben haben mehr als eine Antwort.", kategorie: "Unterrichtsmethoden" },
+  { id: 41, titel: "Namen schaffen Beziehungen", warum: "Wer Schülerinnen und Schüler mit ihrem Namen anspricht, signalisiert Aufmerksamkeit und Wertschätzung. Das stärkt die Beziehung und erhöht die Mitarbeit.", umsetzung: ["Begrüße Lernende möglichst mit Namen.", "Nutze Sitzpläne zum Einprägen.", "Sprich positive Beiträge mit Namen an.", "Übe Namen bewusst in den ersten Wochen."], merksatz: "Ein Name ist der kürzeste Weg zu einer Beziehung.", kategorie: "Beziehungsarbeit" },
+  { id: 42, titel: "Höre erst zu, bevor du bewertest", warum: "Wer vorschnell urteilt, übersieht oft die eigentliche Ursache eines Problems. Zuhören schafft Verständnis und Vertrauen.", umsetzung: ["Stelle offene Fragen.", "Lasse ausreden.", "Fasse Gehörtes zusammen.", "Erst danach gemeinsam Lösungen suchen."], merksatz: "Verstehen kommt vor Bewerten.", kategorie: "Gesprächsführung" },
+  { id: 43, titel: "Stelle offene Fragen", warum: "Offene Fragen regen zum Nachdenken an und liefern mehr Informationen als Ja-Nein-Fragen.", umsetzung: ["Frage mit „Wie…?\", „Warum…?\" oder „Was…?\"", "Gib Zeit zum Antworten.", "Frage nach Begründungen.", "Höre aktiv zu."], merksatz: "Offene Fragen öffnen Gespräche.", kategorie: "Kommunikation" },
+  { id: 44, titel: "Lobe die Anstrengung, nicht nur das Ergebnis", warum: "Wenn Anstrengung und Strategien gewürdigt werden, entwickeln Lernende eher Ausdauer und Lernbereitschaft.", umsetzung: ["Betone den Lernprozess.", "Hebe gute Strategien hervor.", "Anerkenne Ausdauer.", "Zeige Entwicklung auf."], merksatz: "Fortschritt beginnt mit Anstrengung.", kategorie: "Feedback" },
+  { id: 45, titel: "Korrigiere diskret", warum: "Öffentliche Kritik kann Beziehungen belasten. Eine diskrete Rückmeldung wahrt die Würde der Lernenden.", umsetzung: ["Leise ansprechen.", "Nähe suchen.", "Nach der Stunde weiterreden.", "Vor der Klasse nicht bloßstellen."], merksatz: "Kritik wirkt besser ohne Publikum.", kategorie: "Kommunikation" },
+  { id: 46, titel: "Zeige Interesse am Menschen", warum: "Lernende arbeiten engagierter mit Lehrkräften zusammen, wenn sie sich wahrgenommen fühlen.", umsetzung: ["Frage nach Interessen.", "Höre aufmerksam zu.", "Merke dir kleine Details.", "Zeige ehrliche Wertschätzung."], merksatz: "Beziehung entsteht durch echtes Interesse.", kategorie: "Beziehungsarbeit" },
+  { id: 47, titel: "Halte deine Zusagen ein", warum: "Verlässlichkeit schafft Vertrauen. Wer Ankündigungen konsequent umsetzt, wirkt glaubwürdig.", umsetzung: ["Nur realistische Zusagen machen.", "Vereinbarungen notieren.", "Konsequenzen wie angekündigt umsetzen.", "Fehler offen eingestehen."], merksatz: "Vertrauen wächst durch Verlässlichkeit.", kategorie: "Lehrerrolle" },
+  { id: 48, titel: "Lächle bewusst", warum: "Ein freundlicher Gesichtsausdruck wirkt einladend und kann Hemmschwellen abbauen. Gleichzeitig unterstützt er eine positive Lernatmosphäre.", umsetzung: ["Begrüße freundlich.", "Lächle authentisch.", "Verbinde Freundlichkeit mit klaren Erwartungen.", "Bleibe auch in stressigen Situationen respektvoll."], merksatz: "Freundlichkeit kostet nichts – wirkt aber viel.", kategorie: "Klassenklima" },
+  { id: 49, titel: "Konflikte möglichst zeitnah klären", warum: "Ungeklärte Konflikte belasten Beziehungen und können den Unterricht langfristig beeinträchtigen.", umsetzung: ["Gespräch zeitnah vereinbaren.", "Beide Seiten anhören.", "Gemeinsam Lösungen entwickeln.", "Vereinbarungen festhalten."], merksatz: "Konflikte lösen sich selten von allein.", kategorie: "Konfliktmanagement" },
+  { id: 50, titel: "Jeder Tag ist eine neue Chance", warum: "Lernende entwickeln sich. Wer ihnen nach Fehlern einen echten Neuanfang ermöglicht, stärkt Motivation und Beziehung.", umsetzung: ["Vergangene Konflikte nicht ständig ansprechen.", "Neue Chancen bewusst geben.", "Fortschritte wahrnehmen.", "Entwicklung anerkennen."], merksatz: "Jeder Unterrichtstag darf ein Neustart sein.", kategorie: "Beziehungsarbeit" },
+  { id: 52, titel: "Arbeite mit einem Gallery Walk", warum: "Beim Gallery Walk betrachten Schülerinnen und Schüler die Ergebnisse anderer Gruppen. Dadurch entstehen Austausch, Reflexion und gegenseitiges Feedback.", umsetzung: ["Gruppen erstellen Plakate.", "Hänge alle Ergebnisse sichtbar auf.", "Lasse die Gruppen herumgehen.", "Nutze Feedbackbögen oder Leitfragen."], merksatz: "Lernen wird sichtbar.", kategorie: "Kooperatives Lernen" },
+  { id: 53, titel: "Setze ein Gruppenpuzzle ein", warum: "Beim Gruppenpuzzle wird jede Schülerin und jeder Schüler Expertin oder Experte für einen Teilbereich und gibt dieses Wissen anschließend weiter. Das stärkt Eigenverantwortung und Zusammenarbeit.", umsetzung: ["Thema in Teilbereiche aufteilen.", "Expertengruppen bilden.", "Wissen erarbeiten.", "Stammgruppen gegenseitig unterrichten lassen."], merksatz: "Wer erklärt, lernt doppelt.", kategorie: "Kooperatives Lernen" },
+  { id: 54, titel: "Nutze ein Placemat", warum: "Das Placemat verbindet Einzelarbeit und Gruppenarbeit. Alle bringen zunächst eigene Ideen ein und entwickeln anschließend eine gemeinsame Lösung.", umsetzung: ["Blatt in vier Felder und eine Mitte teilen.", "Jede Person schreibt zunächst allein.", "Anschließend gemeinsame Ergebnisse in der Mitte festhalten.", "Gemeinsam präsentieren."], merksatz: "Erst eigene Ideen – dann gemeinsam denken.", kategorie: "Kooperatives Lernen" },
+  { id: 55, titel: "Arbeite mit einem Kugellager", warum: "Das Kugellager sorgt dafür, dass viele kurze Gespräche entstehen. Lernende wiederholen Inhalte mehrfach und üben freies Sprechen.", umsetzung: ["Zwei Kreise bilden.", "Gegenüberstehende Paare tauschen sich aus.", "Nach jeder Runde weiterrücken.", "Neue Gesprächspartner kennenlernen."], merksatz: "Viele kurze Gespräche fördern sicheres Sprechen.", kategorie: "Kommunikation" },
+  { id: 56, titel: "Nutze das Lerntempoduett", warum: "Schnellere Lernende helfen anderen oder vertiefen ihr Wissen, ohne untätig zu warten.", umsetzung: ["Einzelarbeit beginnen.", "Fertige Lernende zusammenführen.", "Ergebnisse vergleichen.", "Gemeinsam weiterarbeiten."], merksatz: "Lernen endet nicht mit dem Fertigsein.", kategorie: "Differenzierung" },
+  { id: 57, titel: "Diskutiere mit der Fishbowl-Methode", warum: "Fishbowl ermöglicht strukturierte Diskussionen. Eine kleine Gruppe diskutiert, während die übrigen beobachten und später einsteigen.", umsetzung: ["Innenkreis diskutiert.", "Außenkreis beobachtet.", "Plätze regelmäßig wechseln.", "Diskussion gemeinsam auswerten."], merksatz: "Struktur macht Diskussionen besser.", kategorie: "Diskussion" },
+  { id: 58, titel: "Nutze Concept Maps", warum: "Concept Maps helfen dabei, Zusammenhänge sichtbar zu machen und komplexes Wissen zu strukturieren.", umsetzung: ["Zentralen Begriff notieren.", "Unterbegriffe ergänzen.", "Beziehungen mit Pfeilen verbinden.", "Gemeinsam reflektieren."], merksatz: "Zusammenhänge bleiben besser im Gedächtnis.", kategorie: "Visualisierung" },
+  { id: 60, titel: "Plane ein Blitzlicht ein", warum: "Beim Blitzlicht äußert jede Person kurz ihre Meinung oder Erkenntnis. Dadurch kommen viele Stimmen zu Wort.", umsetzung: ["Eine Leitfrage stellen.", "Jede Person antwortet in einem Satz.", "Nicht diskutieren.", "Erst anschließend Ergebnisse zusammenfassen."], merksatz: "Jede Stimme zählt.", kategorie: "Reflexion" },
+  { id: 61, titel: "Nutze Lernstationen", warum: "Stationenlernen ermöglicht individuelles Lerntempo und abwechslungsreiche Zugänge zu einem Thema.", umsetzung: ["Mehrere Stationen vorbereiten.", "Arbeitsaufträge klar formulieren.", "Laufzettel einsetzen.", "Ergebnisse gemeinsam sichern."], merksatz: "Vielfalt fördert Lernen.", kategorie: "Stationenlernen" },
+  { id: 62, titel: "Lass Schülerinnen und Schüler Experten werden", warum: "Wer anderen etwas erklärt, verarbeitet Inhalte intensiver und erkennt eigene Wissenslücken.", umsetzung: ["Teilthemen vergeben.", "Eigenständig erarbeiten lassen.", "Kurz präsentieren.", "Rückfragen zulassen."], merksatz: "Lehren heißt lernen.", kategorie: "Aktivierung" },
+  { id: 63, titel: "Nutze ein Lernplakat", warum: "Lernplakate helfen dabei, Wissen zu strukturieren und dauerhaft sichtbar zu machen.", umsetzung: ["Überschrift formulieren.", "Kernaussagen ergänzen.", "Grafiken nutzen.", "Im Klassenraum aufhängen."], merksatz: "Sichtbares Wissen bleibt präsent.", kategorie: "Visualisierung" },
+  { id: 64, titel: "Arbeite mit Fallbeispielen", warum: "Authentische Situationen fördern problemlösendes Denken und zeigen den Praxisbezug von Unterrichtsinhalten.", umsetzung: ["Realistische Fälle auswählen.", "Gemeinsam analysieren.", "Lösungen entwickeln.", "Ergebnisse vergleichen."], merksatz: "Praxis macht Lernen bedeutsam.", kategorie: "Problemorientiertes Lernen" },
+  { id: 65, titel: "Plane regelmäßige Wiederholungen ein", warum: "Lernen wird nachhaltiger, wenn Inhalte mehrfach über einen längeren Zeitraum wiederholt werden.", umsetzung: ["Kurze Wiederholungen zu Stundenbeginn.", "Quizfragen nutzen.", "Alte Inhalte aufgreifen.", "Verbindungen zu neuen Themen herstellen."], merksatz: "Wiederholung sichert Wissen.", kategorie: "Lernstrategien" },
+  { id: 66, titel: "Nutze Quizformate bewusst", warum: "Kurze Quiz erhöhen die Aktivierung und geben dir gleichzeitig Rückmeldung über den Lernstand.", umsetzung: ["Wenige Fragen auswählen.", "Lösungen gemeinsam besprechen.", "Fehler erklären.", "Quiz als Lernchance nutzen."], merksatz: "Quiz können Lernen sichtbar machen.", kategorie: "Diagnostik" },
+  { id: 67, titel: "Lass Lernende Fragen entwickeln", warum: "Eigene Fragen zeigen, wie tief ein Thema verstanden wurde, und fördern selbstständiges Denken.", umsetzung: ["Jede Person formuliert zwei Fragen.", "Fragen austauschen.", "Gemeinsam beantworten.", "Gute Fragen sammeln."], merksatz: "Gute Fragen zeigen gutes Denken.", kategorie: "Aktivierung" },
+  { id: 68, titel: "Nutze Peer-Feedback", warum: "Rückmeldungen von Mitschülerinnen und Mitschülern fördern Reflexion und helfen, Arbeiten gezielt zu verbessern.", umsetzung: ["Klare Feedbackregeln vereinbaren.", "Positives zuerst nennen.", "Konkrete Verbesserungsvorschläge geben.", "Zeit zur Überarbeitung einplanen."], merksatz: "Feedback hilft beim Wachsen.", kategorie: "Feedback" },
+  { id: 69, titel: "Plane Lernprodukte", warum: "Wenn am Ende ein sichtbares Produkt entsteht, arbeiten viele Lernende zielgerichteter und reflektierter.", umsetzung: ["Produkt früh ankündigen.", "Kriterien transparent machen.", "Zeit für Überarbeitung einplanen.", "Ergebnisse präsentieren."], merksatz: "Ein Ziel macht Lernen greifbar.", kategorie: "Projektarbeit" },
+  { id: 70, titel: "Methoden sind Mittel – nicht das Ziel", warum: "Eine Methode ist dann gut, wenn sie das Lernziel unterstützt. Nicht jede beliebte Methode passt zu jedem Thema oder jeder Lerngruppe.", umsetzung: ["Lernziel zuerst festlegen.", "Methode passend auswählen.", "Nach der Stunde reflektieren.", "Bei Bedarf anpassen."], merksatz: "Das Lernziel bestimmt die Methode – nicht umgekehrt.", kategorie: "Unterrichtsplanung" },
+  { id: 71, titel: "Nutze die Interessen und Lebenswelt der Klasse", warum: "Lerninhalte wirken motivierender, wenn sie an die Lebenswelt der Schülerinnen und Schüler anknüpfen. Bekannte Themen und authentische Beispiele erleichtern den Zugang zu neuen Inhalten.", umsetzung: ["Frage nach Hobbys und Interessen.", "Nutze aktuelle Beispiele.", "Lass Lernende Beispiele einbringen.", "Greife Alltagssituationen auf.", "Beziehe lokale Ereignisse ein."], merksatz: "Interesse ist der Motor des Lernens.", kategorie: "Motivation" },
+  { id: 72, titel: "Gib Lernenden Verantwortung", warum: "Wer Verantwortung übernimmt, identifiziert sich stärker mit dem Unterricht und entwickelt Selbstständigkeit.", umsetzung: ["Klassenämter vergeben.", "Materialdienste einführen.", "Moderationen übertragen.", "Ergebnisse präsentieren lassen."], merksatz: "Verantwortung fördert Selbstständigkeit.", kategorie: "Partizipation" },
+  { id: 73, titel: "Nutze Lernziele statt Arbeitsaufträge", warum: "Arbeitsaufträge beschreiben, was getan werden soll. Lernziele machen deutlich, was am Ende verstanden oder gekonnt werden soll.", umsetzung: ["Lernziel zu Beginn nennen.", "Am Ende darauf zurückkommen.", "Lernziel gemeinsam überprüfen.", "Erfolg sichtbar machen."], merksatz: "Ein Auftrag beschäftigt – ein Lernziel orientiert.", kategorie: "Unterrichtsplanung" },
+  { id: 74, titel: "Plane Aufgaben auf mehreren Niveaus", warum: "Lernende unterscheiden sich in Vorwissen, Lerntempo und Unterstützungsbedarf. Aufgaben knapp über dem aktuellen Können motivieren am meisten – zu leichte langweilen, zu schwere frustrieren.", umsetzung: ["Basisaufgaben anbieten.", "Erweiterungsaufgaben ergänzen.", "Freiwillige Zusatzaufgaben entwickeln.", "Lernfortschritt regelmäßig beobachten."], merksatz: "Nicht alle lernen auf demselben Weg.", kategorie: "Differenzierung" },
+  { id: 75, titel: "Gib Hilfen gestuft", warum: "Hilfen müssen nicht sofort die Lösung liefern. Gestufte Hilfen fördern eigenständiges Denken und geben nur so viel Unterstützung wie nötig.", umsetzung: ["Erst einen kleinen Hinweis geben.", "Danach Leitfragen stellen.", "Beispiele anbieten.", "Hilfekarten frei zugänglich machen.", "Die Lösung erst als letzte Hilfe zeigen."], merksatz: "So viel Hilfe wie nötig – so wenig wie möglich.", kategorie: "Differenzierung" },
+  { id: 78, titel: "Nutze Lernpartnerschaften", warum: "Feste Lernpartner erleichtern Zusammenarbeit, gegenseitige Unterstützung und Feedback.", umsetzung: ["Lernpaare bewusst zusammenstellen.", "Rollen vereinbaren.", "Regelmäßig wechseln.", "Zusammenarbeit reflektieren."], merksatz: "Gemeinsam lernt es sich leichter.", kategorie: "Kooperatives Lernen" },
+  { id: 79, titel: "Plane Zeit für Fragen ein", warum: "Fragen zeigen Interesse und helfen, Missverständnisse frühzeitig zu erkennen.", umsetzung: ["Feste Fragerunden einbauen.", "Anonyme Fragen ermöglichen.", "Verständnisfragen zulassen.", "Offen auf Fragen reagieren."], merksatz: "Fragen sind ein Zeichen von Lernen.", kategorie: "Unterrichtsgespräch" },
+  { id: 80, titel: "Beende Aufgaben mit einer Selbstkontrolle", warum: "Selbstkontrollen fördern Eigenverantwortung und helfen Lernenden, Fehler selbst zu entdecken.", umsetzung: ["Checklisten bereitstellen.", "Musterlösungen nutzen.", "Reflexionsfragen ergänzen.", "Zeit zur Überarbeitung geben."], merksatz: "Selbstkontrolle macht unabhängiger.", kategorie: "Lernstrategien" },
+  { id: 82, titel: "Diagnostiziere kontinuierlich statt nur am Ende", warum: "Regelmäßige Lernstandsdiagnosen zeigen frühzeitig Verständnisprobleme und ermöglichen gezielte Unterstützung.", umsetzung: ["Kurze Verständnisfragen stellen.", "Mini-Quiz einsetzen.", "Exit-Tickets nutzen.", "Ergebnisse für die Planung verwenden."], merksatz: "Diagnostik begleitet Lernen – sie beendet es nicht.", kategorie: "Diagnostik" },
+  { id: 83, titel: "Nutze Fehler zur Unterrichtsplanung", warum: "Häufige Fehler zeigen, welche Inhalte noch nicht verstanden wurden und wo Wiederholungen nötig sind.", umsetzung: ["Typische Fehler sammeln.", "Gemeinsam analysieren.", "Missverständnisse gezielt aufgreifen.", "Übungen anpassen."], merksatz: "Fehler zeigen den nächsten Lernschritt.", kategorie: "Diagnostik" },
+  { id: 85, titel: "Nutze Checklisten", warum: "Checklisten helfen Lernenden, strukturiert zu arbeiten und ihre Ergebnisse selbstständig zu überprüfen.", umsetzung: ["Klare Kriterien formulieren.", "Vor der Abgabe nutzen lassen.", "Gemeinsam besprechen.", "Regelmäßig einsetzen."], merksatz: "Checklisten schaffen Sicherheit.", kategorie: "Selbstständiges Lernen" },
+  { id: 86, titel: "Lass unterschiedliche Lösungswege zu", warum: "Nicht alle Lernenden gelangen auf dieselbe Weise zum Ziel. Verschiedene Lösungswege fördern kreatives und flexibles Denken.", umsetzung: ["Mehrere Strategien zulassen.", "Lösungen vergleichen.", "Gemeinsam Vor- und Nachteile besprechen.", "Begründungen einfordern."], merksatz: "Viele Wege können richtig sein.", kategorie: "Unterrichtsmethoden" },
+  { id: 87, titel: "Nutze Beispiele und Gegenbeispiele", warum: "Gegenbeispiele helfen, Begriffe und Regeln präziser zu verstehen und Missverständnisse zu vermeiden.", umsetzung: ["Passendes Beispiel zeigen.", "Gegenbeispiel ergänzen.", "Unterschiede besprechen.", "Merkmale gemeinsam herausarbeiten."], merksatz: "Gegenbeispiele schärfen das Verständnis.", kategorie: "Didaktik" },
+  { id: 88, titel: "Lass Lernende ihre Lösungen begründen", warum: "Begründungen machen Denkprozesse sichtbar und fördern ein tieferes Verständnis.", umsetzung: ["Nach dem „Warum?\" fragen.", "Begründungen vergleichen.", "Alternative Argumente zulassen.", "Rückfragen stellen."], merksatz: "Begründen vertieft Verstehen.", kategorie: "Unterrichtsgespräch" },
+  { id: 89, titel: "Arbeite mit Reflexionsfragen", warum: "Reflexionsfragen fördern selbstständiges Lernen und helfen, den eigenen Lernprozess bewusst wahrzunehmen.", umsetzung: ["„Was fiel dir leicht?\"", "„Was war schwierig?\"", "„Was möchtest du noch üben?\"", "Antworten kurz notieren lassen."], merksatz: "Wer reflektiert, lernt bewusster.", kategorie: "Lernstrategien" },
+  { id: 90, titel: "Passe dein Tempo an die Lerngruppe an", warum: "Ein angemessenes Unterrichtstempo verhindert Überforderung und Langeweile. Die Lerngruppe bestimmt das Lerntempo – nicht der Stundenplan allein.", umsetzung: ["Verständnis regelmäßig überprüfen.", "Bei Bedarf verlangsamen.", "Zusätzliche Herausforderungen anbieten.", "Zeitreserven einplanen."], merksatz: "Guter Unterricht richtet sich nach den Lernenden.", kategorie: "Unterrichtsplanung" },
+  { id: 91, titel: "Beginne jedes Elterngespräch mit etwas Positivem", warum: "Ein wertschätzender Einstieg schafft Vertrauen und erleichtert es, auch schwierige Themen anzusprechen. Eltern erleben, dass ihr Kind ganzheitlich wahrgenommen wird.", umsetzung: ["Nenne eine konkrete Stärke des Kindes.", "Bleibe ehrlich und authentisch.", "Gehe anschließend zum Gesprächsanlass über.", "Verbinde Stärken mit Entwicklungsmöglichkeiten."], merksatz: "Wertschätzung öffnet Türen.", kategorie: "Elternarbeit" },
+  { id: 92, titel: "Bereite Elterngespräche gut vor", warum: "Eine gute Vorbereitung sorgt für Struktur, Sicherheit und Sachlichkeit – besonders bei schwierigen Gesprächen.", umsetzung: ["Ziele des Gesprächs notieren.", "Beobachtungen dokumentieren.", "Beispiele bereithalten.", "Mögliche Lösungen überlegen."], merksatz: "Vorbereitung schafft Sicherheit.", kategorie: "Elternarbeit" },
+  { id: 93, titel: "Beschreibe Beobachtungen statt Vermutungen", warum: "Konkrete Beobachtungen sind nachvollziehbar und vermeiden Missverständnisse. Vermutungen oder Verallgemeinerungen führen dagegen häufig zu Abwehr.", umsetzung: ["Beschreibe konkrete Situationen.", "Nutze Beispiele.", "Vermeide Begriffe wie „immer\" oder „nie\".", "Trenne Beobachtung und Interpretation."], merksatz: "Beobachtungen überzeugen mehr als Vermutungen.", kategorie: "Gesprächsführung" },
+  { id: 94, titel: "Suche gemeinsam nach Lösungen", warum: "Nachhaltige Veränderungen entstehen eher, wenn Lehrkräfte, Eltern und Kinder gemeinsam an Lösungen arbeiten.", umsetzung: ["Frage nach Ideen der Eltern.", "Entwickle gemeinsame Ziele.", "Vereinbare konkrete Schritte.", "Halte Ergebnisse fest."], merksatz: "Gemeinsame Lösungen halten länger.", kategorie: "Elternarbeit" },
+  { id: 95, titel: "Dokumentiere wichtige Gespräche", warum: "Kurze Gesprächsnotizen helfen dabei, Vereinbarungen nachzuvollziehen und Missverständnisse zu vermeiden.", umsetzung: ["Datum notieren.", "Gesprächsanlass festhalten.", "Vereinbarungen dokumentieren.", "Datenschutz beachten."], merksatz: "Was dokumentiert ist, bleibt nachvollziehbar.", kategorie: "Organisation" },
+  { id: 96, titel: "Bleibe auch in schwierigen Gesprächen sachlich", warum: "Emotionen sind verständlich, doch sachliche Kommunikation erhöht die Chance auf konstruktive Lösungen.", umsetzung: ["Ruhig sprechen.", "Aktiv zuhören.", "Nachfragen stellen.", "Nicht persönlich werden."], merksatz: "Sachlichkeit schafft Klarheit.", kategorie: "Konfliktmanagement" },
+  { id: 97, titel: "Vereinbare konkrete nächste Schritte", warum: "Ein Gespräch ohne klare Vereinbarung führt selten zu nachhaltigen Veränderungen.", umsetzung: ["Ziele formulieren.", "Verantwortlichkeiten klären.", "Termin zur Rückmeldung vereinbaren.", "Ergebnisse schriftlich festhalten."], merksatz: "Klare Absprachen schaffen Verbindlichkeit.", kategorie: "Elternarbeit" },
+  { id: 98, titel: "Kommuniziere regelmäßig – nicht nur bei Problemen", warum: "Wenn Eltern nur bei Schwierigkeiten kontaktiert werden, entstehen leichter Unsicherheiten. Regelmäßige positive Rückmeldungen stärken die Zusammenarbeit.", umsetzung: ["Positive Entwicklungen mitteilen.", "Erfolge würdigen.", "Kurz und konkret formulieren.", "Kommunikation planbar gestalten."], merksatz: "Beziehung entsteht durch regelmäßigen Kontakt.", kategorie: "Elternarbeit" },
+  { id: 99, titel: "Grenzen gehören zu professioneller Kommunikation", warum: "Klare Grenzen schützen die eigene Arbeitszeit und schaffen transparente Erwartungen für alle Beteiligten.", umsetzung: ["Erreichbarkeit kommunizieren.", "Antwortzeiten realistisch halten.", "Schulische Kommunikationswege nutzen.", "Freundlich, aber bestimmt bleiben."], merksatz: "Klare Grenzen schaffen Respekt.", kategorie: "Professionelles Handeln" },
+  { id: 100, titel: "Beende jedes Gespräch mit einer Zusammenfassung", warum: "Eine kurze Zusammenfassung stellt sicher, dass alle Beteiligten dieselben Vereinbarungen verstanden haben.", umsetzung: ["Wichtigste Punkte wiederholen.", "Vereinbarungen benennen.", "Verantwortlichkeiten klären.", "Positiv verabschieden."], merksatz: "Eine gute Zusammenfassung verhindert Missverständnisse.", kategorie: "Gesprächsführung" },
+];
+
 const HELP_DATA = [
   {
     category: "Erste Schritte",
@@ -2195,6 +2369,7 @@ const HELP_DATA = [
       { q: "Was zeigt das Morgen-Briefing auf der Startseite?", a: `Beim Öffnen der App erscheint oben die Karte „Heute im Blick". Sie fasst den Tag in ganzen Sätzen zusammen – zum Beispiel: „Guten Morgen! Heute stehen 4 Stunden an – die erste um 8:00 Uhr in der 4a." Berücksichtigt werden die Stunden des Tages, knapp bevorstehende Klassenarbeiten, Termine, Geburtstage, Kinder die an mehreren der letzten Tage gefehlt haben, und noch nicht erfasste Stunden. Dringendes steht rot und zuerst; angezeigt werden drei Sätze, der Rest über „+ weitere". Alles wird auf deinem Gerät berechnet, es werden keine Daten übertragen. Mit dem × blendest du die Karte für heute aus.` },
       { q: "Wie ist die Übersichtsseite aufgebaut?", a: `Von oben nach unten: (1) Vier Kennzahl-Kacheln – Stunden heute, noch nicht erfasste Stunden, offene Entschuldigungen und aktive Förderziele. Die Reihe lässt sich seitlich schieben, jede Kachel ist antippbar und springt in den passenden Bereich. Kacheln mit offenen Punkten färben sich amber. (2) Das Morgen-Briefing „Heute im Blick". (3) Die Wochenleiste zum Wechseln des Tages. (4) „Dein Unterricht heute" – jede Stunde als eigene Karte, daneben der Knopf „Stundenplan". (5) Eine Dreierreihe mit Terminen, Geburtstagen und To-dos. (6) Ganz unten Dienste und Entschuldigungen; nur deren Reihenfolge lässt sich in den Einstellungen unter „Übersicht (Startseite)" ändern – alles darüber hat einen festen Platz.` },
       { q: "Was zeigt eine Stundenkarte auf der Startseite?", a: `Links Anfangs- und Endzeit, daneben das Klassenkürzel (z. B. „4a") und das Fach; darunter steht der Titel der nächsten Klassenarbeit, falls einer hinterlegt ist. Eine Doppelstunde – also zwei aufeinanderfolgende Blöcke desselben Fachs – erscheint als eine Karte mit durchgehender Zeitspanne (07:55 – 09:30) und dem Vermerk „Doppel". Sind zwischen den Blöcken andere Stunden, bleiben sie getrennt. Rechts das Stundenthema und – sobald ein Klassenarbeitstermin existiert – ein Fortschrittsbalken. Er füllt sich, je weiter ihr im Thema seid: „3 / 6 Stunden" heißt, drei Stunden habt ihr für dieses Thema schon gehalten, sechs sind es bis zur Arbeit insgesamt. Eine Doppelstunde zählt dabei als eine Stunde – so wie sie auch nur einmal erfasst wird. Daneben steht, in wie vielen Stunden geschrieben wird. Die Farbe wechselt von oliv über amber zu rot, je knapper es wird. Die zuletzt gehaltene und noch nicht erfasste Stunden bekommen einen farbigen Rand links. Ein Tipp auf Klasse und Fach öffnet die Notenübersicht des Fachs, ein Tipp auf den Balken die Details zur Arbeit. Ganz rechts das Klemmbrett für die Schnellerfassung – es leuchtet amber, solange die Stunde nicht erfasst ist. Ab fünf Stunden zeigt Saidy zunächst vier und blendet den Rest über „Alle N Stunden ansehen" ein.` },
+      { q: "Was ist der Unterrichtstipp des Tages?", a: `Ganz unten auf der Übersicht liegt eine kompakte Zeile mit einem Tipp aus dem Wissenspool – Titel plus Merksatz. Der Tipp wechselt automatisch mit jedem Tag (er ist an das Datum gekoppelt, bleibt also bei mehrmaligem Öffnen am selben Tag gleich). Tippe drauf, dann öffnet sich die volle Karte: „Warum?" mit Kurzbegründung, „So setzt du es um" als praktische Punkte, und der Merksatz zum Mitnehmen. Ein „Nächster Tipp"-Knopf springt zufällig zu einer anderen Karte, so kannst du zwischendurch etwas schmökern. In den Einstellungen unter „Übersicht (Startseite)" lässt sich die Kachel abschalten.` },
       { q: "Was ist der Wochenrückblick auf der Übersicht?", a: `Eine Karte, die von Freitag 12 Uhr bis Sonntag Nacht ganz oben auf der Übersicht erscheint (ab Montag ist sie automatisch weg). Sie zeigt drei Dinge: die Zahlen der Woche (gehaltene Stunden, vergebene Noten, geführte Gespräche, neue Notizen), was aufgefallen ist (Klassen mit Signalen aus dem Klassenradar, Kinder ohne Eintrag in dieser Woche) und einen Ausblick auf die nächste Woche (Klassenarbeiten, Termine). Ein × blendet die Karte für den Rest dieser Woche aus – am nächsten Freitag kommt sie wieder.` },
       { q: "Was macht der grüne Plus-Knopf in der Mitte?", a: `Er ist der Schnellzugriff zum Erfassen und funktioniert aus jedem Bereich heraus. Ein Tipp öffnet fünf Einträge: „Stunde erfassen" springt direkt in die Schnellerfassung – Saidy wählt dabei selbst die passende Stunde, zuerst eine noch nicht erfasste, sonst die zuletzt gehaltene von heute. „Gespräch notieren" und „Notiz zu einem Kind" fragen zuerst nach dem Kind (einfach den Namen tippen) und dann nach dem Text; beim Gespräch kommen Art (Schüler, Eltern, Förder) und Stimmung dazu. „Aufgabe" und „Termin" legen einen To-do beziehungsweise einen Kalendereintrag an. Bist du gerade in einem Bereich mit eigener Aktion – etwa im Klassen-Tab – steht diese zusätzlich ganz oben in der Liste. Auf Tablet und Desktop heißt der Knopf „Schnell erfassen" und sitzt in der linken Seitenleiste, ganz oben; das aufklappende Menü enthält dieselben Aktionen.` },
       { q: "Wo finde ich die Aufgaben in der unteren Leiste?", a: `Die Leiste zeigt Übersicht, Klassen, den Plus-Knopf, Noten und „Mehr". Die Aufgaben sind unter „Mehr" zu finden – zusammen mit Stundenplan, Kalender, Suche, Einstellungen und Hilfe. Eine neue Aufgabe legst du schneller über den grünen Plus-Knopf an.` },
@@ -2274,6 +2449,65 @@ const HELP_DATA = [
     ],
   },
 ];
+
+/* Detail-Sheet fuer eine Unterrichtstipp-Karte. Zeigt Titel, Kategorie, Merksatz,
+   Warum-Absatz und die Umsetzungspunkte als Liste. Der Naechster-Knopf waehlt eine
+   zufaellige andere Karte, damit man ohne Zurueckgehen weiterschmoekern kann. */
+function TippKartenSheet({ karte, alleKarten, onNaechste, onClose }) {
+  if (!karte) return null;
+  const kapitel = KATEGORIE_ZU_KAPITEL[karte.kategorie] || "Unterrichtsmethoden";
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={onClose}>
+      <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
+          <div className="min-w-0 flex-1 flex items-center gap-2">
+            <Lightbulb size={16} className="akzent-text shrink-0" />
+            <div className="min-w-0">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 leading-none">Unterrichtstipp</div>
+              <div className="text-[11px] text-stone-500 truncate">{kapitel} · {karte.kategorie}</div>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-11 h-11 -mr-3 rounded-full text-stone-400 hover:text-stone-600 flex items-center justify-center shrink-0">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4">
+          <div>
+            <h2 className="text-lg font-bold text-stone-900 leading-snug">{karte.titel}</h2>
+            <p className="text-sm akzent-text font-medium mt-1.5 italic">„{karte.merksatz}"</p>
+          </div>
+
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 mb-1.5">Warum?</div>
+            <p className="text-sm text-stone-700 leading-relaxed">{karte.warum}</p>
+          </div>
+
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 mb-1.5">So setzt du es um</div>
+            <ul className="space-y-1.5">
+              {karte.umsetzung.map((punkt, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm text-stone-700">
+                  <span className="w-1.5 h-1.5 rounded-full akzent-flaeche shrink-0 mt-1.5" />
+                  <span className="flex-1">{punkt}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button variant="ghost" onClick={onClose} className="flex-1 justify-center">Schließen</Button>
+            {alleKarten.length > 1 && (
+              <Button onClick={onNaechste} className="flex-1 justify-center">
+                Nächster Tipp
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function HilfeSheet({ onClose }) {
   const [search, setSearch] = useState("");
@@ -4474,6 +4708,19 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
     return { stundenWoche, notenWoche, gespraecheWoche, notizenWoche, klassenSignale, kinderLuecke, kasNext, termineNext, kw: woche.kw };
   })();
 
+  /* Unterrichtstipp des Tages: waehlt deterministisch eine Karte pro Datum aus dem Pool
+     (fester Grundstock + eigene aus data.settings.tippKartenEigene). Damit sich derselbe
+     Tipp nach Reload nicht aendert, wird der Index aus dem ISO-Datum abgeleitet. */
+  const eigeneKarten = data.settings?.tippKartenEigene || [];
+  const alleTippKarten = [...TIPP_KARTEN, ...eigeneKarten];
+  const tippsAn = data.settings?.tippsAn !== false;
+  const tippDesTages = (() => {
+    if (!tippsAn || !alleTippKarten.length) return null;
+    const seed = todayStr.split("-").reduce((a, s) => a * 31 + parseInt(s, 10), 7);
+    return alleTippKarten[Math.abs(seed) % alleTippKarten.length];
+  })();
+  const [tippSheetKarte, setTippSheetKarte] = useState(null);
+
   /* Zusammenhängender Briefing-Text: aus den Tagesdaten zu ganzen Sätzen zusammengesetzt.
      Läuft vollständig lokal – keine externe Verarbeitung. */
   const briefingSentences = (() => {
@@ -5374,6 +5621,38 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           </div>
         );
       })()}
+
+      {/* Unterrichtstipp des Tages - dezent am Ende der Uebersicht. Klick oeffnet
+          das Detail-Sheet mit Warum, Umsetzung und einem "Naechster Tipp"-Knopf. */}
+      {tippDesTages && (
+        <button
+          onClick={() => setTippSheetKarte(tippDesTages)}
+          className="w-full text-left flex items-center gap-3 bg-white rounded-2xl border border-stone-100 px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors"
+        >
+          <span className="w-9 h-9 rounded-lg akzent-ton flex items-center justify-center shrink-0">
+            <Lightbulb size={16} className="akzent-text" />
+          </span>
+          <div className="flex-1 min-w-0">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 leading-none">Unterrichtstipp des Tages</div>
+            <div className="text-sm font-medium text-stone-800 mt-1 leading-snug line-clamp-1">{tippDesTages.titel}</div>
+            <div className="text-[11px] text-stone-500 italic mt-0.5 line-clamp-1">„{tippDesTages.merksatz}"</div>
+          </div>
+          <ChevronRight size={14} className="text-stone-300 shrink-0" />
+        </button>
+      )}
+
+      {tippSheetKarte && (
+        <TippKartenSheet
+          karte={tippSheetKarte}
+          alleKarten={alleTippKarten}
+          onNaechste={() => {
+            const andere = alleTippKarten.filter((k) => k.id !== tippSheetKarte.id);
+            if (!andere.length) return;
+            setTippSheetKarte(andere[Math.floor(Math.random() * andere.length)]);
+          }}
+          onClose={() => setTippSheetKarte(null)}
+        />
+      )}
 
     </div>
   );
