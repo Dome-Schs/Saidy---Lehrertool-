@@ -3192,6 +3192,9 @@ export default function App() {
       const snapshot = { deletedAt: new Date().toISOString(), data: { ...d, deletedSnapshot: null } };
       return { ...EMPTY_DATA, deletedSnapshot: snapshot };
     });
+    // Sichtbare Bestaetigung - der Rueckgang auf leere Uebersicht wirkt sonst
+    // wie ein Fehler; der Toast verweist auch auf die 30-Tage-Wiederherstellung.
+    showToast("Alle Daten gelöscht. Wiederherstellung 30 Tage möglich in Einstellungen.");
   }
 
   function importBackup(file, onResult) {
@@ -3702,7 +3705,7 @@ export default function App() {
             </div>
           )}
           {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenKlassenDashboard={(classId) => { setFocusKlassenDashboardId(classId); goTo("klassen"); }} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
-          {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} focusKlassenDashboardId={focusKlassenDashboardId} onFocusKlassenDashboardConsumed={() => setFocusKlassenDashboardId(null)} onRegisterFab={setFabActions} />}
+          {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} focusKlassenDashboardId={focusKlassenDashboardId} onFocusKlassenDashboardConsumed={() => setFocusKlassenDashboardId(null)} onRegisterFab={setFabActions} showToast={showToast} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
           {tab === "kalender" && <KalenderTab data={activeData} update={update} autoOpenForm={kalenderAutoForm} onAutoFormConsumed={() => setKalenderAutoForm(false)} />}
           {tab === "aufgaben" && <AufgabenTab data={activeData} update={update} />}
@@ -4860,7 +4863,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
   const kacheln = [
     {
       icon: ClipboardCheck,
-      label: "Erfassen",
+      label: "Stunden nachtragen",
       value: (pendingLessons || []).length,
       sub: (pendingLessons || []).length ? (offeneKlassen ? `in ${offeneKlassen} ${offeneKlassen === 1 ? "Klasse" : "Klassen"}` : "heute offen") : "alles erledigt",
       warn: !!(pendingLessons || []).length,
@@ -5112,10 +5115,21 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                 <Icon size={13} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
               </span>
               <div className="text-[10px] text-stone-500 leading-tight mt-1.5 truncate w-full">{k.label}</div>
-              <div className={`text-[22px] font-bold leading-none tabular-nums mt-1 ${aktiv && isColor ? "text-amber-600" : "akzent-text"}`}>
-                {k.value}
-              </div>
-              <div className="text-[10px] text-stone-400 mt-0.5 truncate w-full">{k.sub}</div>
+              {/* Kacheln mit Wert 0 zeigen einen kleinen Haken statt einer riesigen 0 –
+                  eine 0 wirkte sonst wie ein Fehler- oder Leerzustand. */}
+              {k.value === 0 ? (
+                <div className="flex items-center gap-1 mt-1.5 text-stone-400">
+                  <Check size={14} strokeWidth={2.5} />
+                  <span className="text-[11px]">nichts offen</span>
+                </div>
+              ) : (
+                <>
+                  <div className={`text-[22px] font-bold leading-none tabular-nums mt-1 ${aktiv && isColor ? "text-amber-600" : "akzent-text"}`}>
+                    {k.value}
+                  </div>
+                  <div className="text-[10px] text-stone-400 mt-0.5 truncate w-full">{k.sub}</div>
+                </>
+              )}
             </button>
           );
         })}
@@ -9010,7 +9024,7 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
   );
 }
 
-function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed, focusKlassenDashboardId, onFocusKlassenDashboardConsumed, onRegisterFab }) {
+function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed, focusKlassenDashboardId, onFocusKlassenDashboardConsumed, onRegisterFab, showToast }) {
   const [selectedClass, setSelectedClass] = useState(data.classes[0]?.id ?? null);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -9088,13 +9102,18 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
 
   function deleteClass(id) {
     const ts = isoDate(new Date());
+    const cls = data.classes.find((c) => c.id === id);
+    const name = cls?.name || "Klasse";
     update((d) => {
-      const cls = d.classes.find((c) => c.id === id);
-      if (cls) cls.deletedAt = ts;
+      const c = d.classes.find((x) => x.id === id);
+      if (c) c.deletedAt = ts;
       d.students.filter((s) => s.classId === id).forEach((s) => { s.deletedAt = ts; });
       return d;
     });
     if (selectedClass === id) setSelectedClass(null);
+    // Ohne Toast bleibt die Klasse einfach aus der Liste - das wirkt wie ein
+    // Absturz oder ein versehentliches Wegtippen. Bewusst Bestaetigung geben.
+    showToast?.(`Klasse ${name} gelöscht.`);
   }
 
   function addStudent(name) {
