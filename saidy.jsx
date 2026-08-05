@@ -3491,21 +3491,20 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Kleines Aktiv-Icon unten-links wenn Nav weggescrollt ist */}
+      {/* Ersatz-Knopf unten links, wenn die Nav weggescrollt ist. Zeigt bewusst NICHT
+          das Symbol des aktuellen Bereichs - das las sich wie eine Zustandsanzeige
+          ("du bist in Klassen") und niemand kam auf die Idee, dass es ein Knopf ist.
+          Ein Pfeil nach oben zeigt, was passiert: die Leiste kommt zurueck. */}
       <button
         onClick={() => setNavCollapsed(false)}
         aria-label="Navigation einblenden"
-        className={`md:hidden fixed left-4 z-40 w-12 h-12 rounded-full akzent-ton shadow-lg flex items-center justify-center transition-all duration-200 ${
+        className={`md:hidden fixed left-4 z-40 w-12 h-12 rounded-full akzent-flaeche shadow-lg flex items-center justify-center transition-all duration-200 ${
           navCollapsed
             ? "bottom-[calc(env(safe-area-inset-bottom)+16px)] opacity-100 scale-100"
             : "bottom-0 opacity-0 scale-75 pointer-events-none"
         }`}
       >
-        {(() => {
-          const activeTabObj = tabs.find((t) => t.key === tab) || tabs[0];
-          const Icon = activeTabObj.icon;
-          return <Icon size={20} strokeWidth={2.4} className="akzent-text" />;
-        })()}
+        <ChevronDown size={22} strokeWidth={2.4} className="text-white rotate-180" />
       </button>
 
       {/* Mehr-Menü (mobil) */}
