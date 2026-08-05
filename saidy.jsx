@@ -4640,8 +4640,11 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         })()}
       </div>
 
-      {/* Kennzahl-Kacheln – horizontal scrollbar, damit sie auch auf schmalen Geräten lesbar bleiben */}
-      <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5 chip-scroll">
+      {/* Kennzahl-Kacheln - auf Handy vollbreite Zeilen untereinander (Icon links,
+          Beschriftung mitte, Zahl rechts). Auf Desktop bleibt die Vierer-Reihe, weil
+          dort Platz ist. Vorher lag eine seitlich scrollbare Reihe an, in der die
+          hinteren Kacheln am rechten Rand abgeschnitten wurden. */}
+      <div className="flex flex-col gap-2 md:grid md:grid-cols-4">
         {kacheln.map((k) => {
           const Icon = k.icon;
           const aktiv = k.warn && k.value > 0;
@@ -4649,18 +4652,19 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             <button
               key={k.label}
               onClick={k.onClick}
-              className="shrink-0 w-[9.25rem] text-left bg-white rounded-2xl border border-stone-100 px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors"
+              className="w-full text-left bg-white rounded-2xl border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors flex items-center gap-3 px-3 py-2.5 md:flex-col md:items-start md:gap-0 md:py-3"
             >
-              <div className="flex items-start gap-2 mb-2">
-                <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${aktiv && isColor ? "bg-amber-100" : "akzent-ton"}`}>
-                  <Icon size={14} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
-                </span>
-                <span className="text-[11px] text-stone-500 leading-tight pt-0.5">{k.label}</span>
+              <span className={`w-9 h-9 md:w-7 md:h-7 rounded-lg flex items-center justify-center shrink-0 ${aktiv && isColor ? "bg-amber-100" : "akzent-ton"}`}>
+                <Icon size={16} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
+              </span>
+              <div className="flex-1 min-w-0 md:mt-2">
+                <div className="text-[11px] text-stone-500 leading-tight truncate md:whitespace-normal">{k.label}</div>
+                <div className="text-[11px] text-stone-400 mt-0.5 truncate md:hidden">{k.sub}</div>
               </div>
-              <div className={`text-[26px] font-bold leading-none tabular-nums ${aktiv && isColor ? "text-amber-600" : "akzent-text"}`}>
+              <div className={`text-[26px] font-bold leading-none tabular-nums shrink-0 tabular-nums ${aktiv && isColor ? "text-amber-600" : "akzent-text"} md:mt-2`}>
                 {k.value}
               </div>
-              <div className="text-[11px] text-stone-400 mt-1">{k.sub}</div>
+              <div className="hidden md:block text-[11px] text-stone-400 mt-1">{k.sub}</div>
             </button>
           );
         })}
