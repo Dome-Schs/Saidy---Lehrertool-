@@ -1663,6 +1663,23 @@ function bekannteThemen(grades, fachId) {
   return Object.keys(gesehen).map((k) => gesehen[k]).sort((a, b) => a.localeCompare(b, "de"));
 }
 
+/* Vorschlaege fuer das Stundenthema-Feld in der Schnellerfassung. Zieht Themen aus
+   frueheren Stunden (lessonTopics) UND aus schriftlichen Noten (grades) zusammen -
+   beide Quellen fuellen sich gegenseitig, damit ein Thema, das man in einer Klassen-
+   arbeit vergeben hat, in einer folgenden Stunde als Vorschlag erscheint (und umgekehrt).
+   Dedupliziert case-insensitive. */
+function bekannteStundenthemen(lessonTopics, grades, fachId) {
+  const gesehen = Object.create(null);
+  const sammeln = (t) => {
+    if (typeof t !== "string") return;
+    const s = t.trim();
+    if (s) gesehen[s.toLowerCase()] = s;
+  };
+  (lessonTopics || []).forEach((x) => { if (x.fachId === fachId) sammeln(x.text); });
+  (grades || []).forEach((g) => { if (g.fachId === fachId) sammeln(g.topic); });
+  return Object.keys(gesehen).map((k) => gesehen[k]).sort((a, b) => a.localeCompare(b, "de"));
+}
+
 /* Aufbereiteter Klassenarbeits-Countdown für die Anzeige.
    Liefert null, wenn nichts anzuzeigen ist (kein Termin oder Termin vorbei). */
 function testCountdown(fach, timetable, events) {
@@ -2104,7 +2121,7 @@ const HELP_DATA = [
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Klemmbrett-Symbol neben einer Stunde auf der Startseite öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Gespräche eintragen kannst. Eine Doppelstunde wird dabei einmal erfasst, nicht zweimal – sie gilt als eine Unterrichtseinheit und erscheint in der Liste der offenen Stunden als ein Eintrag mit der Zahl der Blöcke. Die Notenbuttons sind immer direkt sichtbar. Weitere Aktionen (Notiz, Gespräch, Vergessen) erscheinen nach Antippen des ···-Symbols neben dem Namen. Hat ein Kind bereits eine Notiz oder einen Auffälligkeits-Eintrag, leuchtet das ···-Symbol grün.` },
       { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Saidy an, wie viele Unterrichtsstunden bis dahin noch bleiben. Gezählt wird in Unterrichtseinheiten: ein Tag mit diesem Fach ist eine Einheit – eine Doppelstunde aus zwei 45-Minuten-Blöcken zählt also einmal, genau wie eine einzelne Stunde. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Saidy die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
       { q: "Wo sehe ich auf der Startseite, wie viel Zeit bis zur Klassenarbeit bleibt?", a: `Direkt bei der Stunde – es gibt dafür keine eigene Karte mehr. Ist für ein Fach ein Test-Termin hinterlegt, erscheint in der Unterricht-Übersicht unter der Stunde ein feiner Strich: voll bedeutet viel Vorbereitungszeit, kurz bedeutet es wird eng. Die Farbe wechselt von oliv über amber zu rot, je näher der Termin rückt. Rechts neben der Stunde steht zusätzlich die Zahl der verbleibenden Unterrichtsstunden (z. B. „5×"), am Prüfungstag selbst „Heute!". Ein Tipp auf den Strich klappt die Details auf: Titel der Arbeit, Datum und die verbleibenden Übungsstunden im Klartext. Angezeigt wird das nur bei Fächern, für die du einen Termin eingetragen hast.` },
-      { q: "Wie finde ich heraus, bei welchem Thema die Klasse Lücken hat?", a: `Beim Eintragen einer schriftlichen Note kannst du ein Thema angeben, z. B. „Bruchrechnung". Bereits verwendete Themen werden beim Tippen vorgeschlagen – nimm die Vorschläge, dann bleibt die Auswertung sauber. Auch die Schnellerfassung übernimmt das oben eingetragene Stundenthema automatisch, wenn du dort schriftliche Noten vergibst. In der Fachansicht („Noten & Berichte" → Klasse → Fach) erscheint dann die Karte „Wissensgebiete": Alle Themen mit dem Klassenschnitt, das schwächste zuerst. Ein langer Balken bedeutet gut beherrscht. Tippst du ein Thema an, siehst du, welche Kinder dort Lücken haben – daraus wird direkt eine Fördergruppe.` },
+      { q: "Wie finde ich heraus, bei welchem Thema die Klasse Lücken hat?", a: `Beim Eintragen einer schriftlichen Note kannst du ein Thema angeben, z. B. „Bruchrechnung". Bereits verwendete Themen werden beim Tippen vorgeschlagen – nimm die Vorschläge, dann bleibt die Auswertung sauber. Auch die Schnellerfassung übernimmt das oben eingetragene Stundenthema automatisch, wenn du dort schriftliche Noten vergibst. Umgekehrt schlägt das Stundenthema-Feld bereits bekannte Themen desselben Fachs vor – so bleibt „Bruchrechnung" über Wochen dasselbe Wort und der Fortschrittsbalken zählt sauber weiter, statt bei jeder Tippvariante von vorn. In der Fachansicht („Noten & Berichte" → Klasse → Fach) erscheint dann die Karte „Wissensgebiete": Alle Themen mit dem Klassenschnitt, das schwächste zuerst. Ein langer Balken bedeutet gut beherrscht. Tippst du ein Thema an, siehst du, welche Kinder dort Lücken haben – daraus wird direkt eine Fördergruppe.` },
       { q: "Wie sehe ich, wie weit ich mit den Zeugnisnoten bin?", a: `In der Zeugnisphase (Januar, Februar, Juni, Juli) zeigt jede Klassenkarte unter „Noten & Berichte" einen Fortschrittsbalken: wie viele Zeugnisnoten von wie vielen bereits gesetzt sind und wie viele noch offen sind. Über mehrere Klassen hinweg siehst du so auf einen Blick, wo noch Arbeit liegt. Ist alles vollständig, wird der Balken grün.` },
       { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button „Zeugnisnote". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
       { q: "Wo kann ich Gespräche mit Schüler:innen erfassen?", a: `An drei Stellen: (1) In der Klassenliste neben jedem Kind das 💬-Symbol antippen. (2) Im Schnellerfassungs-Modus nach dem Unterricht. (3) Direkt in der Notenansicht: Kind antippen – die Detailansicht zeigt oben eine Karte „Gespräch & Stimmung" mit Typ-Wahl (Schüler / Eltern / Förder), Stimmungsskala (😄😊😐😕😟) und Notizfeld. Alle erfassten Gespräche erscheinen auch bei Elternsprechtag-Vorbereitung.` },
@@ -3905,7 +3922,10 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
             </div>
           </div>
 
-          {/* Optionales Stundenthema */}
+          {/* Optionales Stundenthema. Datalist schlaegt bereits bekannte Themen desselben
+              Fachs vor - so bleibt "Bruchrechnung" ueber Wochen dasselbe Wort und der
+              Fortschrittsbalken zaehlt sauber weiter statt bei jeder Tippvariante von
+              vorn. */}
           <div className="mb-4">
             <input
               className={inputCls}
@@ -3913,7 +3933,14 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
               maxLength={200}
               value={topic}
               onChange={(e) => saveTopic(e.target.value)}
+              list={`stundenthemen-${fach.id}`}
+              autoComplete="off"
             />
+            <datalist id={`stundenthemen-${fach.id}`}>
+              {bekannteStundenthemen(data.lessonTopics, data.grades, fach.id).map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
           </div>
 
           {/* Frage zum Mitbringen – nur bei Sport-Fächern sichtbar */}
