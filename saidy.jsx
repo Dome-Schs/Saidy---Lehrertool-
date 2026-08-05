@@ -2768,6 +2768,7 @@ const HELP_DATA = [
     items: [
       { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung". Dort erscheint zuerst ein kurzer Datenschutz-Hinweis, den du bestätigst. Danach: „Sichern" legt die Datei im Download-Ordner ab, „Teilen" öffnet die Teilen-Ansicht (z. B. für „In Dateien sichern" oder AirDrop). Wichtig: abgelegte Dokumente sind darin nicht enthalten – die brauchen eine eigene Sicherung, direkt darunter unter „Dokumente sichern".` },
       { q: "Wie lege ich ein Dokument bei einem Kind ab?", a: `Öffne die Klasse, tippe das Kind an und wechsle auf den Reiter „Mehr". Ganz unten steht „Dokumente" mit zwei Knöpfen: „Foto" öffnet direkt die Kamera – ideal, um eine Entschuldigung abzufotografieren. „Datei" öffnet die Dateien-App, dort wählst du ein PDF oder ein vorhandenes Bild. Fotos werden automatisch verkleinert, damit sie wenig Platz brauchen. Ein Tipp auf einen Eintrag öffnet ihn, das Papierkorb-Symbol löscht ihn.` },
+      { q: "Kann ich Dokumente auch bei einer Klasse, einem Fach oder ganz allgemein ablegen?", a: `Ja. Im Klassen-Dashboard (Klasse aufklappen → „Klassen-Dashboard") liegt ganz unten die Ablage für die ganze Klasse – etwa Sitzplan oder Elternbrief. In der Notenübersicht eines Fachs (Noten → Klasse → Fach) findest du dieselbe Ablage für Arbeitsblätter oder Lösungen. Für alles ohne festen Bezug – Konferenzprotokolle, Formulare, Schulordnung – gibt es unter „Mehr" → „Dokumente" einen eigenen allgemeinen Bereich. Dort steht auch eine durchsuchbare Liste aller abgelegten Dokumente, egal wo sie hängen.` },
       { q: "Wo werden meine Dokumente gespeichert?", a: `Auf deinem Gerät, genau wie alles andere in Saidy – nichts wird ins Internet übertragen. Dokumente liegen allerdings in einem eigenen Speicherbereich, weil sie für die normale Ablage zu groß wären. Deshalb sind sie auch nicht in der normalen Datensicherung enthalten, sondern brauchen unter „Einstellungen" → „Datensicherung" den eigenen Knopf „Dokumente sichern".` },
       { q: "Warum sind meine Dokumente nach dem Wiederherstellen weg?", a: `Die normale Datensicherung enthält nur die Liste der Dokumente (Name, Datum, zu welchem Kind), nicht die Dateien selbst. Nach dem Wiederherstellen siehst du deshalb die Einträge, aber beim Öffnen kommt der Hinweis, dass die Datei fehlt. Spiel dann zusätzlich deine Dokument-Sicherung ein: „Einstellungen" → „Datensicherung" → „Einspielen" im Abschnitt „Dokumente sichern".` },
       { q: "Kann ich mir Dokumente direkt an Saidy schicken lassen?", a: `Nein. Saidy hat bewusst keinen Server und kann deshalb weder E-Mails abrufen noch Nachrichten empfangen. Auf dem iPhone lässt Apple Web-Apps auch nicht als Ziel im Teilen-Menü zu. Der Weg ist deshalb: Datei zuerst in „Dateien" sichern (bei einer E-Mail: Anhang antippen → Teilen → „In Dateien sichern"), danach in Saidy beim Kind auf „Datei" tippen und sie dort auswählen. Für Papier-Entschuldigungen ist „Foto" der schnellere Weg.` },
@@ -3201,6 +3202,7 @@ export default function App() {
   const [navCollapsed, setNavCollapsed] = useState(false);
   const mainRef = useRef(null);
   const [showHelp, setShowHelp] = useState(false);
+  const [showDokumente, setShowDokumente] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [fabActions, setFabActions] = useState([]); // [{label, icon, onClick}]
   const [showSearch, setShowSearch] = useState(false);
@@ -4118,6 +4120,12 @@ export default function App() {
               <Search size={17} strokeWidth={2} /> Suchen
             </button>
             <button
+              onClick={() => setShowDokumente(true)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-800 transition-colors"
+            >
+              <Paperclip size={17} strokeWidth={2} /> Dokumente
+            </button>
+            <button
               onClick={() => setShowSettings(true)}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-800 transition-colors"
             >
@@ -4341,6 +4349,13 @@ export default function App() {
                 <span className="text-xs text-stone-600">Suchen</span>
               </button>
               <button
+                onClick={() => { setShowDokumente(true); setShowMore(false); }}
+                className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-stone-200"
+              >
+                <Paperclip size={22} className="text-stone-500" />
+                <span className="text-xs text-stone-600">Dokumente</span>
+              </button>
+              <button
                 onClick={() => { setShowSettings(true); setShowMore(false); }}
                 className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-stone-200"
               >
@@ -4360,6 +4375,14 @@ export default function App() {
       )}
 
       {showHelp && <HilfeSheet onClose={() => setShowHelp(false)} />}
+
+      {showDokumente && (
+        <DokumenteAllgemein
+          data={activeData}
+          update={update}
+          onClose={() => setShowDokumente(false)}
+        />
+      )}
 
       {showSearch && (
         <GlobalSearchModal
@@ -6973,6 +6996,111 @@ function DokumenteBlock({ scope, scopeId, documents, update, hinweis }) {
   );
 }
 
+/* Eigener Bereich fuer Dokumente ohne Kind-, Klassen- oder Fachbezug -
+   Konferenzprotokolle, Formulare, Schulordnung. Zusaetzlich eine Uebersicht
+   aller abgelegten Dokumente ueber alle Bereiche hinweg, damit ein einzelnes
+   Dokument auch wiederfindet, wer sich nicht mehr erinnert, wo es lag. */
+function DokumenteAllgemein({ data, update, onClose }) {
+  const [suche, setSuche] = useState("");
+  const documents = data.documents || [];
+
+  function scopeLabel(doc) {
+    if (doc.scope === "student") {
+      const s = data.students.find((x) => x.id === doc.scopeId);
+      return s ? { text: s.name, art: "Kind" } : { text: "gelöschtes Kind", art: "Kind" };
+    }
+    if (doc.scope === "class") {
+      const c = data.classes.find((x) => x.id === doc.scopeId);
+      return c ? { text: c.name, art: "Klasse" } : { text: "gelöschte Klasse", art: "Klasse" };
+    }
+    if (doc.scope === "fach") {
+      const f = data.faecher.find((x) => x.id === doc.scopeId);
+      return f ? { text: f.subject, art: "Fach" } : { text: "gelöschtes Fach", art: "Fach" };
+    }
+    return { text: "Allgemein", art: "Allgemein" };
+  }
+
+  const q = suche.trim().toLowerCase();
+  const alle = documents
+    .map((d) => ({ ...d, ort: scopeLabel(d) }))
+    .filter((d) => !q || d.name.toLowerCase().includes(q) || d.ort.text.toLowerCase().includes(q))
+    .sort((a, b) => String(b.addedAt || "").localeCompare(String(a.addedAt || "")));
+
+  async function oeffnen(doc) {
+    try {
+      const blob = await docLaden(doc.id);
+      if (!blob) return;
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch { /* Datei fehlt oder ist beschaedigt - stiller Abbruch reicht hier */ }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
+      <div className="bg-white border-b border-stone-100 shrink-0">
+        <div className="flex items-center gap-3 px-4 pb-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale">
+            <ChevronLeft size={18} className="text-stone-600" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="text-xl font-bold text-stone-900">Dokumente</div>
+            <div className="t-caption">{documents.length} {documents.length === 1 ? "Dokument" : "Dokumente"} insgesamt</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        {/* Allgemeine Ablage - ohne Kind-, Klassen- oder Fachbezug */}
+        <div className="card card-p">
+          <DokumenteBlock
+            scope="frei"
+            scopeId={null}
+            documents={documents}
+            update={update}
+            hinweis="Für Unterlagen ohne festen Bezug – Konferenzprotokolle, Formulare, Schulordnung."
+          />
+        </div>
+
+        {/* Uebersicht aller Dokumente, egal wo sie haengen. Neue Dokumente kommen
+            weiterhin direkt beim Kind, bei der Klasse oder beim Fach hinzu - hier
+            geht es ums Wiederfinden, nicht ums Anlegen. */}
+        <div>
+          <div className="t-section px-1 mb-2">Alle Dokumente</div>
+          {documents.length > 3 && (
+            <input
+              className="w-full bg-white border border-stone-200 rounded-xl px-3 py-2 text-sm placeholder-stone-400 outline-none mb-2"
+              placeholder="Suchen nach Name oder Kind/Klasse/Fach …"
+              value={suche}
+              onChange={(e) => setSuche(e.target.value)}
+            />
+          )}
+          {alle.length ? (
+            <div className="card divide-y divide-stone-100 overflow-hidden">
+              {alle.map((doc) => (
+                <button key={doc.id} onClick={() => oeffnen(doc)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-stone-50">
+                  <span className="w-8 h-8 rounded-lg bg-stone-100 flex items-center justify-center shrink-0">
+                    {doc.mime?.startsWith("image/") ? <ImageIcon size={14} className="text-stone-500" /> : <FileText size={14} className="text-stone-500" />}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm text-stone-800 truncate">{doc.name}</div>
+                    <div className="t-caption">{doc.ort.art} · {doc.ort.text} · {byteText(doc.size)}</div>
+                  </div>
+                  <ChevronRight size={14} className="text-stone-300 shrink-0" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-stone-400 px-1">
+              {q ? "Nichts gefunden." : `Noch keine Dokumente abgelegt – bei einem Kind, einer Klasse oder einem Fach jeweils unter „Mehr" bzw. im Dashboard.`}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* Eigenständiges Fenster für die Schülerliste einer Klasse – bewusst getrennt von der Klassenübersicht */
 function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, absences, incidents, documents, update, settings, notenfarben, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
   const [photoError, setPhotoError] = useState("");
@@ -9367,7 +9495,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
   );
 }
 
-function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele, absences, onOpenStudent, onClose }) {
+function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele, absences, documents, update, onOpenStudent, onClose }) {
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const cutoff14Iso = (() => { const d = new Date(today); d.setDate(d.getDate() - 14); return d.toISOString().slice(0, 10); })();
 
@@ -9682,6 +9810,16 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
             </div>
           </div>
         )}
+
+        {/* Unterlagen zur Klasse - Sitzplan, Elternbrief, Klassenliste */}
+        <div className="card card-p">
+          <DokumenteBlock
+            scope="class"
+            scopeId={cls.id}
+            documents={documents}
+            update={update}
+          />
+        </div>
 
         {!students.length && (
           <div className="card p-8 text-center text-stone-400 text-sm">Noch keine Schüler:innen in dieser Klasse.</div>
@@ -10148,6 +10286,8 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
             faecher={dashFaecher}
             foerderZiele={data.foerderZiele || []}
             absences={(data.absences || []).filter((a) => dashStudents.some((s) => s.id === a.studentId))}
+            documents={data.documents || []}
+            update={update}
             onOpenStudent={(studentId) => {
               setKlassenDashboardId(null);
               setSelectedClass(klassenDashboardId);
@@ -12568,6 +12708,15 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                 </div>
                 <IncidentsOverview data={data} update={update} fach={fach} cls={cls} students={students} halbjahr={halbjahr} />
               </div>
+            </div>
+          )}
+
+          {/* Unterlagen zum Fach - Arbeitsblaetter, Klassenarbeiten, Loesungen.
+              Nur in der Klassenuebersicht des Fachs, nicht im Schueler-Sheet
+              darunter - dort waere sie ausser Kontext. */}
+          {!student && (
+            <div className="card card-p">
+              <DokumenteBlock scope="fach" scopeId={fach.id} documents={data.documents || []} update={update} />
             </div>
           )}
 
