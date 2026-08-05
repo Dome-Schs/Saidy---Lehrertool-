@@ -4658,15 +4658,17 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
         {(showAllLessons ? dayUnits : dayUnits.slice(0, 4)).map((unit) => {
           const { fach, cls, startZeit, endZeit, periodLabel, topic, cd, gehalten, gesamt, pct, offen, istLetzte } = lessonInfo(unit);
           const detailOpen = openTestDetail === unit.id;
-          const hervor = offen || istLetzte;
-          const accentCol = fach ? (isColor ? fach.color : "var(--oliv)") : "var(--oliv)";
           const barCol = !cd ? "var(--oliv)" : cd.level === "krit" ? "#ef4444" : cd.level === "warn" ? "#f59e0b" : "var(--oliv)";
           const istDoppel = unit.slots.length > 1;
+          /* Zwei getrennte visuelle Rollen, damit man auf einen Blick erkennt, was
+             Aufgabe (Amber-Rand links) und was reine Orientierung ist (dezenter
+             Akzentton als Hintergrund). Ist die gerade eben gehaltene Stunde auch
+             noch offen, gewinnt Amber. */
+          const zeigeLetzte = istLetzte && !offen;
           return (
-            <Card key={unit.id} className="overflow-hidden p-0">
+            <Card key={unit.id} className={`overflow-hidden p-0 ${zeigeLetzte ? "akzent-ton" : ""}`}>
               <div
-                className={`flex items-stretch ${hervor ? "border-l-[3px]" : "border-l-[3px] border-l-transparent"}`}
-                style={hervor ? { borderLeftColor: accentCol } : {}}
+                className={`flex items-stretch border-l-[3px] ${offen ? "border-l-amber-500" : "border-l-transparent"}`}
               >
                 {/* Zeitspalte – bei Doppelstunde durchgehend von 07:55 bis 09:30 */}
                 <div className="shrink-0 w-[3.5rem] py-2.5 pl-2 pr-1">
