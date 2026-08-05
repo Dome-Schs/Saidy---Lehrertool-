@@ -2262,14 +2262,23 @@ function QuickAddNoteModal({ data, modus, onSave, onClose }) {
     onSave({ studentId: student.id, text: text.trim(), istGespraech, typ, mood });
   }
 
+  /* Backdrop-Klick und X-Knopf wirken versehentlich - besonders wenn das Sheet auf dem
+     iPad viel Rand um sich herum hat. Steht Text im Feld und ist ein Kind gewaehlt,
+     wird der Draft mit gespeichert statt kommentarlos verworfen. Wer bewusst abbrechen
+     will, druckt "Abbrechen" - der Knopf bleibt unveraendert. */
+  function schliessenMitRettung() {
+    if (student && text.trim()) speichern();
+    else onClose();
+  }
+
   return (
-    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[70]" onClick={onClose}>
+    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[70]" onClick={schliessenMitRettung}>
       <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
           <div className="font-semibold text-stone-800">
             {istGespraech ? "Gespräch notieren" : "Notiz zu einem Kind"}
           </div>
-          <button onClick={onClose} className="w-11 h-11 -mr-3 rounded-full text-stone-400 hover:text-stone-600 flex items-center justify-center">
+          <button onClick={schliessenMitRettung} className="w-11 h-11 -mr-3 rounded-full text-stone-400 hover:text-stone-600 flex items-center justify-center">
             <X size={18} />
           </button>
         </div>
