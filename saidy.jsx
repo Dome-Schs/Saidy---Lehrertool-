@@ -4726,11 +4726,8 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
                           )}
                         </span>
                         <span className="text-[10px] truncate text-right leading-tight" style={{ color: barCol }}>
-                          {cd.istHeute
-                            ? "KA heute"
-                            : cd.rem === null
-                              ? `KA ${cd.datum}`
-                              : `KA in ${cd.rem} ${cd.rem === 1 ? "Stunde" : "Stunden"}`}
+                          {/* Links steht schon die Restzahl - hier reicht Termin oder „heute". */}
+                          {cd.istHeute ? "Arbeit heute" : `Arbeit am ${cd.datum}`}
                         </span>
                       </div>
                       {detailOpen && (
