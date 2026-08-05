@@ -4580,12 +4580,12 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
               className="shrink-0 w-[9.25rem] text-left bg-white rounded-2xl border border-stone-100 px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors"
             >
               <div className="flex items-start gap-2 mb-2">
-                <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${aktiv ? "bg-amber-100" : "akzent-ton"}`}>
-                  <Icon size={14} className={aktiv ? "text-amber-700" : "akzent-text"} />
+                <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${aktiv && isColor ? "bg-amber-100" : "akzent-ton"}`}>
+                  <Icon size={14} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
                 </span>
                 <span className="text-[11px] text-stone-500 leading-tight pt-0.5">{k.label}</span>
               </div>
-              <div className={`text-[26px] font-bold leading-none tabular-nums ${aktiv ? "text-amber-600" : "akzent-text"}`}>
+              <div className={`text-[26px] font-bold leading-none tabular-nums ${aktiv && isColor ? "text-amber-600" : "akzent-text"}`}>
                 {k.value}
               </div>
               <div className="text-[11px] text-stone-400 mt-1">{k.sub}</div>
@@ -4719,7 +4719,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
         {(showAllLessons ? dayUnits : dayUnits.slice(0, 4)).map((unit) => {
           const { fach, cls, startZeit, endZeit, periodLabel, topic, cd, gehalten, gesamt, pct, offen, istLetzte } = lessonInfo(unit);
           const detailOpen = openTestDetail === unit.id;
-          const barCol = !cd ? "var(--oliv)" : cd.level === "krit" ? "#ef4444" : cd.level === "warn" ? "#f59e0b" : "var(--oliv)";
+          const barCol = !cd || !isColor ? "var(--oliv)" : cd.level === "krit" ? "#ef4444" : cd.level === "warn" ? "#f59e0b" : "var(--oliv)";
           const istDoppel = unit.slots.length > 1;
           /* Zwei getrennte visuelle Rollen, damit man auf einen Blick erkennt, was
              Aufgabe (Amber-Rand links) und was reine Orientierung ist (dezenter
@@ -4729,7 +4729,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
           return (
             <Card key={unit.id} className={`overflow-hidden p-0 ${zeigeLetzte ? "akzent-ton" : ""}`}>
               <div
-                className={`flex items-stretch border-l-[3px] ${offen ? "border-l-amber-500" : "border-l-transparent"}`}
+                className={`flex items-stretch border-l-[3px] ${offen ? (isColor ? "border-l-amber-500" : "border-l-[var(--oliv)]") : "border-l-transparent"}`}
               >
                 {/* Zeitspalte – bei Doppelstunde durchgehend von 07:55 bis 09:30 */}
                 <div className="shrink-0 w-[3.5rem] py-2.5 pl-2 pr-1">
@@ -4808,7 +4808,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
                   <button
                     onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
                     className={`shrink-0 w-9 flex items-center justify-center transition-colors ${
-                      offen ? "text-amber-600" : "text-stone-300 hover:text-stone-500"
+                      offen ? (isColor ? "text-amber-600" : "text-stone-700 font-semibold") : "text-stone-300 hover:text-stone-500"
                     }`}
                     aria-label="Stunde erfassen"
                     title="Stunde erfassen"
