@@ -4526,7 +4526,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
           <button
             onClick={() => update((d) => { d.settings = { ...d.settings, colorMode: !isColor }; return d; })}
             title={isColor ? "Mono-Modus" : "Bring Farbe in mein Leben"}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 ${isColor ? "bg-stone-100 hover:bg-stone-200 text-stone-400" : "akzent-ton akzent-text"}`}
+            className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shrink-0 ${isColor ? "bg-stone-100 hover:bg-stone-200 text-stone-400" : "akzent-ton akzent-text"}`}
           >
             <Sparkles size={14} />
           </button>
@@ -4662,7 +4662,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
       {/* Wochentagsleiste – schlank, kein Rahmen */}
       <div>
         <div className="flex items-center gap-0.5">
-          <button onClick={() => setSelectedDate((d) => addDays(d, -7))} className="p-1 text-stone-300 hover:text-stone-600 shrink-0">
+          <button onClick={() => setSelectedDate((d) => addDays(d, -7))} aria-label="Vorherige Woche" className="w-11 h-11 -my-3 text-stone-300 hover:text-stone-600 shrink-0 flex items-center justify-center">
             <ChevronLeft size={15} />
           </button>
           <div className="flex-1 grid grid-cols-7">
@@ -4683,7 +4683,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
               );
             })}
           </div>
-          <button onClick={() => setSelectedDate((d) => addDays(d, 7))} className="p-1 text-stone-300 hover:text-stone-600 shrink-0">
+          <button onClick={() => setSelectedDate((d) => addDays(d, 7))} aria-label="Naechste Woche" className="w-11 h-11 -my-3 text-stone-300 hover:text-stone-600 shrink-0 flex items-center justify-center">
             <ChevronRight size={15} />
           </button>
         </div>
@@ -4853,7 +4853,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
           ) : (
             <p className="text-[11px] text-stone-400">Nichts geplant</p>
           )}
-          <button onClick={() => onNavigate?.("kalender")} className="mt-auto pt-2 text-[10px] font-medium akzent-text text-left">
+          <button onClick={() => onNavigate?.("kalender")} className="mt-auto py-2 -mx-1 px-1 text-[11px] font-medium akzent-text text-left">
             Alle Termine →
           </button>
         </Card>
@@ -4895,7 +4895,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
           ) : (
             <p className="text-[11px] text-stone-400">Keine in 3 Wochen</p>
           )}
-          <button onClick={() => onNavigate?.("klassen")} className="mt-auto pt-2 text-[10px] font-medium akzent-text text-left">
+          <button onClick={() => onNavigate?.("klassen")} className="mt-auto py-2 -mx-1 px-1 text-[11px] font-medium akzent-text text-left">
             Alle Geburtstage →
           </button>
         </Card>
@@ -4927,7 +4927,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
           ) : (
             <p className="text-[11px] text-stone-400">Nichts offen</p>
           )}
-          <button onClick={() => onNavigate?.("aufgaben")} className="mt-auto pt-2 text-[10px] font-medium akzent-text text-left">
+          <button onClick={() => onNavigate?.("aufgaben")} className="mt-auto py-2 -mx-1 px-1 text-[11px] font-medium akzent-text text-left">
             Alle Aufgaben →
           </button>
         </Card>
