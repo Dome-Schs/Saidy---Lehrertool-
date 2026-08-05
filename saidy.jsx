@@ -7,7 +7,7 @@ import {
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
   Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target, Mic,
-  Lightbulb, BookOpen,
+  Lightbulb, BookOpen, Paperclip, Camera, FolderOpen,
 } from "lucide-react";
 
 /* ---------- Konstanten ---------- */
@@ -41,7 +41,11 @@ const QUICK_SYMBOLS = [
   { symbol: "– –", value: 5, color: "#B91C1C" },
 ];
 
-const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], sitzplaene: {}, deletedSnapshot: null, settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null, notenfarben: true, colorMode: false } };
+/* `documents` haelt nur die Eintraege (Name, Typ, Groesse, Zuordnung) - die
+   Dateien selbst liegen in IndexedDB. So bleibt die normale Datensicherung
+   klein, und nach dem Wiederherstellen auf einem neuen Geraet ist wenigstens
+   sichtbar, welche Unterlagen es gab. */
+const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], documents: [], sitzplaene: {}, deletedSnapshot: null, settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null, notenfarben: true, colorMode: false } };
 
 /* Sortierbar sind nur die Karten im unteren Raster.
    Fest sitzen: „Unterricht" als Hauptkarte sowie die Dreierreihe aus Terminen,
@@ -528,6 +532,117 @@ function telHref(raw) {
   return /\d/.test(clean) ? `tel:${clean.replace(/\s/g, "")}` : null;
 }
 
+/* ---------- Dokumentenablage ----------
+   Die Dateien selbst liegen in IndexedDB, nicht in localStorage. Der gesamte
+   uebrige Datenbestand ist ein einziger JSON-String unter „app_data"; Safari
+   gibt dafuer rund 5 MB. Ein einziges abfotografiertes Attest wuerde dieses
+   Budget spuerbar angreifen und im Zweifel das Speichern der Noten verhindern.
+   IndexedDB hat ein eigenes, deutlich groesseres Kontingent.
+
+   Getrennt bleiben auch die Sicherungen: die normale Datensicherung enthaelt
+   nur die Eintraege (Name, Datum, Zuordnung), die Dateien wandern in eine
+   eigene Dokument-Sicherung. So bleibt die taegliche Sicherung klein, und die
+   besonders heikle Datei entsteht nur, wenn sie bewusst angefordert wird. */
+
+const DOC_DB = "saidy_dokumente";
+const DOC_STORE = "dateien";
+/* Obergrenze je Datei. Bilder werden vorher verkleinert, das greift also vor
+   allem bei PDFs. 25 MB ist grosszuegig fuer ein Gutachten und haelt zugleich
+   einzelne Ausreisser aus dem Speicher. */
+const DOC_MAX_BYTES = 25 * 1024 * 1024;
+
+function docDbOeffnen() {
+  return new Promise((resolve, reject) => {
+    if (typeof indexedDB === "undefined") return reject(new Error("IndexedDB nicht verfügbar"));
+    const req = indexedDB.open(DOC_DB, 1);
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains(DOC_STORE)) db.createObjectStore(DOC_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+function docAktion(modus, fn) {
+  return docDbOeffnen().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const tx = db.transaction(DOC_STORE, modus);
+        const req = fn(tx.objectStore(DOC_STORE));
+        tx.oncomplete = () => { db.close(); resolve(req?.result); };
+        tx.onerror = () => { db.close(); reject(tx.error); };
+      })
+  );
+}
+
+const docSpeichern = (id, blob) => docAktion("readwrite", (st) => st.put(blob, id));
+const docLaden = (id) => docAktion("readonly", (st) => st.get(id));
+const docLoeschen = (id) => docAktion("readwrite", (st) => st.delete(id));
+const docAlleIds = () => docAktion("readonly", (st) => st.getAllKeys());
+const docAllesLoeschen = () => docAktion("readwrite", (st) => st.clear());
+
+/* Safari raeumt Browser-Speicher auf, wenn eine Seite laenger nicht benutzt
+   wird. Der Antrag auf dauerhaften Speicher senkt dieses Risiko - er wird nicht
+   immer bewilligt, kostet aber nichts. */
+async function dauerhaftenSpeicherAnfordern() {
+  try {
+    if (navigator.storage?.persist && !(await navigator.storage.persisted())) {
+      return await navigator.storage.persist();
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function speicherBelegung() {
+  try {
+    const { usage, quota } = (await navigator.storage?.estimate?.()) || {};
+    return typeof usage === "number" ? { belegt: usage, gesamt: quota || null } : null;
+  } catch {
+    return null;
+  }
+}
+
+function byteText(n) {
+  if (typeof n !== "number") return "–";
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/* Bilder verkleinern, bevor sie in den Speicher wandern. Ein iPhone-Foto hat
+   3-5 MB; eine abfotografierte Entschuldigung bleibt bei 2000 px Kante gut
+   lesbar und braucht danach nur einen Bruchteil davon. PDFs bleiben unberuehrt -
+   sie neu zu kodieren wuerde sie eher beschaedigen als verkleinern. */
+function dateiVorbereiten(file, maxKante = 2000) {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) return resolve(file);
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Datei nicht lesbar"));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Bild nicht lesbar"));
+      img.onload = () => {
+        const faktor = Math.min(1, maxKante / Math.max(img.width, img.height));
+        if (faktor === 1 && file.size < 800 * 1024) return resolve(file);
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width * faktor);
+        c.height = Math.round(img.height * faktor);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        c.toBlob(
+          (blob) => resolve(blob ? new File([blob], file.name.replace(/\.\w+$/, "") + ".jpg", { type: "image/jpeg" }) : file),
+          "image/jpeg",
+          0.8
+        );
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
 /* ---------- Einwilligung fuer Gesundheitsdaten (Art. 9 DSGVO) ----------
    Die Einwilligung der Erziehungsberechtigten gilt immer fuer ein bestimmtes
    Kind, nie pauschal fuer die ganze Klasse. Deshalb wird sie pro studentId
@@ -658,6 +773,19 @@ function sanitizeImport(imported) {
       slots: Number.isInteger(d.slots) && d.slots > 0 && d.slots <= 40 ? d.slots : 1,
     })),
     finalGrades: map("finalGrades", (f) => ({ ...f, value: typeof f.value === "number" ? f.value : null })),
+    /* Nur die Eintraege - die Dateien kommen aus der getrennten Dokument-
+       Sicherung. `scope` steuert, wo ein Dokument auftaucht; ein fremder Wert
+       wuerde es unauffindbar machen, deshalb Rueckfall auf „frei". */
+    documents: map("documents", (d) => ({
+      ...d,
+      name: S_TEXT(d.name, 200),
+      mime: S_TEXT(d.mime, 100),
+      note: S_TEXT(d.note, 500),
+      addedAt: S_DATUM(d.addedAt),
+      size: Number.isFinite(d.size) && d.size >= 0 ? d.size : 0,
+      scope: ["student", "class", "fach", "frei"].includes(d.scope) ? d.scope : "frei",
+      scopeId: typeof d.scopeId === "string" ? d.scopeId.slice(0, 100) : null,
+    })),
   };
   return { daten: raus, gekuerzt };
 }
@@ -1194,7 +1322,7 @@ function LegalModal({ onClose }) {
 }
 
 /* Einstellungen: Reihenfolge der Dashboard-Karten per Pfeiltasten anpassen */
-function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onImport, onReset, onClose, onOpenUntisImport }) {
+function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onImport, onExportDocuments, onImportDocuments, onReset, onClose, onOpenUntisImport }) {
   const gespeicherteReihenfolge = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
   const order = [
     ...gespeicherteReihenfolge.filter((k) => DASHBOARD_SECTIONS[k]),
@@ -1204,6 +1332,13 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
   const importInputRef = useRef(null);
   const [importMsg, setImportMsg] = useState(null); // { ok, msg }
   const [confirmImport, setConfirmImport] = useState(null); // File
+  /* Getrennte Dokument-Sicherung: eigener Datei-Input und eigene Meldung,
+     damit die beiden Vorgaenge nicht durcheinandergeraten. */
+  const dokImportRef = useRef(null);
+  const [dokMsg, setDokMsg] = useState(null);
+  const [speicher, setSpeicher] = useState(null);
+  const dokAnzahl = (data.documents || []).length;
+  useEffect(() => { speicherBelegung().then(setSpeicher); }, [dokAnzahl]);
   const [confirmBackupAction, setConfirmBackupAction] = useState(null); // 'export' | 'share'
   const [confirmReset, setConfirmReset] = useState(false);
   const [resetInput, setResetInput] = useState("");
@@ -1444,6 +1579,33 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
               <li>• <strong>Nicht in Google Drive, Dropbox oder iCloud</strong> ablegen.</li>
               <li>• Nur auf dem eigenen Gerät oder Schul-Server aufbewahren.</li>
             </ul>
+          </div>
+
+          {/* Dokumente werden getrennt gesichert - sie wuerden die taegliche
+              Sicherung sonst stark aufblaehen und sind besonders heikel. */}
+          <div className="mt-4 pt-3 border-t border-stone-100">
+            <div className="text-xs font-medium text-stone-500 mb-1">Dokumente sichern</div>
+            <p className="text-[11px] text-stone-500 mb-2 leading-relaxed">
+              Abgelegte Dateien (Atteste, Gutachten, Fotos) stecken <strong>nicht</strong> in der normalen Datensicherung –
+              sie brauchen eine eigene Datei. {dokAnzahl ? `Aktuell ${dokAnzahl} ${dokAnzahl === 1 ? "Dokument" : "Dokumente"}.` : "Aktuell sind keine abgelegt."}
+              {speicher && ` Belegt: ${byteText(speicher.belegt)}${speicher.gesamt ? ` von ${byteText(speicher.gesamt)}` : ""}.`}
+            </p>
+            <div className="flex gap-2 mb-2">
+              <Button variant="subtle" onClick={() => onExportDocuments?.((r) => setDokMsg(r))} className="flex-1 justify-center">
+                <Download size={15} /> Dokumente sichern
+              </Button>
+              <Button variant="ghost" onClick={() => dokImportRef.current?.click()} className="flex-1 justify-center">
+                <Upload size={15} /> Einspielen
+              </Button>
+            </div>
+            <input
+              ref={dokImportRef} type="file" accept="application/json,.json" className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) onImportDocuments?.(f, (r) => setDokMsg(r)); e.target.value = ""; }}
+            />
+            {dokMsg && <p className={`text-xs ${dokMsg.ok ? "akzent-text" : "text-red-600"}`}>{dokMsg.msg}</p>}
+            <p className="text-[11px] text-amber-700 mt-1.5 leading-snug">
+              Diese Datei enthält Atteste und Gutachten im Klartext – dieselben Regeln wie oben, nur noch strenger.
+            </p>
           </div>
 
           {/* Empfohlener Weg: auf dem Gerät ablegen statt verschicken */}
@@ -1720,6 +1882,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
               <div className="font-semibold text-stone-800 mb-2">Alle Daten löschen?</div>
               <p className="text-sm text-stone-600 mb-3">
                 Alle Daten werden für <strong>30 Tage in den Papierkorb</strong> verschoben und können dort wiederhergestellt werden. Danach ist die Löschung endgültig.
+                Abgelegte <strong>Dokumente werden sofort und endgültig gelöscht</strong> – sichere sie vorher, falls du sie noch brauchst.
               </p>
               <p className="text-xs text-stone-400 mb-1.5">Tippe <strong>LÖSCHEN</strong> zur Bestätigung:</p>
               <input
@@ -2603,7 +2766,11 @@ const HELP_DATA = [
   {
     category: "Backup & Daten",
     items: [
-      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung". Dort erscheint zuerst ein kurzer Datenschutz-Hinweis, den du bestätigst. Danach: „Sichern" legt die Datei im Download-Ordner ab, „Teilen" öffnet die Teilen-Ansicht (z. B. für „In Dateien sichern" oder AirDrop).` },
+      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung". Dort erscheint zuerst ein kurzer Datenschutz-Hinweis, den du bestätigst. Danach: „Sichern" legt die Datei im Download-Ordner ab, „Teilen" öffnet die Teilen-Ansicht (z. B. für „In Dateien sichern" oder AirDrop). Wichtig: abgelegte Dokumente sind darin nicht enthalten – die brauchen eine eigene Sicherung, direkt darunter unter „Dokumente sichern".` },
+      { q: "Wie lege ich ein Dokument bei einem Kind ab?", a: `Öffne die Klasse, tippe das Kind an und wechsle auf den Reiter „Mehr". Ganz unten steht „Dokumente" mit zwei Knöpfen: „Foto" öffnet direkt die Kamera – ideal, um eine Entschuldigung abzufotografieren. „Datei" öffnet die Dateien-App, dort wählst du ein PDF oder ein vorhandenes Bild. Fotos werden automatisch verkleinert, damit sie wenig Platz brauchen. Ein Tipp auf einen Eintrag öffnet ihn, das Papierkorb-Symbol löscht ihn.` },
+      { q: "Wo werden meine Dokumente gespeichert?", a: `Auf deinem Gerät, genau wie alles andere in Saidy – nichts wird ins Internet übertragen. Dokumente liegen allerdings in einem eigenen Speicherbereich, weil sie für die normale Ablage zu groß wären. Deshalb sind sie auch nicht in der normalen Datensicherung enthalten, sondern brauchen unter „Einstellungen" → „Datensicherung" den eigenen Knopf „Dokumente sichern".` },
+      { q: "Warum sind meine Dokumente nach dem Wiederherstellen weg?", a: `Die normale Datensicherung enthält nur die Liste der Dokumente (Name, Datum, zu welchem Kind), nicht die Dateien selbst. Nach dem Wiederherstellen siehst du deshalb die Einträge, aber beim Öffnen kommt der Hinweis, dass die Datei fehlt. Spiel dann zusätzlich deine Dokument-Sicherung ein: „Einstellungen" → „Datensicherung" → „Einspielen" im Abschnitt „Dokumente sichern".` },
+      { q: "Kann ich mir Dokumente direkt an Saidy schicken lassen?", a: `Nein. Saidy hat bewusst keinen Server und kann deshalb weder E-Mails abrufen noch Nachrichten empfangen. Auf dem iPhone lässt Apple Web-Apps auch nicht als Ziel im Teilen-Menü zu. Der Weg ist deshalb: Datei zuerst in „Dateien" sichern (bei einer E-Mail: Anhang antippen → Teilen → „In Dateien sichern"), danach in Saidy beim Kind auf „Datei" tippen und sie dort auswählen. Für Papier-Entschuldigungen ist „Foto" der schnellere Weg.` },
       { q: "Wie sichere ich am einfachsten auf dem iPhone oder iPad?", a: `Einstellungen → „Datensicherung" → „Teilen" antippen. In der Teilen-Ansicht dann „In Dateien sichern" wählen und „Auf meinem iPhone" (oder iPad) als Ort. Ein Schritt, kein Tippen – und die Daten verlassen dein Gerät nicht. Verschicke Backups nicht per E-Mail oder Messenger: Die Datei enthält alle Schülerdaten im Klartext, und der Versand über einen privaten Mailanbieter ist für Schülerdaten in der Regel nicht zulässig.` },
       { q: "Wie aktiviere ich die Freitags-Erinnerung?", a: `In den Einstellungen unter „Datensicherung" → „Freitags-Erinnerung" den Schalter aktivieren. Beim ersten Mal fragt der Browser nach der Erlaubnis für Benachrichtigungen. Wichtig zu wissen: Die Erinnerung erscheint, wenn du Saidy an einem Freitag öffnest und dein letztes Backup mindestens 3 Tage her ist. Saidy läuft nicht im Hintergrund – öffnest du die App freitags nicht, kommt auch keine Erinnerung. Verlass dich also nicht allein darauf.` },
       { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung" → „Gesichertes wiederherstellen" und wähle deine Backup-Datei. Achtung: Die aktuell gespeicherten Daten werden dabei ersetzt – am besten vorher einmal „Sichern". Sollten sich die Daten beim Start einmal nicht lesen lassen, zeigt Saidy direkt einen Wiederherstellen-Knopf und überschreibt nichts.` },
@@ -3345,6 +3512,84 @@ export default function App() {
     recordBackup();
   }
 
+  /* Getrennte Sicherung der Dokumente. Bewusst ein eigener Vorgang: die Datei
+     wird deutlich groesser als die normale Sicherung und enthaelt Atteste und
+     Gutachten im Klartext - das soll eine bewusste Entscheidung bleiben.
+     Format ist wie beim uebrigen Backup JSON mit base64, damit kein weiteres
+     Paket noetig wird; der Aufschlag von rund einem Drittel ist der Preis. */
+  async function exportDocuments(onResult) {
+    try {
+      const eintraege = data.documents || [];
+      if (!eintraege.length) return onResult?.({ ok: false, msg: "Es sind keine Dokumente abgelegt." });
+      const dateien = [];
+      let fehlend = 0;
+      for (const doc of eintraege) {
+        const blob = await docLaden(doc.id);
+        if (!blob) { fehlend++; continue; }
+        const b64 = await new Promise((res, rej) => {
+          const r = new FileReader();
+          r.onload = () => res(String(r.result).split(",")[1] || "");
+          r.onerror = () => rej(r.error);
+          r.readAsDataURL(blob);
+        });
+        dateien.push({ id: doc.id, mime: doc.mime, data: b64 });
+      }
+      const payload = { app: "saidy-dokumente", version: 1, exportedAt: new Date().toISOString(), eintraege, dateien };
+      const blob = new Blob([JSON.stringify(payload)], { type: "application/json" });
+      const stamp = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Saidy-Dokumente-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
+      onResult?.({
+        ok: true,
+        msg: fehlend
+          ? `${dateien.length} Dokumente gesichert. ${fehlend} Datei(en) fehlten auf diesem Gerät.`
+          : `${dateien.length} Dokumente gesichert (${byteText(blob.size)}).`,
+      });
+    } catch (e) {
+      console.warn("[Saidy] Dokument-Export fehlgeschlagen:", e);
+      onResult?.({ ok: false, msg: "Dokumente konnten nicht gesichert werden." });
+    }
+  }
+
+  /* Gegenstueck zum Export. Die Eintraege werden mit dem Bestand zusammen-
+     gefuehrt statt ersetzt - so laesst sich eine Dokument-Sicherung auch
+     nachtraeglich zu bestehenden Daten einspielen. */
+  async function importDocuments(file, onResult) {
+    try {
+      const text = await file.text();
+      const p = JSON.parse(text);
+      if (p?.app !== "saidy-dokumente" || !Array.isArray(p.dateien)) {
+        return onResult?.({ ok: false, msg: "Das ist keine Saidy-Dokument-Sicherung." });
+      }
+      await dauerhaftenSpeicherAnfordern();
+      let anzahl = 0;
+      for (const f of p.dateien) {
+        if (typeof f?.id !== "string" || typeof f?.data !== "string") continue;
+        const bin = Uint8Array.from(atob(f.data), (c) => c.charCodeAt(0));
+        /* Nur Bild und PDF zulassen - dieselbe Grenze wie beim Hinzufuegen. */
+        const mime = /^(image\/(jpeg|png|webp)|application\/pdf)$/.test(f.mime) ? f.mime : "application/octet-stream";
+        await docSpeichern(f.id, new Blob([bin], { type: mime }));
+        anzahl++;
+      }
+      const { daten } = sanitizeImport({ documents: p.eintraege });
+      update((d) => {
+        const vorhanden = new Set((d.documents || []).map((x) => x.id));
+        d.documents = [...(d.documents || []), ...daten.documents.filter((x) => x.id && !vorhanden.has(x.id))];
+        return d;
+      });
+      onResult?.({ ok: true, msg: `${anzahl} Dokumente wiederhergestellt.` });
+    } catch (e) {
+      console.warn("[Saidy] Dokument-Import fehlgeschlagen:", e);
+      onResult?.({ ok: false, msg: "Die Dokument-Sicherung konnte nicht gelesen werden." });
+    }
+  }
+
   async function shareBackup() {
     const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data: { ...data, deletedSnapshot: null } };
     const json = JSON.stringify(payload, null, 2);
@@ -3372,8 +3617,13 @@ export default function App() {
         .filter((k) => k.startsWith("saidy_briefing_"))
         .forEach((k) => localStorage.removeItem(k));
     } catch { /* ignoriert */ }
+    /* Die Dateien liegen in IndexedDB und wuerden sonst zurueckbleiben - bei
+       Attesten und Gutachten waere das der schwerste Teil eines vergessenen
+       Loeschvorgangs. Sie kommen bewusst nicht in den 30-Tage-Papierkorb:
+       dessen Momentaufnahme liegt in localStorage und wuerde daran zerbrechen. */
+    docAllesLoeschen().catch((e) => console.warn("[Saidy] Dokumente löschen fehlgeschlagen:", e));
     update((d) => {
-      const snapshot = { deletedAt: new Date().toISOString(), data: { ...d, deletedSnapshot: null } };
+      const snapshot = { deletedAt: new Date().toISOString(), data: { ...d, deletedSnapshot: null, documents: [] } };
       return { ...EMPTY_DATA, deletedSnapshot: snapshot };
     });
     // Sichtbare Bestaetigung - der Rueckgang auf leere Uebersicht wirkt sonst
@@ -3931,6 +4181,8 @@ export default function App() {
               onExport={exportBackup}
               onShare={shareBackup}
               onImport={importBackup}
+              onExportDocuments={exportDocuments}
+              onImportDocuments={importDocuments}
               onReset={resetAllData}
               onClose={() => setShowSettings(false)}
               onOpenUntisImport={() => { setShowSettings(false); setShowUntisImport(true); }}
@@ -6560,8 +6812,164 @@ function GradeChart({ grades, faecher }) {
   return <canvas ref={canvasRef} style={{ width: "100%", height: "140px", display: "block" }} />;
 }
 
+/* Dokumentenliste fuer einen Bereich (Kind, Klasse, Fach, allgemein).
+   Bewusst als eigene Komponente, damit die spaeteren Bereiche dieselbe
+   Oberflaeche und dieselbe Logik nutzen und nichts doppelt gepflegt wird. */
+function DokumenteBlock({ scope, scopeId, documents, update, hinweis }) {
+  const [fehler, setFehler] = useState("");
+  const [laedt, setLaedt] = useState(false);
+  const [loeschId, setLoeschId] = useState(null);
+  const kameraRef = useRef(null);
+  const dateiRef = useRef(null);
+
+  const eigene = (documents || [])
+    .filter((d) => d.scope === scope && (scopeId ? d.scopeId === scopeId : true))
+    .sort((a, b) => String(b.addedAt || "").localeCompare(String(a.addedAt || "")));
+
+  async function hinzufuegen(file) {
+    if (!file) return;
+    setFehler("");
+    setLaedt(true);
+    try {
+      const fertig = await dateiVorbereiten(file);
+      if (fertig.size > DOC_MAX_BYTES) {
+        setFehler(`Datei zu groß (${byteText(fertig.size)}). Höchstens ${byteText(DOC_MAX_BYTES)} pro Dokument.`);
+        return;
+      }
+      await dauerhaftenSpeicherAnfordern();
+      const id = uid();
+      await docSpeichern(id, fertig);
+      update((d) => {
+        d.documents = d.documents || [];
+        d.documents.push({
+          id, name: (file.name || "Dokument").slice(0, 200), mime: fertig.type || "application/octet-stream",
+          size: fertig.size, addedAt: isoDate(new Date()), scope, scopeId: scopeId || null, note: "",
+        });
+        return d;
+      });
+    } catch (e) {
+      console.warn("[Saidy] Dokument speichern fehlgeschlagen:", e);
+      /* Der haeufigste echte Grund ist ein volles Speicherkontingent - das
+         soll die Lehrkraft erfahren, nicht nur „hat nicht geklappt". */
+      setFehler(e?.name === "QuotaExceededError"
+        ? "Der Speicher ist voll. Lösche nicht mehr benötigte Dokumente oder sichere sie vorher."
+        : "Dokument konnte nicht gespeichert werden.");
+    } finally {
+      setLaedt(false);
+    }
+  }
+
+  async function oeffnen(doc) {
+    setFehler("");
+    try {
+      const blob = await docLaden(doc.id);
+      if (!blob) {
+        setFehler("Die Datei fehlt auf diesem Gerät – spiel die Dokument-Sicherung ein.");
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      window.open(url, "_blank");
+      /* Der Browser braucht die Adresse noch einen Moment, danach freigeben. */
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch {
+      setFehler("Dokument konnte nicht geöffnet werden.");
+    }
+  }
+
+  async function entfernen(id) {
+    try { await docLoeschen(id); } catch { /* Eintrag trotzdem entfernen */ }
+    update((d) => { d.documents = (d.documents || []).filter((x) => x.id !== id); return d; });
+    setLoeschId(null);
+  }
+
+  return (
+    <div>
+      <div className="flex items-center gap-1.5 mb-2">
+        <Paperclip size={13} className="text-stone-400 shrink-0" />
+        <span className="t-caption">Dokumente</span>
+        {!!eigene.length && <span className="text-[10px] text-stone-400">{eigene.length}</span>}
+      </div>
+
+      {hinweis && (
+        <p className="text-[11px] text-amber-600 mb-2 flex items-start gap-1">
+          <ShieldCheck size={11} className="shrink-0 mt-0.5" />
+          {hinweis}
+        </p>
+      )}
+
+      {eigene.length ? (
+        <ul className="space-y-1.5 mb-2">
+          {eigene.map((doc) => (
+            <li key={doc.id} className="flex items-center gap-2 rounded-xl border border-stone-100 px-2.5 py-2">
+              <span className="w-7 h-7 rounded-lg bg-stone-100 flex items-center justify-center shrink-0">
+                {doc.mime?.startsWith("image/")
+                  ? <ImageIcon size={13} className="text-stone-500" />
+                  : <FileText size={13} className="text-stone-500" />}
+              </span>
+              <button onClick={() => oeffnen(doc)} className="flex-1 min-w-0 text-left">
+                <div className="text-xs text-stone-800 truncate">{doc.name}</div>
+                <div className="text-[10px] text-stone-400 tabular-nums">
+                  {doc.addedAt ? localDate(doc.addedAt).toLocaleDateString("de-DE") : "—"} · {byteText(doc.size)}
+                </div>
+              </button>
+              <button
+                onClick={() => setLoeschId(doc.id)}
+                className="w-9 h-9 -mr-1.5 flex items-center justify-center text-stone-300 hover:text-red-500 shrink-0"
+                aria-label={`${doc.name} löschen`}
+              >
+                <Trash2 size={14} />
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="text-[11px] text-stone-400 mb-2">Noch keine Dokumente abgelegt.</p>
+      )}
+
+      {fehler && <p className="text-[11px] text-red-600 mb-2">{fehler}</p>}
+
+      <div className="flex gap-2">
+        <button
+          onClick={() => kameraRef.current?.click()}
+          disabled={laedt}
+          className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 py-2 text-xs text-stone-600 disabled:opacity-50"
+        >
+          <Camera size={14} /> Foto
+        </button>
+        <button
+          onClick={() => dateiRef.current?.click()}
+          disabled={laedt}
+          className="flex-1 flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 py-2 text-xs text-stone-600 disabled:opacity-50"
+        >
+          <FolderOpen size={14} /> Datei
+        </button>
+      </div>
+      {laedt && <p className="text-[11px] text-stone-400 mt-1.5">Wird gespeichert …</p>}
+
+      {/* capture oeffnet auf dem Handy direkt die Kamera statt der Galerie */}
+      <input
+        ref={kameraRef} type="file" accept="image/*" capture="environment" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; hinzufuegen(f); }}
+      />
+      <input
+        ref={dateiRef} type="file" accept="image/*,application/pdf" className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; hinzufuegen(f); }}
+      />
+
+      <ConfirmDialog
+        open={!!loeschId}
+        title="Dokument löschen?"
+        message="Die Datei wird sofort und endgültig von diesem Gerät entfernt – anders als bei Kindern oder Klassen gibt es hier keinen Papierkorb."
+        confirmLabel="Löschen"
+        onConfirm={() => entfernen(loeschId)}
+        onCancel={() => setLoeschId(null)}
+      />
+    </div>
+  );
+}
+
 /* Eigenständiges Fenster für die Schülerliste einer Klasse – bewusst getrennt von der Klassenübersicht */
-function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, absences, incidents, settings, notenfarben, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
+function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, absences, incidents, documents, update, settings, notenfarben, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
   const [photoError, setPhotoError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   /* Haelt die studentId, fuer die gerade die Einwilligung erfragt wird - die
@@ -7710,6 +8118,17 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
                       Gesundheitsdaten löschen
                     </button>
                   )}
+                </div>
+
+                {/* Unterlagen zum Kind - Entschuldigung, Attest, Gutachten, Foerderplan */}
+                <div className="card card-p">
+                  <DokumenteBlock
+                    scope="student"
+                    scopeId={s.id}
+                    documents={documents}
+                    update={update}
+                    hinweis="Atteste und Gutachten sind Gesundheitsdaten (Art. 9 DSGVO) – nur mit Einwilligung ablegen. Dokumente liegen auf diesem Gerät und stecken nicht in der normalen Datensicherung."
+                  />
                 </div>
 
               </div>
@@ -9652,6 +10071,8 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
           foerderZiele={data.foerderZiele || []}
           absences={data.absences || []}
           incidents={data.incidents || []}
+          documents={data.documents || []}
+          update={update}
           settings={data.settings || {}}
           notenfarben={data.settings?.notenfarben !== false}
           selectedStudent={selectedStudent}
