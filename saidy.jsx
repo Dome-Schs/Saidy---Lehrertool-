@@ -1217,6 +1217,38 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
         </ul>
         <p className="text-xs text-stone-400 mb-4">Legt fest, in welcher Reihenfolge die unteren Karten auf der Übersicht erscheinen. Kennzahlen, Unterricht sowie Termine, Geburtstage und To-dos haben einen festen Platz.</p>
 
+        {/* Was in der "Seit deinem letzten Besuch"-Karte im Schuelerprofil erscheint.
+            Default: alle sechs Kategorien an. Setzt der Nutzer eine ab, wird sie nicht mehr
+            aufgelistet - der Besuchszeitpunkt selbst wird unabhaengig davon getrackt. */}
+        <div className="pt-5 border-t border-stone-100">
+          <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">„Was ist neu"-Karte im Schülerprofil</div>
+          <p className="text-xs text-stone-500 mb-3">
+            Waehle aus, was in der Karte „Seit deinem letzten Besuch" oben im Profil erscheint. Alles was du hier abschaltest, wird dort nicht mehr aufgelistet.
+          </p>
+          {[
+            ["noten", "Neue Noten"],
+            ["notizen", "Neue Notizen"],
+            ["gespraeche", "Neue Gespräche (mit Stimmung)"],
+            ["fehlzeiten", "Neue Fehlzeiten"],
+            ["incidents", "Neue Klassenbuch-Einträge"],
+            ["ziele", "Neue oder erledigte Förderziele"],
+          ].map(([key, label]) => {
+            const aktiv = (data.settings?.neuSeitAnzeige || {})[key] !== false;
+            return (
+              <label key={key} className="flex items-center gap-2.5 py-1.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4"
+                  style={{ accentColor: "#4F5844" }}
+                  checked={aktiv}
+                  onChange={(e) => setSetting("neuSeitAnzeige", { ...(data.settings?.neuSeitAnzeige || {}), [key]: e.target.checked })}
+                />
+                <span className="text-sm text-stone-700">{label}</span>
+              </label>
+            );
+          })}
+        </div>
+
         <div className="pt-5 border-t border-stone-100">
           <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Datensicherung</div>
           <p className="text-xs text-stone-500 mb-3">
@@ -5833,13 +5865,27 @@ function GradeChart({ grades, faecher }) {
 }
 
 /* Eigenständiges Fenster für die Schülerliste einer Klasse – bewusst getrennt von der Klassenübersicht */
-function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, notenfarben, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
+function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, absences, incidents, settings, notenfarben, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
   const [photoError, setPhotoError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [showMedicalConsent, setShowMedicalConsent] = useState(false);
   const [quickGesprId, setQuickGesprId] = useState(null);
   const [zielDraft, setZielDraft] = useState({ text: "", typ: "foerder" });
   const [profileTab, setProfileTab] = useState("übersicht");
+  /* Referenzzeitpunkt des vorletzten Besuchs bei diesem Kind. Beim Wechsel auf ein
+     Kind wird der bisher gespeicherte Wert gelesen (das ist der Zeitpunkt der Anzeige)
+     und ein neuer Zeitpunkt gespeichert (das ist der aktuelle Besuch, wird beim naechsten
+     Oeffnen zur Referenz). Beim allerersten Besuch bleibt die Referenz null, dann wird
+     die "Was ist neu"-Karte gar nicht gerendert. */
+  const [besuchRef, setBesuchRef] = useState(null);
+  useEffect(() => {
+    if (!selectedStudent) { setBesuchRef(null); return; }
+    const key = `saidy_lastVisit_${selectedStudent}`;
+    let alter = null;
+    try { alter = localStorage.getItem(key); } catch {}
+    setBesuchRef(alter || null);
+    try { localStorage.setItem(key, isoDate(new Date())); } catch {}
+  }, [selectedStudent]);
   const [newTag, setNewTag] = useState("");
   const [addingTag, setAddingTag] = useState(false);
   const [listSort, setListSort] = useState("name");
@@ -6324,6 +6370,68 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, no
                     </div>
                   )}
                 </div>
+
+                {/* "Was ist seit deinem letzten Besuch passiert" - erst ab dem zweiten
+                    Besuch, dann alles was zeitlich nach dem letzten Besuch neu dazukam,
+                    sortiert nach Datum neueste zuerst. In den Einstellungen kann jede
+                    Kategorie einzeln ausgeblendet werden. */}
+                {besuchRef && (() => {
+                  const cats = settings?.neuSeitAnzeige || {};
+                  const zeige = (name) => cats[name] !== false;
+                  const items = [];
+                  if (zeige("noten")) (grades || []).filter((g) => g.studentId === s.id && (g.date || "") > besuchRef).forEach((g) => {
+                    const fach = (faecher || []).find((f) => f.id === g.fachId);
+                    items.push({ typ: "Note", datum: g.date, text: `${g.value}${fach ? ` in ${fach.subject}` : ""}${g.title ? ` · ${g.title}` : ""}` });
+                  });
+                  (notes || []).filter((n) => n.studentId === s.id && (n.date || "") > besuchRef).forEach((n) => {
+                    if (n.type === "gespraech") {
+                      if (!zeige("gespraeche")) return;
+                      const typLabel = n.gesprTyp === "eltern" ? "Elterngespräch" : n.gesprTyp === "foerder" ? "Fördergespräch" : "Schülergespräch";
+                      items.push({ typ: typLabel, datum: n.date, text: n.text });
+                    } else {
+                      if (!zeige("notizen")) return;
+                      items.push({ typ: "Notiz", datum: n.date, text: n.text });
+                    }
+                  });
+                  if (zeige("fehlzeiten")) (absences || []).filter((a) => a.studentId === s.id && (a.date || "") > besuchRef).forEach((a) => {
+                    const status = a.excuseStatus === "entschuldigt" ? "entschuldigt" : a.excuseStatus === "unentschuldigt" ? "unentschuldigt" : "offen";
+                    items.push({ typ: "Fehlzeit", datum: a.date, text: `${a.reason || "Fehltag"} · ${status}` });
+                  });
+                  if (zeige("incidents")) (incidents || []).filter((i) => i.studentId === s.id && (i.date || "") > besuchRef).forEach((i) => {
+                    items.push({ typ: "Klassenbuch", datum: i.date, text: i.label });
+                  });
+                  if (zeige("ziele")) (foerderZiele || []).filter((z) => z.studentId === s.id).forEach((z) => {
+                    if (z.createdAt && z.createdAt > besuchRef) items.push({ typ: z.typ === "wochen" ? "Neues Wochenziel" : "Neues Förderziel", datum: z.createdAt, text: z.text });
+                    if (z.doneAt && z.doneAt > besuchRef) items.push({ typ: "Ziel erledigt", datum: z.doneAt, text: z.text });
+                  });
+                  if (!items.length) return null;
+                  items.sort((a, b) => (b.datum || "").localeCompare(a.datum || ""));
+                  const sichtbar = items.slice(0, 8);
+                  return (
+                    <div className="card p-4 border-l-2 akzent-rand">
+                      <div className="flex items-center gap-1.5 mb-3">
+                        <Sparkles size={12} className="akzent-text" />
+                        <span className="text-[11px] font-semibold uppercase tracking-wide akzent-text">Seit deinem letzten Besuch</span>
+                      </div>
+                      <ul className="space-y-2.5">
+                        {sichtbar.map((it, i) => {
+                          const d = localDate(it.datum);
+                          const label = d ? d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }) : "";
+                          return (
+                            <li key={i} className="flex items-start gap-2.5">
+                              <span className="text-[10px] text-stone-400 shrink-0 pt-0.5 tabular-nums w-11">{label}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-[10px] font-semibold uppercase text-stone-500 tracking-wide">{it.typ}</div>
+                                <div className="text-sm text-stone-700 leading-snug line-clamp-3">{it.text}</div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                        {items.length > 8 && <li className="text-[11px] text-stone-400 pl-[3.4rem]">+{items.length - 8} weitere</li>}
+                      </ul>
+                    </div>
+                  );
+                })()}
 
                 {/* Signale */}
                 {signals.length > 0 && (
@@ -8828,6 +8936,9 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
           grades={data.grades || []}
           faecher={classFaecher}
           foerderZiele={data.foerderZiele || []}
+          absences={data.absences || []}
+          incidents={data.incidents || []}
+          settings={data.settings || {}}
           notenfarben={data.settings?.notenfarben !== false}
           selectedStudent={selectedStudent}
           setSelectedStudent={setSelectedStudent}
