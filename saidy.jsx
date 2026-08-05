@@ -4859,19 +4859,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
 
   const kacheln = [
     {
-      icon: Clock,
-      // Der Wert folgt dem gewählten Tag, deshalb muss die Beschriftung das auch tun
-      label: isToday ? "Heute unterrichtest du" : `${selectedDate.toLocaleDateString("de-DE", { weekday: "long" })} unterrichtest du`,
-      value: dayUnits.length,
-      sub: dayUnits.length === 1 ? "Stunde" : "Stunden",
-      warn: false,
-      onClick: () => onNavigate?.("stundenplan"),
-    },
-    {
       icon: ClipboardCheck,
-      label: "Noch nicht erfasst",
+      label: "Erfassen",
       value: (pendingLessons || []).length,
-      sub: offeneKlassen ? `in ${offeneKlassen} ${offeneKlassen === 1 ? "Klasse" : "Klassen"}` : "heute",
+      sub: (pendingLessons || []).length ? (offeneKlassen ? `in ${offeneKlassen} ${offeneKlassen === 1 ? "Klasse" : "Klassen"}` : "heute offen") : "alles erledigt",
       warn: !!(pendingLessons || []).length,
       /* Die Liste darunter erscheint nur am heutigen Tag – sonst bliebe der Tipp wirkungslos */
       onClick: () => {
@@ -4884,15 +4875,15 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       icon: FileText,
       label: "Entschuldigungen",
       value: offeneEntschuldigungen,
-      sub: "offen",
+      sub: offeneEntschuldigungen ? "offen" : "keine offen",
       warn: offeneEntschuldigungen > 0,
       onClick: () => onNavigate?.("klassen"),
     },
     {
       icon: Target,
-      label: "Aktive Förderziele",
+      label: "Förderziele",
       value: offeneZiele.length,
-      sub: zielKinder ? `bei ${zielKinder} ${zielKinder === 1 ? "Kind" : "Kindern"}` : "keine offen",
+      sub: offeneZiele.length ? (zielKinder ? `bei ${zielKinder} ${zielKinder === 1 ? "Kind" : "Kindern"}` : "aktiv") : "keine aktiv",
       warn: false,
       onClick: () => onNavigate?.("klassen"),
     },
@@ -5104,9 +5095,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         </Card>
       )}
 
-      {/* Kennzahl-Kacheln - 2x2-Raster auf Handy, Vierer-Reihe auf Desktop.
-          Icon oben, Label darunter, groesse Zahl. */}
-      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      {/* Kennzahl-Kacheln - drei kompakte Kacheln nebeneinander. Icon links,
+          Label und grosse Zahl rechts. Stunden-Kachel entfaellt, weil die Info
+          eh im Stundenplan steht. */}
+      <div className="grid grid-cols-3 gap-2">
         {kacheln.map((k) => {
           const Icon = k.icon;
           const aktiv = k.warn && k.value > 0;
@@ -5114,16 +5106,16 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             <button
               key={k.label}
               onClick={k.onClick}
-              className="w-full text-left bg-white rounded-2xl border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors flex flex-col items-start px-3 py-3"
+              className="w-full text-left bg-white rounded-2xl border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors flex flex-col items-start px-2.5 py-2.5"
             >
-              <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${aktiv && isColor ? "bg-amber-100" : "akzent-ton"}`}>
-                <Icon size={14} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
+              <span className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${aktiv && isColor ? "bg-amber-100" : "akzent-ton"}`}>
+                <Icon size={13} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
               </span>
-              <div className="text-[11px] text-stone-500 leading-tight mt-2 line-clamp-2">{k.label}</div>
-              <div className={`text-[26px] font-bold leading-none tabular-nums mt-1.5 ${aktiv && isColor ? "text-amber-600" : "akzent-text"}`}>
+              <div className="text-[10px] text-stone-500 leading-tight mt-1.5 truncate w-full">{k.label}</div>
+              <div className={`text-[22px] font-bold leading-none tabular-nums mt-1 ${aktiv && isColor ? "text-amber-600" : "akzent-text"}`}>
                 {k.value}
               </div>
-              <div className="text-[11px] text-stone-400 mt-1 line-clamp-1">{k.sub}</div>
+              <div className="text-[10px] text-stone-400 mt-0.5 truncate w-full">{k.sub}</div>
             </button>
           );
         })}
