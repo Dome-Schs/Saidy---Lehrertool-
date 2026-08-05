@@ -42,13 +42,12 @@ const QUICK_SYMBOLS = [
 
 const EMPTY_DATA = { classes: [], students: [], notes: [], timetable: [], events: [], grades: [], periodTimes: {}, subjectColors: {}, faecher: [], taskLists: [], tasks: [], incidents: [], finalGrades: [], duties: [], lessonTopics: [], absences: [], sitzplaene: {}, deletedSnapshot: null, settings: { dashboardOrder: ["unterricht", "aufgaben", "kalender", "geburtstage"], bundesland: null, ferienAdded: false, showFerienCountdown: true, countdownSchooldaysOnly: true, fehlzeitenImportInterval: 7, fehlzeitenLastImport: null, notenfarben: true, colorMode: false } };
 
-/* Nur die Karten im unteren 2-Spalten-Raster sind sortierbar.
-   „Unterricht" steht fest als Hauptkarte darüber, die frühere „Klassenarbeiten"-Karte
-   gibt es nicht mehr – der Countdown sitzt jetzt direkt an der jeweiligen Stunde. */
+/* Sortierbar sind nur die Karten im unteren Raster.
+   Fest sitzen: „Unterricht" als Hauptkarte sowie die Dreierreihe aus Terminen,
+   Geburtstagen und To-dos – deren Platz ergibt sich aus dem Seitenaufbau.
+   Die frühere „Klassenarbeiten"-Karte gibt es nicht mehr, der Countdown
+   sitzt jetzt direkt an der jeweiligen Stunde. */
 const DASHBOARD_SECTIONS = {
-  aufgaben: "Tagesaufgaben",
-  kalender: "Kalendereinträge",
-  geburtstage: "Geburtstage",
   dienste: "Dienste",
   fehlzeiten: "Offene Entschuldigungen",
 };
@@ -1216,7 +1215,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             </li>
           ))}
         </ul>
-        <p className="text-xs text-stone-400 mb-4">Legt fest, in welcher Reihenfolge Unterricht, Tagesaufgaben, Kalendereinträge und Geburtstage auf der Übersicht erscheinen.</p>
+        <p className="text-xs text-stone-400 mb-4">Legt fest, in welcher Reihenfolge die unteren Karten auf der Übersicht erscheinen. Kennzahlen, Unterricht sowie Termine, Geburtstage und To-dos haben einen festen Platz.</p>
 
         <div className="pt-5 border-t border-stone-100">
           <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Datensicherung</div>
@@ -1568,20 +1567,41 @@ function computePendingLessons(data, now) {
   const dayKey = DAYS[(now.getDay() + 6) % 7]; // Mo–Fr, am Wochenende undefined
   if (!dayKey) return [];
   const nowHM = formatHM(now);
-  return data.timetable
+
+  /* Mehrere Stunden desselben Fachs an einem Tag – etwa eine Doppelstunde – werden zu
+     einem Eintrag zusammengefasst. Das ist keine Vereinfachung, sondern entspricht dem
+     Datenmodell: Noten tragen nur ein Datum, keine Stundenangabe. Zwei getrennte Einträge
+     ließen sich deshalb nie einzeln abhaken – das Erfassen der einen würde die andere
+     stillschweigend mit erledigen. Als ein Eintrag stimmen Zählung und Verhalten überein. */
+  const proFach = new Map();
+  data.timetable
     .filter((t) => t.day === dayKey)
-    .map((t) => {
+    .forEach((t) => {
       const fach = data.faecher.find((f) => f.id === t.fachId);
-      if (!fach) return null;
-      const cls = data.classes.find((c) => c.id === fach.classId);
+      if (!fach) return;
       const pt = data.periodTimes?.[t.period];
-      if (!pt?.end || nowHM < pt.end) return null;
-      const graded = data.grades.some((g) => g.fachId === fach.id && g.date === todayStr);
-      if (graded) return null;
-      return { key: `${fach.id}-${todayStr}`, fach, cls, period: t.period, start: pt.start, end: pt.end };
-    })
-    .filter(Boolean)
-    .sort((a, b) => b.period - a.period); // neueste Stunde zuerst
+      if (!pt?.end || nowHM < pt.end) return;
+      if (data.grades.some((g) => g.fachId === fach.id && g.date === todayStr)) return;
+      const vorhanden = proFach.get(fach.id);
+      if (vorhanden) {
+        vorhanden.anzahl += 1;
+        vorhanden.period = Math.max(vorhanden.period, t.period);
+        if (pt.start < vorhanden.start) vorhanden.start = pt.start;
+        if (pt.end > vorhanden.end) vorhanden.end = pt.end;
+        return;
+      }
+      proFach.set(fach.id, {
+        key: `${fach.id}-${todayStr}`,
+        fach,
+        cls: data.classes.find((c) => c.id === fach.classId),
+        period: t.period,
+        start: pt.start,
+        end: pt.end,
+        anzahl: 1,
+      });
+    });
+
+  return [...proFach.values()].sort((a, b) => b.period - a.period); // neueste Stunde zuerst
 }
 
 /* Benachrichtigung sicher senden. Auf Android Chrome wirft `new Notification()` einen
@@ -1622,7 +1642,10 @@ function remainingLessonsForFach(fachId, testDateStr, timetable, events) {
   let safety = 0; // Schutz vor Tippfehlern im Jahr (z. B. 9999) – max. gut ein Schuljahr
   while (cursor < testDate && safety++ < 400) {
     const dayKey = DAYS[(cursor.getDay() + 6) % 7];
-    if (dayKey && !istFrei(isoDate(cursor))) count += slots.filter((t) => t.day === dayKey).length;
+    /* Ein Tag mit Unterricht in diesem Fach zählt als eine Unterrichtseinheit – egal ob
+       einzelne 45 Minuten oder eine Doppelstunde aus zwei Blöcken. So rechnet auch die
+       Erfassung: eine Doppelstunde wird einmal bewertet, nicht zweimal. */
+    if (dayKey && !istFrei(isoDate(cursor)) && slots.some((t) => t.day === dayKey)) count += 1;
     cursor.setDate(cursor.getDate() + 1);
   }
   return count;
@@ -1637,6 +1660,23 @@ function bekannteThemen(grades, fachId) {
     const t = g.topic.trim();
     if (t) gesehen[t.toLowerCase()] = t;
   });
+  return Object.keys(gesehen).map((k) => gesehen[k]).sort((a, b) => a.localeCompare(b, "de"));
+}
+
+/* Vorschlaege fuer das Stundenthema-Feld in der Schnellerfassung. Zieht Themen aus
+   frueheren Stunden (lessonTopics) UND aus schriftlichen Noten (grades) zusammen -
+   beide Quellen fuellen sich gegenseitig, damit ein Thema, das man in einer Klassen-
+   arbeit vergeben hat, in einer folgenden Stunde als Vorschlag erscheint (und umgekehrt).
+   Dedupliziert case-insensitive. */
+function bekannteStundenthemen(lessonTopics, grades, fachId) {
+  const gesehen = Object.create(null);
+  const sammeln = (t) => {
+    if (typeof t !== "string") return;
+    const s = t.trim();
+    if (s) gesehen[s.toLowerCase()] = s;
+  };
+  (lessonTopics || []).forEach((x) => { if (x.fachId === fachId) sammeln(x.text); });
+  (grades || []).forEach((g) => { if (g.fachId === fachId) sammeln(g.topic); });
   return Object.keys(gesehen).map((k) => gesehen[k]).sort((a, b) => a.localeCompare(b, "de"));
 }
 
@@ -2050,9 +2090,11 @@ const HELP_DATA = [
       { q: "Was passiert beim ersten Start?", a: `Saidy führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
       { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus.` },
       { q: "Was zeigt das Morgen-Briefing auf der Startseite?", a: `Beim Öffnen der App erscheint oben die Karte „Heute im Blick". Sie fasst den Tag in ganzen Sätzen zusammen – zum Beispiel: „Guten Morgen! Heute stehen 4 Stunden an – die erste um 8:00 Uhr in der 4a." Berücksichtigt werden die Stunden des Tages, knapp bevorstehende Klassenarbeiten, Termine, Geburtstage, Kinder die an mehreren der letzten Tage gefehlt haben, und noch nicht erfasste Stunden. Dringendes steht rot und zuerst; angezeigt werden drei Sätze, der Rest über „+ weitere". Alles wird auf deinem Gerät berechnet, es werden keine Daten übertragen. Mit dem × blendest du die Karte für heute aus.` },
-      { q: "Wie ist die Übersichtsseite aufgebaut?", a: `Von oben nach unten: (1) Vier Kacheln mit den Kennzahlen des Tages – Stunden, noch nicht erfasste Stunden (leuchtet amber wenn etwas offen ist), Geburtstage und offene Aufgaben. Jede Kachel ist antippbar und springt in den passenden Bereich. (2) Das Morgen-Briefing „Heute im Blick". (3) Die Wochenleiste zum Wechseln des Tages. (4) Die große Unterricht-Karte mit allen Stunden des Tages. (5) Darunter zweispaltig: Aufgaben, Termine, Geburtstage, Dienste und Entschuldigungen. Die Reihenfolge der unteren Karten lässt sich in den Einstellungen unter „Übersicht (Startseite)" anpassen.` },
-      { q: "Was zeigt die Unterricht-Karte auf der Startseite?", a: `Jede Stunde des Tages als eigene Zeile: links ein Kürzel-Feld mit der Klasse (z. B. „4a"), daneben das Fach, rechts die Uhrzeit. Steht für die Stunde ein Thema, erscheint es klein darunter. Die zuletzt gehaltene Stunde und Stunden die noch nicht erfasst sind, bekommen einen farbigen Rand links. Ein Tipp auf Klasse und Fach öffnet direkt die Notenübersicht dieses Fachs. Ganz rechts das Klemmbrett-Symbol für die Schnellerfassung – es leuchtet amber, solange die Stunde noch nicht erfasst ist. Stehen mehr als drei Stunden im Plan, zeigt Saidy zunächst nur die ersten drei; über „Alle N Stunden ansehen ↓" klappst du den Rest auf.` },
-      { q: "Warum verschwindet die Navigationsleiste beim Scrollen?", a: `Damit mehr Platz für den Inhalt bleibt. Scrollst du auf einer Seite nach unten, gleitet die untere Leiste weg und stattdessen erscheint unten links ein kleines rundes Symbol – das des Bereichs in dem du gerade bist. Ein Tipp darauf holt die vollständige Leiste zurück. Scrollst du wieder nach oben, erscheint sie ohnehin von selbst. Auf dem Desktop bleibt die Seitenleiste immer sichtbar.` }
+      { q: "Wie ist die Übersichtsseite aufgebaut?", a: `Von oben nach unten: (1) Vier Kennzahl-Kacheln – Stunden heute, noch nicht erfasste Stunden, offene Entschuldigungen und aktive Förderziele. Die Reihe lässt sich seitlich schieben, jede Kachel ist antippbar und springt in den passenden Bereich. Kacheln mit offenen Punkten färben sich amber. (2) Das Morgen-Briefing „Heute im Blick". (3) Die Wochenleiste zum Wechseln des Tages. (4) „Dein Unterricht heute" – jede Stunde als eigene Karte, daneben der Knopf „Stundenplan". (5) Eine Dreierreihe mit Terminen, Geburtstagen und To-dos. (6) Ganz unten Dienste und Entschuldigungen; nur deren Reihenfolge lässt sich in den Einstellungen unter „Übersicht (Startseite)" ändern – alles darüber hat einen festen Platz.` },
+      { q: "Was zeigt eine Stundenkarte auf der Startseite?", a: `Links Anfangs- und Endzeit, daneben das Klassenkürzel (z. B. „4a") und das Fach; darunter steht der Titel der nächsten Klassenarbeit, falls einer hinterlegt ist. Eine Doppelstunde – also zwei aufeinanderfolgende Blöcke desselben Fachs – erscheint als eine Karte mit durchgehender Zeitspanne (07:55 – 09:30) und dem Vermerk „Doppel". Sind zwischen den Blöcken andere Stunden, bleiben sie getrennt. Rechts das Stundenthema und – sobald ein Klassenarbeitstermin existiert – ein Fortschrittsbalken. Er füllt sich, je weiter ihr im Thema seid: „3 / 6 Stunden" heißt, drei Stunden habt ihr für dieses Thema schon gehalten, sechs sind es bis zur Arbeit insgesamt. Eine Doppelstunde zählt dabei als eine Stunde – so wie sie auch nur einmal erfasst wird. Daneben steht, in wie vielen Stunden geschrieben wird. Die Farbe wechselt von oliv über amber zu rot, je knapper es wird. Die zuletzt gehaltene und noch nicht erfasste Stunden bekommen einen farbigen Rand links. Ein Tipp auf Klasse und Fach öffnet die Notenübersicht des Fachs, ein Tipp auf den Balken die Details zur Arbeit. Ganz rechts das Klemmbrett für die Schnellerfassung – es leuchtet amber, solange die Stunde nicht erfasst ist. Ab fünf Stunden zeigt Saidy zunächst vier und blendet den Rest über „Alle N Stunden ansehen" ein.` },
+      { q: "Was macht der grüne Plus-Knopf in der Mitte?", a: `Er ist der Schnellzugriff zum Erfassen und funktioniert aus jedem Bereich heraus. Ein Tipp öffnet fünf Einträge: „Stunde erfassen" springt direkt in die Schnellerfassung – Saidy wählt dabei selbst die passende Stunde, zuerst eine noch nicht erfasste, sonst die zuletzt gehaltene von heute. „Gespräch notieren" und „Notiz zu einem Kind" fragen zuerst nach dem Kind (einfach den Namen tippen) und dann nach dem Text; beim Gespräch kommen Art (Schüler, Eltern, Förder) und Stimmung dazu. „Aufgabe" und „Termin" legen einen To-do beziehungsweise einen Kalendereintrag an. Bist du gerade in einem Bereich mit eigener Aktion – etwa im Klassen-Tab – steht diese zusätzlich ganz oben in der Liste. Auf Tablet und Desktop heißt der Knopf „Schnell erfassen" und sitzt in der linken Seitenleiste, ganz oben; das aufklappende Menü enthält dieselben Aktionen.` },
+      { q: "Wo finde ich die Aufgaben in der unteren Leiste?", a: `Die Leiste zeigt Übersicht, Klassen, den Plus-Knopf, Noten und „Mehr". Die Aufgaben sind unter „Mehr" zu finden – zusammen mit Stundenplan, Kalender, Suche, Einstellungen und Hilfe. Eine neue Aufgabe legst du schneller über den grünen Plus-Knopf an.` },
+      { q: "Warum verschwindet die Navigationsleiste beim Scrollen?", a: `Damit mehr Platz für den Inhalt bleibt. Scrollst du auf einer Seite nach unten, gleitet die untere Leiste weg und stattdessen erscheint unten links ein olivfarbener Kreis mit einem Pfeil nach oben. Ein Tipp darauf holt die vollständige Leiste zurück. Scrollst du wieder nach oben, erscheint sie ohnehin von selbst. Auf dem Desktop bleibt die Seitenleiste immer sichtbar.` }
     ],
   },
   {
@@ -2076,10 +2118,10 @@ const HELP_DATA = [
       { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten & Berichte", wähle Klasse und Fach. Tippe auf eine:n Schüler:in – in der Karte „Neue Note" Kategorie und Note wählen und auf „+" tippen. Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aus mündlichen und schriftlichen Noten. Voreingestellt ist 50 zu 50 Prozent – änderbar unter „Klassen & Schüler" → Reiter „Fächer" → Zahnrad beim Fach → „Gewichtung der Noten". Einzelne Noten lassen sich zusätzlich stärker gewichten (Faktor beim Bearbeiten der Note). Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
-      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Klemmbrett-Symbol neben einer Stunde auf der Startseite öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Gespräche eintragen kannst. Die Notenbuttons sind immer direkt sichtbar. Weitere Aktionen (Notiz, Gespräch, Vergessen) erscheinen nach Antippen des ···-Symbols neben dem Namen. Hat ein Kind bereits eine Notiz oder einen Auffälligkeits-Eintrag, leuchtet das ···-Symbol grün.` },
-      { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Saidy an, wie viele Unterrichtsstunden bis dahin noch bleiben. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Saidy die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
+      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Klemmbrett-Symbol neben einer Stunde auf der Startseite öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Gespräche eintragen kannst. Eine Doppelstunde wird dabei einmal erfasst, nicht zweimal – sie gilt als eine Unterrichtseinheit und erscheint in der Liste der offenen Stunden als ein Eintrag mit der Zahl der Blöcke. Die Notenbuttons sind immer direkt sichtbar. Weitere Aktionen (Notiz, Gespräch, Vergessen) erscheinen nach Antippen des ···-Symbols neben dem Namen. Hat ein Kind bereits eine Notiz oder einen Auffälligkeits-Eintrag, leuchtet das ···-Symbol grün.` },
+      { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Saidy an, wie viele Unterrichtsstunden bis dahin noch bleiben. Gezählt wird in Unterrichtseinheiten: ein Tag mit diesem Fach ist eine Einheit – eine Doppelstunde aus zwei 45-Minuten-Blöcken zählt also einmal, genau wie eine einzelne Stunde. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Saidy die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
       { q: "Wo sehe ich auf der Startseite, wie viel Zeit bis zur Klassenarbeit bleibt?", a: `Direkt bei der Stunde – es gibt dafür keine eigene Karte mehr. Ist für ein Fach ein Test-Termin hinterlegt, erscheint in der Unterricht-Übersicht unter der Stunde ein feiner Strich: voll bedeutet viel Vorbereitungszeit, kurz bedeutet es wird eng. Die Farbe wechselt von oliv über amber zu rot, je näher der Termin rückt. Rechts neben der Stunde steht zusätzlich die Zahl der verbleibenden Unterrichtsstunden (z. B. „5×"), am Prüfungstag selbst „Heute!". Ein Tipp auf den Strich klappt die Details auf: Titel der Arbeit, Datum und die verbleibenden Übungsstunden im Klartext. Angezeigt wird das nur bei Fächern, für die du einen Termin eingetragen hast.` },
-      { q: "Wie finde ich heraus, bei welchem Thema die Klasse Lücken hat?", a: `Beim Eintragen einer schriftlichen Note kannst du ein Thema angeben, z. B. „Bruchrechnung". Bereits verwendete Themen werden beim Tippen vorgeschlagen – nimm die Vorschläge, dann bleibt die Auswertung sauber. Auch die Schnellerfassung übernimmt das oben eingetragene Stundenthema automatisch, wenn du dort schriftliche Noten vergibst. In der Fachansicht („Noten & Berichte" → Klasse → Fach) erscheint dann die Karte „Wissensgebiete": Alle Themen mit dem Klassenschnitt, das schwächste zuerst. Ein langer Balken bedeutet gut beherrscht. Tippst du ein Thema an, siehst du, welche Kinder dort Lücken haben – daraus wird direkt eine Fördergruppe.` },
+      { q: "Wie finde ich heraus, bei welchem Thema die Klasse Lücken hat?", a: `Beim Eintragen einer schriftlichen Note kannst du ein Thema angeben, z. B. „Bruchrechnung". Bereits verwendete Themen werden beim Tippen vorgeschlagen – nimm die Vorschläge, dann bleibt die Auswertung sauber. Auch die Schnellerfassung übernimmt das oben eingetragene Stundenthema automatisch, wenn du dort schriftliche Noten vergibst. Umgekehrt schlägt das Stundenthema-Feld bereits bekannte Themen desselben Fachs vor – so bleibt „Bruchrechnung" über Wochen dasselbe Wort und der Fortschrittsbalken zählt sauber weiter, statt bei jeder Tippvariante von vorn. In der Fachansicht („Noten & Berichte" → Klasse → Fach) erscheint dann die Karte „Wissensgebiete": Alle Themen mit dem Klassenschnitt, das schwächste zuerst. Ein langer Balken bedeutet gut beherrscht. Tippst du ein Thema an, siehst du, welche Kinder dort Lücken haben – daraus wird direkt eine Fördergruppe.` },
       { q: "Wie sehe ich, wie weit ich mit den Zeugnisnoten bin?", a: `In der Zeugnisphase (Januar, Februar, Juni, Juli) zeigt jede Klassenkarte unter „Noten & Berichte" einen Fortschrittsbalken: wie viele Zeugnisnoten von wie vielen bereits gesetzt sind und wie viele noch offen sind. Über mehrere Klassen hinweg siehst du so auf einen Blick, wo noch Arbeit liegt. Ist alles vollständig, wird der Balken grün.` },
       { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button „Zeugnisnote". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
       { q: "Wo kann ich Gespräche mit Schüler:innen erfassen?", a: `An drei Stellen: (1) In der Klassenliste neben jedem Kind das 💬-Symbol antippen. (2) Im Schnellerfassungs-Modus nach dem Unterricht. (3) Direkt in der Notenansicht: Kind antippen – die Detailansicht zeigt oben eine Karte „Gespräch & Stimmung" mit Typ-Wahl (Schüler / Eltern / Förder), Stimmungsskala (😄😊😐😕😟) und Notizfeld. Alle erfassten Gespräche erscheinen auch bei Elternsprechtag-Vorbereitung.` },
@@ -2209,6 +2251,158 @@ function HilfeItem({ item, open, toggle, showCategory }) {
   );
 }
 
+/* Schnellerfassung vom Plus-Knopf aus: erst das Kind wählen, dann Notiz oder Gespräch
+   eintragen. Beides landet in `notes` – ein Gespräch zusätzlich mit Typ und Stimmung,
+   genau wie im Schülerprofil. So muss man sich nicht erst durch Klasse und Profil klicken. */
+function QuickAddNoteModal({ data, modus, onSave, onClose }) {
+  const istGespraech = modus === "gespraech";
+  const [studentId, setStudentId] = useState(null);
+  const [query, setQuery] = useState("");
+  const [text, setText] = useState("");
+  const [typ, setTyp] = useState("schueler");
+  const [mood, setMood] = useState("ok");
+  const inputRef = useRef(null);
+  useEffect(() => { inputRef.current?.focus(); }, [studentId]);
+
+  const student = data.students.find((s) => s.id === studentId) || null;
+  const q = query.trim().toLowerCase();
+  const treffer = (q
+    ? data.students.filter((s) => s.name.toLowerCase().includes(q))
+    : data.students
+  )
+    .slice()
+    .sort((a, b) => a.name.localeCompare(b.name, "de"))
+    .slice(0, 40);
+
+  function speichern() {
+    if (!student || !text.trim()) return;
+    onSave({ studentId: student.id, text: text.trim(), istGespraech, typ, mood });
+  }
+
+  /* Backdrop-Klick und X-Knopf wirken versehentlich - besonders wenn das Sheet auf dem
+     iPad viel Rand um sich herum hat. Steht Text im Feld und ist ein Kind gewaehlt,
+     wird der Draft mit gespeichert statt kommentarlos verworfen. Wer bewusst abbrechen
+     will, druckt "Abbrechen" - der Knopf bleibt unveraendert. */
+  function schliessenMitRettung() {
+    if (student && text.trim()) speichern();
+    else onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[70]" onClick={schliessenMitRettung}>
+      <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
+          <div className="font-semibold text-stone-800">
+            {istGespraech ? "Gespräch notieren" : "Notiz zu einem Kind"}
+          </div>
+          <button onClick={schliessenMitRettung} className="w-11 h-11 -mr-3 rounded-full text-stone-400 hover:text-stone-600 flex items-center justify-center">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))]">
+          {!student ? (
+            <>
+              <input
+                ref={inputRef}
+                className={inputCls}
+                placeholder="Kind suchen …"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+              {!data.students.length ? (
+                <p className="text-sm text-stone-500 mt-4">Noch keine Schüler:innen angelegt.</p>
+              ) : (
+                <ul className="mt-3 divide-y divide-stone-100 max-h-[45vh] overflow-y-auto">
+                  {treffer.map((s) => {
+                    const cls = data.classes.find((c) => c.id === s.classId);
+                    return (
+                      <li key={s.id}>
+                        <button
+                          onClick={() => { setStudentId(s.id); setQuery(""); }}
+                          className="w-full flex items-center gap-2.5 py-2.5 text-left"
+                        >
+                          <StudentAvatar student={s} size={28} />
+                          <span className="flex-1 text-sm text-stone-800 truncate">{s.name}</span>
+                          {cls && <span className="text-xs text-stone-400 shrink-0">{cls.name}</span>}
+                        </button>
+                      </li>
+                    );
+                  })}
+                  {!treffer.length && <li className="py-3 text-sm text-stone-500">Kein Kind gefunden.</li>}
+                </ul>
+              )}
+            </>
+          ) : (
+            <>
+              <div className="flex items-center gap-2.5 mb-4">
+                <StudentAvatar student={student} size={32} />
+                <span className="flex-1 text-sm font-medium text-stone-800 truncate">{student.name}</span>
+                <button onClick={() => setStudentId(null)} className="text-xs akzent-text hover:underline shrink-0">
+                  Anderes Kind
+                </button>
+              </div>
+
+              {istGespraech && (
+                <>
+                  <Field label="Art des Gesprächs">
+                    <div className="flex gap-1.5">
+                      {GESPRAECH_TYPEN.map((t) => (
+                        <button
+                          key={t.key}
+                          onClick={() => setTyp(t.key)}
+                          className={`flex-1 py-2 rounded-xl border text-xs font-medium transition-colors ${
+                            typ === t.key ? "akzent-rand akzent-ton akzent-text" : "border-stone-200 bg-white text-stone-500"
+                          }`}
+                        >
+                          {t.label}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+                  <Field label="Stimmung">
+                    <div className="flex gap-1.5">
+                      {MOOD_OPTIONS.map((m) => (
+                        <button
+                          key={m.key}
+                          onClick={() => setMood(m.key)}
+                          title={m.label}
+                          aria-label={m.label}
+                          className={`flex-1 py-2 rounded-xl border text-base transition-colors ${
+                            mood === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-white"
+                          }`}
+                        >
+                          {m.emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </Field>
+                </>
+              )}
+
+              <Field label={istGespraech ? "Notiz zum Gespräch" : "Notiz"}>
+                <textarea
+                  ref={inputRef}
+                  className={`${inputCls} min-h-[6rem] resize-none`}
+                  placeholder={istGespraech ? "Worum ging es?" : "Was ist dir aufgefallen?"}
+                  value={text}
+                  maxLength={1000}
+                  onChange={(e) => setText(e.target.value)}
+                />
+              </Field>
+
+              <div className="flex gap-2 mt-5">
+                <Button variant="ghost" onClick={onClose} className="flex-1 justify-center">Abbrechen</Button>
+                <Button onClick={speichern} disabled={!text.trim()} className="flex-1 justify-center">Speichern</Button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function GlobalSearchModal({ data, onSelectStudent, onClose }) {
   const [query, setQuery] = useState("");
   const inputRef = useRef(null);
@@ -2319,6 +2513,8 @@ export default function App() {
   const [showUntisImport, setShowUntisImport] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [showMore, setShowMore] = useState(false);
+  const [quickAdd, setQuickAdd] = useState(null);       // "notiz" | "gespraech" | "aufgabe"
+  const [kalenderAutoForm, setKalenderAutoForm] = useState(false); // Kalender mit offenem Formular öffnen
   const [navCollapsed, setNavCollapsed] = useState(false);
   const mainRef = useRef(null);
   const [showHelp, setShowHelp] = useState(false);
@@ -2346,7 +2542,10 @@ export default function App() {
     }
     el.addEventListener("scroll", handleScroll, { passive: true });
     return () => el.removeEventListener("scroll", handleScroll);
-  }, []);
+    /* `loaded` muss in die Abhängigkeiten: solange die Daten laden, gibt App einen
+       Ladebildschirm zurück und <main> existiert noch gar nicht. Ohne diesen Eintrag
+       liefe der Effekt genau einmal ins Leere und der Listener hinge nie am Element. */
+  }, [loaded]);
   // Tab-Wechsel: immer nach oben scrollen + Nav aufklappen
   useEffect(() => {
     if (mainRef.current) mainRef.current.scrollTop = 0;
@@ -2727,6 +2926,74 @@ export default function App() {
     { key: "noten", label: "Noten & Berichte", icon: GraduationCap },
   ];
 
+  /* Notiz oder Gespräch aus der Schnellerfassung ablegen – dasselbe Format wie im Profil */
+  function saveQuickNote({ studentId, text, istGespraech, typ, mood }) {
+    update((d) => {
+      d.notes = d.notes || [];
+      d.notes.push(
+        istGespraech
+          ? { id: uid(), studentId, date: isoDate(new Date()), text, type: "gespraech", mood, gesprTyp: typ || "schueler" }
+          : { id: uid(), studentId, date: isoDate(new Date()), text }
+      );
+      return d;
+    });
+    setQuickAdd(null);
+    showToast(istGespraech ? "Gespräch gespeichert." : "Notiz gespeichert.");
+  }
+
+  function saveQuickTask(payload) {
+    update((d) => {
+      d.taskLists = d.taskLists || [];
+      d.tasks = d.tasks || [];
+      let listId = payload.listId;
+      if (payload.newList) {
+        const id = uid();
+        d.taskLists.push({ id, name: payload.newList.name, icon: payload.newList.icon || "" });
+        listId = id;
+      }
+      d.tasks.push({ id: uid(), title: payload.title, color: payload.color, listId, dueDate: payload.dueDate, done: false });
+      return d;
+    });
+    setQuickAdd(null);
+    showToast("Aufgabe angelegt.");
+  }
+
+  /* Für „Stunde erfassen" die naheliegendste Stunde wählen: zuerst eine noch offene,
+     sonst die zuletzt gehaltene von heute. Gibt es beides nicht, führt der Weg
+     zur Übersicht – dort steht der ganze Tag. */
+  function startQuickCapture() {
+    const offen = (pendingLessons || [])[0];
+    if (offen) {
+      setCaptureLesson({ fach: offen.fach, cls: offen.cls, date: isoDate(new Date()) });
+      return;
+    }
+    const heuteKey = DAYS[(new Date().getDay() + 6) % 7];
+    const heuteStunden = (data.timetable || [])
+      .filter((t) => t.day === heuteKey)
+      .sort((a, b) => a.period - b.period);
+    const nowHM = formatHM(now || new Date());
+    const kandidat =
+      heuteStunden.filter((l) => (data.periodTimes?.[l.period]?.start || "") <= nowHM).pop() || heuteStunden[0];
+    const fach = kandidat && data.faecher.find((f) => f.id === kandidat.fachId);
+    const cls = fach && data.classes.find((c) => c.id === fach.classId);
+    if (fach && cls) {
+      setCaptureLesson({ fach, cls, date: isoDate(new Date()) });
+    } else {
+      goTo("dashboard");
+      showToast("Heute steht keine Stunde im Plan.");
+    }
+  }
+
+  /* Aktionen des Plus-Knopfs. Bereichsspezifische Aktionen (z. B. „Neue Klasse")
+     hängen sich über onRegisterFab vorne an. */
+  const globalFabActions = [
+    { label: "Stunde erfassen", icon: ClipboardCheck, onClick: startQuickCapture },
+    { label: "Gespräch notieren", icon: MessageSquare, onClick: () => setQuickAdd("gespraech") },
+    { label: "Notiz zu einem Kind", icon: StickyNote, onClick: () => setQuickAdd("notiz") },
+    { label: "Aufgabe", icon: ListChecks, onClick: () => setQuickAdd("aufgabe") },
+    { label: "Termin", icon: CalendarDays, onClick: () => { setKalenderAutoForm(true); goTo("kalender"); } },
+  ];
+
   if (!loaded) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center app-bg gap-4">
@@ -2959,6 +3226,40 @@ export default function App() {
             </div>
           </div>
 
+          {/* Schnell-erfassen-Knopf mit ausklappbarem Menue - fuer iPad/Desktop, wo die
+              untere Leiste fehlt. Nutzt dieselben Aktionen wie der grosse Plus-Knopf
+              auf dem Handy, damit der Erfassungs-Weg auf allen Geraeten gleich ist. */}
+          <div className="relative px-3 pt-3">
+            <button
+              onClick={() => setFabOpen((o) => !o)}
+              className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl akzent-flaeche text-white text-sm font-semibold press-scale"
+              aria-expanded={fabOpen}
+            >
+              <Plus size={16} className="text-white" strokeWidth={2.4} />
+              Schnell erfassen
+            </button>
+            {fabOpen && (
+              <>
+                {/* Klick ausserhalb schliesst das Dropdown */}
+                <div className="fixed inset-0 z-40" onClick={() => setFabOpen(false)} />
+                <div className="absolute left-3 right-3 mt-1.5 z-50 bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden">
+                  {[...fabActions, ...globalFabActions].map(({ label, icon: Icon, onClick }) => (
+                    <button
+                      key={label}
+                      onClick={() => { setFabOpen(false); onClick(); }}
+                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-stone-700 hover:bg-stone-50 text-left"
+                    >
+                      <span className="w-6 h-6 rounded-full akzent-flaeche flex items-center justify-center flex-shrink-0">
+                        <Icon size={12} className="text-white" />
+                      </span>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Navigation */}
           <nav className="flex-1 overflow-y-auto px-2 py-3 space-y-5">
             {/* Gruppe: Unterricht */}
@@ -3063,7 +3364,7 @@ export default function App() {
           {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
           {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} onRegisterFab={setFabActions} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
-          {tab === "kalender" && <KalenderTab data={activeData} update={update} />}
+          {tab === "kalender" && <KalenderTab data={activeData} update={update} autoOpenForm={kalenderAutoForm} onAutoFormConsumed={() => setKalenderAutoForm(false)} />}
           {tab === "aufgaben" && <AufgabenTab data={activeData} update={update} />}
           {tab === "noten" && <NotenTab data={activeData} update={update} halbjahr={halbjahr} initialFachId={notenFachId} onConsumeInitial={() => setNotenFachId(null)} />}
 
@@ -3114,15 +3415,18 @@ export default function App() {
               date={captureLesson.date}
               halbjahr={halbjahr}
               onClose={() => setCaptureLesson(null)}
+              onSwitch={(neu) => setCaptureLesson(neu)}
             />
           )}
         </main>
       </div>
 
       {/* Feste untere Navigation (nur mobil) – scrollt weg wenn tief gescrollt */}
-      <nav className={`md:hidden fixed inset-x-0 bottom-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 z-40 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-transform duration-200 ${navCollapsed ? "translate-y-full" : "translate-y-0"}`}>
+      <nav className={`md:hidden fixed inset-x-0 bottom-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 ${fabOpen ? "z-[46]" : "z-40"} pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-transform duration-200 ${navCollapsed ? "translate-y-[calc(100%+1.5rem)]" : "translate-y-0"}`}>
+        {/* Übersicht · Klassen · [+] · Noten · Mehr – „Aufgaben" liegt im Mehr-Menü
+            und ist zusätzlich über den Plus-Knopf erreichbar. */}
         <div className="flex items-stretch justify-around px-2 pt-2 pb-1">
-          {[tabs[0], tabs[1], tabs[4], tabs[5]].map((t) => {
+          {[tabs[0], tabs[1]].map((t) => {
             const Icon = t.icon;
             const active = tab === t.key;
             return (
@@ -3135,38 +3439,72 @@ export default function App() {
                   <Icon size={20} strokeWidth={active ? 2.4 : 2} className={active ? "akzent-text" : "text-stone-400"} />
                 </span>
                 <span className={`text-[10px] leading-none ${active ? "akzent-text font-semibold" : "text-stone-400"}`}>
-                  {t.key === "klassen" ? "Klassen" : t.key === "noten" ? "Noten" : t.label}
+                  {t.key === "klassen" ? "Klassen" : t.label}
                 </span>
               </button>
             );
           })}
+
+          {/* Plus in der Mitte – hebt sich über die Leiste hinaus */}
+          <div className="flex-1 flex justify-center">
+            <button
+              onClick={() => { setFabOpen((o) => !o); setShowMore(false); }}
+              className="w-14 h-14 -mt-5 rounded-full akzent-flaeche text-white flex items-center justify-center press-scale shrink-0"
+              style={{ boxShadow: "0 6px 20px rgba(79,88,68,0.45)" }}
+              aria-label="Neu erfassen"
+              aria-expanded={fabOpen}
+            >
+              <Plus
+                size={26}
+                className="text-white"
+                style={{ transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
+              />
+            </button>
+          </div>
+
+          {[tabs[5]].map((t) => {
+            const Icon = t.icon;
+            const active = tab === t.key;
+            return (
+              <button
+                key={t.key}
+                onClick={() => { setTab(t.key); setNavCollapsed(false); setShowMore(false); }}
+                className="flex-1 flex flex-col items-center gap-1"
+              >
+                <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${active ? "akzent-ton" : ""}`}>
+                  <Icon size={20} strokeWidth={active ? 2.4 : 2} className={active ? "akzent-text" : "text-stone-400"} />
+                </span>
+                <span className={`text-[10px] leading-none ${active ? "akzent-text font-semibold" : "text-stone-400"}`}>Noten</span>
+              </button>
+            );
+          })}
+
           <button
-            onClick={() => { setShowMore(true); setNavCollapsed(false); }}
+            onClick={() => { setShowMore(true); setNavCollapsed(false); setFabOpen(false); }}
             className="flex-1 flex flex-col items-center gap-1"
           >
-            <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${["stundenplan", "kalender"].includes(tab) ? "akzent-ton" : ""}`}>
-              <MoreHorizontal size={20} strokeWidth={2.2} className={["stundenplan", "kalender"].includes(tab) ? "akzent-text" : "text-stone-400"} />
+            <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${["stundenplan", "kalender", "aufgaben"].includes(tab) ? "akzent-ton" : ""}`}>
+              <MoreHorizontal size={20} strokeWidth={2.2} className={["stundenplan", "kalender", "aufgaben"].includes(tab) ? "akzent-text" : "text-stone-400"} />
             </span>
-            <span className={`text-[10px] leading-none ${["stundenplan", "kalender"].includes(tab) ? "akzent-text font-semibold" : "text-stone-400"}`}>Mehr</span>
+            <span className={`text-[10px] leading-none ${["stundenplan", "kalender", "aufgaben"].includes(tab) ? "akzent-text font-semibold" : "text-stone-400"}`}>Mehr</span>
           </button>
         </div>
       </nav>
 
-      {/* Kleines Aktiv-Icon unten-links wenn Nav weggescrollt ist */}
+      {/* Ersatz-Knopf unten links, wenn die Nav weggescrollt ist. Zeigt bewusst NICHT
+          das Symbol des aktuellen Bereichs - das las sich wie eine Zustandsanzeige
+          ("du bist in Klassen") und niemand kam auf die Idee, dass es ein Knopf ist.
+          Ein Pfeil nach oben zeigt, was passiert: die Leiste kommt zurueck. */}
       <button
         onClick={() => setNavCollapsed(false)}
         aria-label="Navigation einblenden"
-        className={`md:hidden fixed left-4 z-40 w-12 h-12 rounded-full akzent-ton shadow-lg flex items-center justify-center transition-all duration-200 ${
+        className={`md:hidden fixed left-4 z-40 w-12 h-12 rounded-full akzent-flaeche shadow-lg flex items-center justify-center transition-all duration-200 ${
           navCollapsed
             ? "bottom-[calc(env(safe-area-inset-bottom)+16px)] opacity-100 scale-100"
             : "bottom-0 opacity-0 scale-75 pointer-events-none"
         }`}
       >
-        {(() => {
-          const activeTabObj = tabs.find((t) => t.key === tab) || tabs[0];
-          const Icon = activeTabObj.icon;
-          return <Icon size={20} strokeWidth={2.4} className="akzent-text" />;
-        })()}
+        <ChevronDown size={22} strokeWidth={2.4} className="text-white rotate-180" />
       </button>
 
       {/* Mehr-Menü (mobil) */}
@@ -3175,7 +3513,7 @@ export default function App() {
           <div className="bg-white rounded-t-3xl w-full p-4 pb-[max(2rem,env(safe-area-inset-bottom))] anim-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
             <div className="grid grid-cols-2 gap-3">
-              {[tabs[2], tabs[3]].map((t) => {
+              {[tabs[2], tabs[3], tabs[4]].map((t) => {
                 const Icon = t.icon;
                 const active = tab === t.key;
                 return (
@@ -3226,21 +3564,21 @@ export default function App() {
       )}
 
       {/* Floating Action Button (nur mobil, nur wenn Aktionen registriert) */}
-      {fabActions.length > 0 && !showMore && (
+      {/* Aktionsliste über dem Plus-Knopf. Bereichsspezifische Einträge (z. B. „Neue Klasse")
+          stehen vorn, danach die überall verfügbaren Schnellerfassungen. */}
+      {fabOpen && !showMore && (
         <>
-          {fabOpen && (
-            <div className="md:hidden fixed inset-0 z-[44]" onClick={() => setFabOpen(false)} />
-          )}
+          <div className="md:hidden fixed inset-0 bg-stone-900/20 z-[44]" onClick={() => setFabOpen(false)} />
           <div
-            className="md:hidden fixed z-[45] flex flex-col items-end gap-2.5"
-            style={{ bottom: "calc(env(safe-area-inset-bottom) + 82px)", right: "1rem" }}
+            className="md:hidden fixed z-[45] left-0 right-0 px-4 flex flex-col items-center gap-2"
+            style={{ bottom: "calc(env(safe-area-inset-bottom) + 90px)" }}
           >
-            {fabOpen && fabActions.map(({ label, icon: Icon, onClick }, i) => (
+            {[...fabActions, ...globalFabActions].map(({ label, icon: Icon, onClick }, i) => (
               <button
                 key={label}
-                onClick={() => { onClick(); setFabOpen(false); }}
-                className="flex items-center gap-2.5 bg-white border border-stone-100 shadow-lg px-4 py-2.5 rounded-full text-sm font-medium text-stone-800 press-scale anim-item"
-                style={{ animationDelay: `${i * 40}ms`, animationFillMode: "both" }}
+                onClick={() => { setFabOpen(false); onClick(); }}
+                className="w-full max-w-xs flex items-center gap-2.5 bg-white border border-stone-100 shadow-lg px-4 py-2.5 rounded-full text-sm font-medium text-stone-800 press-scale anim-item"
+                style={{ animationDelay: `${i * 35}ms`, animationFillMode: "both" }}
               >
                 <span className="w-7 h-7 rounded-full akzent-flaeche flex items-center justify-center flex-shrink-0">
                   <Icon size={13} className="text-white" />
@@ -3248,20 +3586,15 @@ export default function App() {
                 {label}
               </button>
             ))}
-            <button
-              onClick={() => setFabOpen((o) => !o)}
-              className="w-14 h-14 rounded-full akzent-flaeche text-white flex items-center justify-center press-scale"
-              style={{ boxShadow: "0 6px 20px rgba(79,88,68,0.45)" }}
-              aria-label="Aktionen"
-            >
-              <Plus
-                size={26}
-                className="text-white"
-                style={{ transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
-              />
-            </button>
           </div>
         </>
+      )}
+
+      {quickAdd === "aufgabe" && (
+        <TaskModal data={data} initial={null} defaultListId="" onSave={saveQuickTask} onClose={() => setQuickAdd(null)} />
+      )}
+      {(quickAdd === "notiz" || quickAdd === "gespraech") && (
+        <QuickAddNoteModal data={activeData} modus={quickAdd} onSave={saveQuickNote} onClose={() => setQuickAdd(null)} />
       )}
 
       {/* Toast-Meldung */}
@@ -3352,7 +3685,7 @@ function nextFerienCountdown(events, schooldaysOnly) {
 }
 
 /* Schnellerfassung nach der Stunde: Note, Notiz und Auffälligkeit pro Schüler:in in einer kompakten Liste */
-function QuickCaptureModal({ data, update, fach, cls, students, date: initialDate, halbjahr, onClose }) {
+function QuickCaptureModal({ data, update, fach, cls, students, date: initialDate, halbjahr, onClose, onSwitch }) {
   const isColor = data.settings?.colorMode === true;
   const istSport = /sport/i.test(fach?.subject || "");
   const [date, setDate] = useState(initialDate || isoDate(new Date()));
@@ -3366,6 +3699,29 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
   const [gesprTyp, setGesprTyp] = useState("schueler");
   const [gesprTexts, setGesprTexts] = useState({});
   const [actionsId, setActionsId] = useState(null);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  /* Andere Stunden desselben Tages zum Wechseln - pro Fach genau eine Zeile.
+     Eine Doppelstunde erscheint einmal, weil sie ohnehin als eine Einheit erfasst wird. */
+  const tagFaecher = (() => {
+    const tagKey = DAYS[(localDate(date).getDay() + 6) % 7];
+    if (!tagKey) return [];
+    const seen = new Set();
+    const zeilen = [];
+    data.timetable
+      .filter((t) => t.day === tagKey)
+      .sort((a, b) => a.period - b.period)
+      .forEach((t) => {
+        if (seen.has(t.fachId)) return;
+        seen.add(t.fachId);
+        const f = data.faecher.find((x) => x.id === t.fachId);
+        if (!f) return;
+        const c = data.classes.find((x) => x.id === f.classId);
+        if (!c) return;
+        zeilen.push({ fach: f, cls: c, start: data.periodTimes?.[t.period]?.start || "" });
+      });
+    return zeilen;
+  })();
 
   // Optionales Stundenthema für genau diese Stunde (Fach + Datum)
   const topicId = `${fach.id}-${date}`;
@@ -3464,19 +3820,94 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
     setGesprExpanded(null);
   }
 
+  /* Beim Schliessen alle offenen Gespraechs-Drafts mitspeichern, statt sie
+     stillschweigend zu verwerfen. Wer den Text getippt hat, will ihn nicht durch
+     einen Fehltipp neben das Sheet oder ein zu frueh gedruecktes „Fertig" verlieren.
+     Notizen speichern schon per onBlur - hier fehlte der Auto-Save nur bei Gespraechen. */
+  function schliessenMitRettung() {
+    const offene = Object.entries(gesprTexts).filter(([, t]) => (t || "").trim());
+    if (offene.length) {
+      update((d) => {
+        offene.forEach(([studentId, t]) => {
+          d.notes.push({ id: uid(), studentId, date, text: t.trim(), type: "gespraech", mood: gesprMood, gesprTyp });
+        });
+        return d;
+      });
+    }
+    onClose();
+  }
+
   return (
-    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={onClose}>
+    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={schliessenMitRettung}>
       <div className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet overflow-x-hidden" onClick={(e) => e.stopPropagation()}>
 
-        {/* Kopf bleibt beim Scrollen sichtbar */}
-        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-200 px-4 py-3 flex items-center gap-2 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)]">
-          <div className="min-w-0 flex-1">
-            <div className="font-semibold text-stone-800 leading-tight">Schnellerfassung</div>
-            <div className="text-xs text-stone-400 truncate">{cls?.name} · {fach.subject}</div>
+        {/* Kopf bleibt beim Scrollen sichtbar - Klasse und Fach gross und klar,
+            damit auffaellt wenn Saidy die falsche Stunde vorgewaehlt hat. Ein Tipp
+            auf die Zeile oeffnet die Liste der anderen Stunden des Tages. */}
+        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-200 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)]">
+          <div className="px-4 py-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => tagFaecher.length > 1 && setSwitcherOpen((v) => !v)}
+              disabled={tagFaecher.length <= 1}
+              className="min-w-0 flex-1 text-left flex items-center gap-2 -mx-1 px-1 py-0.5 rounded-lg disabled:cursor-default"
+              aria-expanded={switcherOpen}
+              aria-label={tagFaecher.length > 1 ? "Andere Stunde waehlen" : undefined}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 leading-none mb-1">Schnellerfassung</div>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {cls && (
+                    <span className="shrink-0 text-[11px] font-bold px-1.5 py-0.5 rounded akzent-ton akzent-text leading-none">{cls.name}</span>
+                  )}
+                  <span className="font-semibold text-stone-800 truncate">{fach.subject}</span>
+                  {tagFaecher.length > 1 && (
+                    <ChevronDown size={14} className={`text-stone-400 shrink-0 transition-transform ${switcherOpen ? "rotate-180" : ""}`} />
+                  )}
+                </div>
+              </div>
+            </button>
+            <button onClick={schliessenMitRettung} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0">
+              <X size={16} />
+            </button>
           </div>
-          <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0">
-            <X size={16} />
-          </button>
+          {switcherOpen && tagFaecher.length > 1 && (
+            <div className="border-t border-stone-100 max-h-64 overflow-y-auto">
+              <ul className="py-1">
+                {tagFaecher.map(({ fach: f, cls: c, start }) => {
+                  const aktiv = f.id === fach.id;
+                  return (
+                    <li key={f.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSwitcherOpen(false);
+                          if (aktiv) return;
+                          /* Draft-Rettung des laufenden Sheets, dann Wechsel zur neuen Stunde */
+                          const offene = Object.entries(gesprTexts).filter(([, t]) => (t || "").trim());
+                          if (offene.length) {
+                            update((d) => {
+                              offene.forEach(([sid, t]) => {
+                                d.notes.push({ id: uid(), studentId: sid, date, text: t.trim(), type: "gespraech", mood: gesprMood, gesprTyp });
+                              });
+                              return d;
+                            });
+                          }
+                          onSwitch?.({ fach: f, cls: c, date });
+                        }}
+                        className={`w-full flex items-center gap-2 px-4 py-2 text-left text-sm ${aktiv ? "akzent-ton akzent-text font-medium" : "text-stone-700 hover:bg-stone-50"}`}
+                      >
+                        <span className="w-11 text-xs text-stone-400 tabular-nums shrink-0">{start || "–"}</span>
+                        <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-stone-100 text-stone-600 leading-none">{c.name}</span>
+                        <span className="flex-1 truncate">{f.subject}</span>
+                        {aktiv && <Check size={14} className="akzent-text shrink-0" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
@@ -3524,7 +3955,10 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
             </div>
           </div>
 
-          {/* Optionales Stundenthema */}
+          {/* Optionales Stundenthema. Datalist schlaegt bereits bekannte Themen desselben
+              Fachs vor - so bleibt "Bruchrechnung" ueber Wochen dasselbe Wort und der
+              Fortschrittsbalken zaehlt sauber weiter statt bei jeder Tippvariante von
+              vorn. */}
           <div className="mb-4">
             <input
               className={inputCls}
@@ -3532,7 +3966,14 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
               maxLength={200}
               value={topic}
               onChange={(e) => saveTopic(e.target.value)}
+              list={`stundenthemen-${fach.id}`}
+              autoComplete="off"
             />
+            <datalist id={`stundenthemen-${fach.id}`}>
+              {bekannteStundenthemen(data.lessonTopics, data.grades, fach.id).map((t) => (
+                <option key={t} value={t} />
+              ))}
+            </datalist>
           </div>
 
           {/* Frage zum Mitbringen – nur bei Sport-Fächern sichtbar */}
@@ -3714,7 +4155,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
             {!students.length && <li className="py-3 text-sm text-stone-400">Keine Schüler:innen in dieser Klasse.</li>}
           </ul>
 
-          <Button onClick={onClose} className="w-full justify-center mt-4">Fertig</Button>
+          <Button onClick={schliessenMitRettung} className="w-full justify-center mt-4">Fertig</Button>
         </div>
       </div>
     </div>
@@ -3739,6 +4180,30 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
     .filter((t) => t.day === dayKey)
     .sort((a, b) => a.period - b.period);
 
+  /* Aufeinanderfolgende Bloecke desselben Fachs bilden eine Unterrichtseinheit
+     (Doppelstunde 07:55 - 09:30). Der Tagesplan wird darueber angezeigt, weil
+     eine Doppelstunde vor der Klasse auch als ein Vorgang erlebt und erfasst wird.
+     Mathe in Stunde 1 und 4 bleibt getrennt - dazwischen ist eine andere Stunde. */
+  const dayUnits = (() => {
+    const units = [];
+    dayLessons.forEach((slot) => {
+      const letzte = units[units.length - 1];
+      if (letzte && letzte.fachId === slot.fachId && slot.period === letzte.lastPeriod + 1) {
+        letzte.slots.push(slot);
+        letzte.lastPeriod = slot.period;
+      } else {
+        units.push({
+          id: `u-${slot.fachId}-${slot.period}`,
+          fachId: slot.fachId,
+          slots: [slot],
+          firstPeriod: slot.period,
+          lastPeriod: slot.period,
+        });
+      }
+    });
+    return units;
+  })();
+
   // Zuletzt gehaltene Stunde: die letzte, deren Endzeit schon vorbei ist
   const letzteStunde = (() => {
     if (!isToday || !now) return null;
@@ -3755,7 +4220,14 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
     .filter((e) => (e.endDate ? e.date <= selStr && selStr <= e.endDate : e.date === selStr))
     .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
 
-  const openTasks = (data.tasks || []).filter((t) => !t.done).slice(0, 6);
+  /* Für die Termine-Karte ohne Ferien und schulfreie Tage – sonst füllt sich die Karte
+     in den Ferien mit „Sommerferien" an jedem einzelnen Tag. Das Briefing filtert genauso. */
+  const terminEvents = dayEvents.filter((e) => e.type !== "ferien" && e.type !== "frei");
+
+  /* Vollstaendige Liste behalten - die Karten schneiden selbst zu, sonst zeigt
+     der Zaehler in der Dreierreihe hoechstens 6 statt der echten Zahl. */
+  const alleOffenenTasks = (data.tasks || []).filter((t) => !t.done);
+  const openTasks = alleOffenenTasks.slice(0, 6);
 
   const birthdays = data.students.filter((s) => s.birthday && s.birthday.slice(5) === selStr.slice(5));
 
@@ -3922,6 +4394,104 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
   const briefingVisible = showAllBriefing ? briefingSorted : briefingSorted.slice(0, 3);
   const briefingHidden = briefingSorted.length - briefingVisible.length;
 
+  /* Kennzahlen der oberen Kachelreihe – alles aus vorhandenen Daten, keine Platzhalter.
+     Bei den Zielen zählen nur Förderziele (nicht die kurzlebigen Wochenziele) und nur
+     solche aus dem letzten halben Jahr – ein vergessenes Ziel aus dem Vorjahr soll die
+     Zahl nicht dauerhaft aufblähen. */
+  const zielFenster = isoDate(addDays(new Date(), -183));
+  const offeneZiele = (data.foerderZiele || []).filter(
+    (z) => !z.doneAt && z.typ !== "wochen" && (z.createdAt || "") >= zielFenster
+  );
+  const zielKinder = new Set(offeneZiele.map((z) => z.studentId)).size;
+  const offeneEntschuldigungen = (data.absences || []).filter(
+    (a) => a.excuseStatus === "ausstehend" || a.excuseStatus === "eingereicht"
+  ).length;
+
+  /* Die Klassenangabe gehört zur Zahl der offenen Stunden – also zu heute,
+     nicht zum gerade angetippten Wochentag. */
+  const offeneKlassen = new Set((pendingLessons || []).map((p) => p.cls?.id).filter(Boolean)).size;
+
+  const kacheln = [
+    {
+      icon: Clock,
+      // Der Wert folgt dem gewählten Tag, deshalb muss die Beschriftung das auch tun
+      label: isToday ? "Heute unterrichtest du" : `${selectedDate.toLocaleDateString("de-DE", { weekday: "long" })} unterrichtest du`,
+      value: dayUnits.length,
+      sub: dayUnits.length === 1 ? "Stunde" : "Stunden",
+      warn: false,
+      onClick: () => onNavigate?.("stundenplan"),
+    },
+    {
+      icon: ClipboardCheck,
+      label: "Noch nicht erfasst",
+      value: (pendingLessons || []).length,
+      sub: offeneKlassen ? `in ${offeneKlassen} ${offeneKlassen === 1 ? "Klasse" : "Klassen"}` : "heute",
+      warn: !!(pendingLessons || []).length,
+      /* Die Liste darunter erscheint nur am heutigen Tag – sonst bliebe der Tipp wirkungslos */
+      onClick: () => {
+        if (!(pendingLessons || []).length) return onNavigate?.("stundenplan");
+        if (!isToday) setSelectedDate(new Date());
+        setShowPending((v) => !v);
+      },
+    },
+    {
+      icon: FileText,
+      label: "Entschuldigungen",
+      value: offeneEntschuldigungen,
+      sub: "offen",
+      warn: offeneEntschuldigungen > 0,
+      onClick: () => onNavigate?.("klassen"),
+    },
+    {
+      icon: Target,
+      label: "Aktive Förderziele",
+      value: offeneZiele.length,
+      sub: zielKinder ? `bei ${zielKinder} ${zielKinder === 1 ? "Kind" : "Kindern"}` : "keine offen",
+      warn: false,
+      onClick: () => onNavigate?.("klassen"),
+    },
+  ];
+
+  /* Eine Unterrichtseinheit fuer die Anzeige aufbereiten. „Einheit" heisst: eine 45-Minuten-
+     Stunde oder eine Doppelstunde (zwei aufeinanderfolgende Bloecke desselben Fachs).
+     `startZeit` kommt vom ersten Block, `endZeit` vom letzten. */
+  function lessonInfo(unit) {
+    const fach = data.faecher.find((f) => f.id === unit.fachId);
+    const cls = fach ? data.classes.find((c) => c.id === fach.classId) : null;
+    const startPt = data.periodTimes?.[unit.firstPeriod];
+    const endPt = data.periodTimes?.[unit.lastPeriod];
+    const startZeit = startPt?.start || null;
+    const endZeit = endPt?.end || null;
+    const periodLabel = unit.firstPeriod === unit.lastPeriod
+      ? `${unit.firstPeriod}.`
+      : `${unit.firstPeriod}.–${unit.lastPeriod}.`;
+    const topic = fach ? (data.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr) : null;
+    const cd = fach ? testCountdown(fach, data.timetable, data.events) : null;
+    let gehalten = null, gesamt = null;
+    if (cd && cd.rem !== null && topic?.text) {
+      /* Beide Seiten zählen Unterrichtseinheiten: ein Tag mit diesem Fach ist eine
+         Einheit, ob einzelne 45 Minuten oder Doppelstunde. Das Thema wird pro Fach
+         und Tag genau einmal notiert, passt also unmittelbar dazu.
+         Groß-/Kleinschreibung und Leerzeichen bleiben außen vor, damit „Bruchrechnung"
+         und „bruchrechnung " nicht als zwei Themen gelten. */
+      const gleich = (t) => (t || "").trim().toLowerCase();
+      const thema = gleich(topic.text);
+      gehalten = (data.lessonTopics || []).filter(
+        (x) => x.fachId === fach.id && x.date <= selStr && gleich(x.text) === thema
+      ).length;
+      gesamt = gehalten + cd.rem;
+    }
+    const pct = gesamt ? Math.round((gehalten / gesamt) * 100) : cd && cd.rem !== null ? Math.max(0, 100 - Math.min(100, Math.round((cd.rem / 8) * 100))) : null;
+    return {
+      fach, cls, startZeit, endZeit, periodLabel, topic, cd, gehalten, gesamt, pct,
+      offen: isToday && fach && (pendingLessons || []).some((p) => p.fach.id === fach.id),
+      /* Faellt die zuletzt gehaltene 45-Minuten-Stunde in irgendeinen Block dieser
+         Einheit, wird die ganze Einheit als „zuletzt" markiert - bei der Doppelstunde
+         genauso wie bei einer einzelnen Stunde. */
+      istLetzte: isToday && fach && !!letzteStunde && unit.slots.some((s) => s.id === letzteStunde.id),
+    };
+  }
+
   return (
     <div className="space-y-3">
       {/* Zeile 1: Wordmark + Icon-Actions */}
@@ -3956,22 +4526,28 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
           <button
             onClick={() => update((d) => { d.settings = { ...d.settings, colorMode: !isColor }; return d; })}
             title={isColor ? "Mono-Modus" : "Bring Farbe in mein Leben"}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shrink-0 ${isColor ? "bg-stone-100 hover:bg-stone-200 text-stone-400" : "akzent-ton akzent-text"}`}
+            className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shrink-0 ${isColor ? "bg-stone-100 hover:bg-stone-200 text-stone-400" : "akzent-ton akzent-text"}`}
           >
             <Sparkles size={14} />
           </button>
         </div>
       </div>
 
-      {/* Zeile 2: Wochentag groß + Datum + optionaler Ferien-Countdown */}
+      {/* Begrüßung: kleine Zeile über dem großen Wochentag – wie im Entwurf */}
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight leading-none" style={{ color: "var(--ink)" }}>
-            {selectedDate.toLocaleDateString("de-DE", { weekday: "long" })}
-          </h1>
-          <p className="text-xs text-stone-400 mt-0.5">
-            {selectedDate.toLocaleDateString("de-DE", { day: "numeric", month: "long" })}
+          <p className="text-xs text-stone-400 leading-none mb-1">
+            {(() => {
+              const h = (now || new Date()).getHours();
+              return h < 11 ? "Guten Morgen," : h < 17 ? "Hallo," : "Guten Abend,";
+            })()}
           </p>
+          <h1 className="text-2xl font-bold tracking-tight leading-none" style={{ color: "var(--ink)" }}>
+            {selectedDate.toLocaleDateString("de-DE", { weekday: "long" })}
+            <span className="text-stone-300 font-semibold text-lg ml-2">
+              {selectedDate.toLocaleDateString("de-DE", { day: "numeric", month: "long" })}
+            </span>
+          </h1>
         </div>
         {data.settings?.showFerienCountdown && (() => {
           const cd = nextFerienCountdown(data.events, data.settings?.countdownSchooldaysOnly);
@@ -3991,43 +4567,30 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
         })()}
       </div>
 
-      {/* 4 Stat-Kacheln */}
-      <div className="grid grid-cols-4 gap-1.5">
-        {[
-          {
-            value: dayLessons.length,
-            label: "Stunden",
-            onClick: () => onNavigate?.("stundenplan"),
-            alert: false,
-          },
-          {
-            value: (pendingLessons || []).length,
-            label: "Offen",
-            onClick: () => (pendingLessons || []).length ? setShowPending((v) => !v) : undefined,
-            alert: !!(pendingLessons || []).length,
-          },
-          {
-            value: birthdays.length,
-            label: birthdays.length === 1 ? "Geburtstag" : "Geburtstage",
-            onClick: () => onNavigate?.("klassen"),
-            alert: false,
-          },
-          {
-            value: openTasks.length,
-            label: "Aufgaben",
-            onClick: () => onNavigate?.("aufgaben"),
-            alert: false,
-          },
-        ].map(({ value, label, onClick, alert }) => (
-          <button
-            key={label}
-            onClick={onClick}
-            className="flex flex-col items-center justify-center py-2.5 px-1 rounded-xl bg-white border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.05)] hover:border-stone-200 transition-colors"
-          >
-            <span className={`text-xl font-bold leading-none tabular-nums ${alert ? "text-amber-500" : "akzent-text"}`}>{value}</span>
-            <span className="text-[9px] text-stone-400 mt-1 leading-tight text-center">{label}</span>
-          </button>
-        ))}
+      {/* Kennzahl-Kacheln – horizontal scrollbar, damit sie auch auf schmalen Geräten lesbar bleiben */}
+      <div className="flex gap-2 overflow-x-auto -mx-4 px-4 pb-0.5 chip-scroll">
+        {kacheln.map((k) => {
+          const Icon = k.icon;
+          const aktiv = k.warn && k.value > 0;
+          return (
+            <button
+              key={k.label}
+              onClick={k.onClick}
+              className="shrink-0 w-[9.25rem] text-left bg-white rounded-2xl border border-stone-100 px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors"
+            >
+              <div className="flex items-start gap-2 mb-2">
+                <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${aktiv && isColor ? "bg-amber-100" : "akzent-ton"}`}>
+                  <Icon size={14} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
+                </span>
+                <span className="text-[11px] text-stone-500 leading-tight pt-0.5">{k.label}</span>
+              </div>
+              <div className={`text-[26px] font-bold leading-none tabular-nums ${aktiv && isColor ? "text-amber-600" : "akzent-text"}`}>
+                {k.value}
+              </div>
+              <div className="text-[11px] text-stone-400 mt-1">{k.sub}</div>
+            </button>
+          );
+        })}
       </div>
 
       {/* Morgen-Briefing – lokal erzeugte Tageszusammenfassung */}
@@ -4080,7 +4643,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
               <li key={p.key} className="flex items-center gap-2 text-sm">
                 <span className="text-xs text-stone-400 w-11 shrink-0">{p.start}</span>
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? p.fach.color : "#C0BBA8" }} />
-                <span className="flex-1 text-stone-700 truncate">{p.cls?.name} – {p.fach.subject}</span>
+                <span className="flex-1 text-stone-700 truncate">
+                  {p.cls?.name} – {p.fach.subject}
+                  {p.anzahl > 1 && <span className="text-stone-400"> · {p.anzahl} Stunden</span>}
+                </span>
                 <button
                   onClick={() => { setCaptureLesson({ fach: p.fach, cls: p.cls, date: todayStr }); setShowPending(false); }}
                   className="shrink-0 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 px-2.5 py-1 rounded-lg"
@@ -4096,7 +4662,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
       {/* Wochentagsleiste – schlank, kein Rahmen */}
       <div>
         <div className="flex items-center gap-0.5">
-          <button onClick={() => setSelectedDate((d) => addDays(d, -7))} className="p-1 text-stone-300 hover:text-stone-600 shrink-0">
+          <button onClick={() => setSelectedDate((d) => addDays(d, -7))} aria-label="Vorherige Woche" className="w-11 h-11 -my-3 text-stone-300 hover:text-stone-600 shrink-0 flex items-center justify-center">
             <ChevronLeft size={15} />
           </button>
           <div className="flex-1 grid grid-cols-7">
@@ -4117,7 +4683,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
               );
             })}
           </div>
-          <button onClick={() => setSelectedDate((d) => addDays(d, 7))} className="p-1 text-stone-300 hover:text-stone-600 shrink-0">
+          <button onClick={() => setSelectedDate((d) => addDays(d, 7))} aria-label="Naechste Woche" className="w-11 h-11 -my-3 text-stone-300 hover:text-stone-600 shrink-0 flex items-center justify-center">
             <ChevronRight size={15} />
           </button>
         </div>
@@ -4128,218 +4694,248 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
         )}
       </div>
 
-      {/* Unterricht – vollbreite Hauptkarte, neu gestaltet */}
-      <Card className="px-3 py-2.5">
-        <div className="flex items-center justify-between mb-2">
-          <button onClick={() => onNavigate?.("stundenplan")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-            Unterricht <ChevronRight size={10} />
-          </button>
-          {dayLessons.length > 3 && (
-            <button onClick={() => setShowAllLessons((v) => !v)} className="text-[11px] akzent-text">
-              {showAllLessons ? "Weniger" : `Alle ${dayLessons.length} ansehen ↓`}
-            </button>
-          )}
+      {/* Abschnittsüberschrift mit Akzentstrich + Sprung in den Stundenplan */}
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <div>
+          <h2 className="text-base font-bold text-stone-800 leading-tight">
+            {isToday ? "Dein Unterricht heute" : "Dein Unterricht"}
+          </h2>
+          <span className="block w-7 h-[3px] rounded-full akzent-flaeche mt-1" />
         </div>
-        {!dayKey && <p className="text-xs text-stone-500 pb-1">Wochenende – kein regulärer Unterricht</p>}
-        {dayKey && !dayLessons.length && <p className="text-xs text-stone-500 pb-1">Keine Stunden im Plan</p>}
-        <ul>
-          {(showAllLessons ? dayLessons : dayLessons.slice(0, 3)).map((l) => {
-            const fach = data.faecher.find((f) => f.id === l.fachId);
-            const cls = fach ? data.classes.find((c) => c.id === fach.classId) : null;
-            const pt = data.periodTimes?.[l.period];
-            const offen = isToday && fach && (pendingLessons || []).some((p) => p.fach.id === fach.id);
-            const istLetzte = isToday && fach && letzteStunde?.id === l.id;
-            const cd = fach ? testCountdown(fach, data.timetable, data.events) : null;
-            const pct = cd && cd.rem !== null ? Math.min(100, Math.round((cd.rem / 8) * 100)) : null;
-            const barCls = !cd ? "" : cd.level === "krit" ? "bg-red-400" : cd.level === "warn" ? "bg-amber-400" : "bg-[var(--oliv)]";
-            const detailOpen = openTestDetail === l.id;
-            const topic = fach && (data.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr);
-            const accentCol = fach ? (isColor ? fach.color : "var(--oliv)") : "var(--oliv)";
-            const highlighted = offen || istLetzte;
-            return (
-              <li
-                key={l.id}
-                className={`py-2 text-sm border-b border-stone-100 last:border-b-0 ${highlighted ? "border-l-2 -ml-3 pl-2.5" : ""}`}
-                style={highlighted ? { borderLeftColor: accentCol } : {}}
+        <button
+          onClick={() => onNavigate?.("stundenplan")}
+          className="shrink-0 flex items-center gap-1.5 bg-white border border-stone-200 rounded-full pl-2.5 pr-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-300 transition-colors"
+        >
+          <CalendarDays size={13} className="text-stone-400" />
+          Stundenplan
+        </button>
+      </div>
+
+      {/* Stunden – jede als eigene Karte */}
+      {!dayKey && <Card className="px-3 py-3 text-xs text-stone-500">Wochenende – kein regulärer Unterricht</Card>}
+      {dayKey && !dayUnits.length && <Card className="px-3 py-3 text-xs text-stone-500">Keine Stunden im Plan</Card>}
+      <div className="space-y-2">
+        {(showAllLessons ? dayUnits : dayUnits.slice(0, 4)).map((unit) => {
+          const { fach, cls, startZeit, endZeit, periodLabel, topic, cd, gehalten, gesamt, pct, offen, istLetzte } = lessonInfo(unit);
+          const detailOpen = openTestDetail === unit.id;
+          const barCol = !cd || !isColor ? "var(--oliv)" : cd.level === "krit" ? "#ef4444" : cd.level === "warn" ? "#f59e0b" : "var(--oliv)";
+          const istDoppel = unit.slots.length > 1;
+          /* Zwei getrennte visuelle Rollen, damit man auf einen Blick erkennt, was
+             Aufgabe (Amber-Rand links) und was reine Orientierung ist (dezenter
+             Akzentton als Hintergrund). Ist die gerade eben gehaltene Stunde auch
+             noch offen, gewinnt Amber. */
+          const zeigeLetzte = istLetzte && !offen;
+          return (
+            <Card key={unit.id} className={`overflow-hidden p-0 ${zeigeLetzte ? "akzent-ton" : ""}`}>
+              <div
+                className={`flex items-stretch border-l-[3px] ${offen ? (isColor ? "border-l-amber-500" : "border-l-[var(--oliv)]") : "border-l-transparent"}`}
               >
-                <div className="flex items-start gap-2">
-                  {/* Tipp auf Klasse/Fach öffnet die Notenübersicht des Fachs */}
-                  <button
-                    onClick={() => fach && onOpenFach?.(fach.id)}
-                    disabled={!fach}
-                    className="flex-1 min-w-0 text-left py-0.5 -my-0.5 rounded-lg disabled:cursor-default"
-                    aria-label={fach && cls ? `${cls.name} – ${fach.subject} öffnen` : undefined}
-                  >
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      {cls && (
-                        <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded akzent-ton akzent-text leading-none">
-                          {cls.name}
-                        </span>
-                      )}
-                      <span className="font-semibold text-stone-800 truncate">{fach?.subject || "—"}</span>
-                      <span className="text-[10px] text-stone-400 shrink-0 ml-auto">{pt ? pt.start : `${l.period}.`}</span>
-                    </div>
-                    {topic && <div className="text-xs text-stone-400 mt-0.5 truncate">{topic.text}</div>}
-                  </button>
-                  <div className="flex items-center gap-1 shrink-0">
-                    {cd && (
-                      <button
-                        onClick={() => setOpenTestDetail(detailOpen ? null : l.id)}
-                        className={`text-[11px] font-semibold px-1 ${cd.level === "krit" ? "text-red-500" : cd.level === "warn" ? "text-amber-500" : "text-stone-400"}`}
-                        title={cd.label}
-                      >
-                        {cd.rem === null ? "KA" : cd.rem === 0 ? "Heute!" : `${cd.rem}×`}
-                      </button>
-                    )}
-                    {fach && cls && (
-                      <button
-                        onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
-                        className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                          offen ? "bg-amber-100 text-amber-700" : "bg-stone-100 text-stone-400"
-                        }`}
-                        aria-label="Stunde erfassen"
-                      >
-                        <ClipboardCheck size={14} />
-                      </button>
-                    )}
+                {/* Zeitspalte – bei Doppelstunde durchgehend von 07:55 bis 09:30 */}
+                <div className="shrink-0 w-[3.5rem] py-2.5 pl-2 pr-1">
+                  <div className="text-[13px] font-semibold text-stone-800 tabular-nums leading-tight whitespace-nowrap">
+                    {startZeit || periodLabel}
                   </div>
+                  {endZeit && <div className="text-[11px] text-stone-400 tabular-nums leading-tight whitespace-nowrap">–{endZeit}</div>}
+                  {istDoppel && <div className="text-[9px] uppercase tracking-wide text-stone-400 mt-0.5">Doppel</div>}
                 </div>
-                {cd && (
-                  <button
-                    onClick={() => setOpenTestDetail(detailOpen ? null : l.id)}
-                    className="w-full mt-1.5 mb-0.5 text-left"
-                    aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
-                  >
-                    <div className="h-px rounded-full overflow-hidden" style={{ backgroundColor: "#e7e5e4" }}>
-                      {pct !== null
-                        ? <div className={`h-full rounded-full transition-[width] ${barCls}`} style={{ width: `${pct}%` }} />
-                        : <div className="h-full w-full bg-stone-300 rounded-full" />
-                      }
-                    </div>
-                    {detailOpen && (
-                      <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-stone-500">
-                        <span className="font-medium text-stone-700">{cd.label}</span>
-                        <span>·</span>
-                        <span>{cd.istHeute ? "heute" : cd.datum}</span>
-                        {cd.rem !== null && (
-                          <>
-                            <span>·</span>
-                            <span className={cd.level === "krit" ? "text-red-600 font-medium" : cd.level === "warn" ? "text-amber-600 font-medium" : ""}>
-                              {cd.rem === 0 ? "keine Übungsstunde mehr" : `noch ${cd.rem} ${cd.rem === 1 ? "Stunde" : "Stunden"}`}
-                            </span>
-                          </>
-                        )}
-                      </div>
+
+                <div className="w-px bg-stone-100 my-2.5 shrink-0" />
+
+                {/* Klasse, Fach, Einheit – öffnet das Fach */}
+                <button
+                  onClick={() => fach && onOpenFach?.(fach.id)}
+                  disabled={!fach}
+                  className="shrink-0 w-[6.8rem] text-left py-2.5 px-1.5 disabled:cursor-default"
+                  aria-label={fach && cls ? `${cls.name} – ${fach.subject} öffnen` : undefined}
+                >
+                  <div className="flex items-center gap-1 min-w-0">
+                    {cls && (
+                      <span className="shrink-0 text-[10px] font-bold px-1 py-0.5 rounded bg-stone-100 text-stone-600 leading-none">
+                        {cls.name}
+                      </span>
                     )}
+                    <span className="font-bold text-stone-800 text-[12px] truncate">{fach?.subject || "—"}</span>
+                  </div>
+                  {cd?.label && <div className="text-[10px] text-stone-400 mt-1 leading-tight line-clamp-2 break-words">{cd.label}</div>}
+                </button>
+
+                {/* Thema + Lernfortschritt */}
+                <div className="flex-1 min-w-0 py-2.5 pr-1">
+                  {topic ? (
+                    <div className="text-[11px] text-stone-500 truncate mb-1.5">Thema: {topic.text}</div>
+                  ) : (
+                    <div className="text-[11px] text-stone-300 truncate mb-1.5">Kein Thema notiert</div>
+                  )}
+                  {cd && pct !== null && (
+                    <button
+                      onClick={() => setOpenTestDetail(detailOpen ? null : unit.id)}
+                      className="w-full text-left"
+                      aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
+                    >
+                      {/* Fortschrittsbalken - schmale Schiene mit farbiger Fuellung.
+                          Kein Slider-Knubbel: der Balken ist nicht ziehbar, ein Knubbel
+                          weckt falsche Erwartungen und sitzt bei pct=0 halb links neben
+                          der leeren Schiene, was nach Renderfehler aussieht. */}
+                      <div className="relative h-1 rounded-full overflow-hidden" style={{ backgroundColor: "var(--linie)" }}>
+                        <div className="absolute inset-y-0 left-0 rounded-full transition-[width]" style={{ width: `${pct}%`, backgroundColor: barCol }} />
+                      </div>
+                      <div className="flex items-center justify-between gap-2 mt-1.5">
+                        <span className="text-[10px] text-stone-400 shrink-0 tabular-nums">
+                          {gesamt !== null ? (
+                            <><span className="font-bold" style={{ color: barCol }}>{gehalten}</span> / {gesamt} Stunden</>
+                          ) : (
+                            <span className="font-bold" style={{ color: barCol }}>{cd.rem === 0 ? "letzte Stunde" : `noch ${cd.rem}`}</span>
+                          )}
+                        </span>
+                        <span className="text-[10px] truncate text-right leading-tight" style={{ color: barCol }}>
+                          {/* Links steht schon die Restzahl - hier reicht Termin oder „heute". */}
+                          {cd.istHeute ? "Arbeit heute" : `Arbeit am ${cd.datum}`}
+                        </span>
+                      </div>
+                      {detailOpen && (
+                        <div className="mt-1.5 text-[10px] text-stone-500">
+                          {cd.label} · {cd.istHeute ? "heute" : cd.datum}
+                          {cd.rem !== null && ` · ${cd.rem === 0 ? "keine Übungsstunde mehr" : `${cd.rem} ${cd.rem === 1 ? "Übungsstunde" : "Übungsstunden"} übrig`}`}
+                        </div>
+                      )}
+                    </button>
+                  )}
+                </div>
+
+                {/* Schnellerfassung */}
+                {fach && cls && (
+                  <button
+                    onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
+                    className={`shrink-0 w-9 flex items-center justify-center transition-colors ${
+                      offen ? (isColor ? "text-amber-600" : "text-stone-700 font-semibold") : "text-stone-300 hover:text-stone-500"
+                    }`}
+                    aria-label="Stunde erfassen"
+                    title="Stunde erfassen"
+                  >
+                    {offen ? <ClipboardCheck size={16} /> : <ChevronRight size={16} />}
                   </button>
                 )}
-              </li>
-            );
-          })}
-        </ul>
-        {!showAllLessons && dayLessons.length > 3 && (
-          <button
-            onClick={() => setShowAllLessons(true)}
-            className="w-full mt-2 py-1.5 text-center text-[11px] akzent-text hover:underline"
-          >
-            Alle {dayLessons.length} Stunden ansehen ↓
-          </button>
-        )}
-      </Card>
+              </div>
+            </Card>
+          );
+        })}
+      </div>
 
-      {/* Rest-Kacheln im 2-Spalten-Raster */}
+      {dayUnits.length > 4 && (
+        <button
+          onClick={() => setShowAllLessons((v) => !v)}
+          className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-stone-500 hover:akzent-text transition-colors"
+        >
+          {showAllLessons ? "Weniger anzeigen" : `Alle ${dayUnits.length} Stunden ansehen`}
+          <ChevronDown size={14} className={showAllLessons ? "rotate-180 transition-transform" : "transition-transform"} />
+        </button>
+      )}
+
+      {/* Dreierreihe: Termine, Geburtstage, Aufgaben */}
+      <div className="grid grid-cols-3 gap-2 items-stretch">
+        {/* Termine */}
+        <Card className="px-2.5 py-2.5 flex flex-col">
+          <div className="flex items-center gap-1 mb-2">
+            <span className="w-4 h-4 rounded akzent-ton flex items-center justify-center shrink-0">
+              <CalendarDays size={10} className="akzent-text" />
+            </span>
+            <span className="text-[10px] font-semibold text-stone-700 truncate min-w-0">Termine</span>
+          </div>
+          {terminEvents.length ? (
+            <ul className="space-y-1.5">
+              {terminEvents.slice(0, 3).map((e) => (
+                <li key={e.id} className="min-w-0">
+                  <div className="text-[11px] text-stone-700 truncate leading-tight">{e.title}</div>
+                  {e.time && <div className="text-[10px] text-stone-400 tabular-nums">{e.time}</div>}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[11px] text-stone-400">Nichts geplant</p>
+          )}
+          <button onClick={() => onNavigate?.("kalender")} className="mt-auto py-2 -mx-1 px-1 text-[11px] font-medium akzent-text text-left">
+            Alle Termine →
+          </button>
+        </Card>
+
+        {/* Geburtstage */}
+        <Card className="px-2.5 py-2.5 flex flex-col">
+          <div className="flex items-center gap-1 mb-2">
+            <span className="w-4 h-4 rounded akzent-ton flex items-center justify-center shrink-0">
+              <PartyPopper size={10} className="akzent-text" />
+            </span>
+            <span className="text-[10px] font-semibold text-stone-700 truncate min-w-0">Geburtstage</span>
+          </div>
+          {birthdays.length || kommendeGeburtstage.length ? (
+            <ul className="space-y-1.5">
+              {birthdays.slice(0, 2).map((s) => {
+                const info = birthdayInfo(s, selectedDate);
+                return (
+                  <li key={s.id} className="flex items-center gap-1.5 min-w-0">
+                    <StudentAvatar student={s} size={18} />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-[11px] font-medium text-stone-800 truncate leading-tight">{s.name.split(" ")[0]}</div>
+                      {info?.alter != null && <div className="text-[10px] text-stone-400">{info.alter} Jahre</div>}
+                    </div>
+                  </li>
+                );
+              })}
+              {kommendeGeburtstage.slice(0, birthdays.length ? 1 : 3).map(({ s, info }) => (
+                <li key={s.id} className="flex items-center gap-1.5 min-w-0">
+                  <StudentAvatar student={s} size={18} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-[11px] text-stone-600 truncate leading-tight">{s.name.split(" ")[0]}</div>
+                    <div className="text-[10px] text-stone-400 tabular-nums">
+                      {info.next.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[11px] text-stone-400">Keine in 3 Wochen</p>
+          )}
+          <button onClick={() => onNavigate?.("klassen")} className="mt-auto py-2 -mx-1 px-1 text-[11px] font-medium akzent-text text-left">
+            Alle Geburtstage →
+          </button>
+        </Card>
+
+        {/* Aufgaben */}
+        <Card className="px-2.5 py-2.5 flex flex-col">
+          <div className="flex items-center gap-1 mb-2">
+            <span className="w-4 h-4 rounded akzent-ton flex items-center justify-center shrink-0">
+              <ListChecks size={10} className="akzent-text" />
+            </span>
+            <span className="text-[10px] font-semibold text-stone-700 truncate min-w-0">To-dos</span>
+            {!!alleOffenenTasks.length && <span className="ml-auto text-[10px] text-stone-400 shrink-0">{alleOffenenTasks.length}</span>}
+          </div>
+          {openTasks.length ? (
+            <ul className="space-y-1.5">
+              {openTasks.slice(0, 3).map((t) => (
+                <li key={t.id} className="flex items-start gap-1.5">
+                  <button
+                    onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
+                    className="w-9 h-9 -m-2.5 shrink-0 flex items-center justify-center"
+                    aria-label={`"${t.title}" als erledigt markieren`}
+                  >
+                    <span className="w-3.5 h-3.5 rounded-full border-2 block" style={{ borderColor: isColor ? t.color : "#A8A29E" }} />
+                  </button>
+                  <span className="text-[11px] text-stone-700 leading-tight line-clamp-2">{t.title}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-[11px] text-stone-400">Nichts offen</p>
+          )}
+          <button onClick={() => onNavigate?.("aufgaben")} className="mt-auto py-2 -mx-1 px-1 text-[11px] font-medium akzent-text text-left">
+            Alle Aufgaben →
+          </button>
+        </Card>
+      </div>
+
+      {/* Weitere Karten – Reihenfolge aus den Einstellungen */}
       {(() => {
         const sections = {
-          aufgaben: (
-            <Card className="px-3 py-2.5 h-full">
-              <div className="flex items-center justify-between mb-1.5">
-                <button onClick={() => onNavigate?.("aufgaben")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                  Aufgaben {!!openTasks.length && <span className="text-stone-300">({openTasks.length})</span>} <ChevronRight size={10} />
-                </button>
-                <button onClick={() => onNavigate?.("aufgaben")} className="text-sm text-stone-300 hover:akzent-text shrink-0 leading-none">+</button>
-              </div>
-              {openTasks.length ? (
-                <ul className="space-y-0">
-                  {openTasks.map((t) => (
-                    <li key={t.id} className="flex items-center gap-2 py-1">
-                      <button
-                        onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
-                        className="w-4 h-4 rounded-full border-2 shrink-0 flex items-center justify-center transition-colors"
-                        style={{ borderColor: isColor ? t.color : "#A8A29E", backgroundColor: "transparent" }}
-                        aria-label="Erledigt"
-                      >
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: isColor ? t.color : "#A8A29E", opacity: 0.3 }} />
-                      </button>
-                      <span className="text-sm text-stone-700 truncate">{t.title}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-stone-500">Nichts offen</p>
-              )}
-            </Card>
-          ),
-          kalender: (
-            <Card className="px-3 py-2.5 h-full">
-              <div className="flex items-center justify-between mb-1.5">
-                <button onClick={() => onNavigate?.("kalender")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                  Termine <ChevronRight size={10} />
-                </button>
-                <button onClick={() => onNavigate?.("kalender")} className="text-sm text-stone-300 hover:akzent-text shrink-0 leading-none">+</button>
-              </div>
-              {dayEvents.length ? (
-                <ul className="space-y-1.5">
-                  {dayEvents.map((e) => (
-                    <li key={e.id} className="text-sm flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: isColor ? (e.type === "ferien" ? "#10b981" : (e.color || "#c9702f")) : "#A8A29E" }} />
-                      <span className="text-stone-700 truncate">{e.title}</span>
-                      {e.time && <span className="text-stone-400 text-xs ml-auto shrink-0">{e.time}</span>}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-stone-500">Nichts geplant</p>
-              )}
-            </Card>
-          ),
-          geburtstage: (
-            <Card className="px-3 py-2.5 h-full">
-              <button onClick={() => onNavigate?.("klassen")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">
-                Geburtstage <ChevronRight size={10} />
-              </button>
-              {birthdays.length || kommendeGeburtstage.length ? (
-                <ul className="space-y-2">
-                  {birthdays.map((s) => {
-                    const info = birthdayInfo(s, selectedDate);
-                    return (
-                      <li key={s.id} className="text-sm flex items-center gap-1.5">
-                        <span className="text-[9px] font-semibold uppercase tracking-wider shrink-0" style={{ color: isColor ? "#C0392B" : "#4F5844" }}>heute</span>
-                        <span className="text-stone-900 font-medium truncate">{s.name}</span>
-                        {info?.alter != null && (
-                          <span className="ml-auto shrink-0 tnum text-xs font-semibold text-stone-500">
-                            {info.alter}
-                          </span>
-                        )}
-                      </li>
-                    );
-                  })}
-                  {kommendeGeburtstage.map(({ s, info }) => (
-                    <li key={s.id} className="text-sm flex items-center gap-1.5">
-                      <span className="text-[10px] text-stone-400 shrink-0 tnum">
-                        {info.next.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
-                      </span>
-                      <span className="text-stone-600 truncate">{s.name}</span>
-                      {info.alter != null && (
-                        <span className="ml-auto shrink-0 tnum text-xs text-stone-400">{info.alter}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-xs text-stone-500">Keine in den nächsten 3 Wochen</p>
-              )}
-            </Card>
-          ),
           dienste: (
             <Card className="px-3 py-2.5 h-full">
               <div className="flex items-center justify-between mb-1.5">
@@ -4402,11 +4998,9 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
             })).filter((e) => e.student).sort((a, b) => a.student.name.localeCompare(b.student.name, "de"));
             return (
               <Card className="px-3 py-2.5 h-full">
-                <div className="flex items-center justify-between mb-1.5">
-                  <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                    Entschuldig.
-                    {ausstehend.length > 0 && <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
-                  </div>
+                <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">
+                  Entschuldigungen
+                  {ausstehend.length > 0 && <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
                 </div>
                 {!studentEntries.length
                   ? <p className="text-xs text-stone-500">Alle erledigt 👍</p>
@@ -4429,9 +5023,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
 
         const gespeichert = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
         const order = [
-          ...gespeichert.filter((k) => k !== "unterricht" && sections[k]),
+          ...gespeichert.filter((k) => sections[k]),
           ...Object.keys(sections).filter((k) => !gespeichert.includes(k) && sections[k]),
         ];
+        if (!order.length) return null;
 
         return (
           <div className="grid grid-cols-2 gap-2 items-start">
@@ -8485,7 +9080,7 @@ function isEventOnDate(event, ds) {
   return false;
 }
 
-function KalenderTab({ data, update }) {
+function KalenderTab({ data, update, autoOpenForm, onAutoFormConsumed }) {
   const [view, setView] = useState("liste"); // "liste" | "monat"
   const [monthCursor, setMonthCursor] = useState(() => { const d = new Date(); d.setDate(1); return d; });
   const [filterDate, setFilterDate] = useState(null);
@@ -8497,6 +9092,13 @@ function KalenderTab({ data, update }) {
   const [recurrence, setRecurrence] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [showAllFerien, setShowAllFerien] = useState(false);
+
+  // Über den Plus-Knopf aufgerufen: Eingabefeld direkt geöffnet zeigen
+  useEffect(() => {
+    if (!autoOpenForm) return;
+    setShowForm(true);
+    onAutoFormConsumed?.();
+  }, [autoOpenForm, onAutoFormConsumed]);
 
   const isColor = data.settings?.colorMode === true;
   const typeLabels = { termin: "Termin", erinnerung: "Erinnerung", ferien: "Ferien" };
