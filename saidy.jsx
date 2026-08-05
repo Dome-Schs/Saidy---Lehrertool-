@@ -2074,7 +2074,7 @@ const HELP_DATA = [
       { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus.` },
       { q: "Was zeigt das Morgen-Briefing auf der Startseite?", a: `Beim Öffnen der App erscheint oben die Karte „Heute im Blick". Sie fasst den Tag in ganzen Sätzen zusammen – zum Beispiel: „Guten Morgen! Heute stehen 4 Stunden an – die erste um 8:00 Uhr in der 4a." Berücksichtigt werden die Stunden des Tages, knapp bevorstehende Klassenarbeiten, Termine, Geburtstage, Kinder die an mehreren der letzten Tage gefehlt haben, und noch nicht erfasste Stunden. Dringendes steht rot und zuerst; angezeigt werden drei Sätze, der Rest über „+ weitere". Alles wird auf deinem Gerät berechnet, es werden keine Daten übertragen. Mit dem × blendest du die Karte für heute aus.` },
       { q: "Wie ist die Übersichtsseite aufgebaut?", a: `Von oben nach unten: (1) Vier Kennzahl-Kacheln – Stunden heute, noch nicht erfasste Stunden, offene Entschuldigungen und aktive Förderziele. Die Reihe lässt sich seitlich schieben, jede Kachel ist antippbar und springt in den passenden Bereich. Kacheln mit offenen Punkten färben sich amber. (2) Das Morgen-Briefing „Heute im Blick". (3) Die Wochenleiste zum Wechseln des Tages. (4) „Dein Unterricht heute" – jede Stunde als eigene Karte, daneben der Knopf „Stundenplan". (5) Eine Dreierreihe mit Terminen, Geburtstagen und To-dos. (6) Ganz unten Dienste und Entschuldigungen; nur deren Reihenfolge lässt sich in den Einstellungen unter „Übersicht (Startseite)" ändern – alles darüber hat einen festen Platz.` },
-      { q: "Was zeigt eine Stundenkarte auf der Startseite?", a: `Links Anfangs- und Endzeit, daneben das Klassenkürzel (z. B. „4a") und das Fach; darunter steht der Titel der nächsten Klassenarbeit, falls einer hinterlegt ist. Rechts das Stundenthema und – sobald ein Klassenarbeitstermin existiert – ein Fortschrittsbalken. Er füllt sich, je weiter ihr im Thema seid: „3 / 6 Stunden" heißt, drei Stunden habt ihr für dieses Thema schon gehalten, sechs sind es bis zur Arbeit insgesamt. Eine Doppelstunde zählt dabei als eine Stunde – so wie sie auch nur einmal erfasst wird. Daneben steht, in wie vielen Stunden geschrieben wird. Die Farbe wechselt von oliv über amber zu rot, je knapper es wird. Die zuletzt gehaltene und noch nicht erfasste Stunden bekommen einen farbigen Rand links. Ein Tipp auf Klasse und Fach öffnet die Notenübersicht des Fachs, ein Tipp auf den Balken die Details zur Arbeit. Ganz rechts das Klemmbrett für die Schnellerfassung – es leuchtet amber, solange die Stunde nicht erfasst ist. Ab fünf Stunden zeigt Saidy zunächst vier und blendet den Rest über „Alle N Stunden ansehen" ein.` },
+      { q: "Was zeigt eine Stundenkarte auf der Startseite?", a: `Links Anfangs- und Endzeit, daneben das Klassenkürzel (z. B. „4a") und das Fach; darunter steht der Titel der nächsten Klassenarbeit, falls einer hinterlegt ist. Eine Doppelstunde – also zwei aufeinanderfolgende Blöcke desselben Fachs – erscheint als eine Karte mit durchgehender Zeitspanne (07:55 – 09:30) und dem Vermerk „Doppel". Sind zwischen den Blöcken andere Stunden, bleiben sie getrennt. Rechts das Stundenthema und – sobald ein Klassenarbeitstermin existiert – ein Fortschrittsbalken. Er füllt sich, je weiter ihr im Thema seid: „3 / 6 Stunden" heißt, drei Stunden habt ihr für dieses Thema schon gehalten, sechs sind es bis zur Arbeit insgesamt. Eine Doppelstunde zählt dabei als eine Stunde – so wie sie auch nur einmal erfasst wird. Daneben steht, in wie vielen Stunden geschrieben wird. Die Farbe wechselt von oliv über amber zu rot, je knapper es wird. Die zuletzt gehaltene und noch nicht erfasste Stunden bekommen einen farbigen Rand links. Ein Tipp auf Klasse und Fach öffnet die Notenübersicht des Fachs, ein Tipp auf den Balken die Details zur Arbeit. Ganz rechts das Klemmbrett für die Schnellerfassung – es leuchtet amber, solange die Stunde nicht erfasst ist. Ab fünf Stunden zeigt Saidy zunächst vier und blendet den Rest über „Alle N Stunden ansehen" ein.` },
       { q: "Was macht der grüne Plus-Knopf in der Mitte?", a: `Er ist der Schnellzugriff zum Erfassen und funktioniert aus jedem Bereich heraus. Ein Tipp öffnet fünf Einträge: „Stunde erfassen" springt direkt in die Schnellerfassung – Saidy wählt dabei selbst die passende Stunde, zuerst eine noch nicht erfasste, sonst die zuletzt gehaltene von heute. „Gespräch notieren" und „Notiz zu einem Kind" fragen zuerst nach dem Kind (einfach den Namen tippen) und dann nach dem Text; beim Gespräch kommen Art (Schüler, Eltern, Förder) und Stimmung dazu. „Aufgabe" und „Termin" legen einen To-do beziehungsweise einen Kalendereintrag an. Bist du gerade in einem Bereich mit eigener Aktion – etwa im Klassen-Tab – steht diese zusätzlich ganz oben in der Liste.` },
       { q: "Wo finde ich die Aufgaben in der unteren Leiste?", a: `Die Leiste zeigt Übersicht, Klassen, den Plus-Knopf, Noten und „Mehr". Die Aufgaben sind unter „Mehr" zu finden – zusammen mit Stundenplan, Kalender, Suche, Einstellungen und Hilfe. Eine neue Aufgabe legst du schneller über den grünen Plus-Knopf an.` },
       { q: "Warum verschwindet die Navigationsleiste beim Scrollen?", a: `Damit mehr Platz für den Inhalt bleibt. Scrollst du auf einer Seite nach unten, gleitet die untere Leiste weg und stattdessen erscheint unten links ein kleines rundes Symbol – das des Bereichs in dem du gerade bist. Ein Tipp darauf holt die vollständige Leiste zurück. Scrollst du wieder nach oben, erscheint sie ohnehin von selbst. Auf dem Desktop bleibt die Seitenleiste immer sichtbar.` }
@@ -4012,6 +4012,30 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
     .filter((t) => t.day === dayKey)
     .sort((a, b) => a.period - b.period);
 
+  /* Aufeinanderfolgende Bloecke desselben Fachs bilden eine Unterrichtseinheit
+     (Doppelstunde 07:55 - 09:30). Der Tagesplan wird darueber angezeigt, weil
+     eine Doppelstunde vor der Klasse auch als ein Vorgang erlebt und erfasst wird.
+     Mathe in Stunde 1 und 4 bleibt getrennt - dazwischen ist eine andere Stunde. */
+  const dayUnits = (() => {
+    const units = [];
+    dayLessons.forEach((slot) => {
+      const letzte = units[units.length - 1];
+      if (letzte && letzte.fachId === slot.fachId && slot.period === letzte.lastPeriod + 1) {
+        letzte.slots.push(slot);
+        letzte.lastPeriod = slot.period;
+      } else {
+        units.push({
+          id: `u-${slot.fachId}-${slot.period}`,
+          fachId: slot.fachId,
+          slots: [slot],
+          firstPeriod: slot.period,
+          lastPeriod: slot.period,
+        });
+      }
+    });
+    return units;
+  })();
+
   // Zuletzt gehaltene Stunde: die letzte, deren Endzeit schon vorbei ist
   const letzteStunde = (() => {
     if (!isToday || !now) return null;
@@ -4224,8 +4248,8 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
       icon: Clock,
       // Der Wert folgt dem gewählten Tag, deshalb muss die Beschriftung das auch tun
       label: isToday ? "Heute unterrichtest du" : `${selectedDate.toLocaleDateString("de-DE", { weekday: "long" })} unterrichtest du`,
-      value: dayLessons.length,
-      sub: dayLessons.length === 1 ? "Stunde" : "Stunden",
+      value: dayUnits.length,
+      sub: dayUnits.length === 1 ? "Stunde" : "Stunden",
       warn: false,
       onClick: () => onNavigate?.("stundenplan"),
     },
@@ -4260,14 +4284,19 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
     },
   ];
 
-  /* Eine Stunde für die Unterrichtsliste aufbereiten: Fach, Klasse, Zeiten, Thema
-     und – falls ein Klassenarbeitstermin hinterlegt ist – der Lernfortschritt.
-     „Gehalten" zählt die Stunden, in denen schon dasselbe Thema notiert wurde;
-     zusammen mit den Reststunden ergibt das die Gesamtzahl für den Balken. */
-  function lessonInfo(l) {
-    const fach = data.faecher.find((f) => f.id === l.fachId);
+  /* Eine Unterrichtseinheit fuer die Anzeige aufbereiten. „Einheit" heisst: eine 45-Minuten-
+     Stunde oder eine Doppelstunde (zwei aufeinanderfolgende Bloecke desselben Fachs).
+     `startZeit` kommt vom ersten Block, `endZeit` vom letzten. */
+  function lessonInfo(unit) {
+    const fach = data.faecher.find((f) => f.id === unit.fachId);
     const cls = fach ? data.classes.find((c) => c.id === fach.classId) : null;
-    const pt = data.periodTimes?.[l.period];
+    const startPt = data.periodTimes?.[unit.firstPeriod];
+    const endPt = data.periodTimes?.[unit.lastPeriod];
+    const startZeit = startPt?.start || null;
+    const endZeit = endPt?.end || null;
+    const periodLabel = unit.firstPeriod === unit.lastPeriod
+      ? `${unit.firstPeriod}.`
+      : `${unit.firstPeriod}.–${unit.lastPeriod}.`;
     const topic = fach ? (data.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr) : null;
     const cd = fach ? testCountdown(fach, data.timetable, data.events) : null;
     let gehalten = null, gesamt = null;
@@ -4286,9 +4315,12 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
     }
     const pct = gesamt ? Math.round((gehalten / gesamt) * 100) : cd && cd.rem !== null ? Math.max(0, 100 - Math.min(100, Math.round((cd.rem / 8) * 100))) : null;
     return {
-      fach, cls, pt, topic, cd, gehalten, gesamt, pct,
+      fach, cls, startZeit, endZeit, periodLabel, topic, cd, gehalten, gesamt, pct,
       offen: isToday && fach && (pendingLessons || []).some((p) => p.fach.id === fach.id),
-      istLetzte: isToday && fach && letzteStunde?.id === l.id,
+      /* Faellt die zuletzt gehaltene 45-Minuten-Stunde in irgendeinen Block dieser
+         Einheit, wird die ganze Einheit als „zuletzt" markiert - bei der Doppelstunde
+         genauso wie bei einer einzelnen Stunde. */
+      istLetzte: isToday && fach && !!letzteStunde && unit.slots.some((s) => s.id === letzteStunde.id),
     };
   }
 
@@ -4513,26 +4545,28 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
 
       {/* Stunden – jede als eigene Karte */}
       {!dayKey && <Card className="px-3 py-3 text-xs text-stone-500">Wochenende – kein regulärer Unterricht</Card>}
-      {dayKey && !dayLessons.length && <Card className="px-3 py-3 text-xs text-stone-500">Keine Stunden im Plan</Card>}
+      {dayKey && !dayUnits.length && <Card className="px-3 py-3 text-xs text-stone-500">Keine Stunden im Plan</Card>}
       <div className="space-y-2">
-        {(showAllLessons ? dayLessons : dayLessons.slice(0, 4)).map((l) => {
-          const { fach, cls, pt, topic, cd, gehalten, gesamt, pct, offen, istLetzte } = lessonInfo(l);
-          const detailOpen = openTestDetail === l.id;
+        {(showAllLessons ? dayUnits : dayUnits.slice(0, 4)).map((unit) => {
+          const { fach, cls, startZeit, endZeit, periodLabel, topic, cd, gehalten, gesamt, pct, offen, istLetzte } = lessonInfo(unit);
+          const detailOpen = openTestDetail === unit.id;
           const hervor = offen || istLetzte;
           const accentCol = fach ? (isColor ? fach.color : "var(--oliv)") : "var(--oliv)";
           const barCol = !cd ? "var(--oliv)" : cd.level === "krit" ? "#ef4444" : cd.level === "warn" ? "#f59e0b" : "var(--oliv)";
+          const istDoppel = unit.slots.length > 1;
           return (
-            <Card key={l.id} className="overflow-hidden p-0">
+            <Card key={unit.id} className="overflow-hidden p-0">
               <div
                 className={`flex items-stretch ${hervor ? "border-l-[3px]" : "border-l-[3px] border-l-transparent"}`}
                 style={hervor ? { borderLeftColor: accentCol } : {}}
               >
-                {/* Zeitspalte */}
+                {/* Zeitspalte – bei Doppelstunde durchgehend von 07:55 bis 09:30 */}
                 <div className="shrink-0 w-[3.5rem] py-2.5 pl-2 pr-1">
                   <div className="text-[13px] font-semibold text-stone-800 tabular-nums leading-tight whitespace-nowrap">
-                    {pt ? pt.start : `${l.period}.`}
+                    {startZeit || periodLabel}
                   </div>
-                  {pt?.end && <div className="text-[11px] text-stone-400 tabular-nums leading-tight whitespace-nowrap">–{pt.end}</div>}
+                  {endZeit && <div className="text-[11px] text-stone-400 tabular-nums leading-tight whitespace-nowrap">–{endZeit}</div>}
+                  {istDoppel && <div className="text-[9px] uppercase tracking-wide text-stone-400 mt-0.5">Doppel</div>}
                 </div>
 
                 <div className="w-px bg-stone-100 my-2.5 shrink-0" />
@@ -4564,7 +4598,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
                   )}
                   {cd && pct !== null && (
                     <button
-                      onClick={() => setOpenTestDetail(detailOpen ? null : l.id)}
+                      onClick={() => setOpenTestDetail(detailOpen ? null : unit.id)}
                       className="w-full text-left"
                       aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
                     >
@@ -4620,12 +4654,12 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
         })}
       </div>
 
-      {dayLessons.length > 4 && (
+      {dayUnits.length > 4 && (
         <button
           onClick={() => setShowAllLessons((v) => !v)}
           className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-stone-500 hover:akzent-text transition-colors"
         >
-          {showAllLessons ? "Weniger anzeigen" : `Alle ${dayLessons.length} Stunden ansehen`}
+          {showAllLessons ? "Weniger anzeigen" : `Alle ${dayUnits.length} Stunden ansehen`}
           <ChevronDown size={14} className={showAllLessons ? "rotate-180 transition-transform" : "transition-transform"} />
         </button>
       )}
