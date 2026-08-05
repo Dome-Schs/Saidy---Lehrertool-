@@ -3364,6 +3364,7 @@ export default function App() {
               date={captureLesson.date}
               halbjahr={halbjahr}
               onClose={() => setCaptureLesson(null)}
+              onSwitch={(neu) => setCaptureLesson(neu)}
             />
           )}
         </main>
@@ -3634,7 +3635,7 @@ function nextFerienCountdown(events, schooldaysOnly) {
 }
 
 /* Schnellerfassung nach der Stunde: Note, Notiz und Auffälligkeit pro Schüler:in in einer kompakten Liste */
-function QuickCaptureModal({ data, update, fach, cls, students, date: initialDate, halbjahr, onClose }) {
+function QuickCaptureModal({ data, update, fach, cls, students, date: initialDate, halbjahr, onClose, onSwitch }) {
   const isColor = data.settings?.colorMode === true;
   const istSport = /sport/i.test(fach?.subject || "");
   const [date, setDate] = useState(initialDate || isoDate(new Date()));
@@ -3648,6 +3649,29 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
   const [gesprTyp, setGesprTyp] = useState("schueler");
   const [gesprTexts, setGesprTexts] = useState({});
   const [actionsId, setActionsId] = useState(null);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
+
+  /* Andere Stunden desselben Tages zum Wechseln - pro Fach genau eine Zeile.
+     Eine Doppelstunde erscheint einmal, weil sie ohnehin als eine Einheit erfasst wird. */
+  const tagFaecher = (() => {
+    const tagKey = DAYS[(localDate(date).getDay() + 6) % 7];
+    if (!tagKey) return [];
+    const seen = new Set();
+    const zeilen = [];
+    data.timetable
+      .filter((t) => t.day === tagKey)
+      .sort((a, b) => a.period - b.period)
+      .forEach((t) => {
+        if (seen.has(t.fachId)) return;
+        seen.add(t.fachId);
+        const f = data.faecher.find((x) => x.id === t.fachId);
+        if (!f) return;
+        const c = data.classes.find((x) => x.id === f.classId);
+        if (!c) return;
+        zeilen.push({ fach: f, cls: c, start: data.periodTimes?.[t.period]?.start || "" });
+      });
+    return zeilen;
+  })();
 
   // Optionales Stundenthema für genau diese Stunde (Fach + Datum)
   const topicId = `${fach.id}-${date}`;
@@ -3767,15 +3791,73 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
     <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={schliessenMitRettung}>
       <div className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet overflow-x-hidden" onClick={(e) => e.stopPropagation()}>
 
-        {/* Kopf bleibt beim Scrollen sichtbar */}
-        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-200 px-4 py-3 flex items-center gap-2 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)]">
-          <div className="min-w-0 flex-1">
-            <div className="font-semibold text-stone-800 leading-tight">Schnellerfassung</div>
-            <div className="text-xs text-stone-400 truncate">{cls?.name} · {fach.subject}</div>
+        {/* Kopf bleibt beim Scrollen sichtbar - Klasse und Fach gross und klar,
+            damit auffaellt wenn Saidy die falsche Stunde vorgewaehlt hat. Ein Tipp
+            auf die Zeile oeffnet die Liste der anderen Stunden des Tages. */}
+        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-200 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)]">
+          <div className="px-4 py-3 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => tagFaecher.length > 1 && setSwitcherOpen((v) => !v)}
+              disabled={tagFaecher.length <= 1}
+              className="min-w-0 flex-1 text-left flex items-center gap-2 -mx-1 px-1 py-0.5 rounded-lg disabled:cursor-default"
+              aria-expanded={switcherOpen}
+              aria-label={tagFaecher.length > 1 ? "Andere Stunde waehlen" : undefined}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 leading-none mb-1">Schnellerfassung</div>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  {cls && (
+                    <span className="shrink-0 text-[11px] font-bold px-1.5 py-0.5 rounded akzent-ton akzent-text leading-none">{cls.name}</span>
+                  )}
+                  <span className="font-semibold text-stone-800 truncate">{fach.subject}</span>
+                  {tagFaecher.length > 1 && (
+                    <ChevronDown size={14} className={`text-stone-400 shrink-0 transition-transform ${switcherOpen ? "rotate-180" : ""}`} />
+                  )}
+                </div>
+              </div>
+            </button>
+            <button onClick={schliessenMitRettung} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0">
+              <X size={16} />
+            </button>
           </div>
-          <button onClick={schliessenMitRettung} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0">
-            <X size={16} />
-          </button>
+          {switcherOpen && tagFaecher.length > 1 && (
+            <div className="border-t border-stone-100 max-h-64 overflow-y-auto">
+              <ul className="py-1">
+                {tagFaecher.map(({ fach: f, cls: c, start }) => {
+                  const aktiv = f.id === fach.id;
+                  return (
+                    <li key={f.id}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSwitcherOpen(false);
+                          if (aktiv) return;
+                          /* Draft-Rettung des laufenden Sheets, dann Wechsel zur neuen Stunde */
+                          const offene = Object.entries(gesprTexts).filter(([, t]) => (t || "").trim());
+                          if (offene.length) {
+                            update((d) => {
+                              offene.forEach(([sid, t]) => {
+                                d.notes.push({ id: uid(), studentId: sid, date, text: t.trim(), type: "gespraech", mood: gesprMood, gesprTyp });
+                              });
+                              return d;
+                            });
+                          }
+                          onSwitch?.({ fach: f, cls: c, date });
+                        }}
+                        className={`w-full flex items-center gap-2 px-4 py-2 text-left text-sm ${aktiv ? "akzent-ton akzent-text font-medium" : "text-stone-700 hover:bg-stone-50"}`}
+                      >
+                        <span className="w-11 text-xs text-stone-400 tabular-nums shrink-0">{start || "–"}</span>
+                        <span className="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded bg-stone-100 text-stone-600 leading-none">{c.name}</span>
+                        <span className="flex-1 truncate">{f.subject}</span>
+                        {aktiv && <Check size={14} className="akzent-text shrink-0" />}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </div>
 
         <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
