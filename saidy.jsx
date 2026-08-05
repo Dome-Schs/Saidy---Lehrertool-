@@ -520,6 +520,14 @@ function calcOverall(grades, weights) {
   return { overall, byCat };
 }
 
+/* Baut ein sicheres tel:-Ziel. Alles ausser Ziffern und den ueblichen
+   Telefonzeichen faellt raus, damit eine importierte oder eingetippte
+   Nummer nichts Fremdes in die URL bringt. Ohne Ziffer: kein Link. */
+function telHref(raw) {
+  const clean = String(raw || "").replace(/[^0-9+()\-\s]/g, "").trim();
+  return /\d/.test(clean) ? `tel:${clean.replace(/\s/g, "")}` : null;
+}
+
 /* ---------- Foto-Verarbeitung & Avatar ---------- */
 
 function resizeImageFile(file, size = 128) {
@@ -990,7 +998,7 @@ function LegalModal({ onClose }) {
           ) : activeTab === "impressum" ? (
             <>
               <div>
-                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Angaben gemäß § 5 TMG</div>
+                <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Angaben gemäß § 5 DDG</div>
                 <p className="font-medium text-stone-800">[VORNAME NACHNAME]</p>
                 <p>[STRASSE HAUSNUMMER]</p>
                 <p>[PLZ ORT]</p>
@@ -3074,6 +3082,7 @@ export default function App() {
       } catch (e) {
         /* Gespeicherte Daten sind unlesbar. Auf keinen Fall Demodaten setzen – der
            Autosave würde sie 500 ms später über den Originalbestand schreiben. */
+        console.warn("[Saidy] Laden fehlgeschlagen:", e);
         setLoadFailed(true);
         setToast("⚠ Gespeicherte Daten konnten nicht gelesen werden. Bitte ein Backup einspielen – es wurde nichts überschrieben.");
       }
@@ -3090,6 +3099,9 @@ export default function App() {
         await window.storage.set("app_data", JSON.stringify(data));
         setSaveState("saved");
       } catch (e) {
+        /* Meist voller Speicher oder privater Modus. Der Grund steht sonst
+           nirgends – ueber Web Inspector am Geraet ist er so auffindbar. */
+        console.warn("[Saidy] Speichern fehlgeschlagen:", e);
         setSaveState("error");
       }
     }, 500);
@@ -3251,7 +3263,10 @@ export default function App() {
         if (Array.isArray(merged.students)) {
           merged.students = merged.students.map((s) => ({
             ...s,
-            photo: typeof s.photo === "string" && s.photo.startsWith("data:image/") ? s.photo : "",
+            /* Nur Rasterformate zulassen. „data:image/" allein liesse auch
+               data:image/svg+xml durch - und SVG kann Skripte enthalten.
+               Eigene Fotos kommen aus resizeImageFile immer als JPEG. */
+            photo: typeof s.photo === "string" && /^data:image\/(jpeg|png|webp);base64,/.test(s.photo) ? s.photo : "",
             name: typeof s.name === "string" ? s.name.slice(0, 200) : s.name,
             medicalInfo: typeof s.medicalInfo === "string" ? s.medicalInfo.slice(0, 2000) : s.medicalInfo,
             foerderStatus: typeof s.foerderStatus === "string" ? s.foerderStatus.slice(0, 500) : s.foerderStatus,
@@ -3283,6 +3298,7 @@ export default function App() {
         recordBackup();
         onResult?.({ ok: true, msg: "Backup erfolgreich geladen." });
       } catch (e) {
+        console.warn("[Saidy] Backup-Import fehlgeschlagen:", e);
         onResult?.({ ok: false, msg: "Die Datei konnte nicht gelesen werden." });
       }
     };
@@ -5333,7 +5349,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                     )}
                     <span className="font-bold text-stone-800 text-[12px] truncate">{fach?.subject || "—"}</span>
                   </div>
-                  {cd?.label && <div className="text-[10px] text-stone-400 mt-1 leading-tight line-clamp-2 break-words">{cd.label}</div>}
+                  {/* Der KA-Titel steht nur da, wenn rechts kein Thema konkurriert -
+                      sonst kaempfen zwei Textzeilen um dieselbe Kartenbreite. Beim
+                      Aufklappen des Balkens ist er ohnehin wieder zu sehen. */}
+                  {cd?.label && !topic && <div className="text-[10px] text-stone-400 mt-1 leading-tight line-clamp-2 break-words">{cd.label}</div>}
                 </button>
 
                 {/* Thema + Lernfortschritt */}
@@ -5414,8 +5433,8 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         {/* Termine */}
         <Card className="px-3 py-3 flex flex-col">
           <div className="flex items-center gap-1.5 mb-2">
-            <span className="w-5 h-5 rounded akzent-ton flex items-center justify-center shrink-0">
-              <CalendarDays size={12} className="akzent-text" />
+            <span className="w-5 h-5 rounded bg-stone-100 flex items-center justify-center shrink-0">
+              <CalendarDays size={12} className="text-stone-500" />
             </span>
             <span className="text-xs font-semibold text-stone-700">Termine</span>
           </div>
@@ -5431,7 +5450,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           ) : (
             <p className="text-xs text-stone-400">Nichts geplant</p>
           )}
-          <button onClick={() => onNavigate?.("kalender")} className="mt-2 py-1.5 -mx-1 px-1 text-xs font-medium akzent-text text-left">
+          <button onClick={() => onNavigate?.("kalender")} className="mt-2 py-1.5 -mx-1 px-1 text-xs text-stone-500 hover:text-stone-700 text-left">
             Alle Termine →
           </button>
         </Card>
@@ -5439,8 +5458,8 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         {/* Geburtstage */}
         <Card className="px-3 py-3 flex flex-col">
           <div className="flex items-center gap-1.5 mb-2">
-            <span className="w-5 h-5 rounded akzent-ton flex items-center justify-center shrink-0">
-              <PartyPopper size={12} className="akzent-text" />
+            <span className="w-5 h-5 rounded bg-stone-100 flex items-center justify-center shrink-0">
+              <PartyPopper size={12} className="text-stone-500" />
             </span>
             <span className="text-xs font-semibold text-stone-700">Geburtstage</span>
           </div>
@@ -5473,7 +5492,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           ) : (
             <p className="text-xs text-stone-400">Keine in 3 Wochen</p>
           )}
-          <button onClick={() => onNavigate?.("klassen")} className="mt-2 py-1.5 -mx-1 px-1 text-xs font-medium akzent-text text-left">
+          <button onClick={() => onNavigate?.("klassen")} className="mt-2 py-1.5 -mx-1 px-1 text-xs text-stone-500 hover:text-stone-700 text-left">
             Alle Geburtstage →
           </button>
         </Card>
@@ -5481,8 +5500,8 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         {/* Aufgaben */}
         <Card className="px-3 py-3 flex flex-col">
           <div className="flex items-center gap-1.5 mb-2">
-            <span className="w-5 h-5 rounded akzent-ton flex items-center justify-center shrink-0">
-              <ListChecks size={12} className="akzent-text" />
+            <span className="w-5 h-5 rounded bg-stone-100 flex items-center justify-center shrink-0">
+              <ListChecks size={12} className="text-stone-500" />
             </span>
             <span className="text-xs font-semibold text-stone-700">To-dos</span>
             {!!alleOffenenTasks.length && <span className="ml-auto text-[11px] text-stone-400 shrink-0">{alleOffenenTasks.length}</span>}
@@ -5505,7 +5524,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           ) : (
             <p className="text-xs text-stone-400">Nichts offen</p>
           )}
-          <button onClick={() => onNavigate?.("aufgaben")} className="mt-2 py-1.5 -mx-1 px-1 text-xs font-medium akzent-text text-left">
+          <button onClick={() => onNavigate?.("aufgaben")} className="mt-2 py-1.5 -mx-1 px-1 text-xs text-stone-500 hover:text-stone-700 text-left">
             Alle Aufgaben →
           </button>
         </Card>
@@ -6166,6 +6185,22 @@ function StudentOverviewModal({ student, faecher, grades, finalGrades, halbjahr,
 
 /* Canvas-Chart: Notenverlauf eines Schülers */
 const VOICE_CONSENT_KEY = "saidy_voice_consent";
+/* Die Spracherkennung laeuft ueber Apple bzw. Google, das Audio verlaesst also
+   das Geraet. Eine einmal erteilte Zustimmung soll deshalb nicht ewig gelten -
+   nach einem Jahr wird erneut gefragt. Der Wert ist ein ISO-Datum; der alte
+   Wert "1" aus frueheren Versionen zaehlt als abgelaufen. */
+const VOICE_CONSENT_MAX_TAGE = 365;
+
+function voiceConsentGueltig() {
+  try {
+    const wert = localStorage.getItem(VOICE_CONSENT_KEY);
+    if (!wert || !/^\d{4}-\d{2}-\d{2}$/.test(wert)) return false;
+    const alter = (Date.now() - localDate(wert).getTime()) / 86400000;
+    return alter >= 0 && alter < VOICE_CONSENT_MAX_TAGE;
+  } catch {
+    return false;
+  }
+}
 
 function VoiceNoteButton({ onTranscript }) {
   const SR = typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition);
@@ -6216,7 +6251,7 @@ function VoiceNoteButton({ onTranscript }) {
   function handleClick() {
     if (listening) { srRef.current?.stop(); return; }
     setMicError("");
-    if (!localStorage.getItem(VOICE_CONSENT_KEY)) { setShowConsent(true); return; }
+    if (!voiceConsentGueltig()) { setShowConsent(true); return; }
     startRecording();
   }
 
@@ -6252,7 +6287,7 @@ function VoiceNoteButton({ onTranscript }) {
             <div className="flex gap-2">
               <button onClick={() => setShowConsent(false)} className="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-600 font-medium">Abbrechen</button>
               <button
-                onClick={() => { localStorage.setItem(VOICE_CONSENT_KEY, "1"); setShowConsent(false); startRecording(); }}
+                onClick={() => { try { localStorage.setItem(VOICE_CONSENT_KEY, isoDate(new Date())); } catch { /* privater Modus */ } setShowConsent(false); startRecording(); }}
                 className="flex-1 py-2.5 rounded-xl akzent-flaeche text-white text-sm font-semibold"
               >
                 Verstanden &amp; nutzen
@@ -6465,7 +6500,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
       const dataUrl = await resizeImageFile(file);
       onUpdateField(studentId, "photo", dataUrl);
       setPhotoError("");
-    } catch (e) {
+    } catch {
       setPhotoError("Foto konnte nicht verarbeitet werden.");
     }
   }
@@ -7469,8 +7504,10 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
                       <div className="flex gap-1">
                         <input type="tel" placeholder="0176 …" value={s.parentPhone || ""} maxLength={30}
                           onChange={(e) => onUpdateField(s.id, "parentPhone", e.target.value)} className="input-base flex-1 min-w-0" />
-                        {s.parentPhone && (
-                          <a href={`tel:${s.parentPhone}`} className="shrink-0 w-9 h-9 rounded-lg akzent-ton flex items-center justify-center" title="Anrufen"><Phone size={15} /></a>
+                        {/* Nur Ziffern und Telefon-Sonderzeichen in die URL lassen -
+                            eine importierte Nummer koennte sonst Fremdes einschleusen. */}
+                        {s.parentPhone && telHref(s.parentPhone) && (
+                          <a href={telHref(s.parentPhone)} className="shrink-0 w-9 h-9 rounded-lg akzent-ton flex items-center justify-center" title="Anrufen"><Phone size={15} /></a>
                         )}
                       </div>
                     </div>
