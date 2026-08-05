@@ -1567,20 +1567,41 @@ function computePendingLessons(data, now) {
   const dayKey = DAYS[(now.getDay() + 6) % 7]; // Mo–Fr, am Wochenende undefined
   if (!dayKey) return [];
   const nowHM = formatHM(now);
-  return data.timetable
+
+  /* Mehrere Stunden desselben Fachs an einem Tag – etwa eine Doppelstunde – werden zu
+     einem Eintrag zusammengefasst. Das ist keine Vereinfachung, sondern entspricht dem
+     Datenmodell: Noten tragen nur ein Datum, keine Stundenangabe. Zwei getrennte Einträge
+     ließen sich deshalb nie einzeln abhaken – das Erfassen der einen würde die andere
+     stillschweigend mit erledigen. Als ein Eintrag stimmen Zählung und Verhalten überein. */
+  const proFach = new Map();
+  data.timetable
     .filter((t) => t.day === dayKey)
-    .map((t) => {
+    .forEach((t) => {
       const fach = data.faecher.find((f) => f.id === t.fachId);
-      if (!fach) return null;
-      const cls = data.classes.find((c) => c.id === fach.classId);
+      if (!fach) return;
       const pt = data.periodTimes?.[t.period];
-      if (!pt?.end || nowHM < pt.end) return null;
-      const graded = data.grades.some((g) => g.fachId === fach.id && g.date === todayStr);
-      if (graded) return null;
-      return { key: `${fach.id}-${todayStr}`, fach, cls, period: t.period, start: pt.start, end: pt.end };
-    })
-    .filter(Boolean)
-    .sort((a, b) => b.period - a.period); // neueste Stunde zuerst
+      if (!pt?.end || nowHM < pt.end) return;
+      if (data.grades.some((g) => g.fachId === fach.id && g.date === todayStr)) return;
+      const vorhanden = proFach.get(fach.id);
+      if (vorhanden) {
+        vorhanden.anzahl += 1;
+        vorhanden.period = Math.max(vorhanden.period, t.period);
+        if (pt.start < vorhanden.start) vorhanden.start = pt.start;
+        if (pt.end > vorhanden.end) vorhanden.end = pt.end;
+        return;
+      }
+      proFach.set(fach.id, {
+        key: `${fach.id}-${todayStr}`,
+        fach,
+        cls: data.classes.find((c) => c.id === fach.classId),
+        period: t.period,
+        start: pt.start,
+        end: pt.end,
+        anzahl: 1,
+      });
+    });
+
+  return [...proFach.values()].sort((a, b) => b.period - a.period); // neueste Stunde zuerst
 }
 
 /* Benachrichtigung sicher senden. Auf Android Chrome wirft `new Notification()` einen
@@ -4424,7 +4445,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenUntisImport, on
               <li key={p.key} className="flex items-center gap-2 text-sm">
                 <span className="text-xs text-stone-400 w-11 shrink-0">{p.start}</span>
                 <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? p.fach.color : "#C0BBA8" }} />
-                <span className="flex-1 text-stone-700 truncate">{p.cls?.name} – {p.fach.subject}</span>
+                <span className="flex-1 text-stone-700 truncate">
+                  {p.cls?.name} – {p.fach.subject}
+                  {p.anzahl > 1 && <span className="text-stone-400"> · {p.anzahl} Stunden</span>}
+                </span>
                 <button
                   onClick={() => { setCaptureLesson({ fach: p.fach, cls: p.cls, date: todayStr }); setShowPending(false); }}
                   className="shrink-0 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 px-2.5 py-1 rounded-lg"
