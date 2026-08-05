@@ -2195,6 +2195,7 @@ const HELP_DATA = [
       { q: "Was zeigt das Morgen-Briefing auf der Startseite?", a: `Beim Öffnen der App erscheint oben die Karte „Heute im Blick". Sie fasst den Tag in ganzen Sätzen zusammen – zum Beispiel: „Guten Morgen! Heute stehen 4 Stunden an – die erste um 8:00 Uhr in der 4a." Berücksichtigt werden die Stunden des Tages, knapp bevorstehende Klassenarbeiten, Termine, Geburtstage, Kinder die an mehreren der letzten Tage gefehlt haben, und noch nicht erfasste Stunden. Dringendes steht rot und zuerst; angezeigt werden drei Sätze, der Rest über „+ weitere". Alles wird auf deinem Gerät berechnet, es werden keine Daten übertragen. Mit dem × blendest du die Karte für heute aus.` },
       { q: "Wie ist die Übersichtsseite aufgebaut?", a: `Von oben nach unten: (1) Vier Kennzahl-Kacheln – Stunden heute, noch nicht erfasste Stunden, offene Entschuldigungen und aktive Förderziele. Die Reihe lässt sich seitlich schieben, jede Kachel ist antippbar und springt in den passenden Bereich. Kacheln mit offenen Punkten färben sich amber. (2) Das Morgen-Briefing „Heute im Blick". (3) Die Wochenleiste zum Wechseln des Tages. (4) „Dein Unterricht heute" – jede Stunde als eigene Karte, daneben der Knopf „Stundenplan". (5) Eine Dreierreihe mit Terminen, Geburtstagen und To-dos. (6) Ganz unten Dienste und Entschuldigungen; nur deren Reihenfolge lässt sich in den Einstellungen unter „Übersicht (Startseite)" ändern – alles darüber hat einen festen Platz.` },
       { q: "Was zeigt eine Stundenkarte auf der Startseite?", a: `Links Anfangs- und Endzeit, daneben das Klassenkürzel (z. B. „4a") und das Fach; darunter steht der Titel der nächsten Klassenarbeit, falls einer hinterlegt ist. Eine Doppelstunde – also zwei aufeinanderfolgende Blöcke desselben Fachs – erscheint als eine Karte mit durchgehender Zeitspanne (07:55 – 09:30) und dem Vermerk „Doppel". Sind zwischen den Blöcken andere Stunden, bleiben sie getrennt. Rechts das Stundenthema und – sobald ein Klassenarbeitstermin existiert – ein Fortschrittsbalken. Er füllt sich, je weiter ihr im Thema seid: „3 / 6 Stunden" heißt, drei Stunden habt ihr für dieses Thema schon gehalten, sechs sind es bis zur Arbeit insgesamt. Eine Doppelstunde zählt dabei als eine Stunde – so wie sie auch nur einmal erfasst wird. Daneben steht, in wie vielen Stunden geschrieben wird. Die Farbe wechselt von oliv über amber zu rot, je knapper es wird. Die zuletzt gehaltene und noch nicht erfasste Stunden bekommen einen farbigen Rand links. Ein Tipp auf Klasse und Fach öffnet die Notenübersicht des Fachs, ein Tipp auf den Balken die Details zur Arbeit. Ganz rechts das Klemmbrett für die Schnellerfassung – es leuchtet amber, solange die Stunde nicht erfasst ist. Ab fünf Stunden zeigt Saidy zunächst vier und blendet den Rest über „Alle N Stunden ansehen" ein.` },
+      { q: "Was ist der Wochenrückblick auf der Übersicht?", a: `Eine Karte, die von Freitag 12 Uhr bis Sonntag Nacht ganz oben auf der Übersicht erscheint (ab Montag ist sie automatisch weg). Sie zeigt drei Dinge: die Zahlen der Woche (gehaltene Stunden, vergebene Noten, geführte Gespräche, neue Notizen), was aufgefallen ist (Klassen mit Signalen aus dem Klassenradar, Kinder ohne Eintrag in dieser Woche) und einen Ausblick auf die nächste Woche (Klassenarbeiten, Termine). Ein × blendet die Karte für den Rest dieser Woche aus – am nächsten Freitag kommt sie wieder.` },
       { q: "Was macht der grüne Plus-Knopf in der Mitte?", a: `Er ist der Schnellzugriff zum Erfassen und funktioniert aus jedem Bereich heraus. Ein Tipp öffnet fünf Einträge: „Stunde erfassen" springt direkt in die Schnellerfassung – Saidy wählt dabei selbst die passende Stunde, zuerst eine noch nicht erfasste, sonst die zuletzt gehaltene von heute. „Gespräch notieren" und „Notiz zu einem Kind" fragen zuerst nach dem Kind (einfach den Namen tippen) und dann nach dem Text; beim Gespräch kommen Art (Schüler, Eltern, Förder) und Stimmung dazu. „Aufgabe" und „Termin" legen einen To-do beziehungsweise einen Kalendereintrag an. Bist du gerade in einem Bereich mit eigener Aktion – etwa im Klassen-Tab – steht diese zusätzlich ganz oben in der Liste. Auf Tablet und Desktop heißt der Knopf „Schnell erfassen" und sitzt in der linken Seitenleiste, ganz oben; das aufklappende Menü enthält dieselben Aktionen.` },
       { q: "Wo finde ich die Aufgaben in der unteren Leiste?", a: `Die Leiste zeigt Übersicht, Klassen, den Plus-Knopf, Noten und „Mehr". Die Aufgaben sind unter „Mehr" zu finden – zusammen mit Stundenplan, Kalender, Suche, Einstellungen und Hilfe. Eine neue Aufgabe legst du schneller über den grünen Plus-Knopf an.` },
       { q: "Warum verschwindet die Navigationsleiste beim Scrollen?", a: `Damit mehr Platz für den Inhalt bleibt. Scrollst du auf einer Seite nach unten, gleitet die untere Leiste weg und stattdessen erscheint unten links ein olivfarbener Kreis mit einem Pfeil nach oben. Ein Tipp darauf holt die vollständige Leiste zurück. Scrollst du wieder nach oben, erscheint sie ohnehin von selbst. Auf dem Desktop bleibt die Seitenleiste immer sichtbar.` }
@@ -4380,6 +4381,99 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
     setBriefingDismissed(true);
   }
 
+  /* Wochenrueckblick - sichtbar Freitag ab 12:00 bis Sonntag Nacht.
+     Pro Woche einmal ausblendbar; Schluessel enthaelt Jahr + KW, damit der Ausblendzustand
+     naechste Woche automatisch zurueckgesetzt ist. */
+  const woche = currentSchoolWeek(now || new Date());
+  const wocheKey = `${woche.monday.getFullYear()}-W${String(woche.kw).padStart(2, "0")}`;
+  const jetzt = now || new Date();
+  const dow = jetzt.getDay(); // 0 So, 5 Fr, 6 Sa
+  const stunde = jetzt.getHours();
+  const istRueckblickZeit = (dow === 5 && stunde >= 12) || dow === 6 || dow === 0;
+  const [rueckblickDismissed, setRueckblickDismissed] = useState(() => {
+    try { return localStorage.getItem("saidy_weekReview_dismissed") === wocheKey; } catch { return false; }
+  });
+  useEffect(() => {
+    let gesehen = null;
+    try { gesehen = localStorage.getItem("saidy_weekReview_dismissed"); } catch {}
+    setRueckblickDismissed(gesehen === wocheKey);
+  }, [wocheKey]);
+  function dismissRueckblick() {
+    try { localStorage.setItem("saidy_weekReview_dismissed", wocheKey); } catch {}
+    setRueckblickDismissed(true);
+  }
+
+  /* Wochenzahlen - alles zwischen Montag 00:00 und Sonntag 23:59 der aktuellen Woche.
+     Genutzte Datumsvergleiche sind ISO-Strings (YYYY-MM-DD), also lexikografisch korrekt. */
+  const wochenBericht = (() => {
+    if (!istRueckblickZeit || rueckblickDismissed) return null;
+    const mo = isoDate(woche.monday);
+    const so = isoDate(addDays(woche.monday, 6));
+
+    // Stundenzahl der Woche: gehaltene Unterrichtseinheiten (dayLessons-Aequivalent x 5 Tage).
+    // Vereinfacht: pro Werktag mit Faechern zaehlen wir die Einheiten (nicht Bloecke).
+    let stundenWoche = 0;
+    for (let i = 0; i < 5; i++) {
+      const tag = addDays(woche.monday, i);
+      const key = DAYS[i];
+      const slots = (data.timetable || []).filter((t) => t.day === key).sort((a, b) => a.period - b.period);
+      // Bloecke desselben Fachs, die aufeinanderfolgen, zaehlen als eine Einheit
+      let letzte = null, einheiten = 0;
+      slots.forEach((s) => {
+        if (letzte && letzte.fachId === s.fachId && s.period === letzte.period + 1) {
+          // gleiche Doppelstunde, nicht zaehlen
+        } else {
+          einheiten++;
+        }
+        letzte = s;
+      });
+      // Ferien/frei abziehen
+      const iso = isoDate(tag);
+      const istFrei = (data.events || []).some((e) => (e.type === "ferien" || e.type === "frei") && e.date <= iso && iso <= (e.endDate || e.date));
+      if (!istFrei) stundenWoche += einheiten;
+    }
+
+    const notenWoche = (data.grades || []).filter((g) => (g.date || "") >= mo && (g.date || "") <= so).length;
+    const gespraecheWoche = (data.notes || []).filter((n) => n.type === "gespraech" && (n.date || "") >= mo && (n.date || "") <= so).length;
+    const notizenWoche = (data.notes || []).filter((n) => n.type !== "gespraech" && (n.date || "") >= mo && (n.date || "") <= so).length;
+
+    // Auffaellige Klassen: die drei mit den meisten Radar-Signalen (Kombinierte Werte)
+    const klassenSignale = (data.classes || [])
+      .map((c) => ({ klasse: c, sig: computeKlassenradar(data, c, isoDate(jetzt)) }))
+      .filter((x) => x.sig.length)
+      .sort((a, b) => b.sig.length - a.sig.length)
+      .slice(0, 3);
+
+    // Drei Kinder mit laengster Eintragsluecke (nur mit vorhandenen Kindern und Historie)
+    const alleAktivitaeten = (id) => {
+      const dates = [
+        ...(data.notes || []).filter((n) => n.studentId === id).map((n) => n.date),
+        ...(data.grades || []).filter((g) => g.studentId === id).map((g) => g.date),
+      ].filter(Boolean).sort();
+      return dates[dates.length - 1] || null;
+    };
+    const kinderLuecke = (data.students || [])
+      .filter((s) => !s.deletedAt)
+      .map((s) => ({ s, letzte: alleAktivitaeten(s.id) }))
+      .filter((x) => x.letzte && x.letzte < mo)
+      .map((x) => ({ ...x, tage: Math.floor((localDate(mo) - localDate(x.letzte)) / 86400000) }))
+      .sort((a, b) => b.tage - a.tage)
+      .slice(0, 3);
+
+    // Ausblick naechste Woche: KAs + Termine (Mo bis So der Folgewoche)
+    const nMo = isoDate(addDays(woche.monday, 7));
+    const nSo = isoDate(addDays(woche.monday, 13));
+    const kasNext = (data.faecher || [])
+      .filter((f) => f.nextTestDate && f.nextTestDate >= nMo && f.nextTestDate <= nSo)
+      .map((f) => ({ fach: f, cls: (data.classes || []).find((c) => c.id === f.classId) }))
+      .filter((x) => x.cls);
+    const termineNext = (data.events || [])
+      .filter((e) => e.type !== "ferien" && e.type !== "frei" && e.date >= nMo && e.date <= nSo)
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    return { stundenWoche, notenWoche, gespraecheWoche, notizenWoche, klassenSignale, kinderLuecke, kasNext, termineNext, kw: woche.kw };
+  })();
+
   /* Zusammenhängender Briefing-Text: aus den Tagesdaten zu ganzen Sätzen zusammengesetzt.
      Läuft vollständig lokal – keine externe Verarbeitung. */
   const briefingSentences = (() => {
@@ -4671,6 +4765,97 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           );
         })()}
       </div>
+
+      {/* Wochenrueckblick: nur zwischen Freitag 12 Uhr und Sonntag Nacht sichtbar,
+          per X pro Woche ausblendbar. */}
+      {wochenBericht && (
+        <Card className="px-4 py-3.5 border-l-2 akzent-rand">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[11px] font-semibold uppercase tracking-wide akzent-text">Wochenrückblick · KW {wochenBericht.kw}</span>
+            <button
+              onClick={dismissRueckblick}
+              className="w-11 h-11 -mr-3 -mt-3 flex items-center justify-center text-stone-400 hover:text-stone-600 shrink-0"
+              aria-label="Wochenrückblick ausblenden"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <p className="text-sm leading-relaxed text-stone-700 mb-3">
+            Diese Woche: <span className="font-semibold">{wochenBericht.stundenWoche}</span> {wochenBericht.stundenWoche === 1 ? "Stunde" : "Stunden"} gehalten,{" "}
+            <span className="font-semibold">{wochenBericht.notenWoche}</span> {wochenBericht.notenWoche === 1 ? "Note" : "Noten"} vergeben,{" "}
+            <span className="font-semibold">{wochenBericht.gespraecheWoche}</span> {wochenBericht.gespraecheWoche === 1 ? "Gespräch" : "Gespräche"} geführt und{" "}
+            <span className="font-semibold">{wochenBericht.notizenWoche}</span> {wochenBericht.notizenWoche === 1 ? "Notiz" : "Notizen"} erfasst.
+          </p>
+
+          {(wochenBericht.klassenSignale.length > 0 || wochenBericht.kinderLuecke.length > 0) && (
+            <div className="mb-3 pt-2 border-t border-stone-100">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">Aufgefallen</div>
+              {wochenBericht.klassenSignale.length > 0 && (
+                <div className="text-xs text-stone-700 mb-1">
+                  Klassen mit Signalen:{" "}
+                  {wochenBericht.klassenSignale.map(({ klasse, sig }, i) => (
+                    <React.Fragment key={klasse.id}>
+                      {i > 0 && ", "}
+                      <span className="font-semibold">{klasse.name}</span>
+                      <span className="text-stone-400"> ({sig.length})</span>
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+              {wochenBericht.kinderLuecke.length > 0 && (() => {
+                /* Bei zwei Kindern mit gleichem Vornamen den vollen Namen anzeigen -
+                   sonst steht "Jenny (3 Tage), Jenny (3 Tage)" und man weiss nicht wer. */
+                const vornamen = wochenBericht.kinderLuecke.map(({ s }) => s.name.split(" ")[0]);
+                const label = (name) => vornamen.filter((v) => v === name.split(" ")[0]).length > 1 ? name : name.split(" ")[0];
+                return (
+                  <div className="text-xs text-stone-700">
+                    Länger kein Eintrag:{" "}
+                    {wochenBericht.kinderLuecke.map(({ s, tage }, i) => (
+                      <React.Fragment key={s.id}>
+                        {i > 0 && ", "}
+                        <span className="font-semibold">{label(s.name)}</span>
+                        <span className="text-stone-400"> ({tage} Tage)</span>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+
+          {(wochenBericht.kasNext.length > 0 || wochenBericht.termineNext.length > 0) && (
+            <div className="pt-2 border-t border-stone-100">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">Nächste Woche</div>
+              {wochenBericht.kasNext.length > 0 && (
+                <div className="text-xs text-stone-700 mb-1">
+                  Klassenarbeiten:{" "}
+                  {wochenBericht.kasNext.map(({ fach, cls }, i) => (
+                    <React.Fragment key={fach.id}>
+                      {i > 0 && ", "}
+                      <span className="font-semibold">{cls.name} {fach.subject}</span>
+                      <span className="text-stone-400"> ({localDate(fach.nextTestDate).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" })})</span>
+                    </React.Fragment>
+                  ))}
+                </div>
+              )}
+              {wochenBericht.termineNext.length > 0 && (
+                <div className="text-xs text-stone-700">
+                  Termine:{" "}
+                  {wochenBericht.termineNext.slice(0, 3).map((e, i) => (
+                    <React.Fragment key={e.id}>
+                      {i > 0 && ", "}
+                      <span className="font-semibold">{e.title}</span>
+                      <span className="text-stone-400"> ({localDate(e.date).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" })})</span>
+                    </React.Fragment>
+                  ))}
+                  {wochenBericht.termineNext.length > 3 && <span className="text-stone-400"> · +{wochenBericht.termineNext.length - 3}</span>}
+                </div>
+              )}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Kennzahl-Kacheln - auf Handy vollbreite Zeilen untereinander (Icon links,
           Beschriftung mitte, Zahl rechts). Auf Desktop bleibt die Vierer-Reihe, weil
