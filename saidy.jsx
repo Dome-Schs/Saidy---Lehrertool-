@@ -5104,11 +5104,9 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         </Card>
       )}
 
-      {/* Kennzahl-Kacheln - auf Handy vollbreite Zeilen untereinander (Icon links,
-          Beschriftung mitte, Zahl rechts). Auf Desktop bleibt die Vierer-Reihe, weil
-          dort Platz ist. Vorher lag eine seitlich scrollbare Reihe an, in der die
-          hinteren Kacheln am rechten Rand abgeschnitten wurden. */}
-      <div className="flex flex-col gap-2 md:grid md:grid-cols-4">
+      {/* Kennzahl-Kacheln - 2x2-Raster auf Handy, Vierer-Reihe auf Desktop.
+          Icon oben, Label darunter, groesse Zahl. */}
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
         {kacheln.map((k) => {
           const Icon = k.icon;
           const aktiv = k.warn && k.value > 0;
@@ -5116,19 +5114,16 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             <button
               key={k.label}
               onClick={k.onClick}
-              className="w-full text-left bg-white rounded-2xl border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors flex items-center gap-3 px-3 py-2.5 md:flex-col md:items-start md:gap-0 md:py-3"
+              className="w-full text-left bg-white rounded-2xl border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors flex flex-col items-start px-3 py-3"
             >
-              <span className={`w-9 h-9 md:w-7 md:h-7 rounded-lg flex items-center justify-center shrink-0 ${aktiv && isColor ? "bg-amber-100" : "akzent-ton"}`}>
-                <Icon size={16} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
+              <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${aktiv && isColor ? "bg-amber-100" : "akzent-ton"}`}>
+                <Icon size={14} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
               </span>
-              <div className="flex-1 min-w-0 md:mt-2">
-                <div className="text-[11px] text-stone-500 leading-tight truncate md:whitespace-normal">{k.label}</div>
-                <div className="text-[11px] text-stone-400 mt-0.5 truncate md:hidden">{k.sub}</div>
-              </div>
-              <div className={`text-[26px] font-bold leading-none tabular-nums shrink-0 tabular-nums ${aktiv && isColor ? "text-amber-600" : "akzent-text"} md:mt-2`}>
+              <div className="text-[11px] text-stone-500 leading-tight mt-2 line-clamp-2">{k.label}</div>
+              <div className={`text-[26px] font-bold leading-none tabular-nums mt-1.5 ${aktiv && isColor ? "text-amber-600" : "akzent-text"}`}>
                 {k.value}
               </div>
-              <div className="hidden md:block text-[11px] text-stone-400 mt-1">{k.sub}</div>
+              <div className="text-[11px] text-stone-400 mt-1 line-clamp-1">{k.sub}</div>
             </button>
           );
         })}
@@ -5372,103 +5367,104 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         </button>
       )}
 
-      {/* Dreierreihe: Termine, Geburtstage, Aufgaben */}
-      <div className="grid grid-cols-3 gap-2 items-stretch">
+      {/* Termine, Geburtstage, Aufgaben - auf Handy vollbreit untereinander,
+          auf Desktop in einer Dreierreihe. */}
+      <div className="flex flex-col gap-2 md:grid md:grid-cols-3 md:items-stretch">
         {/* Termine */}
-        <Card className="px-2.5 py-2.5 flex flex-col">
-          <div className="flex items-center gap-1 mb-2">
-            <span className="w-4 h-4 rounded akzent-ton flex items-center justify-center shrink-0">
-              <CalendarDays size={10} className="akzent-text" />
+        <Card className="px-3 py-3 flex flex-col">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="w-5 h-5 rounded akzent-ton flex items-center justify-center shrink-0">
+              <CalendarDays size={12} className="akzent-text" />
             </span>
-            <span className="text-[10px] font-semibold text-stone-700 truncate min-w-0">Termine</span>
+            <span className="text-xs font-semibold text-stone-700">Termine</span>
           </div>
           {terminEvents.length ? (
             <ul className="space-y-1.5">
               {terminEvents.slice(0, 3).map((e) => (
-                <li key={e.id} className="min-w-0">
-                  <div className="text-[11px] text-stone-700 truncate leading-tight">{e.title}</div>
-                  {e.time && <div className="text-[10px] text-stone-400 tabular-nums">{e.time}</div>}
+                <li key={e.id} className="min-w-0 flex items-center gap-2">
+                  <div className="text-xs text-stone-700 truncate leading-tight flex-1">{e.title}</div>
+                  {e.time && <div className="text-[11px] text-stone-400 tabular-nums shrink-0">{e.time}</div>}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-[11px] text-stone-400">Nichts geplant</p>
+            <p className="text-xs text-stone-400">Nichts geplant</p>
           )}
-          <button onClick={() => onNavigate?.("kalender")} className="mt-auto py-2 -mx-1 px-1 text-[11px] font-medium akzent-text text-left">
+          <button onClick={() => onNavigate?.("kalender")} className="mt-2 py-1.5 -mx-1 px-1 text-xs font-medium akzent-text text-left">
             Alle Termine →
           </button>
         </Card>
 
         {/* Geburtstage */}
-        <Card className="px-2.5 py-2.5 flex flex-col">
-          <div className="flex items-center gap-1 mb-2">
-            <span className="w-4 h-4 rounded akzent-ton flex items-center justify-center shrink-0">
-              <PartyPopper size={10} className="akzent-text" />
+        <Card className="px-3 py-3 flex flex-col">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="w-5 h-5 rounded akzent-ton flex items-center justify-center shrink-0">
+              <PartyPopper size={12} className="akzent-text" />
             </span>
-            <span className="text-[10px] font-semibold text-stone-700 truncate min-w-0">Geburtstage</span>
+            <span className="text-xs font-semibold text-stone-700">Geburtstage</span>
           </div>
           {birthdays.length || kommendeGeburtstage.length ? (
             <ul className="space-y-1.5">
               {birthdays.slice(0, 2).map((s) => {
                 const info = birthdayInfo(s, selectedDate);
                 return (
-                  <li key={s.id} className="flex items-center gap-1.5 min-w-0">
-                    <StudentAvatar student={s} size={18} />
-                    <div className="min-w-0 flex-1">
-                      <div className="text-[11px] font-medium text-stone-800 truncate leading-tight">{s.name.split(" ")[0]}</div>
-                      {info?.alter != null && <div className="text-[10px] text-stone-400">{info.alter} Jahre</div>}
+                  <li key={s.id} className="flex items-center gap-2 min-w-0">
+                    <StudentAvatar student={s} size={20} />
+                    <div className="min-w-0 flex-1 flex items-center gap-2">
+                      <span className="text-xs font-medium text-stone-800 truncate leading-tight flex-1">{s.name.split(" ")[0]}</span>
+                      {info?.alter != null && <span className="text-[11px] text-stone-400 shrink-0">{info.alter} J.</span>}
                     </div>
                   </li>
                 );
               })}
               {kommendeGeburtstage.slice(0, birthdays.length ? 1 : 3).map(({ s, info }) => (
-                <li key={s.id} className="flex items-center gap-1.5 min-w-0">
-                  <StudentAvatar student={s} size={18} />
-                  <div className="min-w-0 flex-1">
-                    <div className="text-[11px] text-stone-600 truncate leading-tight">{s.name.split(" ")[0]}</div>
-                    <div className="text-[10px] text-stone-400 tabular-nums">
+                <li key={s.id} className="flex items-center gap-2 min-w-0">
+                  <StudentAvatar student={s} size={20} />
+                  <div className="min-w-0 flex-1 flex items-center gap-2">
+                    <span className="text-xs text-stone-600 truncate leading-tight flex-1">{s.name.split(" ")[0]}</span>
+                    <span className="text-[11px] text-stone-400 tabular-nums shrink-0">
                       {info.next.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
-                    </div>
+                    </span>
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-[11px] text-stone-400">Keine in 3 Wochen</p>
+            <p className="text-xs text-stone-400">Keine in 3 Wochen</p>
           )}
-          <button onClick={() => onNavigate?.("klassen")} className="mt-auto py-2 -mx-1 px-1 text-[11px] font-medium akzent-text text-left">
+          <button onClick={() => onNavigate?.("klassen")} className="mt-2 py-1.5 -mx-1 px-1 text-xs font-medium akzent-text text-left">
             Alle Geburtstage →
           </button>
         </Card>
 
         {/* Aufgaben */}
-        <Card className="px-2.5 py-2.5 flex flex-col">
-          <div className="flex items-center gap-1 mb-2">
-            <span className="w-4 h-4 rounded akzent-ton flex items-center justify-center shrink-0">
-              <ListChecks size={10} className="akzent-text" />
+        <Card className="px-3 py-3 flex flex-col">
+          <div className="flex items-center gap-1.5 mb-2">
+            <span className="w-5 h-5 rounded akzent-ton flex items-center justify-center shrink-0">
+              <ListChecks size={12} className="akzent-text" />
             </span>
-            <span className="text-[10px] font-semibold text-stone-700 truncate min-w-0">To-dos</span>
-            {!!alleOffenenTasks.length && <span className="ml-auto text-[10px] text-stone-400 shrink-0">{alleOffenenTasks.length}</span>}
+            <span className="text-xs font-semibold text-stone-700">To-dos</span>
+            {!!alleOffenenTasks.length && <span className="ml-auto text-[11px] text-stone-400 shrink-0">{alleOffenenTasks.length}</span>}
           </div>
           {openTasks.length ? (
             <ul className="space-y-1.5">
               {openTasks.slice(0, 3).map((t) => (
-                <li key={t.id} className="flex items-start gap-1.5">
+                <li key={t.id} className="flex items-start gap-2">
                   <button
                     onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
-                    className="w-9 h-9 -m-2.5 shrink-0 flex items-center justify-center"
+                    className="w-9 h-9 -m-2 shrink-0 flex items-center justify-center"
                     aria-label={`"${t.title}" als erledigt markieren`}
                   >
-                    <span className="w-3.5 h-3.5 rounded-full border-2 block" style={{ borderColor: isColor ? t.color : "#A8A29E" }} />
+                    <span className="w-4 h-4 rounded-full border-2 block" style={{ borderColor: isColor ? t.color : "#A8A29E" }} />
                   </button>
-                  <span className="text-[11px] text-stone-700 leading-tight line-clamp-2">{t.title}</span>
+                  <span className="text-xs text-stone-700 leading-tight line-clamp-2 pt-0.5">{t.title}</span>
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-[11px] text-stone-400">Nichts offen</p>
+            <p className="text-xs text-stone-400">Nichts offen</p>
           )}
-          <button onClick={() => onNavigate?.("aufgaben")} className="mt-auto py-2 -mx-1 px-1 text-[11px] font-medium akzent-text text-left">
+          <button onClick={() => onNavigate?.("aufgaben")} className="mt-2 py-1.5 -mx-1 px-1 text-xs font-medium akzent-text text-left">
             Alle Aufgaben →
           </button>
         </Card>
@@ -5616,7 +5612,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         if (!order.length) return null;
 
         return (
-          <div className="grid grid-cols-2 gap-2 items-start">
+          <div className="flex flex-col gap-2 md:grid md:grid-cols-2 md:items-start">
             {order.map((key) => (sections[key] ? <div key={key}>{sections[key]}</div> : null))}
           </div>
         );
