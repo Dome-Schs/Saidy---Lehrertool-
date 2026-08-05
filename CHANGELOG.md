@@ -5,6 +5,48 @@ Format: Nutzersicht, auf Deutsch, für Lehrerinnen und Lehrer.
 
 ---
 
+## [1.3] – 05.08.2026
+
+### Neu
+- **Klassenradar auf der Übersicht**: Klassen mit auffälligen Signalen (mehrere Fehltage in Folge, gehäufte Vorfälle, Notendurchschnitt abwärts) tauchen automatisch als kurze Zeile unter dem Unterricht auf. Kritische Signale mit rotem Punkt, Warnungen amber – ein Tipp öffnet das Klassen-Dashboard.
+- **„Seit deinem letzten Besuch"** im Schülerprofil: Beim Öffnen eines Kindes fasst Saidy zusammen, was zwischen letztem und aktuellem Aufruf dazugekommen ist – neue Notizen, Vorfälle, Fehlzeiten und Noten in einer chronologischen Kurzliste. Ist nichts Neues da, bleibt die Ansicht ruhig.
+- **Wochenrückblick am Freitag**: Zwischen Freitag 12 Uhr und Sonntagabend erscheint auf der Übersicht eine kompakte Zusammenfassung der Woche – wie viele Stunden erfasst wurden, welche Themen liefen, welche Termine anstehen. Für die Woche einmal wegwischbar.
+- **Unterrichtstipp des Tages**: Ganz unten auf der Übersicht liegt eine kompakte Kachel mit einem pädagogischen Impuls aus dem Wissenspool – Titel und Merksatz. Ein Tipp öffnet die volle Karte mit „Warum?" und „So setzt du es um". Der Tipp wechselt automatisch mit jedem Tag; ein „Nächster Tipp"-Knopf springt zufällig weiter. In den Einstellungen abschaltbar. Der Pool umfasst aktuell 111 Karten aus neun Kapiteln von Classroom Management bis Lehrergesundheit.
+
+### Verbessert
+- **Kennzahl-Kacheln aufgeräumt**: Statt vier nun drei kompakte Kacheln nebeneinander („Stunden nachtragen", „Entschuldigungen", „Förderziele"). Die Stundenzahl ist entfallen, weil die Info direkt in der Unterrichtsliste darunter steht.
+- **Bei Wert 0 kein riesiges Nichts mehr**: Kacheln ohne offene Punkte zeigen jetzt einen kleinen grauen Haken statt einer großen „0" – wirkt weniger wie ein Fehlerzustand am ruhigen Tag.
+- **Doppelstunden zählen als eine Unterrichtseinheit**: Zwei aufeinanderfolgende Blöcke desselben Fachs erscheinen als eine Karte mit durchgehender Zeitspanne (07:55 – 09:30) und dem Vermerk „Doppel". Wird auch nur einmal in den Fortschrittsbalken gezählt – so wie sie ohnehin nur einmal erfasst wird.
+- **Backup-Warnung deutlich sichtbar**: Direkt am Sichern/Teilen-Knopf steht jetzt ein amber-hinterlegter Kasten mit den drei Nein-Punkten (keine Mail/Messenger, keine private Cloud, nur eigenes Gerät oder Schul-Server). Vorher stand die Warnung nur im Bestätigungs-Dialog.
+- **Toast-Bestätigung** für „Klasse gelöscht" und „Alle Daten gelöscht" – vorher verschwand die Klasse einfach aus der Liste, was wie ein Absturz aussah.
+- **Stundenkarten:** offen (amber Rand) und zuletzt gehalten (grüner Rand) sind visuell klar getrennt. „KA" ausgeschrieben, weniger Redundanz mit dem Countdown.
+- **Stundenthema mit Vorschlägen**: Beim Erfassen schlägt Saidy bereits verwendete Themen und Notenthemen des Fachs vor – schneller, konsistenter.
+- **Kompaktere Handy-Ansicht**: Termine, Geburtstage, To-dos und die weiteren Karten (Dienste, Fehlzeiten) stehen jetzt auf dem Handy vollbreit untereinander mit lesbarer Typo. Desktop bleibt in Spalten.
+
+### Wissenspool
+- **Kapitel Referendariat & Berufseinstieg** neu gefüllt (10 Karten): Praxisschock, Mentoring, Unterrichtsbesuche, Lehrprobe-Reflexion, Trennung Seminar/Schule, Kollegiumskontakt, Selbstzweifel, Lehreridentität. Alle mit benannter Quelle (Hascher, Terhart, Meyer, Kounin, Schön, Wahl, Rothland, Dweck, Bandura).
+- **Kapitel Lehrergesundheit & Selbstmanagement** neu gefüllt (9 Karten): Feierabend-Ritual, Stimmschutz, Kollegiale Fallberatung, Warnzeichen erkennen, echte Pausen, 80-Prozent-Grenze, Schlafhygiene, Debriefing, Bewegung. Alle mit benannter Quelle (Kaluza, DGPP, Tietze/Mutzeck, Schaarschmidt/Fischer AVEM, Bauer, KVT-I, Cierpka, WHO).
+
+### Für die „Was ist neu?"-Ansicht in der App
+
+```json
+{
+  "version": "1.3",
+  "date": "05.08.2026",
+  "title": "Klassenradar, Unterrichtstipp des Tages und aufgeräumte Übersicht",
+  "highlights": [
+    "Neu: Klassenradar zeigt automatisch Klassen mit Auffälligkeiten oben auf der Übersicht.",
+    "Neu: „Seit deinem letzten Besuch" fasst im Schülerprofil zusammen, was seit dem letzten Aufruf dazugekommen ist.",
+    "Neu: Wochenrückblick am Freitag mit einer kompakten Zusammenfassung der Woche.",
+    "Neu: Unterrichtstipp des Tages als abschaltbare Kachel – pädagogische Impulse aus einem 111-Karten-Wissenspool.",
+    "Kennzahl-Kacheln aufgeräumt: nur noch drei nebeneinander, bei Wert 0 kleiner Haken statt großer „0".",
+    "Doppelstunden zählen als eine Unterrichtseinheit und erscheinen als eine Karte mit durchgehender Zeitspanne."
+  ]
+}
+```
+
+---
+
 ## [1.2] – 04.08.2026
 
 ### Neu
