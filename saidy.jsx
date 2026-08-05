@@ -1292,10 +1292,17 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           {importMsg && (
             <p className={`text-xs mt-2 ${importMsg.ok ? "akzent-text" : "text-red-600"}`}>{importMsg.msg}</p>
           )}
-          <p className="text-xs text-stone-400 mt-3 flex items-start gap-1.5">
-            <ShieldCheck size={13} className="shrink-0 mt-0.5" />
-            Backup sicher aufbewahren (nur eigenes Gerät oder Schul-Server). Nicht mehr benötigte Backups löschen.
-          </p>
+          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+            <div className="text-[11px] font-semibold text-amber-800 mb-1 flex items-center gap-1.5">
+              <ShieldCheck size={12} className="shrink-0" />
+              Vor dem Sichern kurz lesen
+            </div>
+            <ul className="text-[11px] text-stone-700 space-y-0.5 leading-snug">
+              <li>• <strong>Nicht per E-Mail oder Messenger</strong> teilen.</li>
+              <li>• <strong>Nicht in Google Drive, Dropbox oder iCloud</strong> ablegen.</li>
+              <li>• Nur auf dem eigenen Gerät oder Schul-Server aufbewahren.</li>
+            </ul>
+          </div>
 
           {/* Empfohlener Weg: auf dem Gerät ablegen statt verschicken */}
           <div className="mt-3 bg-stone-50 rounded-xl px-3 py-2.5">
