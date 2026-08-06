@@ -3242,27 +3242,29 @@ export default function App() {
 
   /* Rotation Landscape -> Portrait: iOS Safari rechnet env(safe-area-inset-bottom)
      und 100dvh nicht immer sofort neu; die fixed Bottom-Nav sitzt dann nicht
-     mehr am unteren Bildschirmrand. Fix: eine CSS-Var --app-vh mit
-     window.innerHeight vorhalten, aktualisiert AUSSCHLIESSLICH bei
-     orientationchange - NICHT bei visualViewport.resize, weil iOS Safari
-     das bei jedem Scroll (URL-Bar shrink/expand) feuert und die App-Hoehe
-     dann standig wechselt -> Bottom-Nav flackert und springt. */
+     mehr am unteren Bildschirmrand. Fix: --app-vh wird NUR bei
+     orientationchange gesetzt. Initial NICHT setzen - sonst friert der
+     Wert auf die Hoehe beim ersten Laden ein (URL-Bar sichtbar =
+     kleiner Wert), und die App bleibt zu kurz. Ohne --app-vh nutzt
+     der Container 100dvh - das reagiert dynamisch auf iOS' URL-Bar. */
   useEffect(() => {
-    function updateVh() {
-      document.documentElement.style.setProperty(
-        "--app-vh",
-        window.innerHeight + "px"
-      );
-    }
     function handleRotation() {
       setNavCollapsed(false);
-      updateVh();
+      // Vorherigen Wert erst mal entfernen, damit 100dvh greifen kann
+      document.documentElement.style.removeProperty("--app-vh");
       setTimeout(() => {
-        updateVh();
+        document.documentElement.style.setProperty(
+          "--app-vh",
+          window.innerHeight + "px"
+        );
         window.dispatchEvent(new Event("resize"));
+        // Nach ein paar Frames wieder auf 100dvh zurueck, damit die
+        // App-Hoehe iOS' URL-Bar folgen kann.
+        setTimeout(() => {
+          document.documentElement.style.removeProperty("--app-vh");
+        }, 300);
       }, 60);
     }
-    updateVh();
     window.addEventListener("orientationchange", handleRotation);
     return () => window.removeEventListener("orientationchange", handleRotation);
   }, []);
