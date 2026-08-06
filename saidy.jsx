@@ -3239,23 +3239,42 @@ export default function App() {
     setNavCollapsed(false);
   }, [tab]);
 
-  /* Rotation Landscape -> Portrait: iOS Safari rechnet
-     env(safe-area-inset-bottom) und 100dvh nicht immer sofort neu,
-     dadurch sitzt die fixed Bottom-Nav plötzlich nicht mehr am unteren
-     Bildschirmrand. Ein Force-Reflow und ein zurückgesetzter Nav-Zustand
-     bringt sie wieder in Position. */
+  /* Rotation Landscape -> Portrait: iOS Safari rechnet env(safe-area-inset-bottom)
+     und 100dvh nicht immer sofort neu; die fixed Bottom-Nav sitzt dann nicht
+     mehr am unteren Bildschirmrand. Fix in Schichten:
+
+     1. Custom Property --app-vh haelt die echte innerHeight in px vor,
+        parallel zu 100dvh. Der App-Root nutzt sie als Hoehe (siehe unten).
+     2. Bei orientationchange und visualViewport.resize wird sie neu gesetzt,
+        mit einem 60ms-Delay, weil Safari nach Rotation ein paar Frames
+        braucht, bis innerHeight stimmt.
+     3. Ein synthetisches window.resize danach zwingt fixed-Elemente zur
+        Neuberechnung.
+     4. Nav wird aufgeklappt, falls sie collapsed war.
+
+     Kein body-style-transform-Hack – der hat den Bug versehentlich
+     verschlimmert, weil ein Vorfahre mit transform aus fixed-position
+     eine absolute-position zu body macht. */
   useEffect(() => {
-    function handleOrientation() {
-      setNavCollapsed(false);
-      requestAnimationFrame(() => {
-        document.body.style.transform = "translateZ(0)";
-        requestAnimationFrame(() => {
-          document.body.style.transform = "";
-        });
-      });
+    function updateVh() {
+      const h = window.visualViewport?.height || window.innerHeight;
+      document.documentElement.style.setProperty("--app-vh", h + "px");
     }
-    window.addEventListener("orientationchange", handleOrientation);
-    return () => window.removeEventListener("orientationchange", handleOrientation);
+    function handleRotation() {
+      setNavCollapsed(false);
+      updateVh();
+      setTimeout(() => {
+        updateVh();
+        window.dispatchEvent(new Event("resize"));
+      }, 60);
+    }
+    updateVh();
+    window.addEventListener("orientationchange", handleRotation);
+    window.visualViewport?.addEventListener("resize", updateVh);
+    return () => {
+      window.removeEventListener("orientationchange", handleRotation);
+      window.visualViewport?.removeEventListener("resize", updateVh);
+    };
   }, []);
 
   // Wechselt den Bereich und optional den Unterreiter (z. B. direkt zu den Diensten)
@@ -3862,7 +3881,10 @@ export default function App() {
   }
 
   return (
-    <div className="h-[100dvh] flex flex-col overflow-hidden app-bg text-[color:var(--ink)] font-sans">
+    <div
+      className="flex flex-col overflow-hidden app-bg text-[color:var(--ink)] font-sans"
+      style={{ height: "var(--app-vh, 100dvh)" }}
+    >
       <style>{`
         /* ═══════════════════════════════════════════════════
            TP-01 · Design-Fundament
