@@ -19,6 +19,10 @@ Saidy ist **kein Notenprogramm**, sondern ein **pädagogisches Gedächtnis** —
 
 Wenn ja → gehört rein. Wenn nein → ist Beiwerk und gehört nicht in die Kern-Navigation.
 
+Vor dem Bauen eines neuen Features den `vision`-Agent aufrufen (`/vision <Idee>`).
+Er stuft ein (KERN / RAND / BEIWERK / VERSTOSS) und schlägt eine vision-nähere
+Umsetzung vor.
+
 ## Projektübersicht
 
 Lebende Übersicht (Infrastruktur, Agents, Features, Tasks):
