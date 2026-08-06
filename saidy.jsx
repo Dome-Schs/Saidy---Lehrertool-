@@ -2746,6 +2746,7 @@ const HELP_DATA = [
       { q: "Wie sehe ich, wie weit ich mit den Zeugnisnoten bin?", a: `In der Zeugnisphase (Januar, Februar, Juni, Juli) zeigt jede Klassenkarte unter „Noten & Berichte" einen Fortschrittsbalken: wie viele Zeugnisnoten von wie vielen bereits gesetzt sind und wie viele noch offen sind. Über mehrere Klassen hinweg siehst du so auf einen Blick, wo noch Arbeit liegt. Ist alles vollständig, wird der Balken grün.` },
       { q: "Wie aktiviere ich die Zeugnisnoten-Spalte?", a: `In der Notenübersicht gibt es oben den Button „Zeugnisnote". Antippen blendet die Zeugnisnoten-Spalte ein oder aus. In der Zeugnisphase (Januar, Februar, Juni, Juli) ist sie automatisch sichtbar.` },
       { q: "Wo kann ich Gespräche mit Schüler:innen erfassen?", a: `An drei Stellen: (1) In der Klassenliste neben jedem Kind das 💬-Symbol antippen. (2) Im Schnellerfassungs-Modus nach dem Unterricht. (3) Direkt in der Notenansicht: Kind antippen – die Detailansicht zeigt oben eine Karte „Gespräch & Stimmung" mit Typ-Wahl (Schüler / Eltern / Förder), Stimmungsskala (😄😊😐😕😟) und Notizfeld. Alle erfassten Gespräche erscheinen auch bei Elternsprechtag-Vorbereitung.` },
+      { q: "Was ist der Gesprächsleitfaden?", a: `Ein schrittweiser Assistent für ausführliche Gespräche – erreichbar im Kind-Profil unter der Gesprächs-Erfassung („Ausführlich mit Leitfaden führen"). Drei Modi: (1) Nur Kind: 6 Phasen à ~15 Min – Ankommen, Stimmung per Smiley, offene Fragen, kurzer Schwank aus dem eigenen Leben, nächster kleiner Schritt, Abschluss. Nicht um Noten, sondern wie es dem Kind geht. (2) Nur Eltern: klassischer Elternsprechtag, 6 Phasen à ~20 Min mit Positivem beginnen, Beobachtungen, Eltern-Blick, gemeinsame Ziele. (3) Eltern + Kind: Lernentwicklungsgespräch, 8 Phasen à ~30 Min – hier schildert das Kind zuerst, dann kommen Lehrkraft und Eltern dazu. Pro Phase gibt es einen Hinweis, mögliche Fragen zum Anregen und ein Notizfeld. Am Ende werden alle Notizen zu einem Gesprächseintrag zusammengefasst und im normalen Verlauf gespeichert.` },
     ],
   },
   {
@@ -3082,6 +3083,214 @@ function QuickAddNoteModal({ data, modus, onSave, onClose }) {
               </div>
             </>
           )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Gespraechs-Leitfaden - schrittweiser Assistent fuer strukturierte
+   Gespraeche mit einem Kind. Drei Modi (Kind / Eltern / Eltern+Kind)
+   mit fest hinterlegten Phasen aus paedagogischer Praxis (Aktives
+   Zuhoeren, Ich-Botschaften, Selbstwirksamkeit). Am Ende landet die
+   Zusammenfassung im gleichen Format wie ein "normales" Gespraech
+   (notes mit type=gespraech, mood, gesprTyp) - kein neues Datenformat. */
+const GESPRAECHS_LEITFAEDEN = {
+  kind: {
+    label: "Nur Kind",
+    beschreibung: "Etwa 15 Minuten. Fokus: wie geht es dem Kind gerade – nicht Noten.",
+    gesprTyp: "schueler",
+    phasen: [
+      { titel: "Ankommen", zeit: "1 Min", hinweis: `Warmes Hallo, kurz erklären: „Ich möchte 15 Minuten mit dir reden – nicht über Noten, sondern wie es dir geht." Zeit nehmen, entspannt sein.`, fragen: [] },
+      { titel: "Stimmung", zeit: "2 Min", hinweis: `Kind wählt einen Smiley. Danach eine offene Nachfrage – nicht bewerten, nicht relativieren. Einfach zuhören.`, fragen: [], stimmung: true },
+      { titel: "Was erzählst du mir?", zeit: "5 Min", hinweis: `Offene Fragen, aktives Zuhören (paraphrasieren). Keine „Warum"-Fragen – „Was" und „Wie" klingen weniger defensiv.`, fragen: ["Was macht dir gerade Spaß in der Schule?", "Was ist gerade schwierig?", "Was hat dich diese Woche beschäftigt?"] },
+      { titel: "Kurzer Schwank", zeit: "2 Min", hinweis: `Erzähl kurz von einer eigenen Erfahrung, die passt. Macht dich als Erwachsene:r menschlich – nicht als Autorität.`, fragen: [] },
+      { titel: "Nächster kleiner Schritt", zeit: "3 Min", hinweis: `Kind formuliert selbst – Selbstwirksamkeit. Kein Ziel von dir setzen.`, fragen: ["Was möchtest du bis nächste Woche ausprobieren?", "Wobei kann ich dich unterstützen?"] },
+      { titel: "Abschluss", zeit: "1 Min", hinweis: `Kurz zusammenfassen. Festes Ritual (z. B. Handschlag). Danken.`, fragen: [] },
+    ],
+  },
+  eltern: {
+    label: "Nur Eltern",
+    beschreibung: "Klassischer Elternsprechtag, etwa 20 Minuten. Kind ist nicht dabei.",
+    gesprTyp: "eltern",
+    phasen: [
+      { titel: "Ankommen", zeit: "2 Min", hinweis: `Warm begrüßen, Setting klären. Zeitrahmen nennen.`, fragen: [] },
+      { titel: "Positives zuerst", zeit: "5 Min", hinweis: `Konkrete Stärken benennen – am besten mit einem Beispiel. Öffnet das Gespräch, senkt Abwehr.`, fragen: ["Was gelingt dem Kind gerade besonders?", "Wo zeigt es Interesse?"] },
+      { titel: "Beobachtungen", zeit: "5 Min", hinweis: `Konkret schildern, ohne Wertung. Beobachtung ≠ Interpretation. Beispiele bringen.`, fragen: ["Was ist mir aufgefallen …", "In welcher Situation …"] },
+      { titel: "Eltern-Blick", zeit: "5 Min", hinweis: `Aktiv zuhören. Eltern kennen ihr Kind zu Hause – erfrage ihre Perspektive.`, fragen: ["Wie erleben Sie das zu Hause?", "Wofür interessiert es sich dort?", "Was wünschen Sie sich?"] },
+      { titel: "Gemeinsame Ziele", zeit: "5 Min", hinweis: `Realistisch, konkret, klein. Wer macht was bis wann? Nur 1–2 Punkte.`, fragen: [] },
+      { titel: "Verabredung", zeit: "2 Min", hinweis: `Nächster Kontakt vereinbaren. Zusammenfassung senden? Danken.`, fragen: [] },
+    ],
+  },
+  kindEltern: {
+    label: "Eltern + Kind",
+    beschreibung: "Lernentwicklungsgespräch, etwa 30 Minuten. Kind schildert zuerst.",
+    gesprTyp: "eltern",
+    phasen: [
+      { titel: "Ankommen", zeit: "2 Min", hinweis: `Alle begrüßen. Kind bewusst ansprechen – nicht nur über es reden.`, fragen: [] },
+      { titel: "Stimmung des Kindes", zeit: "2 Min", hinweis: `Kind wählt einen Smiley – bricht das Eis, zeigt Kind darf reden.`, fragen: [], stimmung: true },
+      { titel: "Kind schildert zuerst", zeit: "5 Min", hinweis: `„Erzähl uns, wie läuft Schule gerade für dich?" Kind darf ausreden. Erwachsene warten.`, fragen: ["Was klappt gerade gut?", "Was fällt dir schwer?"] },
+      { titel: "Beispiele zeigen", zeit: "5 Min", hinweis: `Kind zeigt eine Arbeit / ein Portfolio-Stück auf das es stolz ist – konkret werden.`, fragen: [] },
+      { titel: "Lehrkraft ergänzt", zeit: "5 Min", hinweis: `An Kind-Aussage anknüpfen („Das passt zu dem, was ich sehe…"). Nicht widersprechen.`, fragen: [] },
+      { titel: "Eltern-Blick", zeit: "5 Min", hinweis: `Zuhören. Eltern-Perspektive erfragen. Kind darf zuhören.`, fragen: ["Wie erleben Sie das?", "Was fällt Ihnen zu Hause auf?"] },
+      { titel: "Ziele – Kind formuliert mit", zeit: "5 Min", hinweis: `Ziel gemeinsam formulieren. Kind sagt idealerweise: „Ich möchte …"`, fragen: ["Was möchtest du selbst ausprobieren?", "Wobei brauchst du Unterstützung?"] },
+      { titel: "Abschluss", zeit: "3 Min", hinweis: `Nächster Termin. Kind bekommt einen kleinen Merkzettel mit dem Ziel.`, fragen: [] },
+    ],
+  },
+};
+
+function GespraechsleitfadenModal({ student, onSave, onClose }) {
+  const [modus, setModus] = useState(null);
+  const [schrittIdx, setSchrittIdx] = useState(0);
+  const [notizen, setNotizen] = useState({});
+  const [stimmung, setStimmung] = useState(null);
+
+  const leitfaden = modus ? GESPRAECHS_LEITFAEDEN[modus] : null;
+  const phase = leitfaden ? leitfaden.phasen[schrittIdx] : null;
+  const istLetzte = leitfaden && schrittIdx === leitfaden.phasen.length - 1;
+
+  function setNotiz(i, text) {
+    setNotizen((d) => ({ ...d, [i]: text }));
+  }
+
+  function speichern() {
+    if (!leitfaden) return;
+    const zeilen = leitfaden.phasen
+      .map((ph, i) => {
+        const n = (notizen[i] || "").trim();
+        if (!n) return null;
+        return `${ph.titel}: ${n}`;
+      })
+      .filter(Boolean);
+    if (!zeilen.length && !stimmung) return;
+    const text = zeilen.length
+      ? `Leitfaden „${leitfaden.label}"\n\n${zeilen.join("\n\n")}`
+      : `Gespräch „${leitfaden.label}" geführt.`;
+    onSave({
+      text,
+      mood: stimmung || "ok",
+      gesprTyp: leitfaden.gesprTyp,
+    });
+  }
+
+  // Modus-Wahl
+  if (!modus) {
+    return (
+      <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={onClose}>
+        <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+          <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
+            <div>
+              <div className="font-semibold text-stone-800">Gespräch mit Leitfaden</div>
+              <div className="text-xs text-stone-500">{student?.name}</div>
+            </div>
+            <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center"><X size={16} /></button>
+          </div>
+          <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-3">
+            <p className="text-sm text-stone-600 mb-2">Wähle die Gesprächsart:</p>
+            {Object.entries(GESPRAECHS_LEITFAEDEN).map(([key, l]) => (
+              <button
+                key={key}
+                onClick={() => { setModus(key); setSchrittIdx(0); }}
+                className="karte-luft w-full text-left px-4 py-3 press-scale"
+              >
+                <div className="font-semibold text-stone-800 mb-0.5">{l.label}</div>
+                <div className="text-xs text-stone-500">{l.beschreibung}</div>
+                <div className="text-[11px] akzent-text mt-1">{l.phasen.length} Phasen</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Phase X von N
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={onClose}>
+      <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-5 py-3.5 flex items-center gap-2 z-10">
+          <button onClick={() => schrittIdx > 0 ? setSchrittIdx((i) => i - 1) : setModus(null)} className="w-9 h-9 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0" aria-label="Zurück">
+            <ChevronLeft size={16} />
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 leading-none mb-0.5">{leitfaden.label} · Schritt {schrittIdx + 1} von {leitfaden.phasen.length}</div>
+            <div className="font-semibold text-stone-800 truncate">{phase.titel} <span className="text-stone-400 font-normal text-xs">· {phase.zeit}</span></div>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0" aria-label="Schließen"><X size={16} /></button>
+        </div>
+
+        <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4">
+          {/* Fortschrittsbalken */}
+          <div className="h-1 bg-stone-100 rounded-full overflow-hidden">
+            <div className="h-full akzent-flaeche transition-[width]" style={{ width: `${((schrittIdx + 1) / leitfaden.phasen.length) * 100}%` }} />
+          </div>
+
+          {/* Hinweis */}
+          <div className="karte-luft px-4 py-3">
+            <p className="text-sm text-stone-700 leading-relaxed">{phase.hinweis}</p>
+          </div>
+
+          {/* Optional: Stimmung */}
+          {phase.stimmung && (
+            <div>
+              <div className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Welcher Smiley passt?</div>
+              <div className="flex gap-1.5">
+                {MOOD_OPTIONS.map((m) => (
+                  <button
+                    key={m.key}
+                    onClick={() => setStimmung(m.key)}
+                    className={`flex-1 py-3 rounded-xl border text-2xl transition-colors press-scale ${stimmung === m.key ? "akzent-rand akzent-ton" : "border-stone-200 bg-white"}`}
+                    aria-label={m.label}
+                  >
+                    {m.emoji}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Fragenvorschläge */}
+          {phase.fragen.length > 0 && (
+            <div>
+              <div className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Mögliche Fragen</div>
+              <ul className="space-y-1.5">
+                {phase.fragen.map((f, i) => (
+                  <li key={i} className="text-sm text-stone-600 leading-snug flex gap-2">
+                    <span className="akzent-text shrink-0">›</span>
+                    <span>{f}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Notiz-Feld */}
+          <div>
+            <div className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">Kurze Notiz (optional)</div>
+            <textarea
+              className={inputCls + " min-h-[80px]"}
+              placeholder="Stichworte, Zitate, Beobachtungen …"
+              maxLength={500}
+              value={notizen[schrittIdx] || ""}
+              onChange={(e) => setNotiz(schrittIdx, e.target.value)}
+            />
+            <div className="text-[10px] text-stone-400 mt-1">Landet später zusammen mit den anderen Phasen als ein Gesprächs-Eintrag.</div>
+          </div>
+
+          {/* Aktionen */}
+          <div className="flex gap-2 pt-2">
+            {istLetzte ? (
+              <>
+                <Button variant="ghost" onClick={onClose} className="flex-1 justify-center">Abbrechen</Button>
+                <Button onClick={speichern} className="flex-1 justify-center"><Check size={15} /> Speichern</Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" onClick={onClose} className="justify-center">Abbrechen</Button>
+                <Button onClick={() => setSchrittIdx((i) => i + 1)} className="flex-1 justify-center">Weiter <ChevronRight size={15} /></Button>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -7445,6 +7654,7 @@ function DokumenteAllgemein({ data, update, onClose }) {
 function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, absences, incidents, documents, update, settings, notenfarben, selectedStudent, setSelectedStudent, onDeleteStudent, onUpdateField, onAddNote, newNote, setNewNote, gespraechDraft, setGespraechDraft, onAddGespraech, onDeleteNote, onAddFoerderZiel, onToggleFoerderZiel, onDeleteFoerderZiel, onOpenAdd, onOpenOverview, onClose }) {
   const [photoError, setPhotoError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [leitfadenFor, setLeitfadenFor] = useState(null); // studentId
   /* Haelt die studentId, fuer die gerade die Einwilligung erfragt wird - die
      Bestaetigung gilt nur fuer dieses eine Kind. */
   const [showMedicalConsent, setShowMedicalConsent] = useState(null);
@@ -7574,6 +7784,28 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
         </div>
       );
     })()}
+    {leitfadenFor && (
+      <GespraechsleitfadenModal
+        student={students.find((s) => s.id === leitfadenFor)}
+        onClose={() => setLeitfadenFor(null)}
+        onSave={({ text, mood, gesprTyp }) => {
+          update((d) => {
+            d.notes = d.notes || [];
+            d.notes.push({
+              id: uid(),
+              studentId: leitfadenFor,
+              date: isoDate(new Date()),
+              text,
+              type: "gespraech",
+              mood,
+              gesprTyp,
+            });
+            return d;
+          });
+          setLeitfadenFor(null);
+        }}
+      />
+    )}
     {/* TP-02 · Schülerliste als Bottom-Sheet mit Preview-Karten */}
     <div className="fixed inset-0 bg-stone-900/50 z-50 flex flex-col justify-end" onClick={onClose}>
       <div
@@ -8147,6 +8379,13 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
                       <button onClick={() => onAddGespraech(s.id)} disabled={!gespraechDraft.text.trim()}
                         className="shrink-0 px-4 py-2 rounded-xl text-sm font-semibold akzent-flaeche disabled:opacity-40">✓</button>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => setLeitfadenFor(s.id)}
+                      className="mt-2 w-full text-xs text-stone-500 hover:akzent-text py-2 flex items-center justify-center gap-1.5 press-scale"
+                    >
+                      <MessageSquare size={13} /> Ausführlich mit Leitfaden führen (Kind / Eltern)
+                    </button>
                   </div>
                 </div>
 
