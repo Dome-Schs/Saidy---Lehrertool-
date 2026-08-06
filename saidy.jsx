@@ -2739,7 +2739,8 @@ const HELP_DATA = [
       { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten & Berichte", wähle Klasse und Fach. Tippe auf eine:n Schüler:in – in der Karte „Neue Note" Kategorie und Note wählen und auf „+" tippen. Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aus mündlichen und schriftlichen Noten. Voreingestellt ist 50 zu 50 Prozent – änderbar unter „Klassen & Schüler" → Reiter „Fächer" → Zahnrad beim Fach → „Gewichtung der Noten". Einzelne Noten lassen sich zusätzlich stärker gewichten (Faktor beim Bearbeiten der Note). Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
-      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Klemmbrett-Symbol neben einer Stunde auf der Startseite öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Gespräche eintragen kannst. Eine Doppelstunde wird dabei einmal erfasst, nicht zweimal – sie gilt als eine Unterrichtseinheit und erscheint in der Liste der offenen Stunden als ein Eintrag mit der Zahl der Blöcke. Die Notenbuttons sind immer direkt sichtbar. Neben dem Namen liegt das ⚠︎-Symbol – ein Tipp erfasst „Vergessen" (z. B. Sportzeug) sofort, ohne Umweg. Weitere Aktionen (Notiz, Gespräch) öffnen sich nach Antippen des ···-Symbols. Hat ein Kind bereits eine Notiz, leuchtet das ···-Symbol grün; fehlt Material, wird das ⚠︎-Symbol rot.` },
+      { q: "Was ist der Stunden-Abschluss (30 Sekunden)?", a: `Das Klemmbrett-Symbol neben einer Stunde öffnet den 30-Sekunden-Abschluss – die neue Standard-Erfassung nach einer Stunde. Kein Formular mit leerem Notenfeld, sondern eine Liste aller Kinder mit vier One-Tap-Aktionen pro Zeile: + (positive Mitarbeit) · − (Störung / still) · ⚠︎ (Sportzeug bzw. Hausaufgabe vergessen) · Notiz (kurzes Textfeld). Ein Tipp pro Kind, alles wird am Ende auf einmal gespeichert. + wird als mündliche 2 vermerkt, − als 4, das Vergessen als Vorfall (bei Sport als „Sportzeug", sonst als „Hausaufgabe"). Wer eine echte Note vergeben will, wechselt unten über „Auch Noten vergeben →" in die ausführliche Schnellerfassung.` },
+      { q: "Was ist der Schnellerfassungs-Modus?", a: `Die ausführliche Erfassung wird aus dem Stunden-Abschluss über den Link „Auch Noten vergeben" erreicht. Dort kannst du für alle Schüler:innen einer Klasse Noten (mündlich / schriftlich), ausführliche Notizen und Gespräche eintragen. Eine Doppelstunde wird einmal erfasst, nicht zweimal. Die Notenbuttons sind immer sichtbar. Neben dem Namen liegt das ⚠︎-Symbol für „Vergessen"; Notiz und Gespräch öffnen sich über das ···-Symbol.` },
       { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Saidy an, wie viele Unterrichtsstunden bis dahin noch bleiben. Gezählt wird in Unterrichtseinheiten: ein Tag mit diesem Fach ist eine Einheit – eine Doppelstunde aus zwei 45-Minuten-Blöcken zählt also einmal, genau wie eine einzelne Stunde. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Saidy die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
       { q: "Wo sehe ich auf der Startseite, wie viel Zeit bis zur Klassenarbeit bleibt?", a: `Direkt bei der Stunde – es gibt dafür keine eigene Karte mehr. Ist für ein Fach ein Test-Termin hinterlegt, erscheint in der Unterricht-Übersicht unter der Stunde ein feiner Strich: voll bedeutet viel Vorbereitungszeit, kurz bedeutet es wird eng. Die Farbe wechselt von oliv über amber zu rot, je näher der Termin rückt. Rechts neben der Stunde steht zusätzlich die Zahl der verbleibenden Unterrichtsstunden (z. B. „5×"), am Prüfungstag selbst „Heute!". Ein Tipp auf den Strich klappt die Details auf: Titel der Arbeit, Datum und die verbleibenden Übungsstunden im Klartext. Angezeigt wird das nur bei Fächern, für die du einen Termin eingetragen hast.` },
       { q: "Wie finde ich heraus, bei welchem Thema die Klasse Lücken hat?", a: `Beim Eintragen einer schriftlichen Note kannst du ein Thema angeben, z. B. „Bruchrechnung". Bereits verwendete Themen werden beim Tippen vorgeschlagen – nimm die Vorschläge, dann bleibt die Auswertung sauber. Auch die Schnellerfassung übernimmt das oben eingetragene Stundenthema automatisch, wenn du dort schriftliche Noten vergibst. Umgekehrt schlägt das Stundenthema-Feld bereits bekannte Themen desselben Fachs vor – so bleibt „Bruchrechnung" über Wochen dasselbe Wort und der Fortschrittsbalken zählt sauber weiter, statt bei jeder Tippvariante von vorn. In der Fachansicht („Noten & Berichte" → Klasse → Fach) erscheint dann die Karte „Wissensgebiete": Alle Themen mit dem Klassenschnitt, das schwächste zuerst. Ein langer Balken bedeutet gut beherrscht. Tippst du ein Thema an, siehst du, welche Kinder dort Lücken haben – daraus wird direkt eine Fördergruppe.` },
@@ -3496,7 +3497,8 @@ export default function App() {
     setTab("klassen");
   }, []);
   useEffect(() => { setFabOpen(false); }, [tab]);
-  const [captureLesson, setCaptureLesson] = useState(null); // { fach, cls }
+  const [captureLesson, setCaptureLesson] = useState(null); // { fach, cls, date } - klassische Erfassung (Noten)
+  const [abschluss, setAbschluss] = useState(null);         // { fach, cls } - 30-Sek-Stundenabschluss
   const [now, setNow] = useState(() => new Date());
   const saveTimer = useRef(null);
 
@@ -4474,7 +4476,7 @@ export default function App() {
               </button>
             </div>
           )}
-          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenKlassenDashboard={(classId) => { setFocusKlassenDashboardId(classId); goTo("klassen"); }} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} onOpenGeburtstage={() => setShowGeburtstage(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
+          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenKlassenDashboard={(classId) => { setFocusKlassenDashboardId(classId); goTo("klassen"); }} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} onOpenGeburtstage={() => setShowGeburtstage(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} setAbschluss={setAbschluss} pendingLessons={pendingLessons} now={now} />}
           {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} focusKlassenDashboardId={focusKlassenDashboardId} onFocusKlassenDashboardConsumed={() => setFocusKlassenDashboardId(null)} onRegisterFab={setFabActions} showToast={showToast} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
           {tab === "kalender" && <KalenderTab data={activeData} update={update} autoOpenForm={kalenderAutoForm} onAutoFormConsumed={() => setKalenderAutoForm(false)} />}
@@ -4531,6 +4533,22 @@ export default function App() {
               halbjahr={halbjahr}
               onClose={() => setCaptureLesson(null)}
               onSwitch={(neu) => setCaptureLesson(neu)}
+            />
+          )}
+
+          {abschluss && (
+            <StundenAbschlussModal
+              data={data}
+              update={update}
+              fach={abschluss.fach}
+              cls={abschluss.cls}
+              students={data.students.filter((s) => s.classId === abschluss.cls.id).sort((a, b) => a.name.localeCompare(b.name, "de"))}
+              halbjahr={halbjahr}
+              onClose={() => setAbschluss(null)}
+              onWechseln={() => {
+                setCaptureLesson({ fach: abschluss.fach, cls: abschluss.cls, date: isoDate(new Date()) });
+                setAbschluss(null);
+              }}
             />
           )}
         </main>
@@ -4823,6 +4841,191 @@ function nextFerienCountdown(events, schooldaysOnly) {
 }
 
 /* Schnellerfassung nach der Stunde: Note, Notiz und Auffälligkeit pro Schüler:in in einer kompakten Liste */
+/* Stunden-Abschluss in 30 Sekunden. Nach dem Kern-Purpose: "Saidy merkt sich
+   fuer dich, was du im Alltag nicht alles im Kopf haben kannst". Statt einer
+   leeren Notizseite oder Notenformular gibt es 4 One-Tap-Aktionen pro Kind:
+   + (Mitarbeit), - (Stoerung), Vergessen (kontextabhaengig: Sport → Sportzeug,
+   sonst Hausaufgaben), Notiz (kurzes Textfeld). Am Ende einmal "Abschliessen"
+   und alles ist gespeichert. Wer Noten vergeben will, wechselt per Link in die
+   ausfuehrliche Schnellerfassung. */
+function StundenAbschlussModal({ data, update, fach, cls, students, halbjahr, onClose, onWechseln }) {
+  const heute = isoDate(new Date());
+  const istSport = /sport/i.test(fach?.subject || "");
+  const vergessenLabel = istSport ? "Sportzeug" : "Hausaufgabe";
+  /* zustand pro Kind: { mitarbeit: "plus" | "minus" | null, vergessen: bool, notiz: string } */
+  const [zustand, setZustand] = useState({});
+  const [notizFor, setNotizFor] = useState(null);
+  const [notizDraft, setNotizDraft] = useState("");
+
+  function toggleMitarbeit(sid, wert) {
+    setZustand((z) => {
+      const s = z[sid] || {};
+      return { ...z, [sid]: { ...s, mitarbeit: s.mitarbeit === wert ? null : wert } };
+    });
+  }
+  function toggleVergessen(sid) {
+    setZustand((z) => {
+      const s = z[sid] || {};
+      return { ...z, [sid]: { ...s, vergessen: !s.vergessen } };
+    });
+  }
+  function oeffneNotiz(sid) {
+    setNotizDraft(zustand[sid]?.notiz || "");
+    setNotizFor(sid);
+  }
+  function speicherNotiz() {
+    if (notizFor == null) return;
+    setZustand((z) => {
+      const s = z[notizFor] || {};
+      return { ...z, [notizFor]: { ...s, notiz: notizDraft.trim() } };
+    });
+    setNotizFor(null);
+    setNotizDraft("");
+  }
+
+  const eintraege = Object.entries(zustand).filter(([, s]) =>
+    s.mitarbeit || s.vergessen || (s.notiz || "").trim()
+  ).length;
+
+  function abschliessen() {
+    update((d) => {
+      d.grades = d.grades || [];
+      d.incidents = d.incidents || [];
+      d.notes = d.notes || [];
+      Object.entries(zustand).forEach(([sid, s]) => {
+        if (s.mitarbeit === "plus") {
+          d.grades.push({
+            id: uid(), studentId: sid, classId: fach.classId, fachId: fach.id,
+            category: "muendlich", value: 2, factor: 1,
+            title: "Positive Mitarbeit", date: heute, halbjahr, quick: true,
+          });
+        }
+        if (s.mitarbeit === "minus") {
+          d.grades.push({
+            id: uid(), studentId: sid, classId: fach.classId, fachId: fach.id,
+            category: "muendlich", value: 4, factor: 1,
+            title: "Stille / Störung", date: heute, halbjahr, quick: true,
+          });
+        }
+        if (s.vergessen) {
+          d.incidents.push({
+            id: uid(), studentId: sid, fachId: fach.id,
+            label: vergessenLabel, date: heute,
+          });
+        }
+        const notiz = (s.notiz || "").trim();
+        if (notiz) {
+          d.notes.push({
+            id: uid(), studentId: sid, date: heute, text: notiz, quick: true,
+          });
+        }
+      });
+      return d;
+    });
+    onClose();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={onClose}>
+      <div className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-200 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)] px-4 py-3">
+          <div className="flex items-center gap-2">
+            <div className="min-w-0 flex-1">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 leading-none mb-1">Stundenabschluss</div>
+              <div className="flex items-center gap-1.5 min-w-0">
+                {cls && <span className="shrink-0 text-[11px] font-bold px-1.5 py-0.5 rounded akzent-ton akzent-text leading-none">{cls.name}</span>}
+                <span className="font-semibold text-stone-800 truncate">{fach?.subject}</span>
+              </div>
+            </div>
+            <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0">
+              <X size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div className="px-4 py-3 pb-[max(2rem,env(safe-area-inset-bottom))]">
+          <p className="text-xs text-stone-500 mb-3">Ein Tipp pro Kind — was fällt dir spontan ein? Speichern kannst du am Ende alles auf einmal.</p>
+
+          <ul className="divide-y divide-stone-100">
+            {students.map((s) => {
+              const st = zustand[s.id] || {};
+              return (
+                <li key={s.id} className="py-2 flex items-center gap-2">
+                  <StudentAvatar student={s} size={26} />
+                  <span className="flex-1 text-sm text-stone-800 truncate min-w-0">{s.name}</span>
+                  <button
+                    onClick={() => toggleMitarbeit(s.id, "plus")}
+                    className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border transition-colors press-scale text-sm font-semibold ${st.mitarbeit === "plus" ? "bg-emerald-500 border-emerald-500 text-white" : "border-stone-200 text-stone-400 hover:text-emerald-500 hover:border-emerald-200"}`}
+                    aria-label="Positive Mitarbeit"
+                    title="Positive Mitarbeit"
+                  >+</button>
+                  <button
+                    onClick={() => toggleMitarbeit(s.id, "minus")}
+                    className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border transition-colors press-scale text-sm font-semibold ${st.mitarbeit === "minus" ? "bg-stone-500 border-stone-500 text-white" : "border-stone-200 text-stone-400 hover:text-stone-600 hover:border-stone-300"}`}
+                    aria-label="Störung oder still"
+                    title="Störung / still"
+                  >−</button>
+                  <button
+                    onClick={() => toggleVergessen(s.id)}
+                    className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border transition-colors press-scale ${st.vergessen ? "bg-red-500 border-red-500 text-white" : "border-stone-200 text-stone-400 hover:text-red-500 hover:border-red-200"}`}
+                    aria-label={`${vergessenLabel} vergessen`}
+                    title={`${vergessenLabel} vergessen`}
+                  ><AlertTriangle size={15} /></button>
+                  <button
+                    onClick={() => oeffneNotiz(s.id)}
+                    className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border transition-colors press-scale ${(st.notiz || "").trim() ? "akzent-ton akzent-rand akzent-text" : "border-stone-200 text-stone-400"}`}
+                    aria-label="Kurze Notiz"
+                    title="Kurze Notiz"
+                  ><StickyNote size={14} /></button>
+                </li>
+              );
+            })}
+          </ul>
+
+          <div className="mt-4 pt-4 border-t border-stone-100 space-y-2">
+            <button
+              type="button"
+              onClick={() => onWechseln?.()}
+              className="w-full text-xs text-stone-500 hover:akzent-text py-2 flex items-center justify-center gap-1.5 press-scale"
+            >
+              <Calculator size={13} /> Auch Noten vergeben → ausführliche Erfassung
+            </button>
+            <div className="flex gap-2">
+              <Button variant="ghost" onClick={onClose} className="justify-center">Abbrechen</Button>
+              <Button onClick={abschliessen} className="flex-1 justify-center">
+                <Check size={15} /> Stunde abschließen {eintraege > 0 && `(${eintraege})`}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Notiz-Bearbeitung als kleines Popover */}
+        {notizFor != null && (
+          <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[55]" onClick={() => setNotizFor(null)}>
+            <div className="bg-white w-full md:max-w-sm rounded-t-3xl md:rounded-2xl shadow-xl p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
+              <div className="text-xs font-semibold uppercase tracking-wide text-stone-400 mb-1">
+                Kurze Notiz für {students.find((s) => s.id === notizFor)?.name}
+              </div>
+              <textarea
+                autoFocus
+                className={inputCls + " min-h-[72px] mb-2"}
+                placeholder="Was ist dir aufgefallen?"
+                maxLength={300}
+                value={notizDraft}
+                onChange={(e) => setNotizDraft(e.target.value)}
+              />
+              <div className="flex gap-2">
+                <Button variant="ghost" onClick={() => setNotizFor(null)} className="flex-1 justify-center">Abbrechen</Button>
+                <Button onClick={speicherNotiz} className="flex-1 justify-center"><Check size={14} /> Übernehmen</Button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function QuickCaptureModal({ data, update, fach, cls, students, date: initialDate, halbjahr, onClose, onSwitch }) {
   const isColor = data.settings?.colorMode === true;
   const istSport = /sport/i.test(fach?.subject || "");
@@ -5307,7 +5510,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
   );
 }
 
-function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboard, onOpenUntisImport, onOpenSettings, onOpenGeburtstage, halbjahr, setCaptureLesson, pendingLessons, now }) {
+function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboard, onOpenUntisImport, onOpenSettings, onOpenGeburtstage, halbjahr, setCaptureLesson, setAbschluss, pendingLessons, now }) {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showPending, setShowPending] = useState(false);
   const [openTestDetail, setOpenTestDetail] = useState(null);
@@ -6124,7 +6327,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                   {p.anzahl > 1 && <span className="text-stone-400"> · {p.anzahl} Stunden</span>}
                 </span>
                 <button
-                  onClick={() => { setCaptureLesson({ fach: p.fach, cls: p.cls, date: todayStr }); setShowPending(false); }}
+                  onClick={() => { setAbschluss?.({ fach: p.fach, cls: p.cls }); setShowPending(false); }}
                   className="shrink-0 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 px-2.5 py-1 rounded-lg"
                 >
                   Erfassen
@@ -6303,15 +6506,17 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                   )}
                 </div>
 
-                {/* Schnellerfassung */}
+                {/* Klemmbrett: oeffnet den 30-Sek-Stundenabschluss (nicht mehr
+                    direkt die ausfuehrliche Erfassung). Von dort kann man
+                    per Link in die klassische Noten-Erfassung wechseln. */}
                 {fach && cls && (
                   <button
-                    onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
+                    onClick={() => setAbschluss?.({ fach, cls })}
                     className={`shrink-0 w-9 flex items-center justify-center transition-colors press-scale ${
                       offen ? (isColor ? "text-amber-600" : "text-stone-700 font-semibold") : "text-stone-300 hover:text-stone-500"
                     }`}
-                    aria-label="Stunde erfassen"
-                    title="Stunde erfassen"
+                    aria-label="Stunde abschließen"
+                    title="Stunde in 30 Sek abschließen"
                   >
                     {offen ? <ClipboardCheck size={16} /> : <ChevronRight size={16} />}
                   </button>
