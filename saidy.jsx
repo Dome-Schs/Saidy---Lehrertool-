@@ -2727,6 +2727,7 @@ const HELP_DATA = [
       { q: "Wie erfasse ich Fehlzeiten?", a: `Gehe zu Klasse → „Fehlzeiten" → „+ Fehlzeit". Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist.` },
       { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle in der Fläche – es erscheint eine Auswahlliste zum Auswählen des Kindes. Alternativ auf „Kind hinzufügen" tippen. Platzierte Kinder lassen sich frei auf der Fläche verschieben. Die Tafel oben lässt sich an jeden Rand ziehen (oben, unten, links, rechts). Einmal antippen (ohne zu schieben) markiert den Sitzplatz farbig: grün = klappt gut, amber = beobachten, rot = klappt nicht. Ein Kind entfernen: Token nach unten über den Rand der Fläche in die rote Toolbar ziehen und loslassen. „Aufräumen" richtet alle Kinder gleichzeitig in einem sauberen Raster aus. „Löschen" entfernt den gesamten Sitzplan. Am Ende „Speichern" tippen.` },
       { q: "Was zeigt die Zusammenfassung im Schülerprofil?", a: `Im Profil-Tab „Übersicht" erscheint eine automatisch generierte Zusammenfassung – erkennbar am Sparkles-Symbol. Sie fasst Stimmung, Notendurchschnitt, Tendenz, Aktivität der letzten 30 Tage, Förderbedarfe und aktive Ziele in einem Satz zusammen. Die Zusammenfassung wird lokal aus den gespeicherten Daten berechnet und nur angezeigt, wenn genügend Informationen vorliegen.` },
+      { q: `Was ist die „Auf einen Blick"-Karte im Kind-Profil?`, a: `Direkt unter der Profil-Karte erscheint bei aktiven Kindern eine kompakte Signal-Liste – die pädagogische Startseite des Kindes. Sie zeigt bis zu sechs Punkte, die im Alltag konkret helfen: die aktuelle Stimmung aus dem letzten Gespräch (Smiley), einen Notentrend („Noten verbessern sich zuletzt" bzw. „fallen zuletzt ab"), wiederkehrende Vorfälle (z. B. „5× Sportzeug vergessen"), das letzte Elterngespräch mit Datumsabstand, das aktive Förderziel. Alles lokal aus vorhandenen Daten berechnet – keine externen Übertragungen. Ziel: kein Wissen geht verloren, jede Lehrkraft (auch Vertretung) sieht in Sekunden was zählt.` },
       { q: "Wie funktionieren Sprachnotizen?", a: `Im Schülerprofil (Tab „Übersicht" oder „Notizen") gibt es neben dem Notiz-Eingabefeld ein Mikrofon-Symbol. Antippen startet die Aufnahme – beim ersten Mal erscheint ein kurzer Hinweis zur Datenverarbeitung. Während der Aufnahme erscheint eine Live-Vorschau des erkannten Textes. Nach der Aufnahme wird der Text automatisch ins Eingabefeld übernommen, wo er noch bearbeitet werden kann. Unterstützte Browser: Safari (iOS/macOS), Chrome und Edge. Firefox unterstützt diese Funktion nicht. Das Mikrofon-Symbol erscheint nur, wenn dein Browser Spracherkennung unterstützt.` },
       { q: "Was ist der Klassenradar auf der Übersicht?", a: `Eine kompakte Kachel, die anzeigt, welche Klassen gerade Aufmerksamkeit brauchen. Sie erscheint nur, wenn mindestens eine Klasse auffällt – ist alles ruhig, verschwindet die Karte. Drei Signale werden über die letzten 14 Tage berechnet: (1) häufige Klassenbucheinträge – ab 3 in 14 Tagen Warnung, ab 5 kritisch; (2) Klassenschnitt in einem Fach schlechter als 3,5 – ab 3,5 Warnung, ab 4,0 kritisch (nur ab 3 Noten im Fach, sonst Rauschen); (3) mindestens 4 Kinder mit „nicht so gut" oder „schlecht" in Gesprächen – ab 4 Warnung, ab 6 kritisch. Pro Klasse steht das dringendste Signal, mit „+N", wenn mehr da ist. Ein Tipp öffnet direkt das Klassen-Dashboard mit allen Details.` },
       { q: "Was zeigt das Klassen-Dashboard?", a: `Im Klassen-Tab eine Klasse aufklappen → „Klassen-Dashboard" antippen. Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf als Kacheln; eine Notenverteilungs-Leiste; eine Anwesenheits-Übersicht der letzten 12 Wochen als Farbfeld (je dunkler, desto mehr Kinder fehlten an dem Tag, rot heißt unentschuldigt dabei) mit Hinweis, auf welchen Wochentag die meisten Fehltage fallen; eine Liste „Lange kein Eintrag" mit den Kindern die am längsten keine Note oder Notiz bekommen haben – mit Name und Anzahl Tage, direkt antippbar; eine „Aufmerksamkeit"-Liste; Geburtstage der nächsten 21 Tage sowie die letzten Notizen und Gespräche. Tippen auf ein Kind oder einen Punkt öffnet das Schülerprofil.` },
@@ -8395,6 +8396,69 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
                     </div>
                   )}
                 </div>
+
+                {/* "Auf einen Blick" - paedagogische Startseite pro Kind.
+                    Zeigt automatisch aus vorhandenen Daten generierte
+                    Signale, die im Alltag wirklich helfen. Kein neues
+                    Datenformat, alles rein lokal gerechnet. */}
+                {(() => {
+                  const signale = [];
+
+                  // Aktuelle Stimmung aus letztem Gespraech
+                  if (profileMood) {
+                    signale.push({
+                      icon: profileMood.emoji,
+                      text: `Zuletzt: ${profileMood.label.toLowerCase()}`,
+                    });
+                  }
+
+                  // Notentrend (letzte Haelfte vs. erste Haelfte)
+                  if (sGradesAll.length >= 4) {
+                    const mid = Math.floor(sGradesAll.length / 2);
+                    const fAvg = sGradesAll.slice(0, mid).reduce((a, g) => a + g.value, 0) / mid;
+                    const lAvg = sGradesAll.slice(mid).reduce((a, g) => a + g.value, 0) / (sGradesAll.length - mid);
+                    if (lAvg < fAvg - 0.3) signale.push({ icon: "📈", text: "Noten verbessern sich zuletzt" });
+                    else if (lAvg > fAvg + 0.3) signale.push({ icon: "📉", text: "Noten fallen zuletzt ab" });
+                  }
+
+                  // Wiederholt vergessen
+                  const meine = (incidents || []).filter((i) => i.studentId === s.id);
+                  const grp = {};
+                  meine.forEach((i) => { grp[i.label] = (grp[i.label] || 0) + 1; });
+                  const top = Object.entries(grp).filter(([, n]) => n >= 3).sort((a, b) => b[1] - a[1])[0];
+                  if (top) signale.push({ icon: "⚠️", text: `${top[1]}× „${top[0]}" vergessen` });
+
+                  // Letztes Elterngespraech
+                  const letztesEltern = sGespraeche.find((g) => g.gesprTyp === "eltern");
+                  if (letztesEltern) {
+                    const tage = Math.max(0, Math.round((Date.now() - localDate(letztesEltern.date).getTime()) / 86400000));
+                    signale.push({
+                      icon: "🤝",
+                      text: tage === 0 ? "Elterngespräch heute" : tage === 1 ? "Elterngespräch gestern" : `Letztes Elterngespräch vor ${tage} Tagen`,
+                    });
+                  }
+
+                  // Aktives Foerderziel
+                  if (nextGoal) {
+                    signale.push({ icon: "🎯", text: nextGoal.text });
+                  }
+
+                  if (!signale.length) return null;
+
+                  return (
+                    <div className="card p-4">
+                      <div className="t-caption mb-2">Auf einen Blick</div>
+                      <ul className="space-y-1.5">
+                        {signale.slice(0, 6).map((sig, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm text-stone-700 leading-snug">
+                            <span className="shrink-0 text-base leading-none mt-0.5">{sig.icon}</span>
+                            <span className="min-w-0">{sig.text}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  );
+                })()}
 
                 {/* "Was ist seit deinem letzten Besuch passiert" - erst ab dem zweiten
                     Besuch, dann alles was zeitlich nach dem letzten Besuch neu dazukam,
