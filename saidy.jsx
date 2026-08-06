@@ -1090,7 +1090,7 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
   return (
     <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={onClose}>
       <div className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
           <div>
             <div className="font-semibold text-stone-800">WebUntis Fehlzeiten importieren</div>
             <div className="text-xs text-stone-400"><Abbr short="CSV" long="Komma-getrennte Tabellendatei, aus WebUntis exportierbar" />-Export aus WebUntis hochladen</div>
@@ -1196,7 +1196,7 @@ function LegalModal({ onClose }) {
   return (
     <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={onClose}>
       <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
           <div className="font-semibold text-stone-800">Rechtliches</div>
           <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center"><X size={16} /></button>
         </div>
@@ -1407,7 +1407,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
   return (
     <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={onClose}>
       <div className="bg-white w-full md:max-w-sm rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
           <div className="font-semibold text-stone-800">Einstellungen</div>
           <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center"><X size={16} /></button>
         </div>
@@ -2804,7 +2804,7 @@ function TippKartenSheet({ karte, alleKarten, onNaechste, onClose }) {
   return (
     <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={onClose}>
       <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
           <div className="min-w-0 flex-1 flex items-center gap-2">
             <Lightbulb size={16} className="akzent-text shrink-0" />
             <div className="min-w-0">
@@ -2975,7 +2975,7 @@ function QuickAddNoteModal({ data, modus, onSave, onClose }) {
   return (
     <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[70]" onClick={schliessenMitRettung}>
       <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
+        <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
           <div className="font-semibold text-stone-800">
             {istGespraech ? "Gespräch notieren" : "Notiz zu einem Kind"}
           </div>
@@ -4237,7 +4237,7 @@ export default function App() {
       </div>
 
       {/* Feste untere Navigation (nur mobil) – scrollt weg wenn tief gescrollt */}
-      <nav className={`md:hidden fixed inset-x-0 bottom-0 bg-white/95 backdrop-blur-lg border-t border-stone-200/80 ${fabOpen ? "z-[46]" : "z-40"} pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-transform duration-200 ${navCollapsed ? "translate-y-[calc(100%+1.5rem)]" : "translate-y-0"}`}>
+      <nav className={`md:hidden fixed inset-x-0 bottom-0 bg-white/70 backdrop-blur-xl border-t border-stone-200/80 ${fabOpen ? "z-[46]" : "z-40"} pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-transform duration-200 ${navCollapsed ? "translate-y-[calc(100%+1.5rem)]" : "translate-y-0"}`}>
         {/* Übersicht · Klassen · [+] · Noten · Mehr – „Aufgaben" liegt im Mehr-Menü
             und ist zusätzlich über den Plus-Knopf erreichbar. */}
         <div className="flex items-stretch justify-around px-2 pt-2 pb-1">
@@ -4682,7 +4682,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
         {/* Kopf bleibt beim Scrollen sichtbar - Klasse und Fach gross und klar,
             damit auffaellt wenn Saidy die falsche Stunde vorgewaehlt hat. Ein Tipp
             auf die Zeile oeffnet die Liste der anderen Stunden des Tages. */}
-        <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-200 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)]">
+        <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-200 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)]">
           <div className="px-4 py-3 flex items-center gap-2">
             <button
               type="button"
@@ -12207,7 +12207,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
         return (
           <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={() => setSportzeugDetail(null)}>
             <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
-              <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
+              <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
                 <div className="min-w-0">
                   <div className="font-semibold text-stone-800 leading-tight truncate">Sportzeug vergessen</div>
                   <div className="text-xs text-stone-400 truncate">{s?.name}</div>
@@ -12771,7 +12771,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
           {showSprechtagPicker && (
             <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={() => setShowSprechtagPicker(false)}>
               <div className="bg-white w-full md:max-w-sm rounded-t-3xl md:rounded-2xl shadow-xl sheet overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-                <div className="bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between">
+                <div className="bg-white/70 backdrop-blur-xl border-b border-stone-100 px-4 py-3 flex items-center justify-between">
                   <div className="font-semibold text-stone-800">Elternsprechtag – Kind wählen</div>
                   <button onClick={() => setShowSprechtagPicker(false)} className="w-8 h-8 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center"><X size={16} /></button>
                 </div>
@@ -12817,7 +12817,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
           {student && (
               <div className="fixed inset-0 bg-stone-900/40 z-[55] flex items-end md:items-center md:justify-center" onClick={() => setSelectedStudent(null)}>
                 <div className="bg-white w-full md:max-w-lg md:rounded-2xl rounded-t-3xl overflow-y-auto sheet " onClick={(e) => e.stopPropagation()}>
-                  <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-200 px-4 py-3 flex items-center gap-2.5 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)]">
+                  <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-200 px-4 py-3 flex items-center gap-2.5 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)]">
                     <StudentAvatar student={student} size={34} />
                     <div className="flex-1 min-w-0">
                       <div className="font-medium text-stone-800 leading-tight truncate">{student.name}</div>
@@ -13059,7 +13059,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                 {showSprechtag && (
                   <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={() => setShowSprechtag(false)}>
                     <div className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
-                      <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
+                      <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
                         <div className="min-w-0">
                           <div className="font-semibold text-stone-800 leading-tight">Elternsprechtag</div>
                           <div className="text-xs text-stone-400 truncate">{student.name} · {fach.subject}</div>
@@ -13158,7 +13158,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                 {showGradesList && (
                   <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={() => { setShowGradesList(false); setEditingGrade(null); }}>
                     <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
-                      <div className="sticky top-0 bg-white/95 backdrop-blur border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
+                      <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
                         <div className="font-semibold text-stone-800">Einzelnoten – {student.name}</div>
                         <button onClick={() => { setShowGradesList(false); setEditingGrade(null); }} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
                       </div>
