@@ -3203,6 +3203,7 @@ export default function App() {
   const mainRef = useRef(null);
   const [showHelp, setShowHelp] = useState(false);
   const [showDokumente, setShowDokumente] = useState(false);
+  const [showGeburtstage, setShowGeburtstage] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [fabActions, setFabActions] = useState([]); // [{label, icon, onClick}]
   const [showSearch, setShowSearch] = useState(false);
@@ -4173,7 +4174,7 @@ export default function App() {
               </button>
             </div>
           )}
-          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenKlassenDashboard={(classId) => { setFocusKlassenDashboardId(classId); goTo("klassen"); }} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
+          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenKlassenDashboard={(classId) => { setFocusKlassenDashboardId(classId); goTo("klassen"); }} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} onOpenGeburtstage={() => setShowGeburtstage(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} pendingLessons={pendingLessons} now={now} />}
           {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} focusKlassenDashboardId={focusKlassenDashboardId} onFocusKlassenDashboardConsumed={() => setFocusKlassenDashboardId(null)} onRegisterFab={setFabActions} showToast={showToast} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
           {tab === "kalender" && <KalenderTab data={activeData} update={update} autoOpenForm={kalenderAutoForm} onAutoFormConsumed={() => setKalenderAutoForm(false)} />}
@@ -4381,6 +4382,14 @@ export default function App() {
           data={activeData}
           update={update}
           onClose={() => setShowDokumente(false)}
+        />
+      )}
+
+      {showGeburtstage && (
+        <GeburtstageUebersicht
+          data={activeData}
+          onOpenStudent={(id) => { setShowGeburtstage(false); navigateToStudent(id); }}
+          onClose={() => setShowGeburtstage(false)}
         />
       )}
 
@@ -4991,7 +5000,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
   );
 }
 
-function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboard, onOpenUntisImport, onOpenSettings, halbjahr, setCaptureLesson, pendingLessons, now }) {
+function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboard, onOpenUntisImport, onOpenSettings, onOpenGeburtstage, halbjahr, setCaptureLesson, pendingLessons, now }) {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showPending, setShowPending] = useState(false);
   const [openTestDetail, setOpenTestDetail] = useState(null);
@@ -5932,7 +5941,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           ) : (
             <p className="text-xs text-stone-400">Keine in 3 Wochen</p>
           )}
-          <button onClick={() => onNavigate?.("klassen")} className="mt-2 py-1.5 -mx-1 px-1 text-xs text-stone-500 hover:text-stone-700 text-left">
+          <button onClick={() => onOpenGeburtstage?.()} className="mt-2 py-1.5 -mx-1 px-1 text-xs text-stone-500 hover:text-stone-700 text-left">
             Alle Geburtstage →
           </button>
         </Card>
@@ -7000,6 +7009,90 @@ function DokumenteBlock({ scope, scopeId, documents, update, hinweis }) {
    Konferenzprotokolle, Formulare, Schulordnung. Zusaetzlich eine Uebersicht
    aller abgelegten Dokumente ueber alle Bereiche hinweg, damit ein einzelnes
    Dokument auch wiederfindet, wer sich nicht mehr erinnert, wo es lag. */
+/* Vollstaendige, klassenuebergreifende Geburtstagsliste. Die Kachel auf der
+   Uebersicht zeigt nur eine Handvoll Namen der naechsten drei Wochen - „Alle
+   Geburtstage" fuehrte bisher nur zur Klassenliste, ohne dass dort irgendwo
+   tatsaechlich alle Geburtstage stehen. Diese Ansicht ist der echte Ort dafuer:
+   jedes Kind mit hinterlegtem Geburtstag, sortiert nach dem naechsten Termin. */
+function GeburtstageUebersicht({ data, onOpenStudent, onClose }) {
+  const [suche, setSuche] = useState("");
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+
+  function info(s) {
+    if (!s.birthday) return null;
+    const [by, bm, bd] = s.birthday.split("-").map(Number);
+    if (!bm || !bd) return null;
+    let next = new Date(today.getFullYear(), bm - 1, bd);
+    if (next < today) next = new Date(today.getFullYear() + 1, bm - 1, bd);
+    const tage = Math.round((next - today) / 86400000);
+    return { next, tage, alter: by ? next.getFullYear() - by : null };
+  }
+
+  const q = suche.trim().toLowerCase();
+  const alle = data.students
+    .filter((s) => !s.deletedAt)
+    .map((s) => ({ s, info: info(s), cls: data.classes.find((c) => c.id === s.classId) }))
+    .filter((x) => x.info && (!q || x.s.name.toLowerCase().includes(q) || x.cls?.name.toLowerCase().includes(q)))
+    .sort((a, b) => a.info.tage - b.info.tage);
+
+  const ohneDatum = data.students.filter((s) => !s.deletedAt && !s.birthday).length;
+
+  return (
+    <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
+      <div className="bg-white border-b border-stone-100 shrink-0">
+        <div className="flex items-center gap-3 px-4 pb-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale">
+            <ChevronLeft size={18} className="text-stone-600" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="text-xl font-bold text-stone-900">Geburtstage</div>
+            <div className="t-caption">{alle.length} {alle.length === 1 ? "Kind" : "Kinder"} mit Geburtstag hinterlegt</div>
+          </div>
+        </div>
+        {data.students.length > 8 && (
+          <div className="px-4 pb-3">
+            <input
+              className="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm placeholder-stone-400 outline-none"
+              placeholder="Suchen nach Name oder Klasse …"
+              value={suche}
+              onChange={(e) => setSuche(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        {alle.length ? (
+          <div className="card divide-y divide-stone-100 overflow-hidden">
+            {alle.map(({ s, info: i, cls }) => (
+              <button key={s.id} onClick={() => onOpenStudent(s.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-stone-50 press-scale">
+                <span className="text-xl shrink-0">{i.tage === 0 ? "🎂" : "🎁"}</span>
+                <StudentAvatar student={s} size={32} />
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-stone-800 truncate">{s.name}</div>
+                  <div className="t-caption">{cls?.name || "ohne Klasse"} · {i.next.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}{i.alter != null ? ` · wird ${i.alter}` : ""}</div>
+                </div>
+                <span className={`text-xs font-medium shrink-0 ${i.tage === 0 ? "text-red-600" : i.tage <= 7 ? "text-amber-600" : "text-stone-400"}`}>
+                  {i.tage === 0 ? "Heute!" : i.tage === 1 ? "morgen" : `in ${i.tage} T.`}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-stone-400 px-1">
+            {q ? "Niemand gefunden." : `Noch keine Geburtstage hinterlegt – trag sie im Schülerprofil unter „Mehr" ein.`}
+          </p>
+        )}
+        {!q && ohneDatum > 0 && (
+          <p className="text-xs text-stone-400 mt-3 px-1">
+            {ohneDatum} {ohneDatum === 1 ? "Kind hat" : "Kinder haben"} noch keinen Geburtstag hinterlegt.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function DokumenteAllgemein({ data, update, onClose }) {
   const [suche, setSuche] = useState("");
   const documents = data.documents || [];
