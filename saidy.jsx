@@ -2728,6 +2728,7 @@ const HELP_DATA = [
       { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle in der Fläche – es erscheint eine Auswahlliste zum Auswählen des Kindes. Alternativ auf „Kind hinzufügen" tippen. Platzierte Kinder lassen sich frei auf der Fläche verschieben. Die Tafel oben lässt sich an jeden Rand ziehen (oben, unten, links, rechts). Einmal antippen (ohne zu schieben) markiert den Sitzplatz farbig: grün = klappt gut, amber = beobachten, rot = klappt nicht. Ein Kind entfernen: Token nach unten über den Rand der Fläche in die rote Toolbar ziehen und loslassen. „Aufräumen" richtet alle Kinder gleichzeitig in einem sauberen Raster aus. „Löschen" entfernt den gesamten Sitzplan. Am Ende „Speichern" tippen.` },
       { q: "Was zeigt die Zusammenfassung im Schülerprofil?", a: `Im Profil-Tab „Übersicht" erscheint eine automatisch generierte Zusammenfassung – erkennbar am Sparkles-Symbol. Sie fasst Stimmung, Notendurchschnitt, Tendenz, Aktivität der letzten 30 Tage, Förderbedarfe und aktive Ziele in einem Satz zusammen. Die Zusammenfassung wird lokal aus den gespeicherten Daten berechnet und nur angezeigt, wenn genügend Informationen vorliegen.` },
       { q: `Was ist die „Auf einen Blick"-Karte im Kind-Profil?`, a: `Direkt unter der Profil-Karte erscheint bei aktiven Kindern eine kompakte Signal-Liste – die pädagogische Startseite des Kindes. Sie zeigt bis zu sechs Punkte, die im Alltag konkret helfen: die aktuelle Stimmung aus dem letzten Gespräch (Smiley), einen Notentrend („Noten verbessern sich zuletzt" bzw. „fallen zuletzt ab"), wiederkehrende Vorfälle (z. B. „5× Sportzeug vergessen"), das letzte Elterngespräch mit Datumsabstand, das aktive Förderziel. Alles lokal aus vorhandenen Daten berechnet – keine externen Übertragungen. Ziel: kein Wissen geht verloren, jede Lehrkraft (auch Vertretung) sieht in Sekunden was zählt.` },
+      { q: `Wie exportiere ich eine Schülerakte für die Übergabe?`, a: `Im Kind-Profil unter der Gesprächs-Erfassung: „Schülerakte als PDF – für Übergabe an nächste Lehrkraft". Es öffnet sich eine druckbare Vorschau mit Stammdaten, Kontakten, aktuellen Förderzielen, Noten pro Fach, Fehlzeiten, Vorfällen, Gesprächen (letzte 15) und Beobachtungen (letzte 25). Ein Klick auf „Als PDF drucken" öffnet den Browser-Druckdialog – dort „In PDF speichern" wählen. So kann die nächste Klassen- oder Fachlehrkraft in Minuten das pädagogische Wissen übernehmen, statt sich durch Papier zu wühlen. Datenschutz-Hinweis am Fuß der Seite eingebaut.` },
       { q: "Wie funktionieren Sprachnotizen?", a: `Im Schülerprofil (Tab „Übersicht" oder „Notizen") gibt es neben dem Notiz-Eingabefeld ein Mikrofon-Symbol. Antippen startet die Aufnahme – beim ersten Mal erscheint ein kurzer Hinweis zur Datenverarbeitung. Während der Aufnahme erscheint eine Live-Vorschau des erkannten Textes. Nach der Aufnahme wird der Text automatisch ins Eingabefeld übernommen, wo er noch bearbeitet werden kann. Unterstützte Browser: Safari (iOS/macOS), Chrome und Edge. Firefox unterstützt diese Funktion nicht. Das Mikrofon-Symbol erscheint nur, wenn dein Browser Spracherkennung unterstützt.` },
       { q: "Was ist der Klassenradar auf der Übersicht?", a: `Eine kompakte Kachel, die anzeigt, welche Klassen gerade Aufmerksamkeit brauchen. Sie erscheint nur, wenn mindestens eine Klasse auffällt – ist alles ruhig, verschwindet die Karte. Drei Signale werden über die letzten 14 Tage berechnet: (1) häufige Klassenbucheinträge – ab 3 in 14 Tagen Warnung, ab 5 kritisch; (2) Klassenschnitt in einem Fach schlechter als 3,5 – ab 3,5 Warnung, ab 4,0 kritisch (nur ab 3 Noten im Fach, sonst Rauschen); (3) mindestens 4 Kinder mit „nicht so gut" oder „schlecht" in Gesprächen – ab 4 Warnung, ab 6 kritisch. Pro Klasse steht das dringendste Signal, mit „+N", wenn mehr da ist. Ein Tipp öffnet direkt das Klassen-Dashboard mit allen Details.` },
       { q: "Was zeigt das Klassen-Dashboard?", a: `Im Klassen-Tab eine Klasse aufklappen → „Klassen-Dashboard" antippen. Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf als Kacheln; eine Notenverteilungs-Leiste; eine Anwesenheits-Übersicht der letzten 12 Wochen als Farbfeld (je dunkler, desto mehr Kinder fehlten an dem Tag, rot heißt unentschuldigt dabei) mit Hinweis, auf welchen Wochentag die meisten Fehltage fallen; eine Liste „Lange kein Eintrag" mit den Kindern die am längsten keine Note oder Notiz bekommen haben – mit Name und Anzahl Tage, direkt antippbar; eine „Aufmerksamkeit"-Liste; Geburtstage der nächsten 21 Tage sowie die letzten Notizen und Gespräche. Tippen auf ein Kind oder einen Punkt öffnet das Schülerprofil.` },
@@ -7861,6 +7862,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
   const [photoError, setPhotoError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [leitfadenFor, setLeitfadenFor] = useState(null); // studentId
+  const [exportFor, setExportFor] = useState(null); // studentId
   /* Haelt die studentId, fuer die gerade die Einwilligung erfragt wird - die
      Bestaetigung gilt nur fuer dieses eine Kind. */
   const [showMedicalConsent, setShowMedicalConsent] = useState(null);
@@ -8010,6 +8012,15 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
           });
           setLeitfadenFor(null);
         }}
+      />
+    )}
+    {exportFor && (
+      <SchuelerakteExportModal
+        student={students.find((s) => s.id === exportFor)}
+        cls={cls}
+        data={{ notes, grades, absences, incidents, documents, foerderZiele, faecher }}
+        halbjahr={currentHalbjahr()}
+        onClose={() => setExportFor(null)}
       />
     )}
     {/* TP-02 · Schülerliste als Bottom-Sheet mit Preview-Karten */}
@@ -8654,6 +8665,13 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
                       className="mt-2 w-full text-xs text-stone-500 hover:akzent-text py-2 flex items-center justify-center gap-1.5 press-scale"
                     >
                       <MessageSquare size={13} /> Ausführlich mit Leitfaden führen (Kind / Eltern)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExportFor(s.id)}
+                      className="w-full text-xs text-stone-500 hover:akzent-text py-2 flex items-center justify-center gap-1.5 press-scale"
+                    >
+                      <Printer size={13} /> Schülerakte als PDF – für Übergabe an nächste Lehrkraft
                     </button>
                   </div>
                 </div>
@@ -12386,6 +12404,219 @@ function IncidentsOverview({ data, update, fach, cls, students, halbjahr }) {
 }
 
 /* Druck-/PDF-Ansicht: sauberes Schwarz-Weiß-Layout für Klassenübersicht oder Einzelschüler */
+/* Schuelerakte-Uebergabe-Export: alles, was ueber ein Kind gespeichert ist,
+   als druckbare A4-Seite. Kern-Idee aus dem Purpose: bei Lehrerwechsel /
+   Schulwechsel darf kein paedagogisches Wissen verloren gehen. Nutzt
+   window.print() statt eigenem PDF-Writer, weil dann echtes CSS + Icons /
+   Farben in der Ausgabe funktionieren. User waehlt im Druckdialog "Als PDF
+   speichern". */
+function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
+  const heute = new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+
+  const sNotes = (data.notes || []).filter((n) => n.studentId === student.id && n.type !== "gespraech").sort((a, b) => b.date.localeCompare(a.date));
+  const sGespraeche = (data.notes || []).filter((n) => n.studentId === student.id && n.type === "gespraech").sort((a, b) => b.date.localeCompare(a.date));
+  const sGrades = (data.grades || []).filter((g) => g.studentId === student.id);
+  const sFehl = (data.absences || []).filter((a) => a.studentId === student.id);
+  const sZiele = (data.foerderZiele || []).filter((z) => z.studentId === student.id);
+  const sIncidents = (data.incidents || []).filter((i) => i.studentId === student.id);
+  const sDocs = (data.documents || []).filter((d) => d.scope === "student" && d.scopeId === student.id);
+
+  const faecherOfClass = (data.faecher || []).filter((f) => f.classId === student.classId);
+  const notenProFach = faecherOfClass.map((f) => {
+    const fg = sGrades.filter((g) => g.fachId === f.id && g.halbjahr === halbjahr);
+    if (!fg.length) return null;
+    const total = fg.reduce((sum, g) => sum + g.value * (g.factor || 1), 0);
+    const factors = fg.reduce((sum, g) => sum + (g.factor || 1), 0);
+    return { fach: f, avg: total / factors, anzahl: fg.length };
+  }).filter(Boolean);
+
+  const fehlTage = new Set(sFehl.map((a) => a.date)).size;
+  const fehlUnent = sFehl.filter((a) => a.excuseStatus === "unentschuldigt").length;
+
+  const incidentsGrp = {};
+  sIncidents.forEach((i) => { incidentsGrp[i.label] = (incidentsGrp[i.label] || 0) + 1; });
+
+  function drucken() {
+    window.print();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/50 z-[60] flex flex-col print:static print:bg-white" onClick={onClose}>
+      {/* Druck-CSS: versteckt alles ausser .print-akte, setzt A4-Randlayout */}
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 15mm 12mm; }
+          body { background: white !important; }
+          .print-hide { display: none !important; }
+          .print-akte { box-shadow: none !important; margin: 0 !important; max-width: none !important; padding: 0 !important; }
+        }
+      `}</style>
+
+      <div className="print-hide flex items-center justify-between px-4 py-3 bg-white border-b border-stone-200 shrink-0">
+        <div>
+          <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 leading-none mb-0.5">Übergabe-Export</div>
+          <div className="font-semibold text-stone-800">Schülerakte {student.name}</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button onClick={drucken}><Printer size={14} /> Als PDF drucken</Button>
+          <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center">
+            <X size={16} />
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto bg-stone-100 py-6 px-4 print:overflow-visible print:bg-white print:p-0" onClick={(e) => e.stopPropagation()}>
+        <div className="print-akte bg-white max-w-[720px] mx-auto shadow-md p-8 text-stone-800 text-sm leading-relaxed" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif" }}>
+
+          {/* Kopf */}
+          <div className="border-b border-stone-300 pb-3 mb-4">
+            <div className="flex items-baseline justify-between gap-4">
+              <div>
+                <div className="text-[10px] uppercase tracking-widest text-stone-500 mb-0.5">Pädagogische Übergabe</div>
+                <h1 className="text-2xl font-bold tracking-tight text-stone-900 leading-tight">{student.name}</h1>
+                <div className="text-xs text-stone-500 mt-0.5">{cls?.name}{student.birthday ? ` · geboren ${localDate(student.birthday).toLocaleDateString("de-DE")}` : ""}</div>
+              </div>
+              <div className="text-right text-[10px] text-stone-500">
+                <div>Stand: {heute}</div>
+                <div>Saidy – vertraulich</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Kontakt & Stamm */}
+          {(student.parentName || student.parentPhone || student.parentMail || student.address) && (
+            <section className="mb-4">
+              <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Kontakt</h2>
+              <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
+                {student.parentName && <div><span className="text-stone-500">Erziehungsberechtigte: </span>{student.parentName}</div>}
+                {student.parentPhone && <div><span className="text-stone-500">Telefon: </span>{student.parentPhone}</div>}
+                {student.parentMail && <div><span className="text-stone-500">E-Mail: </span>{student.parentMail}</div>}
+                {student.address && <div><span className="text-stone-500">Adresse: </span>{student.address}</div>}
+              </div>
+            </section>
+          )}
+
+          {/* Foerderziele */}
+          {sZiele.length > 0 && (
+            <section className="mb-4">
+              <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Förderziele</h2>
+              <ul className="space-y-1 text-xs">
+                {sZiele.map((z) => (
+                  <li key={z.id} className="flex gap-2">
+                    <span className="text-stone-400 shrink-0">{z.doneAt ? "✓" : "○"}</span>
+                    <span className="min-w-0">
+                      {z.text}
+                      {z.doneAt && <span className="text-stone-400"> · erledigt am {localDate(z.doneAt).toLocaleDateString("de-DE")}</span>}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {/* Noten pro Fach */}
+          {notenProFach.length > 0 && (
+            <section className="mb-4">
+              <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Noten – {halbjahr}. Halbjahr</h2>
+              <table className="w-full text-xs">
+                <tbody>
+                  {notenProFach.map(({ fach, avg, anzahl }) => (
+                    <tr key={fach.id} className="border-b border-stone-100 last:border-0">
+                      <td className="py-1 pr-4">{fach.subject}</td>
+                      <td className="py-1 pr-4 text-stone-500">Ø {avg.toFixed(2)}</td>
+                      <td className="py-1 text-stone-400 text-right">{anzahl} Note{anzahl === 1 ? "" : "n"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </section>
+          )}
+
+          {/* Fehlzeiten + Vorfaelle */}
+          {(fehlTage > 0 || Object.keys(incidentsGrp).length > 0) && (
+            <section className="mb-4">
+              <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Fehlzeiten & Vorfälle</h2>
+              <div className="text-xs space-y-0.5">
+                {fehlTage > 0 && (
+                  <div><span className="text-stone-500">Fehltage: </span>{fehlTage}{fehlUnent > 0 && <span className="text-stone-500"> · davon unentschuldigt: {fehlUnent}</span>}</div>
+                )}
+                {Object.entries(incidentsGrp).map(([label, n]) => (
+                  <div key={label}><span className="text-stone-500">{label} vergessen: </span>{n}×</div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Gespraeche */}
+          {sGespraeche.length > 0 && (
+            <section className="mb-4">
+              <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Gespräche (jüngste zuerst)</h2>
+              <ul className="space-y-2 text-xs">
+                {sGespraeche.slice(0, 15).map((g) => {
+                  const typLabel = ({ schueler: "Schüler:in", eltern: "Eltern", foerder: "Förder" })[g.gesprTyp] || "";
+                  const mood = MOOD_OPTIONS.find((m) => m.key === g.mood);
+                  return (
+                    <li key={g.id} className="border-l-2 border-stone-200 pl-2">
+                      <div className="text-stone-500 text-[10px]">
+                        {localDate(g.date).toLocaleDateString("de-DE")}
+                        {typLabel && ` · ${typLabel}`}
+                        {mood && ` · ${mood.emoji} ${mood.label}`}
+                      </div>
+                      <div>{g.text}</div>
+                    </li>
+                  );
+                })}
+              </ul>
+              {sGespraeche.length > 15 && (
+                <p className="text-[10px] text-stone-400 mt-1">… und {sGespraeche.length - 15} weitere Gespräche in der App.</p>
+              )}
+            </section>
+          )}
+
+          {/* Notizen */}
+          {sNotes.length > 0 && (
+            <section className="mb-4">
+              <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Beobachtungen (jüngste zuerst)</h2>
+              <ul className="space-y-1.5 text-xs">
+                {sNotes.slice(0, 25).map((n) => (
+                  <li key={n.id} className="flex gap-2">
+                    <span className="text-stone-400 shrink-0 tabular-nums">{localDate(n.date).toLocaleDateString("de-DE")}</span>
+                    <span className="min-w-0">{n.text}</span>
+                  </li>
+                ))}
+              </ul>
+              {sNotes.length > 25 && (
+                <p className="text-[10px] text-stone-400 mt-1">… und {sNotes.length - 25} weitere Notizen in der App.</p>
+              )}
+            </section>
+          )}
+
+          {/* Dokumente */}
+          {sDocs.length > 0 && (
+            <section className="mb-4">
+              <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Hinterlegte Dokumente</h2>
+              <ul className="space-y-0.5 text-xs">
+                {sDocs.map((d) => (
+                  <li key={d.id} className="text-stone-600">
+                    · {d.name}{d.note ? ` – ${d.note}` : ""}
+                    <span className="text-stone-400"> ({localDate(d.addedAt).toLocaleDateString("de-DE")})</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-[10px] text-stone-400 mt-1">Dokumente selbst liegen im Saidy-Speicher, nicht im PDF.</p>
+            </section>
+          )}
+
+          {/* Fuss */}
+          <div className="mt-8 pt-3 border-t border-stone-300 text-[9px] text-stone-400 leading-tight">
+            Diese Übersicht enthält personenbezogene Daten nach Art. 6 DSGVO und dient ausschließlich der pädagogischen Übergabe zwischen Lehrkräften. Vertrauliche Behandlung, keine Weitergabe an Unbefugte. Erzeugt mit Saidy · Stand: {heute}.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function PrintReport({ mode, fach, cls, students, data, halbjahr, onClose }) {
   const weights = fach?.weights || DEFAULT_WEIGHTS;
   const today = new Date().toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
