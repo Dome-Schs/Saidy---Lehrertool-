@@ -3242,24 +3242,17 @@ export default function App() {
 
   /* Rotation Landscape -> Portrait: iOS Safari rechnet env(safe-area-inset-bottom)
      und 100dvh nicht immer sofort neu; die fixed Bottom-Nav sitzt dann nicht
-     mehr am unteren Bildschirmrand. Fix in Schichten:
-
-     1. Custom Property --app-vh haelt die echte innerHeight in px vor,
-        parallel zu 100dvh. Der App-Root nutzt sie als Hoehe (siehe unten).
-     2. Bei orientationchange und visualViewport.resize wird sie neu gesetzt,
-        mit einem 60ms-Delay, weil Safari nach Rotation ein paar Frames
-        braucht, bis innerHeight stimmt.
-     3. Ein synthetisches window.resize danach zwingt fixed-Elemente zur
-        Neuberechnung.
-     4. Nav wird aufgeklappt, falls sie collapsed war.
-
-     Kein body-style-transform-Hack – der hat den Bug versehentlich
-     verschlimmert, weil ein Vorfahre mit transform aus fixed-position
-     eine absolute-position zu body macht. */
+     mehr am unteren Bildschirmrand. Fix: eine CSS-Var --app-vh mit
+     window.innerHeight vorhalten, aktualisiert AUSSCHLIESSLICH bei
+     orientationchange - NICHT bei visualViewport.resize, weil iOS Safari
+     das bei jedem Scroll (URL-Bar shrink/expand) feuert und die App-Hoehe
+     dann standig wechselt -> Bottom-Nav flackert und springt. */
   useEffect(() => {
     function updateVh() {
-      const h = window.visualViewport?.height || window.innerHeight;
-      document.documentElement.style.setProperty("--app-vh", h + "px");
+      document.documentElement.style.setProperty(
+        "--app-vh",
+        window.innerHeight + "px"
+      );
     }
     function handleRotation() {
       setNavCollapsed(false);
@@ -3271,11 +3264,7 @@ export default function App() {
     }
     updateVh();
     window.addEventListener("orientationchange", handleRotation);
-    window.visualViewport?.addEventListener("resize", updateVh);
-    return () => {
-      window.removeEventListener("orientationchange", handleRotation);
-      window.visualViewport?.removeEventListener("resize", updateVh);
-    };
+    return () => window.removeEventListener("orientationchange", handleRotation);
   }, []);
 
   // Wechselt den Bereich und optional den Unterreiter (z. B. direkt zu den Diensten)
