@@ -5882,9 +5882,9 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           return (
             <Card
               key={unit.id}
-              className={`overflow-hidden p-0 ${zeigeLetzte ? "akzent-ton" : ""} ${offen ? "!border-l-[3px] !border-l-amber-600" : ""}`}
+              className={`overflow-hidden p-0 min-h-[76px] ${zeigeLetzte ? "akzent-ton" : ""} ${offen ? "!border-l-[3px] !border-l-amber-600" : ""}`}
             >
-              <div className="flex items-stretch">
+              <div className="flex items-stretch h-full">
                 {/* Zeitspalte – bei Doppelstunde durchgehend von 07:55 bis 09:30 */}
                 <div className="shrink-0 w-[3.5rem] py-2.5 pl-2 pr-1">
                   <div className="text-[13px] font-semibold text-stone-800 tabular-nums leading-tight whitespace-nowrap">
