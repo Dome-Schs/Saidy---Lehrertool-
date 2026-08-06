@@ -5871,10 +5871,21 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                   {cd?.label && !topic && <div className="text-[10px] text-stone-400 mt-1 leading-tight line-clamp-2 break-words">{cd.label}</div>}
                 </button>
 
-                {/* Thema + Lernfortschritt */}
+                {/* Thema + Lernfortschritt. Der Thema-Text ist klickbar
+                    und springt in die Schnellerfassung dieser Stunde -
+                    dort steht das Themenfeld ganz oben. Ohne fach/cls
+                    (leere Stunde) bleibt es reiner Text. */}
                 <div className="flex-1 min-w-0 py-2.5 pr-1">
-                  {topic ? (
-                    <div className="text-[11px] text-stone-500 truncate mb-1.5">Thema: {topic.text}</div>
+                  {fach && cls ? (
+                    <button
+                      onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
+                      className={`text-[11px] truncate mb-1.5 w-full text-left press-scale ${
+                        topic ? "text-stone-500 hover:text-stone-700" : "text-stone-400 hover:text-stone-600"
+                      }`}
+                      aria-label={topic ? `Thema ${topic.text} bearbeiten` : "Thema hinzufügen"}
+                    >
+                      {topic ? `Thema: ${topic.text}` : "+ Thema hinzufügen"}
+                    </button>
                   ) : (
                     <div className="text-[11px] text-stone-300 truncate mb-1.5">Kein Thema notiert</div>
                   )}
