@@ -4010,8 +4010,43 @@ export default function App() {
         .anim-bg          { animation: fade-in 0.22s ease both; }
         .anim-tab         { animation: fade-in-tab 0.18s ease both; }
 
+        /* Sheet-Titel: dezenter negativer Letter-Spacing wie Apple-Sheets
+           (San Francisco kerns Semibold-Ueberschriften optisch enger). */
+        .sheet .font-semibold.text-stone-800,
+        .dialog .font-semibold.text-stone-800 {
+          letter-spacing: -0.015em;
+        }
+
+        /* Systemeinstellung "Bewegung reduzieren": Cross-Fade statt Slide.
+           Die Bewegungen sind subtile Orientierungshilfen, kein Deko-Effekt -
+           bei reduced-motion wird daraus ein weiches Ein-/Ausblenden. */
         @media (prefers-reduced-motion: reduce) {
-          * { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+          .anim-sheet,
+          .anim-slide-right,
+          .anim-item,
+          .anim-tab {
+            animation: fade-in 0.12s ease both !important;
+          }
+          * {
+            transition-duration: 0.01ms !important;
+          }
+        }
+
+        /* Systemeinstellung "Transparenz reduzieren": Glasflaechen werden
+           deckend, backdrop-blur aus. Sonst wird Text auf glaskaeltigem
+           Grund fuer Betroffene schwer lesbar. Attribut-Selektoren umgehen
+           Tailwind's Slash-Escaping-Feinheiten. */
+        @media (prefers-reduced-transparency: reduce) {
+          [class~="bg-white/70"],
+          [class~="bg-white/95"],
+          [class~="bg-white/80"],
+          [class~="bg-white/60"] {
+            background-color: rgb(255 255 255) !important;
+          }
+          [class*="backdrop-blur"] {
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+          }
         }
       `}</style>
       {showOnboarding && (
