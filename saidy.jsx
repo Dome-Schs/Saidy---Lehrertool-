@@ -5873,26 +5873,15 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
              Akzentton als Hintergrund). Ist die gerade eben gehaltene Stunde auch
              noch offen, gewinnt Amber. */
           const zeigeLetzte = istLetzte && !offen;
+          /* Amber-Anker fuer offene Stunden: border-left direkt auf der Karte -
+             laeuft entlang der linken Kontur, folgt der border-radius oben und
+             unten und endet dadurch in der Kurve. Kein schwebendes Element mehr,
+             der Balken ist Teil der Karten-Kontur. */
           return (
             <Card
               key={unit.id}
-              className={`overflow-hidden p-0 relative ${zeigeLetzte ? "akzent-ton" : ""} ${offen ? "!border-transparent" : ""}`}
+              className={`overflow-hidden p-0 ${zeigeLetzte ? "akzent-ton" : ""} ${offen ? "!border-l-[3px] !border-l-amber-600" : ""}`}
             >
-              {/* Amber-Kapsel als Anker fuer offene Stunden - schwebt links
-                  in der Karte, wird oben und unten schmaler und verlaeuft an
-                  den Enden. Wirkt edler als eine gerade border-left-Linie. */}
-              {offen && (
-                <span
-                  aria-hidden="true"
-                  className={`pointer-events-none absolute left-[3px] top-1/2 -translate-y-1/2 w-[3px] h-[62%] rounded-full ${isColor ? "bg-amber-600" : "bg-[var(--oliv)]"}`}
-                  style={{
-                    WebkitMaskImage:
-                      "linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)",
-                    maskImage:
-                      "linear-gradient(to bottom, transparent 0%, black 18%, black 82%, transparent 100%)",
-                  }}
-                />
-              )}
               <div className="flex items-stretch">
                 {/* Zeitspalte – bei Doppelstunde durchgehend von 07:55 bis 09:30 */}
                 <div className="shrink-0 w-[3.5rem] py-2.5 pl-2 pr-1">
