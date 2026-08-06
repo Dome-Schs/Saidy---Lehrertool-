@@ -6254,7 +6254,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       {tippDesTages && (
         <button
           onClick={() => setTippSheetKarte(tippDesTages)}
-          className="w-full text-left flex items-center gap-3 bg-white rounded-2xl border border-stone-100 px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors press-scale"
+          className="karte-luft w-full text-left flex items-center gap-3 px-3 py-2.5 press-scale"
         >
           <span className="w-9 h-9 rounded-lg akzent-ton flex items-center justify-center shrink-0">
             <Lightbulb size={16} className="akzent-text" />
@@ -12665,7 +12665,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
               <button
                 key={c.id}
                 onClick={() => setSelectedClass(c.id)}
-                className="w-full bg-white rounded-2xl border border-stone-200 shadow-sm p-4 text-left hover:akzent-rand transition-colors press-scale"
+                className="karte-luft w-full p-4 text-left hover:akzent-rand transition-colors press-scale"
               >
                 <div className="flex items-center gap-3 mb-3">
                   <span className="w-11 h-11 rounded-xl akzent-ton font-bold flex items-center justify-center shrink-0">
@@ -12729,7 +12729,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
               <button
                 key={f.id}
                 onClick={() => { setSelectedFach(f.id); setSelectedStudent(null); }}
-                className="w-full bg-white rounded-2xl border border-stone-200 shadow-sm p-4 text-left hover:akzent-rand transition-colors press-scale"
+                className="karte-luft w-full p-4 text-left hover:akzent-rand transition-colors press-scale"
               >
                 <div className="flex items-center gap-3">
                   <span className="w-2.5 h-11 rounded-full shrink-0" style={{ backgroundColor: isColor ? f.color : "var(--oliv)" }} />
