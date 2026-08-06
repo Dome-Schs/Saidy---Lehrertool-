@@ -1,7 +1,23 @@
 # Saidy – Lehrertool
 
-React-PWA für Grundschullehrkräfte. Single-file-Build via Vite + vite-plugin-singlefile.
+React-PWA für Fachlehrkräfte (Sekundarstufe I). Single-file-Build via Vite + vite-plugin-singlefile.
 Alle App-Logik in `saidy.jsx`. Deployment über GitHub Pages (Branch: main → `.github/workflows/`).
+
+## Vision (Leitstern)
+
+> **Jedes Kind verdient, dass seine Geschichte, seine Stärken und seine Bedürfnisse nicht mit einem Lehrerwechsel verloren gehen. Saidy bewahrt dieses pädagogische Wissen, reduziert Verwaltungsaufwand und schafft Lehrkräften mehr Zeit für das, was wirklich zählt: die Arbeit mit den Kindern.**
+
+Saidy ist **kein Notenprogramm**, sondern ein **pädagogisches Gedächtnis** — die digitale Schülerakte, die Wissen bündelt, Kontinuität schafft (auch bei Lehrerwechsel/Übergabe) und den Fokus auf die individuelle Förderung legt.
+
+### Drei Leitprinzipien
+1. **Wissen geht nie verloren** — egal ob Lehrerwechsel, Klassenwechsel, Vertretung.
+2. **Alles hat Kontext** — nicht „Förderbedarf Lernen", sondern *welche Maßnahmen funktionieren*.
+3. **Dokumentation wird automatisch zu Unterstützung** — aus vielen kleinen Einträgen entstehen Zeugnisbegründung, Elterngespräch, Förderplan, Übergabe.
+
+### Filter-Frage für jedes neue Feature
+> **Hilft diese Funktion einer Lehrkraft, ein Kind besser zu verstehen, fairer zu begleiten oder mehr Zeit für echte pädagogische Arbeit zu gewinnen?**
+
+Wenn ja → gehört rein. Wenn nein → ist Beiwerk und gehört nicht in die Kern-Navigation.
 
 ## Projektübersicht
 
