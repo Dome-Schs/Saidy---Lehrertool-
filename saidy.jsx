@@ -5421,6 +5421,129 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       });
     }
 
+    /* ── Automatische Erinnerungen (regelbasiert) ─────────────────────
+       Zusatzsignale die keinen eigenen Bereich haben, aber taeglich
+       relevant sein koennen. Alle rein aus vorhandenen Daten – keine
+       neuen Felder, kein externer Aufruf. */
+
+    // 7. Kinder ohne Eintrag seit >= 14 Tagen (drohen durchzurutschen)
+    const heuteMs = localDate(todayStr).getTime();
+    const letzteAktivitaet = (() => {
+      const map = {};
+      const scan = (arr, kind) => (arr || []).forEach((e) => {
+        if (!e.studentId || !e.date) return;
+        const t = localDate(e.date).getTime();
+        if (!map[e.studentId] || map[e.studentId] < t) map[e.studentId] = t;
+      });
+      scan(data.notes, "notiz");
+      scan(data.grades, "note");
+      return map;
+    })();
+    const stilleKinder = data.students
+      .map((s) => {
+        const letzte = letzteAktivitaet[s.id];
+        const tage = letzte ? Math.floor((heuteMs - letzte) / 86400000) : 999;
+        return { student: s, tage };
+      })
+      .filter((x) => x.tage >= 14)
+      .sort((a, b) => b.tage - a.tage);
+    if (stilleKinder.length === 1) {
+      const { student, tage } = stilleKinder[0];
+      const txt = tage >= 999 ? "noch gar keinen Eintrag" : `seit ${tage} Tagen keinen Eintrag`;
+      satz.push({
+        text: `${student.name} hat ${txt} – kurz reinschauen?`,
+        urgent: tage >= 21,
+        action: () => onNavigate?.("klassen"),
+      });
+    } else if (stilleKinder.length > 1) {
+      satz.push({
+        text: `${stilleKinder.length} Kinder haben seit zwei Wochen oder länger keinen Eintrag.`,
+        urgent: stilleKinder.some((x) => x.tage >= 21),
+        action: () => onNavigate?.("klassen"),
+      });
+    }
+
+    // 8. Wiederkehrende Vorfaelle (z. B. 3× Sportzeug vergessen in 30 Tagen)
+    const wiederholtVergessen = (() => {
+      const grenze = addDays(localDate(todayStr), -30).getTime();
+      const gruppen = {};
+      (data.incidents || []).forEach((i) => {
+        if (!i.studentId || !i.label || !i.date) return;
+        if (localDate(i.date).getTime() < grenze) return;
+        const key = `${i.studentId}|${i.label}`;
+        gruppen[key] = (gruppen[key] || 0) + 1;
+      });
+      return Object.entries(gruppen)
+        .filter(([, n]) => n >= 3)
+        .map(([k, n]) => {
+          const [sid, label] = k.split("|");
+          const student = data.students.find((s) => s.id === sid);
+          return { student, label, anzahl: n };
+        })
+        .filter((x) => x.student)
+        .sort((a, b) => b.anzahl - a.anzahl);
+    })();
+    if (wiederholtVergessen.length) {
+      const top = wiederholtVergessen[0];
+      const rest = wiederholtVergessen.length - 1;
+      satz.push({
+        text: rest > 0
+          ? `${top.student.name} hat ${top.anzahl}× „${top.label}" vergessen${rest === 1 ? " – ein weiteres Kind auffällig." : ` – ${rest} weitere Kinder auffällig.`}`
+          : `${top.student.name} hat ${top.anzahl}× „${top.label}" vergessen – Muster erkannt.`,
+        urgent: top.anzahl >= 5,
+        action: () => onNavigate?.("klassen"),
+      });
+    }
+
+    // 9. Klassenweite Abwesenheits-Haeufung diese Woche (Mo bis heute)
+    const wochenStart = (() => {
+      const d = localDate(todayStr);
+      const wt = (d.getDay() + 6) % 7; // Montag = 0
+      return isoDate(addDays(d, -wt));
+    })();
+    const klassenHaeufung = (() => {
+      const zaehl = {};
+      (data.absences || []).forEach((a) => {
+        if (a.date < wochenStart || a.date > todayStr) return;
+        const stud = data.students.find((s) => s.id === a.studentId);
+        if (!stud) return;
+        const key = `${stud.classId}|${stud.id}|${a.date}`;
+        zaehl[key] = 1;
+      });
+      const proKlasse = {};
+      Object.keys(zaehl).forEach((k) => {
+        const [cid] = k.split("|");
+        proKlasse[cid] = (proKlasse[cid] || 0) + 1;
+      });
+      return Object.entries(proKlasse)
+        .map(([cid, n]) => ({ cls: data.classes.find((c) => c.id === cid), anzahl: n }))
+        .filter((x) => x.cls && x.anzahl >= 4)
+        .sort((a, b) => b.anzahl - a.anzahl);
+    })();
+    if (klassenHaeufung.length) {
+      const top = klassenHaeufung[0];
+      satz.push({
+        text: `In ${top.cls.name} gab es diese Woche schon ${top.anzahl} Fehlzeiten – vielleicht etwas rundgeht.`,
+        urgent: top.anzahl >= 8,
+        action: () => onNavigate?.("klassen"),
+      });
+    }
+
+    // 10. Zeugnis-Deadline naht (Januar/Juni/Juli, viele Noten offen)
+    const monat = (now || new Date()).getMonth() + 1;
+    if ([1, 6, 7].includes(monat)) {
+      const soll = data.students.length * data.faecher.length;
+      const ist = (data.finalGrades || []).filter((g) => g.halbjahr === halbjahr).length;
+      const offen = soll - ist;
+      if (soll > 0 && offen > 0 && offen / soll > 0.15) {
+        satz.push({
+          text: `Zeugnisnoten: noch ${offen} von ${soll} offen.`,
+          urgent: offen / soll > 0.4,
+          action: () => onNavigate?.("noten"),
+        });
+      }
+    }
+
     /* Backup-Status und Förderziele stehen bewusst nicht im Briefing:
        Der Backup-Hinweis hat bereits ein eigenes Band über dem Dashboard,
        offene Förderziele sind kein Tagesgeschehen. */
