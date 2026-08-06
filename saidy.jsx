@@ -5890,7 +5890,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
               className={`overflow-hidden p-0 ${zeigeLetzte ? "akzent-ton" : ""} ${offen ? "!border-transparent" : ""}`}
             >
               <div
-                className={`flex items-stretch border-l-[4px] ${offen ? (isColor ? "border-l-amber-500" : "border-l-[var(--oliv)]") : "border-l-transparent"}`}
+                className={`flex items-stretch border-l-[3px] ${offen ? (isColor ? "border-l-amber-600" : "border-l-[var(--oliv)]") : "border-l-transparent"}`}
               >
                 {/* Zeitspalte – bei Doppelstunde durchgehend von 07:55 bis 09:30 */}
                 <div className="shrink-0 w-[3.5rem] py-2.5 pl-2 pr-1">
