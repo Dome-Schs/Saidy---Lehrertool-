@@ -2738,7 +2738,7 @@ const HELP_DATA = [
       { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten & Berichte", wähle Klasse und Fach. Tippe auf eine:n Schüler:in – in der Karte „Neue Note" Kategorie und Note wählen und auf „+" tippen. Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aus mündlichen und schriftlichen Noten. Voreingestellt ist 50 zu 50 Prozent – änderbar unter „Klassen & Schüler" → Reiter „Fächer" → Zahnrad beim Fach → „Gewichtung der Noten". Einzelne Noten lassen sich zusätzlich stärker gewichten (Faktor beim Bearbeiten der Note). Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
-      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Klemmbrett-Symbol neben einer Stunde auf der Startseite öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Gespräche eintragen kannst. Eine Doppelstunde wird dabei einmal erfasst, nicht zweimal – sie gilt als eine Unterrichtseinheit und erscheint in der Liste der offenen Stunden als ein Eintrag mit der Zahl der Blöcke. Die Notenbuttons sind immer direkt sichtbar. Weitere Aktionen (Notiz, Gespräch, Vergessen) erscheinen nach Antippen des ···-Symbols neben dem Namen. Hat ein Kind bereits eine Notiz oder einen Auffälligkeits-Eintrag, leuchtet das ···-Symbol grün.` },
+      { q: "Was ist der Schnellerfassungs-Modus?", a: `Das Klemmbrett-Symbol neben einer Stunde auf der Startseite öffnet einen Modus, in dem du für alle Schüler:innen einer Klasse auf einem Bildschirm Noten, Notizen und Gespräche eintragen kannst. Eine Doppelstunde wird dabei einmal erfasst, nicht zweimal – sie gilt als eine Unterrichtseinheit und erscheint in der Liste der offenen Stunden als ein Eintrag mit der Zahl der Blöcke. Die Notenbuttons sind immer direkt sichtbar. Neben dem Namen liegt das ⚠︎-Symbol – ein Tipp erfasst „Vergessen" (z. B. Sportzeug) sofort, ohne Umweg. Weitere Aktionen (Notiz, Gespräch) öffnen sich nach Antippen des ···-Symbols. Hat ein Kind bereits eine Notiz, leuchtet das ···-Symbol grün; fehlt Material, wird das ⚠︎-Symbol rot.` },
       { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Saidy an, wie viele Unterrichtsstunden bis dahin noch bleiben. Gezählt wird in Unterrichtseinheiten: ein Tag mit diesem Fach ist eine Einheit – eine Doppelstunde aus zwei 45-Minuten-Blöcken zählt also einmal, genau wie eine einzelne Stunde. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Saidy die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
       { q: "Wo sehe ich auf der Startseite, wie viel Zeit bis zur Klassenarbeit bleibt?", a: `Direkt bei der Stunde – es gibt dafür keine eigene Karte mehr. Ist für ein Fach ein Test-Termin hinterlegt, erscheint in der Unterricht-Übersicht unter der Stunde ein feiner Strich: voll bedeutet viel Vorbereitungszeit, kurz bedeutet es wird eng. Die Farbe wechselt von oliv über amber zu rot, je näher der Termin rückt. Rechts neben der Stunde steht zusätzlich die Zahl der verbleibenden Unterrichtsstunden (z. B. „5×"), am Prüfungstag selbst „Heute!". Ein Tipp auf den Strich klappt die Details auf: Titel der Arbeit, Datum und die verbleibenden Übungsstunden im Klartext. Angezeigt wird das nur bei Fächern, für die du einen Termin eingetragen hast.` },
       { q: "Wie finde ich heraus, bei welchem Thema die Klasse Lücken hat?", a: `Beim Eintragen einer schriftlichen Note kannst du ein Thema angeben, z. B. „Bruchrechnung". Bereits verwendete Themen werden beim Tippen vorgeschlagen – nimm die Vorschläge, dann bleibt die Auswertung sauber. Auch die Schnellerfassung übernimmt das oben eingetragene Stundenthema automatisch, wenn du dort schriftliche Noten vergibst. Umgekehrt schlägt das Stundenthema-Feld bereits bekannte Themen desselben Fachs vor – so bleibt „Bruchrechnung" über Wochen dasselbe Wort und der Fortschrittsbalken zählt sauber weiter, statt bei jeder Tippvariante von vorn. In der Fachansicht („Noten & Berichte" → Klasse → Fach) erscheint dann die Karte „Wissensgebiete": Alle Themen mit dem Klassenschnitt, das schwächste zuerst. Ein langer Balken bedeutet gut beherrscht. Tippst du ein Thema an, siehst du, welche Kinder dort Lücken haben – daraus wird direkt eine Fördergruppe.` },
@@ -3238,6 +3238,25 @@ export default function App() {
     if (mainRef.current) mainRef.current.scrollTop = 0;
     setNavCollapsed(false);
   }, [tab]);
+
+  /* Rotation Landscape -> Portrait: iOS Safari rechnet
+     env(safe-area-inset-bottom) und 100dvh nicht immer sofort neu,
+     dadurch sitzt die fixed Bottom-Nav plötzlich nicht mehr am unteren
+     Bildschirmrand. Ein Force-Reflow und ein zurückgesetzter Nav-Zustand
+     bringt sie wieder in Position. */
+  useEffect(() => {
+    function handleOrientation() {
+      setNavCollapsed(false);
+      requestAnimationFrame(() => {
+        document.body.style.transform = "translateZ(0)";
+        requestAnimationFrame(() => {
+          document.body.style.transform = "";
+        });
+      });
+    }
+    window.addEventListener("orientationchange", handleOrientation);
+    return () => window.removeEventListener("orientationchange", handleOrientation);
+  }, []);
 
   // Wechselt den Bereich und optional den Unterreiter (z. B. direkt zu den Diensten)
   const goTo = useCallback((ziel, unterreiter) => {
@@ -4831,7 +4850,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                   <span>dabei?</span>
                 </div>
                 <p className={`text-xs mt-1.5 ${anyFehlt ? "text-amber-700" : "text-stone-500"}`}>
-                  Fehlt es, beim Kind auf <MoreHorizontal size={11} className="inline -mt-0.5" /> tippen, dann „Vergessen"
+                  Fehlt es, beim Kind auf <AlertTriangle size={11} className="inline -mt-0.5" /> tippen
                   {autoGrade ? " – trägt automatisch eine mündliche 5 ein." : "."}
                 </p>
               </div>
@@ -4845,17 +4864,31 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
               const hasActivity = hatNotiz || fehlt;
               return (
                 <li key={s.id} className="py-2.5">
-                  {/* Name + MoreHorizontal toggle */}
+                  {/* Name + Vergessen-Direktknopf + MoreHorizontal.
+                      Vergessen-Symbol ist überall in der App AlertTriangle
+                      (z. B. in der Sport-Notenspalte). Direkt in der Zeile,
+                      damit der häufigste Anwendungsfall („Sportzeug vergessen")
+                      ohne Umweg übers Mehr-Menü geht. */}
                   <div className="flex items-center gap-2 mb-2">
                     <StudentAvatar student={s} size={26} />
                     <span className="flex-1 text-sm text-stone-800 truncate min-w-0">{s.name}</span>
                     {fehlt && autoGrade && <span className="text-[11px] leading-none text-red-600 font-medium shrink-0">Note 5</span>}
                     <button
-                      onClick={() => setActionsId((cur) => (cur === s.id ? null : s.id))}
-                      className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border transition-colors ${
-                        hasActivity ? "akzent-ton akzent-rand akzent-text" : actionsId === s.id ? "bg-stone-100 border-stone-300 text-stone-600" : "border-stone-200 text-stone-400"
+                      onClick={() => toggleIncident(s.id)}
+                      className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border transition-colors press-scale ${
+                        fehlt ? "bg-red-500 border-red-500 text-white" : "border-stone-200 text-stone-400 hover:text-red-500 hover:border-red-200"
                       }`}
-                      aria-label="Weitere Aktionen"
+                      aria-label={fehlt ? `${incidentLabel} vergessen entfernen` : `${incidentLabel} vergessen`}
+                      title={fehlt ? `${incidentLabel} vergessen – tippen zum Entfernen` : `${incidentLabel} vergessen`}
+                    >
+                      <AlertTriangle size={16} />
+                    </button>
+                    <button
+                      onClick={() => setActionsId((cur) => (cur === s.id ? null : s.id))}
+                      className={`shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border transition-colors press-scale ${
+                        hatNotiz ? "akzent-ton akzent-rand akzent-text" : actionsId === s.id ? "bg-stone-100 border-stone-300 text-stone-600" : "border-stone-200 text-stone-400"
+                      }`}
+                      aria-label="Notiz oder Gespräch"
                     >
                       <MoreHorizontal size={16} />
                     </button>
@@ -4900,12 +4933,13 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                     </select>
                   )}
 
-                  {/* Action buttons – revealed by MoreHorizontal */}
+                  {/* Notiz + Gespräch – über das Mehr-Menü einblendbar.
+                      Vergessen liegt direkt in der Zeile, siehe oben. */}
                   {actionsId === s.id && (
                     <div className="flex gap-1.5 mt-2">
                       <button
                         onClick={() => setExpanded((cur) => (cur === s.id ? null : s.id))}
-                        className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border text-xs font-medium transition-colors ${
+                        className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border text-xs font-medium transition-colors press-scale ${
                           hatNotiz ? "akzent-ton akzent-rand akzent-text" : "border-stone-200 text-stone-500 bg-stone-50"
                         }`}
                       >
@@ -4913,19 +4947,11 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                       </button>
                       <button
                         onClick={() => { setGesprExpanded((cur) => (cur === s.id ? null : s.id)); setGesprMood("ok"); }}
-                        className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border text-xs font-medium transition-colors ${
+                        className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border text-xs font-medium transition-colors press-scale ${
                           gesprExpanded === s.id ? "akzent-ton akzent-rand akzent-text" : "border-stone-200 text-stone-500 bg-stone-50"
                         }`}
                       >
                         <MessageSquare size={13} /> Gespräch
-                      </button>
-                      <button
-                        onClick={() => toggleIncident(s.id)}
-                        className={`flex-1 flex items-center justify-center gap-1 py-2 rounded-xl border text-xs font-medium transition-colors ${
-                          fehlt ? "bg-red-500 border-red-500 text-white" : "border-stone-200 text-stone-500 bg-stone-50"
-                        }`}
-                      >
-                        <AlertTriangle size={13} /> Vergessen
                       </button>
                     </div>
                   )}
@@ -5736,22 +5762,28 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         )}
       </div>
 
-      {/* Abschnittsüberschrift mit Akzentstrich + Sprung in den Stundenplan */}
-      <div className="flex items-center justify-between gap-2 pt-1">
+      {/* Abschnittsüberschrift mit Akzentstrich + Sprung in den Stundenplan.
+          Ganze Zeile ist ein Button, nicht nur der Chip rechts – wer die
+          Überschrift tippt, will genauso in den Stundenplan. */}
+      <button
+        type="button"
+        onClick={() => onNavigate?.("stundenplan")}
+        className="w-full flex items-center justify-between gap-2 pt-1 text-left press-scale"
+        aria-label="Stundenplan öffnen"
+      >
         <div>
           <h2 className="text-base font-bold text-stone-800 leading-tight">
             {isToday ? "Dein Unterricht heute" : "Dein Unterricht"}
           </h2>
           <span className="block w-7 h-[3px] rounded-full akzent-flaeche mt-1" />
         </div>
-        <button
-          onClick={() => onNavigate?.("stundenplan")}
-          className="shrink-0 flex items-center gap-1.5 bg-white border border-stone-200 rounded-full pl-2.5 pr-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-300 transition-colors press-scale"
+        <span
+          className="shrink-0 flex items-center gap-1.5 bg-white border border-stone-200 rounded-full pl-2.5 pr-3 py-1.5 text-xs font-medium text-stone-600"
         >
           <CalendarDays size={13} className="text-stone-400" />
           Stundenplan
-        </button>
-      </div>
+        </span>
+      </button>
 
       {/* Stunden – jede als eigene Karte */}
       {!dayKey && <Card className="px-3 py-3 text-xs text-stone-500">Wochenende – kein regulärer Unterricht</Card>}
