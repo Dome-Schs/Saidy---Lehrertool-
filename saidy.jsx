@@ -4248,7 +4248,7 @@ export default function App() {
               <button
                 key={t.key}
                 onClick={() => { setTab(t.key); setNavCollapsed(false); setShowMore(false); }}
-                className="flex-1 flex flex-col items-center gap-1"
+                className="flex-1 flex flex-col items-center gap-1 press-scale"
               >
                 <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${active ? "akzent-ton" : ""}`}>
                   <Icon size={20} strokeWidth={active ? 2.4 : 2} className={active ? "akzent-text" : "text-stone-400"} />
@@ -4284,7 +4284,7 @@ export default function App() {
               <button
                 key={t.key}
                 onClick={() => { setTab(t.key); setNavCollapsed(false); setShowMore(false); }}
-                className="flex-1 flex flex-col items-center gap-1"
+                className="flex-1 flex flex-col items-center gap-1 press-scale"
               >
                 <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${active ? "akzent-ton" : ""}`}>
                   <Icon size={20} strokeWidth={active ? 2.4 : 2} className={active ? "akzent-text" : "text-stone-400"} />
@@ -4296,7 +4296,7 @@ export default function App() {
 
           <button
             onClick={() => { setShowMore(true); setNavCollapsed(false); setFabOpen(false); }}
-            className="flex-1 flex flex-col items-center gap-1"
+            className="flex-1 flex flex-col items-center gap-1 press-scale"
           >
             <span className={`flex items-center justify-center h-8 w-12 rounded-full transition-colors ${["stundenplan", "kalender", "aufgaben"].includes(tab) ? "akzent-ton" : ""}`}>
               <MoreHorizontal size={20} strokeWidth={2.2} className={["stundenplan", "kalender", "aufgaben"].includes(tab) ? "akzent-text" : "text-stone-400"} />
@@ -5441,7 +5441,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           {showImportReminder && (
             <button
               onClick={() => onOpenUntisImport?.()}
-              className="relative w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors"
+              className="relative w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors press-scale"
               title={daysSinceLast === null ? "Fehlzeiten noch nie importiert" : `Fehlzeiten-Import fällig (vor ${daysSinceLast} Tagen)`}
             >
               <Upload size={15} />
@@ -5451,7 +5451,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           {isToday && !!(pendingLessons || []).length && (
             <button
               onClick={() => setShowPending((v) => !v)}
-              className="relative w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors"
+              className="relative w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors press-scale"
               title={`${pendingLessons.length} ${pendingLessons.length === 1 ? "Stunde" : "Stunden"} nachtragen`}
             >
               <ClipboardCheck size={15} />
@@ -5461,7 +5461,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           <button
             onClick={() => update((d) => { d.settings = { ...d.settings, colorMode: !isColor }; return d; })}
             title={isColor ? "Mono-Modus" : "Bring Farbe in mein Leben"}
-            className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shrink-0 ${isColor ? "bg-stone-100 hover:bg-stone-200 text-stone-400" : "akzent-ton akzent-text"}`}
+            className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shrink-0 press-scale ${isColor ? "bg-stone-100 hover:bg-stone-200 text-stone-400" : "akzent-ton akzent-text"}`}
           >
             <Sparkles size={14} />
           </button>
@@ -5607,7 +5607,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             <button
               key={k.label}
               onClick={k.onClick}
-              className="w-full h-full text-center bg-white rounded-2xl border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors flex flex-col items-center justify-center gap-1 px-2 py-3"
+              className="w-full h-full text-center bg-white rounded-2xl border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors flex flex-col items-center justify-center gap-1 px-2 py-3 press-scale"
             >
               <span className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${aktiv && isColor ? "bg-amber-100" : "akzent-ton"}`}>
                 <Icon size={13} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
@@ -5712,7 +5712,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
               const active = isoDate(d) === selStr;
               const isTodayCol = isoDate(d) === todayStr;
               return (
-                <button key={i} onClick={() => setSelectedDate(d)} className="flex flex-col items-center gap-0.5 py-0.5 rounded-lg">
+                <button key={i} onClick={() => setSelectedDate(d)} className="flex flex-col items-center gap-0.5 py-0.5 rounded-lg press-scale">
                   <span className={`text-[10px] ${isTodayCol ? "text-red-400" : "text-stone-400"}`}>{WEEKDAY_LABELS[i]}</span>
                   <span
                     className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium ${
@@ -5746,7 +5746,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         </div>
         <button
           onClick={() => onNavigate?.("stundenplan")}
-          className="shrink-0 flex items-center gap-1.5 bg-white border border-stone-200 rounded-full pl-2.5 pr-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-300 transition-colors"
+          className="shrink-0 flex items-center gap-1.5 bg-white border border-stone-200 rounded-full pl-2.5 pr-3 py-1.5 text-xs font-medium text-stone-600 hover:border-stone-300 transition-colors press-scale"
         >
           <CalendarDays size={13} className="text-stone-400" />
           Stundenplan
@@ -5787,7 +5787,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                 <button
                   onClick={() => fach && onOpenFach?.(fach.id)}
                   disabled={!fach}
-                  className="shrink-0 w-[6.8rem] text-left py-2.5 px-1.5 disabled:cursor-default"
+                  className="shrink-0 w-[6.8rem] text-left py-2.5 px-1.5 disabled:cursor-default press-scale"
                   aria-label={fach && cls ? `${cls.name} – ${fach.subject} öffnen` : undefined}
                 >
                   <div className="flex items-center gap-1 min-w-0">
@@ -5814,7 +5814,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                   {cd && pct !== null && (
                     <button
                       onClick={() => setOpenTestDetail(detailOpen ? null : unit.id)}
-                      className="w-full text-left"
+                      className="w-full text-left press-scale"
                       aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
                     >
                       {/* Fortschrittsbalken - schmale Schiene mit farbiger Fuellung.
@@ -5851,7 +5851,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                 {fach && cls && (
                   <button
                     onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
-                    className={`shrink-0 w-9 flex items-center justify-center transition-colors ${
+                    className={`shrink-0 w-9 flex items-center justify-center transition-colors press-scale ${
                       offen ? (isColor ? "text-amber-600" : "text-stone-700 font-semibold") : "text-stone-300 hover:text-stone-500"
                     }`}
                     aria-label="Stunde erfassen"
@@ -5961,7 +5961,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                 <li key={t.id} className="flex items-start gap-2">
                   <button
                     onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
-                    className="w-9 h-9 -m-2 shrink-0 flex items-center justify-center"
+                    className="w-9 h-9 -m-2 shrink-0 flex items-center justify-center press-scale"
                     aria-label={`"${t.title}" als erledigt markieren`}
                   >
                     <span className="w-4 h-4 rounded-full border-2 block" style={{ borderColor: isColor ? t.color : "#A8A29E" }} />
@@ -6008,7 +6008,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                   <li key={klasse.id}>
                     <button
                       onClick={() => onOpenKlassenDashboard?.(klasse.id)}
-                      className="w-full flex items-center gap-2 py-2 text-left"
+                      className="w-full flex items-center gap-2 py-2 text-left press-scale"
                       aria-label={`${klasse.name}: ${erst.kurz}${rest ? ` und ${rest} weitere` : ""}`}
                     >
                       <span className={`w-2 h-2 rounded-full shrink-0 ${dotCls}`} />
@@ -6132,7 +6132,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       {tippDesTages && (
         <button
           onClick={() => setTippSheetKarte(tippDesTages)}
-          className="w-full text-left flex items-center gap-3 bg-white rounded-2xl border border-stone-100 px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors"
+          className="w-full text-left flex items-center gap-3 bg-white rounded-2xl border border-stone-100 px-3 py-2.5 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors press-scale"
         >
           <span className="w-9 h-9 rounded-lg akzent-ton flex items-center justify-center shrink-0">
             <Lightbulb size={16} className="akzent-text" />
@@ -10190,7 +10190,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
                 <div className="border-t border-stone-100 p-3 space-y-1.5 bg-stone-50/50">
                   <button
                     onClick={() => { setSelectedClass(c.id); setSelectedStudent(null); setShowStudentsModal(true); }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700 press-scale"
                   >
                     <Users size={15} className="text-stone-400" /> Schüler:innen
                     <span className="ml-auto text-stone-400 tnum">{cCount}</span>
@@ -10198,7 +10198,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
 
                   <button
                     onClick={() => { setSitzplanClassId(c.id); setShowSitzplan(true); }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700 press-scale"
                   >
                     <LayoutGrid size={15} className="text-stone-400" /> Sitzplan
                     {data.sitzplaene?.[c.id] && (
@@ -10208,7 +10208,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
 
                   <button
                     onClick={() => setKlassenDashboardId(c.id)}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700"
+                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700 press-scale"
                   >
                     <BarChart2 size={15} className="text-stone-400" /> Klassen-Dashboard
                     <ChevronRight size={15} className="text-stone-300 ml-auto" />
@@ -10219,7 +10219,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
                     <button
                       key={f.id}
                       onClick={() => onOpenFach?.(f.id)}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700"
+                      className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700 press-scale"
                     >
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: f.color }} />
                       {f.subject}
@@ -12543,7 +12543,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
               <button
                 key={c.id}
                 onClick={() => setSelectedClass(c.id)}
-                className="w-full bg-white rounded-2xl border border-stone-200 shadow-sm p-4 text-left hover:akzent-rand transition-colors"
+                className="w-full bg-white rounded-2xl border border-stone-200 shadow-sm p-4 text-left hover:akzent-rand transition-colors press-scale"
               >
                 <div className="flex items-center gap-3 mb-3">
                   <span className="w-11 h-11 rounded-xl akzent-ton font-bold flex items-center justify-center shrink-0">
@@ -12607,7 +12607,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
               <button
                 key={f.id}
                 onClick={() => { setSelectedFach(f.id); setSelectedStudent(null); }}
-                className="w-full bg-white rounded-2xl border border-stone-200 shadow-sm p-4 text-left hover:akzent-rand transition-colors"
+                className="w-full bg-white rounded-2xl border border-stone-200 shadow-sm p-4 text-left hover:akzent-rand transition-colors press-scale"
               >
                 <div className="flex items-center gap-3">
                   <span className="w-2.5 h-11 rounded-full shrink-0" style={{ backgroundColor: isColor ? f.color : "var(--oliv)" }} />
