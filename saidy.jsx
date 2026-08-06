@@ -5880,7 +5880,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           return (
             <Card
               key={unit.id}
-              className={`overflow-hidden p-0 ${zeigeLetzte ? "akzent-ton" : ""} ${offen ? (isColor ? "border-l-[3px] border-l-amber-600" : "border-l-[3px] border-l-[var(--oliv)]") : ""}`}
+              className={`overflow-hidden p-0 ${zeigeLetzte ? "akzent-ton" : ""} ${offen ? "!border-l-[3px] !border-l-amber-600" : ""}`}
             >
               <div className="flex items-stretch">
                 {/* Zeitspalte – bei Doppelstunde durchgehend von 07:55 bis 09:30 */}
