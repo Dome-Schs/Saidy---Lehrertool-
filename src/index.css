@@ -1,3 +1,11 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* html + body auf den App-Cremeton, damit kein weisser Streifen
+   erscheint, wenn der App-Container (100dvh) kuerzer als der
+   Viewport ist - z. B. wenn iOS Safari die URL-Bar animiert. */
+html, body {
+  background-color: #F4F1E8;
+  overscroll-behavior-y: none;
+}
