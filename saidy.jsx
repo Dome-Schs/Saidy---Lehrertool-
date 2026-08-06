@@ -863,8 +863,9 @@ function Toggle({ checked, onChange }) {
   );
 }
 
-function Card({ children, className = "" }) {
-  return <div className={`karte rounded-xl ${className}`}>{children}</div>;
+function Card({ children, className = "", luft = false }) {
+  const base = luft ? "karte-luft" : "karte";
+  return <div className={`${base} rounded-xl ${className}`}>{children}</div>;
 }
 
 /* Sicherheitsabfrage vor dem Löschen. Gesteuert über einen State { title, message, onConfirm }. */
@@ -3898,7 +3899,9 @@ export default function App() {
           --oliv-hell: #ECEEE2;
           --creme: #F4F1E8;
           --karte: #FFFDF8;
+          --karte-warm: #FBF8ED;  /* nah am Grund, "gehoert dazu" statt "schwebt drauf" */
           --linie: #E4DFD2;
+          --linie-fein: rgba(79,88,68,0.08);  /* haarfein, wirkt wie Rille statt Rahmen */
           --ink: #2E3328;
 
           /* Semantische Status-Farben
@@ -3932,7 +3935,23 @@ export default function App() {
         .card      { background: #fff;            border-radius: 1rem; box-shadow: var(--shadow-card); }
         .card-warm { background: var(--karte);    border-radius: 1rem; box-shadow: var(--shadow-card); }
         .card-p    { padding: var(--sp-in); }
-        .karte     { background: var(--karte); border: 1px solid var(--linie); }
+        /* Design B - "warm & luftig": Karten gehoeren visuell zum Grund,
+           harte Rahmen fallen weg. Nur eine haarfeine Rille markiert die
+           Kante - fuehlt sich wie eine Nut im Papier an, nicht wie ein
+           Kaesten-Rahmen. Global: alle .karte-Verwendungen sind betroffen
+           (Uebersichts-Kacheln, Kalender-Karten, etc.). */
+        .karte {
+          background: var(--karte-warm);
+          border: 1px solid var(--linie-fein);
+        }
+        .karte-luft {
+          background: var(--karte-warm);
+          border: 1px solid transparent;
+          border-radius: 1rem;
+          transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .karte-luft:hover { border-color: var(--linie-fein); }
+        .karte-luft:focus-visible { outline: 2px solid var(--oliv); outline-offset: 2px; }
 
         /* ── Akzent (unverändert, Rückwärtskompatibilität) ── */
         .akzent-flaeche { background: var(--oliv); color: #fff; }
@@ -5690,7 +5709,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             <button
               key={k.label}
               onClick={k.onClick}
-              className="w-full h-full text-center bg-white rounded-2xl border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors flex flex-col items-center justify-center gap-1 px-2 py-3 press-scale"
+              className="karte-luft w-full h-full text-center flex flex-col items-center justify-center gap-1 px-2 py-3 press-scale"
             >
               <span className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${aktiv && isColor ? "bg-amber-100" : "akzent-ton"}`}>
                 <Icon size={13} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
