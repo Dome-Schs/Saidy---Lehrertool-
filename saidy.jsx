@@ -867,6 +867,66 @@ function Card({ children, className = "" }) {
   return <div className={`karte rounded-xl ${className}`}>{children}</div>;
 }
 
+/* Bottom-Sheets per Ziehen schliessen — Apple-Verhalten:
+   Am Griff oben nach unten ziehen, das Sheet folgt dem Finger,
+   ueber Schwelle oder mit Schwung geht es zu, sonst schnappt es zurueck.
+   Die Enhancement laeuft global (siehe useDismissableSheets in App):
+   jedes Element mit Klasse .sheet bekommt automatisch einen Griff und
+   die Geste. Das erspart 11 einzelne Sheet-Refactorings.
+
+   Zum Schliessen wird auf das Overlay geklickt, damit der bestehende
+   React-onClose-Handler den State korrekt aktualisiert. */
+function enhanceSheet(sheetEl) {
+  if (sheetEl.dataset.saidyEnhanced === "1") return;
+  sheetEl.dataset.saidyEnhanced = "1";
+
+  // Overlay ist das Elternelement mit bg-stone-900/40 – dort haengt onClose.
+  const overlay =
+    sheetEl.closest('[class*="bg-stone-900/40"]') ||
+    sheetEl.parentElement;
+
+  const handle = document.createElement("div");
+  handle.className =
+    "md:hidden w-full flex justify-center pt-2 pb-1 cursor-grab active:cursor-grabbing touch-none select-none";
+  handle.setAttribute("aria-hidden", "true");
+  handle.innerHTML = '<div class="w-9 h-1.5 rounded-full bg-stone-300"></div>';
+  sheetEl.insertBefore(handle, sheetEl.firstChild);
+
+  let startY = 0, dy = 0, t0 = 0, active = false;
+
+  handle.addEventListener("pointerdown", (e) => {
+    if (e.button !== undefined && e.button !== 0) return;
+    active = true; startY = e.clientY; dy = 0; t0 = performance.now();
+    try { handle.setPointerCapture(e.pointerId); } catch {}
+  });
+  handle.addEventListener("pointermove", (e) => {
+    if (!active) return;
+    dy = Math.max(0, e.clientY - startY);
+    sheetEl.style.transition = "none";
+    sheetEl.style.transform = `translateY(${dy}px)`;
+    sheetEl.style.opacity = String(1 - Math.min(0.35, dy / 700));
+  });
+  function end(e) {
+    if (!active) return;
+    active = false;
+    const dt = Math.max(1, performance.now() - t0);
+    const velocity = dy / dt;
+    if (dy > 100 || velocity > 0.5) {
+      sheetEl.style.transition = "transform 0.22s ease-out, opacity 0.22s ease-out";
+      sheetEl.style.transform = "translateY(100%)";
+      sheetEl.style.opacity = "0";
+      setTimeout(() => { try { overlay?.click(); } catch {} }, 170);
+    } else {
+      sheetEl.style.transition = "transform 0.28s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.28s";
+      sheetEl.style.transform = "translateY(0)";
+      sheetEl.style.opacity = "";
+    }
+    try { handle.releasePointerCapture(e.pointerId); } catch {}
+  }
+  handle.addEventListener("pointerup", end);
+  handle.addEventListener("pointercancel", end);
+}
+
 /* Sicherheitsabfrage vor dem Löschen. Gesteuert über einen State { title, message, onConfirm }. */
 function ConfirmDialog({ open, title, message, confirmLabel = "Löschen", onConfirm, onCancel }) {
   if (!open) return null;
@@ -2713,7 +2773,8 @@ const HELP_DATA = [
       { q: "Was ist der Wochenrückblick auf der Übersicht?", a: `Eine Karte, die von Freitag 12 Uhr bis Sonntag Nacht ganz oben auf der Übersicht erscheint (ab Montag ist sie automatisch weg). Sie zeigt drei Dinge: die Zahlen der Woche (gehaltene Stunden, vergebene Noten, geführte Gespräche, neue Notizen), was aufgefallen ist (Klassen mit Signalen aus dem Klassenradar, Kinder ohne Eintrag in dieser Woche) und einen Ausblick auf die nächste Woche (Klassenarbeiten, Termine). Ein × blendet die Karte für den Rest dieser Woche aus – am nächsten Freitag kommt sie wieder.` },
       { q: "Was macht der grüne Plus-Knopf in der Mitte?", a: `Er ist der Schnellzugriff zum Erfassen und funktioniert aus jedem Bereich heraus. Ein Tipp öffnet fünf Einträge: „Stunde erfassen" springt direkt in die Schnellerfassung – Saidy wählt dabei selbst die passende Stunde, zuerst eine noch nicht erfasste, sonst die zuletzt gehaltene von heute. „Gespräch notieren" und „Notiz zu einem Kind" fragen zuerst nach dem Kind (einfach den Namen tippen) und dann nach dem Text; beim Gespräch kommen Art (Schüler, Eltern, Förder) und Stimmung dazu. „Aufgabe" und „Termin" legen einen To-do beziehungsweise einen Kalendereintrag an. Bist du gerade in einem Bereich mit eigener Aktion – etwa im Klassen-Tab – steht diese zusätzlich ganz oben in der Liste. Auf Tablet und Desktop heißt der Knopf „Schnell erfassen" und sitzt in der linken Seitenleiste, ganz oben; das aufklappende Menü enthält dieselben Aktionen.` },
       { q: "Wo finde ich die Aufgaben in der unteren Leiste?", a: `Die Leiste zeigt Übersicht, Klassen, den Plus-Knopf, Noten und „Mehr". Die Aufgaben sind unter „Mehr" zu finden – zusammen mit Stundenplan, Kalender, Suche, Einstellungen und Hilfe. Eine neue Aufgabe legst du schneller über den grünen Plus-Knopf an.` },
-      { q: "Warum verschwindet die Navigationsleiste beim Scrollen?", a: `Damit mehr Platz für den Inhalt bleibt. Scrollst du auf einer Seite nach unten, gleitet die untere Leiste weg und stattdessen erscheint unten links ein olivfarbener Kreis mit einem Pfeil nach oben. Ein Tipp darauf holt die vollständige Leiste zurück. Scrollst du wieder nach oben, erscheint sie ohnehin von selbst. Auf dem Desktop bleibt die Seitenleiste immer sichtbar.` }
+      { q: "Warum verschwindet die Navigationsleiste beim Scrollen?", a: `Damit mehr Platz für den Inhalt bleibt. Scrollst du auf einer Seite nach unten, gleitet die untere Leiste weg und stattdessen erscheint unten links ein olivfarbener Kreis mit einem Pfeil nach oben. Ein Tipp darauf holt die vollständige Leiste zurück. Scrollst du wieder nach oben, erscheint sie ohnehin von selbst. Auf dem Desktop bleibt die Seitenleiste immer sichtbar.` },
+      { q: "Wie schließe ich ein Sheet schnell?", a: `Sheets, die von unten hochkommen (Einstellungen, Hilfe, Schnellerfassung, …), lassen sich auf drei Wegen schließen: (1) auf das X oben rechts tippen, (2) außerhalb des Sheets auf den dunklen Bereich tippen, (3) am kleinen grauen Griff ganz oben nach unten ziehen. Ziehst du deutlich nach unten oder wischt kurz mit Schwung, geht das Sheet zu. Zu kurz gezogen? Es schnappt zurück.` }
     ],
   },
   {
@@ -3256,6 +3317,26 @@ export default function App() {
     }
     window.addEventListener("orientationchange", handleOrientation);
     return () => window.removeEventListener("orientationchange", handleOrientation);
+  }, []);
+
+  /* Bottom-Sheets ziehbar machen: MutationObserver haengt einen Griff
+     und die Drag-Geste an jedes .sheet-Element, das ins DOM kommt.
+     Zum Schliessen wird das Overlay geklickt - so bleibt der React-
+     onClose-Handler jedes einzelnen Sheets unveraendert. Enhanced ist
+     idempotent (dataset.saidyEnhanced), doppelte Griffe entstehen nicht. */
+  useEffect(() => {
+    document.querySelectorAll(".sheet").forEach(enhanceSheet);
+    const obs = new MutationObserver((mutations) => {
+      mutations.forEach((m) => {
+        m.addedNodes.forEach((node) => {
+          if (node.nodeType !== 1) return;
+          if (node.classList?.contains("sheet")) enhanceSheet(node);
+          node.querySelectorAll?.(".sheet").forEach(enhanceSheet);
+        });
+      });
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+    return () => obs.disconnect();
   }, []);
 
   // Wechselt den Bereich und optional den Unterreiter (z. B. direkt zu den Diensten)
