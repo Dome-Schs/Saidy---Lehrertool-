@@ -863,8 +863,9 @@ function Toggle({ checked, onChange }) {
   );
 }
 
-function Card({ children, className = "" }) {
-  return <div className={`karte rounded-xl ${className}`}>{children}</div>;
+function Card({ children, className = "", luft = false }) {
+  const base = luft ? "karte-luft" : "karte";
+  return <div className={`${base} rounded-xl ${className}`}>{children}</div>;
 }
 
 /* Sicherheitsabfrage vor dem Löschen. Gesteuert über einen State { title, message, onConfirm }. */
@@ -3898,7 +3899,9 @@ export default function App() {
           --oliv-hell: #ECEEE2;
           --creme: #F4F1E8;
           --karte: #FFFDF8;
+          --karte-warm: #FBF8ED;  /* nah am Grund, "gehoert dazu" statt "schwebt drauf" */
           --linie: #E4DFD2;
+          --linie-fein: rgba(79,88,68,0.08);  /* haarfein, wirkt wie Rille statt Rahmen */
           --ink: #2E3328;
 
           /* Semantische Status-Farben
@@ -3932,7 +3935,28 @@ export default function App() {
         .card      { background: #fff;            border-radius: 1rem; box-shadow: var(--shadow-card); }
         .card-warm { background: var(--karte);    border-radius: 1rem; box-shadow: var(--shadow-card); }
         .card-p    { padding: var(--sp-in); }
-        .karte     { background: var(--karte); border: 1px solid var(--linie); }
+        /* Design B - "warm & luftig": Karten gehoeren visuell zum Grund,
+           harte Rahmen fallen weg. Nur eine haarfeine Rille markiert die
+           Kante - fuehlt sich wie eine Nut im Papier an, nicht wie ein
+           Kaesten-Rahmen. Global: alle .karte-Verwendungen sind betroffen
+           (Uebersichts-Kacheln, Kalender-Karten, etc.). */
+        .karte {
+          background: var(--karte-warm);
+          border: 1px solid var(--linie-fein);
+        }
+
+        /* Icons einheitlich duenner - lucide-react Default ist 2, nach
+           Apple-Konvention wirkt 1.75 leichter und edler. Trifft nur
+           Icons ohne expliziten strokeWidth-Prop. */
+        svg[stroke-width="2"] { stroke-width: 1.75; }
+        .karte-luft {
+          background: var(--karte-warm);
+          border: 1px solid transparent;
+          border-radius: 1rem;
+          transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .karte-luft:hover { border-color: var(--linie-fein); }
+        .karte-luft:focus-visible { outline: 2px solid var(--oliv); outline-offset: 2px; }
 
         /* ── Akzent (unverändert, Rückwärtskompatibilität) ── */
         .akzent-flaeche { background: var(--oliv); color: #fff; }
@@ -4313,7 +4337,7 @@ export default function App() {
       </div>
 
       {/* Feste untere Navigation (nur mobil) – scrollt weg wenn tief gescrollt */}
-      <nav className={`md:hidden fixed inset-x-0 bottom-0 bg-white/70 backdrop-blur-xl border-t border-stone-200/80 ${fabOpen ? "z-[46]" : "z-40"} pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-transform duration-200 ${navCollapsed ? "translate-y-[calc(100%+1.5rem)]" : "translate-y-0"}`}>
+      <nav className={`md:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl ${fabOpen ? "z-[46]" : "z-40"} pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-transform duration-200 ${navCollapsed ? "translate-y-[calc(100%+1.5rem)]" : "translate-y-0"}`} style={{ background: "rgba(244,241,232,0.8)", borderTop: "1px solid rgba(79,88,68,0.08)" }}>
         {/* Übersicht · Klassen · [+] · Noten · Mehr – „Aufgaben" liegt im Mehr-Menü
             und ist zusätzlich über den Plus-Knopf erreichbar. */}
         <div className="flex items-stretch justify-around px-2 pt-2 pb-1">
@@ -5690,10 +5714,14 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             <button
               key={k.label}
               onClick={k.onClick}
-              className="w-full h-full text-center bg-white rounded-2xl border border-stone-100 shadow-[0_1px_3px_rgba(0,0,0,0.04)] hover:border-stone-200 transition-colors flex flex-col items-center justify-center gap-1 px-2 py-3 press-scale"
+              className="karte-luft w-full h-full text-center flex flex-col items-center justify-center gap-1 px-2 py-3 press-scale"
             >
-              <span className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${aktiv && isColor ? "bg-amber-100" : "akzent-ton"}`}>
-                <Icon size={13} className={aktiv && isColor ? "text-amber-700" : "akzent-text"} />
+              <span className="w-6 h-6 flex items-center justify-center shrink-0">
+                <Icon
+                  size={16}
+                  strokeWidth={1.5}
+                  className={aktiv && isColor ? "text-amber-600" : "akzent-text"}
+                />
               </span>
               {/* Zwei Zeilen erlaubt: „Entschuldigungen" und „Stunden nachtragen"
                   wuerden auf Handybreite sonst abgeschnitten. */}
@@ -5857,9 +5885,12 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
              noch offen, gewinnt Amber. */
           const zeigeLetzte = istLetzte && !offen;
           return (
-            <Card key={unit.id} className={`overflow-hidden p-0 ${zeigeLetzte ? "akzent-ton" : ""}`}>
+            <Card
+              key={unit.id}
+              className={`overflow-hidden p-0 ${zeigeLetzte ? "akzent-ton" : ""} ${offen ? "!border-transparent" : ""}`}
+            >
               <div
-                className={`flex items-stretch border-l-[3px] ${offen ? (isColor ? "border-l-amber-500" : "border-l-[var(--oliv)]") : "border-l-transparent"}`}
+                className={`flex items-stretch border-l-[3px] ${offen ? (isColor ? "border-l-amber-600" : "border-l-[var(--oliv)]") : "border-l-transparent"}`}
               >
                 {/* Zeitspalte – bei Doppelstunde durchgehend von 07:55 bis 09:30 */}
                 <div className="shrink-0 w-[3.5rem] py-2.5 pl-2 pr-1">
