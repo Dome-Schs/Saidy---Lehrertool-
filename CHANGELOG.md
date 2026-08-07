@@ -5,6 +5,51 @@ Format: Nutzersicht, auf Deutsch, für Lehrerinnen und Lehrer.
 
 ---
 
+## [1.4] – 06.08.2026
+
+### Neu
+- **Gesprächsleitfaden im Kind-Profil**: Saidy führt jetzt Schritt für Schritt durch ein Gespräch – in drei Varianten: nur mit dem Kind, nur mit den Eltern oder mit Eltern und Kind gemeinsam. Zu jeder Phase des Gesprächs gibt es passende Fragenvorschläge, ein Stimmungs-Smiley und ein Notizfeld. Am Ende steht ein fertiges Gesprächsprotokoll, ohne dass man nebenher mitschreiben muss.
+- **Stundenabschluss in 30 Sekunden**: Das Klemmbrett-Symbol öffnet nicht mehr direkt die Notenerfassung, sondern eine Liste aller Kinder der Klasse. Pro Kind genügt ein Tipp für „Mitarbeit +", „Störung −", „Vergessen ⚠" oder eine kurze Notiz. So ist die Stunde noch auf dem Weg zum Lehrerzimmer dokumentiert – die ausführliche Notenerfassung bleibt weiterhin erreichbar.
+- **„Auf einen Blick"-Karte im Kind-Profil**: Ganz oben stehen jetzt bis zu sechs automatisch erzeugte Signale zu einem Kind – aktuelle Stimmung, Notentrend, wiederkehrende Vorfälle, das letzte Elterngespräch und das aktive Förderziel. Vor einem Gespräch oder einer Konferenz weiß man damit in wenigen Sekunden wieder, wo das Kind steht.
+- **Schülerakte als PDF**: Alle gesammelten Informationen zu einem Kind lassen sich als PDF ausgeben – gedacht für die Übergabe an die nächste Lehrkraft, damit das pädagogische Wissen beim Wechsel nicht verloren geht.
+- **Vier neue Erinnerungen im Morgen-Briefing**: Saidy meldet sich jetzt auch, wenn zu einem Kind seit 14 Tagen nichts mehr notiert wurde, wenn sich Vorfälle bei einem Kind wiederholen, wenn sich Fehltage in einer Klasse häufen oder wenn noch Zeugnisnoten offen sind.
+
+### Design & Bedienung
+- **Neues Erscheinungsbild „warm & luftig"**: Karten liegen jetzt in einem warmen Cremeton statt in Weiß, Rahmen sind haarfein, Symbole feiner gezeichnet und die untere Leiste ist ebenfalls cremefarben. Die App wirkt dadurch ruhiger und weniger nach Verwaltungssoftware.
+- **Bottom-Sheets zum Wegziehen**: Eingeblendete Fenster von unten lassen sich am Griff einfach nach unten wegziehen und schließen – bequemer als der Weg zum kleinen X mit einer Hand.
+- Der amber Balken an noch nicht erfassten Stunden folgt jetzt sauber der Kontur der Karte.
+- Kopfzeile und untere Navigationsleiste liegen als echtes Milchglas über dem Inhalt – beim Scrollen bleibt sichtbar, wo man ist.
+- Die Stunden-Karten auf der Übersicht sind jetzt alle gleich hoch, die Liste wirkt dadurch ruhiger.
+
+### Barrierefreiheit
+- Die Systemeinstellungen „Bewegung reduzieren" und „Transparenz reduzieren" werden jetzt respektiert: Animationen und Milchglas-Effekte entfallen dann automatisch.
+
+### Behoben
+- Nach dem Drehen des Geräts sitzt die untere Navigationsleiste wieder korrekt am unteren Rand.
+- Der weiße Streifen unter der Navigationsleiste ist verschwunden.
+- Das Thema einer Stunde lässt sich jetzt direkt von der Übersicht aus anlegen – der Umweg über die Stundenerfassung entfällt.
+- Das Vergessen-Symbol liegt in der Schnellerfassung wieder direkt in der Zeile des Kindes statt versteckt im Dreipunkt-Menü.
+
+### Für die „Was ist neu?"-Ansicht in der App
+
+```json
+{
+  "version": "1.4",
+  "date": "06.08.2026",
+  "title": "Gesprächsleitfaden, Stundenabschluss in 30 Sekunden und ein wärmeres Design",
+  "highlights": [
+    "Neu: Der Gesprächsleitfaden führt durch Gespräche mit Kind, Eltern oder beiden – mit Fragenvorschlägen, Stimmung und Notiz pro Phase.",
+    "Neu: Das Klemmbrett-Symbol öffnet jetzt eine Kinderliste mit One-Tap-Aktionen – die Stunde ist in 30 Sekunden dokumentiert.",
+    "Neu: Die Karte „Auf einen Blick\" zeigt im Kind-Profil bis zu sechs Signale – Stimmung, Notentrend, wiederkehrende Vorfälle, letztes Elterngespräch, aktives Förderziel.",
+    "Neu: Die komplette Schülerakte lässt sich als PDF für die Übergabe an die nächste Lehrkraft ausgeben.",
+    "Neu: Vier zusätzliche Erinnerungen im Morgen-Briefing – lange kein Eintrag, wiederkehrende Vorfälle, Fehlzeit-Häufung, offene Zeugnisnoten.",
+    "Frisches Design in warmem Cremeton, Fenster von unten lassen sich einfach wegziehen, und „Bewegung reduzieren\" wird jetzt respektiert."
+  ]
+}
+```
+
+---
+
 ## [1.3] – 05.08.2026
 
 ### Neu
