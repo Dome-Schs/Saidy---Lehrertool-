@@ -2725,7 +2725,11 @@ const HELP_DATA = [
   {
     category: "Klassen & Schüler:innen",
     items: [
-      { q: "Wie finde ich schnell ein bestimmtes Kind?", a: `Tippe auf „Suchen" – in der Seitenleiste (Desktop) oder im „Mehr"-Menü (Mobil). Du kannst nach Namen oder Notiztext suchen. Ein Tipp auf ein Ergebnis öffnet direkt das Schülerprofil.` },
+      { q: "Wie finde ich schnell ein bestimmtes Kind?", a: `Drei Wege: (1) Auf der Übersicht das grüne Plus tippen → „Kind suchen". (2) Im Klassen-Tab ganz oben ein Suchfeld – tippe den Namen, direkte Treffer erscheinen und öffnen das Profil per Tipp. (3) Über das „Mehr"-Menü → „Suchen" (dort auch Notiztext-Suche). Alle drei führen zum selben Ziel: Schülerprofil in Sekunden.` },
+      { q: "Wie sehe ich alle Kinder mit aktivem Förderziel auf einen Blick?", a: `Auf der Übersicht die Kachel „Förderziele" antippen (nur solange offene Ziele bestehen) – es öffnet sich eine Liste aller Kinder mit ihren offenen Zielen. Ein Tipp auf ein Kind führt direkt ins Profil zum Bearbeiten.` },
+      { q: "Wie öffne ich die noch offenen Entschuldigungen?", a: `Übersicht → Kachel „Entschuldigungen" antippen. Sie zeigt alle Fehlzeiten, die noch nicht entschuldigt sind, nach Datum sortiert. Tipp auf einen Eintrag öffnet das Kind-Profil, wo du den Status ändern kannst.` },
+      { q: "Wie trage ich eine Stunde am Wochenende oder in den Ferien nach?", a: `Übersicht → grünes Plus → „Stunde erfassen". Wenn heute keine Stunde im Plan steht, öffnet sich automatisch der Nachtragen-Picker: Klasse wählen → Fach wählen → Datum wählen → weiter. Danach landest du in der normalen Stundenerfassung – auch für alte Stunden.` },
+      { q: "Kann ich ein Gespräch von gestern nachträglich eintragen?", a: `Ja. Grünes Plus → „Gespräch notieren" – neben dem Notizfeld gibt es ein Datumsfeld, das standardmäßig auf heute steht. Ändere es auf das gewünschte Datum, dann bleibt der Eintrag im Verlauf an der richtigen Stelle stehen. Dasselbe gilt für „Notiz zu einem Kind".` },
       { q: "Wie bearbeite ich eine:n Schüler:in?", a: `Tippe in der Klassenliste auf den Namen. Im Profil kannst du Name, Foto und weitere Angaben bearbeiten.` },
       { q: "Wie lösche ich eine Klasse?", a: `Öffne die Klasse, tippe auf das Bearbeiten-Symbol und wähle „Klasse löschen". Achtung: alle Daten dieser Klasse werden unwiderruflich entfernt.` },
       { q: "Was sind Dienste?", a: `Dienste sind Aufgaben, die Saidy Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste", mit einem Tippen weiter zum nächsten Kind.` },
@@ -2955,6 +2959,9 @@ function QuickAddNoteModal({ data, modus, onSave, onClose }) {
   const [text, setText] = useState("");
   const [typ, setTyp] = useState("schueler");
   const [mood, setMood] = useState("ok");
+  /* Datum vorbelegt heute, aber aenderbar - z. B. um ein Gespraech
+     von gestern nachzutragen. */
+  const [datum, setDatum] = useState(isoDate(new Date()));
   const inputRef = useRef(null);
   useEffect(() => { inputRef.current?.focus(); }, [studentId]);
 
@@ -2970,7 +2977,7 @@ function QuickAddNoteModal({ data, modus, onSave, onClose }) {
 
   function speichern() {
     if (!student || !text.trim()) return;
-    onSave({ studentId: student.id, text: text.trim(), istGespraech, typ, mood });
+    onSave({ studentId: student.id, text: text.trim(), istGespraech, typ, mood, date: datum });
   }
 
   /* Backdrop-Klick und X-Knopf wirken versehentlich - besonders wenn das Sheet auf dem
@@ -3073,6 +3080,16 @@ function QuickAddNoteModal({ data, modus, onSave, onClose }) {
                   </Field>
                 </>
               )}
+
+              <Field label="Datum">
+                <input
+                  type="date"
+                  className={inputCls}
+                  value={datum}
+                  max={isoDate(new Date())}
+                  onChange={(e) => setDatum(e.target.value)}
+                />
+              </Field>
 
               <Field label={istGespraech ? "Notiz zum Gespräch" : "Notiz"}>
                 <textarea
@@ -3422,6 +3439,9 @@ export default function App() {
   const [showHelp, setShowHelp] = useState(false);
   const [showDokumente, setShowDokumente] = useState(false);
   const [showGeburtstage, setShowGeburtstage] = useState(false);
+  const [showNachtragen, setShowNachtragen] = useState(false);
+  const [showFoerderziele, setShowFoerderziele] = useState(false);
+  const [showEntschuldigungen, setShowEntschuldigungen] = useState(false);
   const [fabOpen, setFabOpen] = useState(false);
   const [fabActions, setFabActions] = useState([]); // [{label, icon, onClick}]
   const [showSearch, setShowSearch] = useState(false);
@@ -3981,14 +4001,16 @@ export default function App() {
     { key: "noten", label: "Noten & Berichte", icon: GraduationCap },
   ];
 
-  /* Notiz oder Gespräch aus der Schnellerfassung ablegen – dasselbe Format wie im Profil */
-  function saveQuickNote({ studentId, text, istGespraech, typ, mood }) {
+  /* Notiz oder Gespräch aus der Schnellerfassung ablegen – dasselbe Format wie im Profil.
+     `date` optional, damit Nachträge (z. B. Gespräch von gestern) möglich sind. */
+  function saveQuickNote({ studentId, text, istGespraech, typ, mood, date }) {
+    const wann = date || isoDate(new Date());
     update((d) => {
       d.notes = d.notes || [];
       d.notes.push(
         istGespraech
-          ? { id: uid(), studentId, date: isoDate(new Date()), text, type: "gespraech", mood, gesprTyp: typ || "schueler" }
-          : { id: uid(), studentId, date: isoDate(new Date()), text }
+          ? { id: uid(), studentId, date: wann, text, type: "gespraech", mood, gesprTyp: typ || "schueler" }
+          : { id: uid(), studentId, date: wann, text }
       );
       return d;
     });
@@ -4034,14 +4056,16 @@ export default function App() {
     if (fach && cls) {
       setCaptureLesson({ fach, cls, date: isoDate(new Date()) });
     } else {
-      goTo("dashboard");
-      showToast("Heute steht keine Stunde im Plan.");
+      /* Kein Unterricht heute (Wochenende, Ferien) oder Kalender leer:
+         Nachtragen ermoeglichen statt sackgassiger Toast-Meldung. */
+      setShowNachtragen(true);
     }
   }
 
   /* Aktionen des Plus-Knopfs. Bereichsspezifische Aktionen (z. B. „Neue Klasse")
      hängen sich über onRegisterFab vorne an. */
   const globalFabActions = [
+    { label: "Kind suchen", icon: Search, onClick: () => setShowSearch(true) },
     { label: "Stunde erfassen", icon: ClipboardCheck, onClick: startQuickCapture },
     { label: "Gespräch notieren", icon: MessageSquare, onClick: () => setQuickAdd("gespraech") },
     { label: "Notiz zu einem Kind", icon: StickyNote, onClick: () => setQuickAdd("notiz") },
@@ -4483,7 +4507,7 @@ export default function App() {
               </button>
             </div>
           )}
-          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenKlassenDashboard={(classId) => { setFocusKlassenDashboardId(classId); goTo("klassen"); }} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} onOpenGeburtstage={() => setShowGeburtstage(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} setAbschluss={setAbschluss} pendingLessons={pendingLessons} now={now} />}
+          {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenKlassenDashboard={(classId) => { setFocusKlassenDashboardId(classId); goTo("klassen"); }} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} onOpenGeburtstage={() => setShowGeburtstage(true)} onOpenFoerderziele={() => setShowFoerderziele(true)} onOpenEntschuldigungen={() => setShowEntschuldigungen(true)} onOpenNachtragen={() => setShowNachtragen(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} setAbschluss={setAbschluss} pendingLessons={pendingLessons} now={now} />}
           {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} focusKlassenDashboardId={focusKlassenDashboardId} onFocusKlassenDashboardConsumed={() => setFocusKlassenDashboardId(null)} onRegisterFab={setFabActions} showToast={showToast} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
           {tab === "kalender" && <KalenderTab data={activeData} update={update} autoOpenForm={kalenderAutoForm} onAutoFormConsumed={() => setKalenderAutoForm(false)} />}
@@ -4707,6 +4731,33 @@ export default function App() {
           data={activeData}
           update={update}
           onClose={() => setShowDokumente(false)}
+        />
+      )}
+
+      {showFoerderziele && (
+        <FoerderzieleUebersicht
+          data={activeData}
+          onOpenStudent={(id) => { setShowFoerderziele(false); navigateToStudent(id); }}
+          onClose={() => setShowFoerderziele(false)}
+        />
+      )}
+
+      {showEntschuldigungen && (
+        <OffeneEntschuldigungenUebersicht
+          data={activeData}
+          onOpenStudent={(id) => { setShowEntschuldigungen(false); navigateToStudent(id); }}
+          onClose={() => setShowEntschuldigungen(false)}
+        />
+      )}
+
+      {showNachtragen && (
+        <NachtragenPicker
+          data={activeData}
+          onClose={() => setShowNachtragen(false)}
+          onWaehlen={({ fach, cls, date }) => {
+            setShowNachtragen(false);
+            setCaptureLesson({ fach, cls, date });
+          }}
         />
       )}
 
@@ -5517,7 +5568,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
   );
 }
 
-function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboard, onOpenUntisImport, onOpenSettings, onOpenGeburtstage, halbjahr, setCaptureLesson, setAbschluss, pendingLessons, now }) {
+function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboard, onOpenUntisImport, onOpenSettings, onOpenGeburtstage, onOpenFoerderziele, onOpenEntschuldigungen, onOpenNachtragen, halbjahr, setCaptureLesson, setAbschluss, pendingLessons, now }) {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [showPending, setShowPending] = useState(false);
   const [openTestDetail, setOpenTestDetail] = useState(null);
@@ -6002,11 +6053,16 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       value: (pendingLessons || []).length,
       sub: (pendingLessons || []).length ? (offeneKlassen ? `in ${offeneKlassen} ${offeneKlassen === 1 ? "Klasse" : "Klassen"}` : "heute offen") : "alles erledigt",
       warn: !!(pendingLessons || []).length,
-      /* Die Liste darunter erscheint nur am heutigen Tag – sonst bliebe der Tipp wirkungslos */
+      /* Gibt es offene Stunden heute -> Liste darunter aufklappen. Sonst
+         Nachtragen-Picker oeffnen, damit auch am Wochenende / in Ferien
+         etwas eingetragen werden kann. */
       onClick: () => {
-        if (!(pendingLessons || []).length) return onNavigate?.("stundenplan");
-        if (!isToday) setSelectedDate(new Date());
-        setShowPending((v) => !v);
+        if ((pendingLessons || []).length) {
+          if (!isToday) setSelectedDate(new Date());
+          setShowPending((v) => !v);
+        } else {
+          onOpenNachtragen?.();
+        }
       },
     },
     {
@@ -6015,7 +6071,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       value: offeneEntschuldigungen,
       sub: offeneEntschuldigungen ? "offen" : "keine offen",
       warn: offeneEntschuldigungen > 0,
-      onClick: () => onNavigate?.("klassen"),
+      onClick: () => offeneEntschuldigungen ? onOpenEntschuldigungen?.() : onNavigate?.("klassen"),
     },
     {
       icon: Target,
@@ -6023,7 +6079,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       value: offeneZiele.length,
       sub: offeneZiele.length ? (zielKinder ? `bei ${zielKinder} ${zielKinder === 1 ? "Kind" : "Kindern"}` : "aktiv") : "keine aktiv",
       warn: false,
-      onClick: () => onNavigate?.("klassen"),
+      onClick: () => offeneZiele.length ? onOpenFoerderziele?.() : onNavigate?.("klassen"),
     },
   ];
 
@@ -7761,6 +7817,207 @@ function GeburtstageUebersicht({ data, onOpenStudent, onClose }) {
   );
 }
 
+/* Direkter Blick auf alle Kinder mit aktivem Foerderziel - kein Umweg
+   ueber Klassen. Vision-Regel: "Wissen geht nie verloren" - hier heisst
+   das: Foerderkinder auf einen Klick sichtbar. */
+function FoerderzieleUebersicht({ data, onOpenStudent, onClose }) {
+  const [suche, setSuche] = useState("");
+  const zielFenster = isoDate(addDays(new Date(), -183));
+  const offeneZiele = (data.foerderZiele || []).filter(
+    (z) => !z.doneAt && z.typ !== "wochen" && (z.createdAt || "") >= zielFenster
+  );
+  const gruppen = {};
+  offeneZiele.forEach((z) => {
+    if (!gruppen[z.studentId]) gruppen[z.studentId] = [];
+    gruppen[z.studentId].push(z);
+  });
+  const q = suche.trim().toLowerCase();
+  const kinder = Object.entries(gruppen)
+    .map(([sid, ziele]) => ({ student: data.students.find((s) => s.id === sid), ziele }))
+    .filter((x) => x.student && !x.student.deletedAt)
+    .filter((x) => !q || x.student.name.toLowerCase().includes(q))
+    .sort((a, b) => a.student.name.localeCompare(b.student.name, "de"));
+
+  return (
+    <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
+      <div className="bg-white border-b border-stone-100 shrink-0">
+        <div className="flex items-center gap-3 px-4 pb-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale">
+            <ChevronLeft size={18} className="text-stone-600" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="text-xl font-bold text-stone-900">Förderziele</div>
+            <div className="t-caption">{kinder.length} {kinder.length === 1 ? "Kind" : "Kinder"} mit aktivem Förderziel</div>
+          </div>
+        </div>
+        {(data.students || []).length > 8 && (
+          <div className="px-4 pb-3">
+            <input
+              className="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm placeholder-stone-400 outline-none"
+              placeholder="Nach Namen suchen …"
+              value={suche}
+              onChange={(e) => setSuche(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        {kinder.length ? (
+          <div className="card divide-y divide-stone-100 overflow-hidden">
+            {kinder.map(({ student, ziele }) => {
+              const cls = data.classes.find((c) => c.id === student.classId);
+              return (
+                <button key={student.id} onClick={() => onOpenStudent(student.id)} className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-stone-50 press-scale">
+                  <StudentAvatar student={student} size={32} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-stone-800 truncate">{student.name}</div>
+                    <div className="t-caption mb-1">{cls?.name || "ohne Klasse"} · {ziele.length} {ziele.length === 1 ? "Ziel" : "Ziele"}</div>
+                    <ul className="text-xs text-stone-600 space-y-0.5">
+                      {ziele.slice(0, 3).map((z) => (
+                        <li key={z.id} className="flex gap-1.5"><Target size={11} className="shrink-0 mt-0.5 akzent-text" /><span className="min-w-0 truncate">{z.text}</span></li>
+                      ))}
+                    </ul>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-stone-400 px-1">
+            {q ? "Niemand gefunden." : `Keine aktiven Förderziele. Neue Ziele legst du im Schülerprofil unter „Ziele" an.`}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* Direkter Blick auf alle offenen Fehlzeit-Entschuldigungen - der
+   Ort wo Rueckstaende sichtbar werden. Statt "ins Klassen-Menue klicken
+   und suchen" ein direkter Weg. */
+function OffeneEntschuldigungenUebersicht({ data, onOpenStudent, onClose }) {
+  const [suche, setSuche] = useState("");
+  const offene = (data.absences || [])
+    .filter((a) => a.excuseStatus === "ausstehend" || a.excuseStatus === "eingereicht")
+    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")));
+  const q = suche.trim().toLowerCase();
+  const treffer = offene
+    .map((a) => ({ a, student: data.students.find((s) => s.id === a.studentId) }))
+    .filter((x) => x.student && !x.student.deletedAt)
+    .filter((x) => !q || x.student.name.toLowerCase().includes(q));
+
+  return (
+    <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
+      <div className="bg-white border-b border-stone-100 shrink-0">
+        <div className="flex items-center gap-3 px-4 pb-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale">
+            <ChevronLeft size={18} className="text-stone-600" />
+          </button>
+          <div className="flex-1 min-w-0">
+            <div className="text-xl font-bold text-stone-900">Offene Entschuldigungen</div>
+            <div className="t-caption">{offene.length} noch {offene.length === 1 ? "offen" : "offen"}</div>
+          </div>
+        </div>
+        {offene.length > 6 && (
+          <div className="px-4 pb-3">
+            <input
+              className="w-full bg-stone-100 rounded-xl px-3 py-2 text-sm placeholder-stone-400 outline-none"
+              placeholder="Nach Namen suchen …"
+              value={suche}
+              onChange={(e) => setSuche(e.target.value)}
+            />
+          </div>
+        )}
+      </div>
+      <div className="flex-1 overflow-y-auto p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+        {treffer.length ? (
+          <div className="card divide-y divide-stone-100 overflow-hidden">
+            {treffer.map(({ a, student }) => {
+              const cls = data.classes.find((c) => c.id === student.classId);
+              const status = a.excuseStatus === "eingereicht" ? "eingereicht" : "ausstehend";
+              return (
+                <button key={a.id} onClick={() => onOpenStudent(student.id)} className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-stone-50 press-scale">
+                  <StudentAvatar student={student} size={32} />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-stone-800 truncate">{student.name}</div>
+                    <div className="t-caption">{cls?.name || "ohne Klasse"} · {localDate(a.date).toLocaleDateString("de-DE")}{a.reason ? ` · ${a.reason}` : ""}</div>
+                  </div>
+                  <span className={`text-xs font-medium shrink-0 ${status === "ausstehend" ? "text-amber-600" : "text-stone-500"}`}>
+                    {status}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="text-sm text-stone-400 px-1">
+            {q ? "Niemand gefunden." : "Keine offenen Entschuldigungen – alles erledigt."}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* Nachtragen-Picker fuer den Plus-Knopf, wenn heute keine Stunde im Plan
+   steht (Wochenende, Ferien) oder eine aeltere Stunde nachgetragen werden
+   soll. Klasse -> Fach -> Datum. */
+function NachtragenPicker({ data, onWaehlen, onClose }) {
+  const [classId, setClassId] = useState(null);
+  const [fachId, setFachId] = useState(null);
+  const [datum, setDatum] = useState(isoDate(new Date()));
+
+  const klassen = (data.classes || []).slice().sort((a, b) => a.name.localeCompare(b.name, "de"));
+  const faecher = classId
+    ? (data.faecher || []).filter((f) => f.classId === classId).sort((a, b) => a.subject.localeCompare(b.subject, "de"))
+    : [];
+
+  function starten() {
+    const fach = data.faecher.find((f) => f.id === fachId);
+    const cls = data.classes.find((c) => c.id === classId);
+    if (fach && cls) onWaehlen({ fach, cls, date: datum });
+  }
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[70]" onClick={onClose}>
+      <div className="bg-white w-full md:max-w-md rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 leading-none mb-0.5">Stunde nachtragen</div>
+            <div className="font-semibold text-stone-800">Klasse, Fach und Datum wählen</div>
+          </div>
+          <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center"><X size={16} /></button>
+        </div>
+        <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-4">
+          <Field label="Klasse">
+            <select className={inputCls} value={classId || ""} onChange={(e) => { setClassId(e.target.value); setFachId(null); }}>
+              <option value="">Bitte wählen …</option>
+              {klassen.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </Field>
+          {classId && (
+            <Field label="Fach">
+              <select className={inputCls} value={fachId || ""} onChange={(e) => setFachId(e.target.value)}>
+                <option value="">Bitte wählen …</option>
+                {faecher.map((f) => <option key={f.id} value={f.id}>{f.subject}</option>)}
+              </select>
+            </Field>
+          )}
+          <Field label="Datum">
+            <input type="date" className={inputCls} value={datum} max={isoDate(new Date())} onChange={(e) => setDatum(e.target.value)} />
+          </Field>
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={onClose} className="flex-1 justify-center">Abbrechen</Button>
+            <Button onClick={starten} disabled={!fachId} className="flex-1 justify-center">
+              <ChevronRight size={14} /> Weiter
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DokumenteAllgemein({ data, update, onClose }) {
   const [suche, setSuche] = useState("");
   const documents = data.documents || [];
@@ -7782,7 +8039,10 @@ function DokumenteAllgemein({ data, update, onClose }) {
   }
 
   const q = suche.trim().toLowerCase();
+  /* Freie Dokumente werden bereits im oberen Block gezeigt - hier in "Alle Dokumente"
+     nur die mit Bezug (Kind/Klasse/Fach), damit nichts doppelt erscheint. */
   const alle = documents
+    .filter((d) => d.scope !== "frei")
     .map((d) => ({ ...d, ort: scopeLabel(d) }))
     .filter((d) => !q || d.name.toLowerCase().includes(q) || d.ort.text.toLowerCase().includes(q))
     .sort((a, b) => String(b.addedAt || "").localeCompare(String(a.addedAt || "")));
@@ -10717,6 +10977,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
   const [showSitzplan, setShowSitzplan] = useState(false);
   const [sitzplanClassId, setSitzplanClassId] = useState(null);
   const [klassenDashboardId, setKlassenDashboardId] = useState(null);
+  const [kindSuche, setKindSuche] = useState("");
 
   useEffect(() => {
     if (!onRegisterFab) return;
@@ -10930,6 +11191,53 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
 
       {subTab === "klassen" && (
       <div className="space-y-3">
+        {/* Kind-Schnellsuche - Sekundarstufen-Realitaet: 150+ Namen aus
+            5+ Klassen. Direkter Weg zum Kind, ohne Klasse aufzuklappen. */}
+        {data.students.length > 5 && (
+          <div>
+            <input
+              className="w-full bg-white border border-[color:var(--linie-fein)] rounded-xl px-3 py-2 text-sm placeholder-stone-400 outline-none"
+              placeholder="Kind suchen …"
+              value={kindSuche}
+              onChange={(e) => setKindSuche(e.target.value)}
+            />
+            {kindSuche.trim() && (() => {
+              const q = kindSuche.trim().toLowerCase();
+              const treffer = data.students
+                .filter((s) => !s.deletedAt && s.name.toLowerCase().includes(q))
+                .sort((a, b) => a.name.localeCompare(b.name, "de"))
+                .slice(0, 12);
+              return (
+                <div className="mt-2 karte rounded-xl divide-y divide-stone-100 overflow-hidden">
+                  {treffer.length ? treffer.map((s) => {
+                    const c = data.classes.find((x) => x.id === s.classId);
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => {
+                          setSelectedClass(s.classId);
+                          setShowStudentsModal(true);
+                          setSelectedStudent(s.id);
+                          setKindSuche("");
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-left hover:bg-stone-50 press-scale"
+                      >
+                        <StudentAvatar student={s} size={28} />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-stone-800 truncate">{s.name}</div>
+                          <div className="t-caption">{c?.name || "ohne Klasse"}</div>
+                        </div>
+                        <ChevronRight size={14} className="text-stone-300 shrink-0" />
+                      </button>
+                    );
+                  }) : (
+                    <div className="px-4 py-3 text-sm text-stone-400">Niemand gefunden.</div>
+                  )}
+                </div>
+              );
+            })()}
+          </div>
+        )}
         {data.classes.map((c) => {
           const cFaecher = data.faecher.filter((f) => f.classId === c.id);
           const cCount = data.students.filter((s) => s.classId === c.id).length;
