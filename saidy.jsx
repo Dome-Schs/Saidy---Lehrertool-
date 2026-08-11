@@ -7,7 +7,7 @@ import {
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
   Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target, Mic,
-  Lightbulb, BookOpen, Paperclip, Camera, FolderOpen,
+  Lightbulb, BookOpen, Paperclip, Camera, FolderOpen, Folder, Star, User,
 } from "lucide-react";
 
 /* ---------- Konstanten ---------- */
@@ -399,7 +399,7 @@ function SaidyLogoMark({ size = 32, className = "" }) {
       src={SAIDY_LOGO}
       width={size}
       height={size}
-      alt="Saidy"
+      alt="Tuvi"
       className={"rounded-full " + className}
       style={{ width: size, height: size, objectFit: "cover" }}
     />
@@ -718,7 +718,7 @@ const S_ZEIT = (v) => {
 const S_LISTE = (v) => (Array.isArray(v) ? v : []);
 /* Farben landen direkt in style={{ backgroundColor: ... }}. Ein Wert wie
    url(https://…) wuerde von dort aus nachladen - das widerspricht dem
-   Versprechen, dass Saidy nichts nach aussen sendet. */
+   Versprechen, dass Tuvi nichts nach aussen sendet. */
 const S_FARBE = (v) => (typeof v === "string" && /^#[0-9a-fA-F]{3,8}$/.test(v) ? v : null);
 /* Schluessel wie __proto__ oder constructor haben in Nutzdaten nichts zu
    suchen und haben frueher schon zu weissen Seiten gefuehrt. */
@@ -1165,7 +1165,7 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
                     ))}
                   </ul>
                   {matched === 0 && (
-                    <p className="text-xs text-red-600 mt-2">Keine Schüler:innen konnten zugeordnet werden. Bitte prüfe, ob die Namen in Saidy und WebUntis übereinstimmen.</p>
+                    <p className="text-xs text-red-600 mt-2">Keine Schüler:innen konnten zugeordnet werden. Bitte prüfe, ob die Namen in Tuvi und WebUntis übereinstimmen.</p>
                   )}
                 </div>
               )}
@@ -1217,12 +1217,12 @@ function LegalModal({ onClose }) {
             <>
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Zielgruppe</div>
-                <p className="text-xs text-stone-600">Saidy richtet sich ausschließlich an volljährige Lehrkräfte für den beruflichen Gebrauch. Die App ist nicht für die Nutzung durch Schülerinnen und Schüler oder Erziehungsberechtigte bestimmt.</p>
+                <p className="text-xs text-stone-600">Tuvi richtet sich ausschließlich an volljährige Lehrkräfte für den beruflichen Gebrauch. Die App ist nicht für die Nutzung durch Schülerinnen und Schüler oder Erziehungsberechtigte bestimmt.</p>
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Gerätesicherheit</div>
                 <div className="space-y-2 text-xs text-stone-600">
-                  <p>Saidy speichert alle Daten lokal im Browser-Speicher. Daher gilt:</p>
+                  <p>Tuvi speichert alle Daten lokal im Browser-Speicher. Daher gilt:</p>
                   <div className="space-y-1.5 pl-1">
                     <div className="flex items-start gap-2"><span className="text-red-500 font-bold shrink-0 mt-0.5">✕</span><span>Nicht auf geteilten Schulcomputern oder öffentlichen Geräten nutzen</span></div>
                     <div className="flex items-start gap-2"><span className="text-red-500 font-bold shrink-0 mt-0.5">✕</span><span>Nicht im privaten Browser-Modus (InPrivate / Inkognito) – Daten gehen beim Schließen verloren</span></div>
@@ -1255,7 +1255,7 @@ function LegalModal({ onClose }) {
                 </div>
               </div>
               <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-800">
-                Saidy ist ein privates Werkzeug, kein offiziell geprüftes Schulverwaltungssystem. Ob die Nutzung mit den Datenschutzrichtlinien deiner Schule und deines Bundeslandes vereinbar ist, kläre bitte mit deiner Schulleitung oder dem Datenschutzbeauftragten.
+                Tuvi ist ein privates Werkzeug, kein offiziell geprüftes Schulverwaltungssystem. Ob die Nutzung mit den Datenschutzrichtlinien deiner Schule und deines Bundeslandes vereinbar ist, kläre bitte mit deiner Schulleitung oder dem Datenschutzbeauftragten.
               </div>
             </>
           ) : activeTab === "impressum" ? (
@@ -1305,7 +1305,7 @@ function LegalModal({ onClose }) {
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">4. Lokale Datenspeicherung</div>
-                <p className="text-xs text-stone-600">Saidy verwendet ausschließlich den localStorage des Browsers. Es werden keine Tracking-Cookies gesetzt. Die gespeicherten Daten verlassen das Gerät nicht automatisch.</p>
+                <p className="text-xs text-stone-600">Tuvi verwendet ausschließlich den localStorage des Browsers. Es werden keine Tracking-Cookies gesetzt. Die gespeicherten Daten verlassen das Gerät nicht automatisch.</p>
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">5. Haftungsausschluss</div>
@@ -1555,7 +1555,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 mb-3 flex items-start gap-2">
             <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
             <p className="text-[11px] text-stone-600 leading-relaxed">
-              <strong>Geteilte Schulcomputer:</strong> Saidy speichert Daten im Browser. Wenn mehrere Lehrkräfte dasselbe Browser-Profil nutzen, können alle auf diese Daten zugreifen. Nutze Saidy nur in deinem <strong>eigenen, privaten Browser-Profil</strong>.
+              <strong>Geteilte Schulcomputer:</strong> Tuvi speichert Daten im Browser. Wenn mehrere Lehrkräfte dasselbe Browser-Profil nutzen, können alle auf diese Daten zugreifen. Nutze Tuvi nur in deinem <strong>eigenen, privaten Browser-Profil</strong>.
             </p>
           </div>
           <div className="flex gap-2 mb-2">
@@ -1626,7 +1626,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-stone-500">Freitags-Erinnerung</div>
                   <div className="text-[11px] text-stone-400 mt-0.5">
-                    Erinnert dich freitags beim Öffnen von Saidy, wenn dein letztes Backup älter als 3 Tage ist.
+                    Erinnert dich freitags beim Öffnen von Tuvi, wenn dein letztes Backup älter als 3 Tage ist.
                   </div>
                 </div>
                 <Toggle
@@ -1640,7 +1640,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
                       const perm = await Notification.requestPermission();
                       if (perm !== "granted") return;
                       setSetting("backupNotifications", true);
-                      notify("Saidy – Erinnerung aktiv", "Du wirst freitags daran erinnert, dein Backup zu erneuern.");
+                      notify("Tuvi – Erinnerung aktiv", "Du wirst freitags daran erinnert, dein Backup zu erneuern.");
                     } catch {
                       // Manche Browser (u. a. ältere Android-WebViews) werfen hier – Schalter bleibt dann aus
                     }
@@ -1692,7 +1692,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             <>
               <p className="text-xs text-stone-500 mb-2">So nutzt du iCloud Drive zur manuellen Synchronisation:</p>
               <ol className="text-xs text-stone-500 space-y-1 mb-3 pl-4 list-decimal">
-                <li>„Sichern" → Datei in <strong>iCloud Drive → Saidy</strong> ablegen</li>
+                <li>„Sichern" → Datei in <strong>iCloud Drive → Tuvi</strong> ablegen</li>
                 <li>Auf dem anderen Gerät: „Gesichertes wiederherstellen" → Datei aus iCloud Drive wählen</li>
               </ol>
               <div className="flex gap-2">
@@ -2396,9 +2396,9 @@ function demoData() {
       { id: class2Id, name: "7a" },
     ],
     faecher: [
-      { id: fachMatheId, classId, subject: "Mathematik", color: COLOR_PALETTE[0], room: "0.107", weights: DEFAULT_WEIGHTS, nextTestDate: isoDate(addDays(heute, 3)), nextTestTitle: "Bruchrechnen" },
-      { id: fachSportId, classId, subject: "Sport", color: COLOR_PALETTE[2], room: "Sporthalle", weights: { muendlich: 100, schriftlich: 0 }, nextTestDate: isoDate(addDays(heute, 10)), nextTestTitle: "Bundesjugendspiele" },
-      { id: fachSport7aId, classId: class2Id, subject: "Sport", color: COLOR_PALETTE[2], room: "Sporthalle", weights: { muendlich: 100, schriftlich: 0 }, nextTestDate: isoDate(addDays(heute, 6)), nextTestTitle: "Leichtathletik-Test" },
+      { id: fachMatheId, classId, subject: "Mathematik", color: COLOR_PALETTE[0], room: "0.107", weights: DEFAULT_WEIGHTS, nextTestDate: isoDate(addDays(heute, 3)), nextTestTitle: "Bruchrechnen", material: [] },
+      { id: fachSportId, classId, subject: "Sport", color: COLOR_PALETTE[2], room: "Sporthalle", weights: { muendlich: 100, schriftlich: 0 }, nextTestDate: isoDate(addDays(heute, 10)), nextTestTitle: "Bundesjugendspiele", material: ["12 Volleybälle", "6 Hütchen", "Leibchen"] },
+      { id: fachSport7aId, classId: class2Id, subject: "Sport", color: COLOR_PALETTE[2], room: "Sporthalle", weights: { muendlich: 100, schriftlich: 0 }, nextTestDate: isoDate(addDays(heute, 6)), nextTestTitle: "Leichtathletik-Test", material: ["12 Volleybälle", "6 Hütchen", "Leibchen"] },
     ],
     students,
     subjectColors: { Mathematik: COLOR_PALETTE[0], Sport: COLOR_PALETTE[2] },
@@ -2440,7 +2440,7 @@ function OnboardingModal({ onSave, onDone, onSkip }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
         <div className="flex flex-col items-center mb-4">
           <SaidyLogoMark size={56} className="mb-3" />
-          <div className="text-xl font-semibold tracking-widest text-stone-800 uppercase">Saidy</div>
+          <div className="text-xl font-semibold tracking-widest text-stone-800 uppercase">Tuvi</div>
           <div className="text-xs text-stone-400 tracking-widest uppercase mt-0.5">Noten. Notizen. Organisiert.</div>
         </div>
 
@@ -2709,15 +2709,15 @@ const HELP_DATA = [
     items: [
       { q: "Wie lege ich eine neue Klasse an?", a: `Tippe auf „Klassen" in der Navigation, dann oben rechts auf „+". Gib den Klassennamen ein und bestätige mit „Anlegen".` },
       { q: "Wie füge ich Schüler:innen hinzu?", a: `Öffne eine Klasse und tippe auf „+ Schüler:in". Namen können einzeln oder als Liste eingegeben werden.` },
-      { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Saidy automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr" → „Einstellungen" → Bundesland wählen → „Schulferien eintragen".` },
-      { q: "Was passiert beim ersten Start?", a: `Saidy führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
+      { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Tuvi automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr" → „Einstellungen" → Bundesland wählen → „Schulferien eintragen".` },
+      { q: "Was passiert beim ersten Start?", a: `Tuvi führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
       { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus.` },
       { q: "Was zeigt das Morgen-Briefing auf der Startseite?", a: `Beim Öffnen der App erscheint oben die Karte „Heute im Blick". Sie fasst den Tag in ganzen Sätzen zusammen – zum Beispiel: „Guten Morgen! Heute stehen 4 Stunden an – die erste um 8:00 Uhr in der 4a." Berücksichtigt werden die Stunden des Tages, knapp bevorstehende Klassenarbeiten, Termine, Geburtstage, Kinder die an mehreren der letzten Tage gefehlt haben, und noch nicht erfasste Stunden. Dringendes steht rot und zuerst; angezeigt werden drei Sätze, der Rest über „+ weitere". Alles wird auf deinem Gerät berechnet, es werden keine Daten übertragen. Mit dem × blendest du die Karte für heute aus.` },
       { q: "Wie ist die Übersichtsseite aufgebaut?", a: `Von oben nach unten: (1) Drei kompakte Kennzahl-Kacheln nebeneinander – „Erfassen" (noch nicht erfasste Stunden), „Entschuldigungen" (offen) und „Förderziele" (aktiv). Jede Kachel ist antippbar und springt in den passenden Bereich; Kacheln mit offenen Punkten färben sich amber. (2) Das Morgen-Briefing „Heute im Blick". (3) Die Wochenleiste zum Wechseln des Tages. (4) „Dein Unterricht heute" – jede Stunde als eigene Karte, daneben der Knopf „Stundenplan". (5) Termine, Geburtstage und To-dos als vollbreite Karten untereinander. (6) Klassenradar, falls Signale vorliegen. (7) Dienste und Entschuldigungen als vollbreite Karten; nur deren Reihenfolge lässt sich in den Einstellungen unter „Übersicht (Startseite)" ändern – alles darüber hat einen festen Platz. (8) Ganz unten der „Unterrichtstipp des Tages", falls in den Einstellungen aktiv.` },
-      { q: "Was zeigt eine Stundenkarte auf der Startseite?", a: `Links Anfangs- und Endzeit, daneben das Klassenkürzel (z. B. „4a") und das Fach; darunter steht der Titel der nächsten Klassenarbeit, falls einer hinterlegt ist. Eine Doppelstunde – also zwei aufeinanderfolgende Blöcke desselben Fachs – erscheint als eine Karte mit durchgehender Zeitspanne (07:55 – 09:30) und dem Vermerk „Doppel". Sind zwischen den Blöcken andere Stunden, bleiben sie getrennt. Rechts das Stundenthema und – sobald ein Klassenarbeitstermin existiert – ein Fortschrittsbalken. Er füllt sich, je weiter ihr im Thema seid: „3 / 6 Stunden" heißt, drei Stunden habt ihr für dieses Thema schon gehalten, sechs sind es bis zur Arbeit insgesamt. Eine Doppelstunde zählt dabei als eine Stunde – so wie sie auch nur einmal erfasst wird. Daneben steht, in wie vielen Stunden geschrieben wird. Die Farbe wechselt von oliv über amber zu rot, je knapper es wird. Die zuletzt gehaltene und noch nicht erfasste Stunden bekommen einen farbigen Rand links. Ein Tipp auf Klasse und Fach öffnet die Notenübersicht des Fachs, ein Tipp auf den Balken die Details zur Arbeit. Ganz rechts das Klemmbrett für die Schnellerfassung – es leuchtet amber, solange die Stunde nicht erfasst ist. Ab fünf Stunden zeigt Saidy zunächst vier und blendet den Rest über „Alle N Stunden ansehen" ein.` },
+      { q: "Was zeigt eine Stundenkarte auf der Startseite?", a: `Links Anfangs- und Endzeit, daneben das Klassenkürzel (z. B. „4a") und das Fach; darunter steht der Titel der nächsten Klassenarbeit, falls einer hinterlegt ist. Eine Doppelstunde – also zwei aufeinanderfolgende Blöcke desselben Fachs – erscheint als eine Karte mit durchgehender Zeitspanne (07:55 – 09:30) und dem Vermerk „Doppel". Sind zwischen den Blöcken andere Stunden, bleiben sie getrennt. Rechts das Stundenthema und – sobald ein Klassenarbeitstermin existiert – ein Fortschrittsbalken. Er füllt sich, je weiter ihr im Thema seid: „3 / 6 Stunden" heißt, drei Stunden habt ihr für dieses Thema schon gehalten, sechs sind es bis zur Arbeit insgesamt. Eine Doppelstunde zählt dabei als eine Stunde – so wie sie auch nur einmal erfasst wird. Daneben steht, in wie vielen Stunden geschrieben wird. Die Farbe wechselt von oliv über amber zu rot, je knapper es wird. Die zuletzt gehaltene und noch nicht erfasste Stunden bekommen einen farbigen Rand links. Ein Tipp auf Klasse und Fach öffnet die Notenübersicht des Fachs, ein Tipp auf den Balken die Details zur Arbeit. Ganz rechts das Klemmbrett für die Schnellerfassung – es leuchtet amber, solange die Stunde nicht erfasst ist. Ab fünf Stunden zeigt Tuvi zunächst vier und blendet den Rest über „Alle N Stunden ansehen" ein.` },
       { q: "Was ist der Unterrichtstipp des Tages?", a: `Ganz unten auf der Übersicht liegt eine kompakte Zeile mit einem Tipp aus dem Wissenspool – Titel plus Merksatz. Der Tipp wechselt automatisch mit jedem Tag (er ist an das Datum gekoppelt, bleibt also bei mehrmaligem Öffnen am selben Tag gleich). Tippe drauf, dann öffnet sich die volle Karte: „Warum?" mit Kurzbegründung, „So setzt du es um" als praktische Punkte, und der Merksatz zum Mitnehmen. Ein „Nächster Tipp"-Knopf springt zufällig zu einer anderen Karte, so kannst du zwischendurch etwas schmökern. In den Einstellungen unter „Übersicht (Startseite)" lässt sich die Kachel abschalten.` },
       { q: "Was ist der Wochenrückblick auf der Übersicht?", a: `Eine Karte, die von Freitag 12 Uhr bis Sonntag Nacht ganz oben auf der Übersicht erscheint (ab Montag ist sie automatisch weg). Sie zeigt drei Dinge: die Zahlen der Woche (gehaltene Stunden, vergebene Noten, geführte Gespräche, neue Notizen), was aufgefallen ist (Klassen mit Signalen aus dem Klassenradar, Kinder ohne Eintrag in dieser Woche) und einen Ausblick auf die nächste Woche (Klassenarbeiten, Termine). Ein × blendet die Karte für den Rest dieser Woche aus – am nächsten Freitag kommt sie wieder.` },
-      { q: "Was macht der grüne Plus-Knopf in der Mitte?", a: `Er ist der Schnellzugriff zum Erfassen und funktioniert aus jedem Bereich heraus. Ein Tipp öffnet fünf Einträge: „Stunde erfassen" springt direkt in die Schnellerfassung – Saidy wählt dabei selbst die passende Stunde, zuerst eine noch nicht erfasste, sonst die zuletzt gehaltene von heute. „Gespräch notieren" und „Notiz zu einem Kind" fragen zuerst nach dem Kind (einfach den Namen tippen) und dann nach dem Text; beim Gespräch kommen Art (Schüler, Eltern, Förder) und Stimmung dazu. „Aufgabe" und „Termin" legen einen To-do beziehungsweise einen Kalendereintrag an. Bist du gerade in einem Bereich mit eigener Aktion – etwa im Klassen-Tab – steht diese zusätzlich ganz oben in der Liste. Auf Tablet und Desktop heißt der Knopf „Schnell erfassen" und sitzt in der linken Seitenleiste, ganz oben; das aufklappende Menü enthält dieselben Aktionen.` },
+      { q: "Was macht der grüne Plus-Knopf in der Mitte?", a: `Er ist der Schnellzugriff zum Erfassen und funktioniert aus jedem Bereich heraus. Ein Tipp öffnet fünf Einträge: „Stunde erfassen" springt direkt in die Schnellerfassung – Tuvi wählt dabei selbst die passende Stunde, zuerst eine noch nicht erfasste, sonst die zuletzt gehaltene von heute. „Gespräch notieren" und „Notiz zu einem Kind" fragen zuerst nach dem Kind (einfach den Namen tippen) und dann nach dem Text; beim Gespräch kommen Art (Schüler, Eltern, Förder) und Stimmung dazu. „Aufgabe" und „Termin" legen einen To-do beziehungsweise einen Kalendereintrag an. Bist du gerade in einem Bereich mit eigener Aktion – etwa im Klassen-Tab – steht diese zusätzlich ganz oben in der Liste. Auf Tablet und Desktop heißt der Knopf „Schnell erfassen" und sitzt in der linken Seitenleiste, ganz oben; das aufklappende Menü enthält dieselben Aktionen.` },
       { q: "Wo finde ich die Aufgaben in der unteren Leiste?", a: `Die Leiste zeigt Übersicht, Klassen, den Plus-Knopf, Noten und „Mehr". Die Aufgaben sind unter „Mehr" zu finden – zusammen mit Stundenplan, Kalender, Suche, Einstellungen und Hilfe. Eine neue Aufgabe legst du schneller über den grünen Plus-Knopf an.` },
       { q: "Warum verschwindet die Navigationsleiste beim Scrollen?", a: `Damit mehr Platz für den Inhalt bleibt. Scrollst du auf einer Seite nach unten, gleitet die untere Leiste weg und stattdessen erscheint unten links ein olivfarbener Kreis mit einem Pfeil nach oben. Ein Tipp darauf holt die vollständige Leiste zurück. Scrollst du wieder nach oben, erscheint sie ohnehin von selbst. Auf dem Desktop bleibt die Seitenleiste immer sichtbar.` }
     ],
@@ -2732,7 +2732,7 @@ const HELP_DATA = [
       { q: "Kann ich ein Gespräch von gestern nachträglich eintragen?", a: `Ja. Grünes Plus → „Gespräch notieren" – neben dem Notizfeld gibt es ein Datumsfeld, das standardmäßig auf heute steht. Ändere es auf das gewünschte Datum, dann bleibt der Eintrag im Verlauf an der richtigen Stelle stehen. Dasselbe gilt für „Notiz zu einem Kind".` },
       { q: "Wie bearbeite ich eine:n Schüler:in?", a: `Tippe in der Klassenliste auf den Namen. Im Profil kannst du Name, Foto und weitere Angaben bearbeiten.` },
       { q: "Wie lösche ich eine Klasse?", a: `Öffne die Klasse, tippe auf das Bearbeiten-Symbol und wähle „Klasse löschen". Achtung: alle Daten dieser Klasse werden unwiderruflich entfernt.` },
-      { q: "Was sind Dienste?", a: `Dienste sind Aufgaben, die Saidy Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste", mit einem Tippen weiter zum nächsten Kind.` },
+      { q: "Was sind Dienste?", a: `Dienste sind Aufgaben, die Tuvi Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste", mit einem Tippen weiter zum nächsten Kind.` },
       { q: "Wie erfasse ich Fehlzeiten?", a: `Gehe zu Klasse → „Fehlzeiten" → „+ Fehlzeit". Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist.` },
       { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle in der Fläche – es erscheint eine Auswahlliste zum Auswählen des Kindes. Alternativ auf „Kind hinzufügen" tippen. Platzierte Kinder lassen sich frei auf der Fläche verschieben. Die Tafel oben lässt sich an jeden Rand ziehen (oben, unten, links, rechts). Einmal antippen (ohne zu schieben) markiert den Sitzplatz farbig: grün = klappt gut, amber = beobachten, rot = klappt nicht. Ein Kind entfernen: Token nach unten über den Rand der Fläche in die rote Toolbar ziehen und loslassen. „Aufräumen" richtet alle Kinder gleichzeitig in einem sauberen Raster aus. „Löschen" entfernt den gesamten Sitzplan. Am Ende „Speichern" tippen.` },
       { q: "Was zeigt die Zusammenfassung im Schülerprofil?", a: `Im Profil-Tab „Übersicht" erscheint eine automatisch generierte Zusammenfassung – erkennbar am Sparkles-Symbol. Sie fasst Stimmung, Notendurchschnitt, Tendenz, Aktivität der letzten 30 Tage, Förderbedarfe und aktive Ziele in einem Satz zusammen. Die Zusammenfassung wird lokal aus den gespeicherten Daten berechnet und nur angezeigt, wenn genügend Informationen vorliegen.` },
@@ -2748,11 +2748,11 @@ const HELP_DATA = [
     category: "Noten & Berichte",
     items: [
       { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten & Berichte", wähle Klasse und Fach. Tippe auf eine:n Schüler:in – in der Karte „Neue Note" Kategorie und Note wählen und auf „+" tippen. Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
-      { q: "Wie berechnet sich die Zeugnisnote?", a: `Saidy bildet den gewichteten Durchschnitt aus mündlichen und schriftlichen Noten. Voreingestellt ist 50 zu 50 Prozent – änderbar unter „Klassen & Schüler" → Reiter „Fächer" → Zahnrad beim Fach → „Gewichtung der Noten". Einzelne Noten lassen sich zusätzlich stärker gewichten (Faktor beim Bearbeiten der Note). Die berechnete Note erscheint in der Notenübersicht.` },
+      { q: "Wie berechnet sich die Zeugnisnote?", a: `Tuvi bildet den gewichteten Durchschnitt aus mündlichen und schriftlichen Noten. Voreingestellt ist 50 zu 50 Prozent – änderbar unter „Klassen & Schüler" → Reiter „Fächer" → Zahnrad beim Fach → „Gewichtung der Noten". Einzelne Noten lassen sich zusätzlich stärker gewichten (Faktor beim Bearbeiten der Note). Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
       { q: "Was ist der Stunden-Abschluss (30 Sekunden)?", a: `Das Klemmbrett-Symbol neben einer Stunde öffnet den 30-Sekunden-Abschluss – die neue Standard-Erfassung nach einer Stunde. Kein Formular mit leerem Notenfeld, sondern eine Liste aller Kinder mit vier One-Tap-Aktionen pro Zeile: + (positive Mitarbeit) · − (Störung / still) · ⚠︎ (Sportzeug bzw. Hausaufgabe vergessen) · Notiz (kurzes Textfeld). Ein Tipp pro Kind, alles wird am Ende auf einmal gespeichert. + wird als mündliche 2 vermerkt, − als 4, das Vergessen als Vorfall (bei Sport als „Sportzeug", sonst als „Hausaufgabe"). Wer eine echte Note vergeben will, wechselt unten über „Auch Noten vergeben →" in die ausführliche Schnellerfassung.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Die ausführliche Erfassung wird aus dem Stunden-Abschluss über den Link „Auch Noten vergeben" erreicht. Dort kannst du für alle Schüler:innen einer Klasse Noten (mündlich / schriftlich), ausführliche Notizen und Gespräche eintragen. Eine Doppelstunde wird einmal erfasst, nicht zweimal. Die Notenbuttons sind immer sichtbar. Neben dem Namen liegt das ⚠︎-Symbol für „Vergessen"; Notiz und Gespräch öffnen sich über das ···-Symbol.` },
-      { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Saidy an, wie viele Unterrichtsstunden bis dahin noch bleiben. Gezählt wird in Unterrichtseinheiten: ein Tag mit diesem Fach ist eine Einheit – eine Doppelstunde aus zwei 45-Minuten-Blöcken zählt also einmal, genau wie eine einzelne Stunde. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Saidy die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
+      { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Tuvi an, wie viele Unterrichtsstunden bis dahin noch bleiben. Gezählt wird in Unterrichtseinheiten: ein Tag mit diesem Fach ist eine Einheit – eine Doppelstunde aus zwei 45-Minuten-Blöcken zählt also einmal, genau wie eine einzelne Stunde. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Tuvi die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
       { q: "Wo sehe ich auf der Startseite, wie viel Zeit bis zur Klassenarbeit bleibt?", a: `Direkt bei der Stunde – es gibt dafür keine eigene Karte mehr. Ist für ein Fach ein Test-Termin hinterlegt, erscheint in der Unterricht-Übersicht unter der Stunde ein feiner Strich: voll bedeutet viel Vorbereitungszeit, kurz bedeutet es wird eng. Die Farbe wechselt von oliv über amber zu rot, je näher der Termin rückt. Rechts neben der Stunde steht zusätzlich die Zahl der verbleibenden Unterrichtsstunden (z. B. „5×"), am Prüfungstag selbst „Heute!". Ein Tipp auf den Strich klappt die Details auf: Titel der Arbeit, Datum und die verbleibenden Übungsstunden im Klartext. Angezeigt wird das nur bei Fächern, für die du einen Termin eingetragen hast.` },
       { q: "Wie finde ich heraus, bei welchem Thema die Klasse Lücken hat?", a: `Beim Eintragen einer schriftlichen Note kannst du ein Thema angeben, z. B. „Bruchrechnung". Bereits verwendete Themen werden beim Tippen vorgeschlagen – nimm die Vorschläge, dann bleibt die Auswertung sauber. Auch die Schnellerfassung übernimmt das oben eingetragene Stundenthema automatisch, wenn du dort schriftliche Noten vergibst. Umgekehrt schlägt das Stundenthema-Feld bereits bekannte Themen desselben Fachs vor – so bleibt „Bruchrechnung" über Wochen dasselbe Wort und der Fortschrittsbalken zählt sauber weiter, statt bei jeder Tippvariante von vorn. In der Fachansicht („Noten & Berichte" → Klasse → Fach) erscheint dann die Karte „Wissensgebiete": Alle Themen mit dem Klassenschnitt, das schwächste zuerst. Ein langer Balken bedeutet gut beherrscht. Tippst du ein Thema an, siehst du, welche Kinder dort Lücken haben – daraus wird direkt eine Fördergruppe.` },
       { q: "Wie sehe ich, wie weit ich mit den Zeugnisnoten bin?", a: `In der Zeugnisphase (Januar, Februar, Juni, Juli) zeigt jede Klassenkarte unter „Noten & Berichte" einen Fortschrittsbalken: wie viele Zeugnisnoten von wie vielen bereits gesetzt sind und wie viele noch offen sind. Über mehrere Klassen hinweg siehst du so auf einen Blick, wo noch Arbeit liegt. Ist alles vollständig, wird der Balken grün.` },
@@ -2766,7 +2766,7 @@ const HELP_DATA = [
     items: [
       { q: "Wie lege ich einen Termin an?", a: `Tippe auf „Mehr" in der Navigation und dann auf „Kalender". Tippe dort auf „+ Neuen Termin anlegen" und gib Titel, Datum, Uhrzeit und Art ein.` },
       { q: "Wie lege ich einen wiederkehrenden Termin an?", a: `Beim Anlegen eines Termins gibt es das Feld „Wiederholung" – dort kannst du Wöchentlich, Alle 2 Wochen oder Monatlich wählen. Der Termin erscheint dann automatisch an allen folgenden Termintagen im Kalender.` },
-      { q: "Wie trage ich Schulferien ein?", a: `Stelle zuerst dein Bundesland in den Einstellungen ein. Dann erscheint dort „Schulferien eintragen" – Saidy übernimmt alle Ferien automatisch.` },
+      { q: "Wie trage ich Schulferien ein?", a: `Stelle zuerst dein Bundesland in den Einstellungen ein. Dann erscheint dort „Schulferien eintragen" – Tuvi übernimmt alle Ferien automatisch.` },
       { q: "Wie erledige ich einen Termin?", a: `Tippe auf den Kreis links neben dem Termin. Er wandert in den „Erledigt"-Bereich ganz unten.` },
     ],
   },
@@ -2783,26 +2783,26 @@ const HELP_DATA = [
       { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung". Dort erscheint zuerst ein kurzer Datenschutz-Hinweis, den du bestätigst. Danach: „Sichern" legt die Datei im Download-Ordner ab, „Teilen" öffnet die Teilen-Ansicht (z. B. für „In Dateien sichern" oder AirDrop). Wichtig: abgelegte Dokumente sind darin nicht enthalten – die brauchen eine eigene Sicherung, direkt darunter unter „Dokumente sichern".` },
       { q: "Wie lege ich ein Dokument bei einem Kind ab?", a: `Öffne die Klasse, tippe das Kind an und wechsle auf den Reiter „Mehr". Ganz unten steht „Dokumente" mit zwei Knöpfen: „Foto" öffnet direkt die Kamera – ideal, um eine Entschuldigung abzufotografieren. „Datei" öffnet die Dateien-App, dort wählst du ein PDF oder ein vorhandenes Bild. Fotos werden automatisch verkleinert, damit sie wenig Platz brauchen. Ein Tipp auf einen Eintrag öffnet ihn, das Papierkorb-Symbol löscht ihn.` },
       { q: "Kann ich Dokumente auch bei einer Klasse, einem Fach oder ganz allgemein ablegen?", a: `Ja. Im Klassen-Dashboard (Klasse aufklappen → „Klassen-Dashboard") liegt ganz unten die Ablage für die ganze Klasse – etwa Sitzplan oder Elternbrief. In der Notenübersicht eines Fachs (Noten → Klasse → Fach) findest du dieselbe Ablage für Arbeitsblätter oder Lösungen. Für alles ohne festen Bezug – Konferenzprotokolle, Formulare, Schulordnung – gibt es unter „Mehr" → „Dokumente" einen eigenen allgemeinen Bereich. Dort steht auch eine durchsuchbare Liste aller abgelegten Dokumente, egal wo sie hängen.` },
-      { q: "Wo werden meine Dokumente gespeichert?", a: `Auf deinem Gerät, genau wie alles andere in Saidy – nichts wird ins Internet übertragen. Dokumente liegen allerdings in einem eigenen Speicherbereich, weil sie für die normale Ablage zu groß wären. Deshalb sind sie auch nicht in der normalen Datensicherung enthalten, sondern brauchen unter „Einstellungen" → „Datensicherung" den eigenen Knopf „Dokumente sichern".` },
+      { q: "Wo werden meine Dokumente gespeichert?", a: `Auf deinem Gerät, genau wie alles andere in Tuvi – nichts wird ins Internet übertragen. Dokumente liegen allerdings in einem eigenen Speicherbereich, weil sie für die normale Ablage zu groß wären. Deshalb sind sie auch nicht in der normalen Datensicherung enthalten, sondern brauchen unter „Einstellungen" → „Datensicherung" den eigenen Knopf „Dokumente sichern".` },
       { q: "Warum sind meine Dokumente nach dem Wiederherstellen weg?", a: `Die normale Datensicherung enthält nur die Liste der Dokumente (Name, Datum, zu welchem Kind), nicht die Dateien selbst. Nach dem Wiederherstellen siehst du deshalb die Einträge, aber beim Öffnen kommt der Hinweis, dass die Datei fehlt. Spiel dann zusätzlich deine Dokument-Sicherung ein: „Einstellungen" → „Datensicherung" → „Einspielen" im Abschnitt „Dokumente sichern".` },
-      { q: "Kann ich mir Dokumente direkt an Saidy schicken lassen?", a: `Nein. Saidy hat bewusst keinen Server und kann deshalb weder E-Mails abrufen noch Nachrichten empfangen. Auf dem iPhone lässt Apple Web-Apps auch nicht als Ziel im Teilen-Menü zu. Der Weg ist deshalb: Datei zuerst in „Dateien" sichern (bei einer E-Mail: Anhang antippen → Teilen → „In Dateien sichern"), danach in Saidy beim Kind auf „Datei" tippen und sie dort auswählen. Für Papier-Entschuldigungen ist „Foto" der schnellere Weg.` },
+      { q: "Kann ich mir Dokumente direkt an Tuvi schicken lassen?", a: `Nein. Tuvi hat bewusst keinen Server und kann deshalb weder E-Mails abrufen noch Nachrichten empfangen. Auf dem iPhone lässt Apple Web-Apps auch nicht als Ziel im Teilen-Menü zu. Der Weg ist deshalb: Datei zuerst in „Dateien" sichern (bei einer E-Mail: Anhang antippen → Teilen → „In Dateien sichern"), danach in Tuvi beim Kind auf „Datei" tippen und sie dort auswählen. Für Papier-Entschuldigungen ist „Foto" der schnellere Weg.` },
       { q: "Wie sichere ich am einfachsten auf dem iPhone oder iPad?", a: `Einstellungen → „Datensicherung" → „Teilen" antippen. In der Teilen-Ansicht dann „In Dateien sichern" wählen und „Auf meinem iPhone" (oder iPad) als Ort. Ein Schritt, kein Tippen – und die Daten verlassen dein Gerät nicht. Verschicke Backups nicht per E-Mail oder Messenger: Die Datei enthält alle Schülerdaten im Klartext, und der Versand über einen privaten Mailanbieter ist für Schülerdaten in der Regel nicht zulässig.` },
-      { q: "Wie aktiviere ich die Freitags-Erinnerung?", a: `In den Einstellungen unter „Datensicherung" → „Freitags-Erinnerung" den Schalter aktivieren. Beim ersten Mal fragt der Browser nach der Erlaubnis für Benachrichtigungen. Wichtig zu wissen: Die Erinnerung erscheint, wenn du Saidy an einem Freitag öffnest und dein letztes Backup mindestens 3 Tage her ist. Saidy läuft nicht im Hintergrund – öffnest du die App freitags nicht, kommt auch keine Erinnerung. Verlass dich also nicht allein darauf.` },
-      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung" → „Gesichertes wiederherstellen" und wähle deine Backup-Datei. Achtung: Die aktuell gespeicherten Daten werden dabei ersetzt – am besten vorher einmal „Sichern". Sollten sich die Daten beim Start einmal nicht lesen lassen, zeigt Saidy direkt einen Wiederherstellen-Knopf und überschreibt nichts.` },
+      { q: "Wie aktiviere ich die Freitags-Erinnerung?", a: `In den Einstellungen unter „Datensicherung" → „Freitags-Erinnerung" den Schalter aktivieren. Beim ersten Mal fragt der Browser nach der Erlaubnis für Benachrichtigungen. Wichtig zu wissen: Die Erinnerung erscheint, wenn du Tuvi an einem Freitag öffnest und dein letztes Backup mindestens 3 Tage her ist. Tuvi läuft nicht im Hintergrund – öffnest du die App freitags nicht, kommt auch keine Erinnerung. Verlass dich also nicht allein darauf.` },
+      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung" → „Gesichertes wiederherstellen" und wähle deine Backup-Datei. Achtung: Die aktuell gespeicherten Daten werden dabei ersetzt – am besten vorher einmal „Sichern". Sollten sich die Daten beim Start einmal nicht lesen lassen, zeigt Tuvi direkt einen Wiederherstellen-Knopf und überschreibt nichts.` },
       { q: "Wo werden meine Daten gespeichert?", a: `Alle Daten bleiben ausschließlich auf deinem Gerät (lokaler Browser-Speicher). Es werden keine Daten an Server übertragen.` },
-      { q: "Warum bekomme ich eine Backup-Erinnerung?", a: `Saidy erinnert automatisch wenn seit 7 Tagen kein Backup erstellt wurde oder wenn seit dem letzten Backup 10 oder mehr neue Einträge (Noten, Notizen, Fehlzeiten) hinzugekommen sind. Das Morgen-Briefing zeigt ebenfalls einen Hinweis, wenn Backup fällig ist.` },
+      { q: "Warum bekomme ich eine Backup-Erinnerung?", a: `Tuvi erinnert automatisch wenn seit 7 Tagen kein Backup erstellt wurde oder wenn seit dem letzten Backup 10 oder mehr neue Einträge (Noten, Notizen, Fehlzeiten) hinzugekommen sind. Das Morgen-Briefing zeigt ebenfalls einen Hinweis, wenn Backup fällig ist.` },
     ],
   },
   {
     category: "Import",
     items: [
-      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: `Öffne den „Klassen"-Tab und tippe oben rechts auf „Fehlzeiten". Alternativ: „Mehr" → „Einstellungen" → „WebUntis-Import". Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Saidy übernimmt sie automatisch in die passenden Klassen.` },
+      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: `Öffne den „Klassen"-Tab und tippe oben rechts auf „Fehlzeiten". Alternativ: „Mehr" → „Einstellungen" → „WebUntis-Import". Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Tuvi übernimmt sie automatisch in die passenden Klassen.` },
     ],
   },
   {
     category: "Datenschutz & Rechtliches",
     items: [
-      { q: "Wer ist verantwortlich für die Schülerdaten?", a: `Du als Lehrkraft bist gemäß Art. 4 Nr. 7 DSGVO selbst datenschutzrechtlich Verantwortliche:r für die eingegebenen Daten. Der Entwickler von Saidy hat keinen Zugriff auf deine Daten.` },
+      { q: "Wer ist verantwortlich für die Schülerdaten?", a: `Du als Lehrkraft bist gemäß Art. 4 Nr. 7 DSGVO selbst datenschutzrechtlich Verantwortliche:r für die eingegebenen Daten. Der Entwickler von Tuvi hat keinen Zugriff auf deine Daten.` },
       { q: "Wo finde ich das Impressum und die Datenschutzerklärung?", a: `Tippe auf „Mehr" → „Einstellungen" und scrolle ganz nach unten. Dort findest du den Link „Impressum & Datenschutz".` },
       { q: "Werden meine Daten irgendwohin übertragen?", a: `Nein. Alle Daten bleiben ausschließlich auf deinem Gerät (Browser-localStorage). Es werden keine Daten an den Entwickler oder Dritte übermittelt. Beim Aufrufen der App werden lediglich technische Zugriffsdaten (IP-Adresse, Zeitstempel) durch den Hosting-Anbieter GitHub Pages verarbeitet.` },
     ],
@@ -3639,11 +3639,11 @@ export default function App() {
               } else if (daysSince >= 7 || totalChanges >= 10) {
                 setBackupReminderDays(daysSince);
               }
-              // Freitags-Erinnerung – greift nur, wenn Saidy an dem Tag geöffnet wird
+              // Freitags-Erinnerung – greift nur, wenn Tuvi an dem Tag geöffnet wird
               if (parsed.settings?.backupNotifications && new Date().getDay() === 5 && (daysSince === null || daysSince >= 3)) {
                 setTimeout(() => {
                   notify(
-                    "Saidy – Backup nicht vergessen",
+                    "Tuvi – Backup nicht vergessen",
                     daysSince === null ? "Du hast noch nie ein Backup gemacht. Jetzt nachholen?" : `Letztes Backup vor ${daysSince} Tagen. Jetzt kurz sichern?`
                   );
                 }, 1500);
@@ -3657,7 +3657,7 @@ export default function App() {
       } catch (e) {
         /* Gespeicherte Daten sind unlesbar. Auf keinen Fall Demodaten setzen – der
            Autosave würde sie 500 ms später über den Originalbestand schreiben. */
-        console.warn("[Saidy] Laden fehlgeschlagen:", e);
+        console.warn("[Tuvi] Laden fehlgeschlagen:", e);
         setLoadFailed(true);
         setToast("⚠ Gespeicherte Daten konnten nicht gelesen werden. Bitte ein Backup einspielen – es wurde nichts überschrieben.");
       }
@@ -3676,7 +3676,7 @@ export default function App() {
       } catch (e) {
         /* Meist voller Speicher oder privater Modus. Der Grund steht sonst
            nirgends – ueber Web Inspector am Geraet ist er so auffindbar. */
-        console.warn("[Saidy] Speichern fehlgeschlagen:", e);
+        console.warn("[Tuvi] Speichern fehlgeschlagen:", e);
         setSaveState("error");
       }
     }, 500);
@@ -3751,7 +3751,7 @@ export default function App() {
   }
 
   /* Backup vermerken. localStorage kann werfen (Safari-Privatmodus, volles Kontingent) –
-     die Oberfläche muss trotzdem zurückgesetzt werden, sonst mahnt Saidy weiter,
+     die Oberfläche muss trotzdem zurückgesetzt werden, sonst mahnt Tuvi weiter,
      obwohl gerade gesichert wurde. */
   function recordBackup() {
     try {
@@ -3770,7 +3770,7 @@ export default function App() {
     const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data: { ...data, deletedSnapshot: null } };
     const json = JSON.stringify(payload, null, 2);
     const stamp = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
-    const fileName = `Saidy-Backup-${stamp}.json`;
+    const fileName = `Tuvi-Backup-${stamp}.json`;
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -3811,7 +3811,7 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Saidy-Dokumente-${stamp}.json`;
+      a.download = `Tuvi-Dokumente-${stamp}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -3823,7 +3823,7 @@ export default function App() {
           : `${dateien.length} Dokumente gesichert (${byteText(blob.size)}).`,
       });
     } catch (e) {
-      console.warn("[Saidy] Dokument-Export fehlgeschlagen:", e);
+      console.warn("[Tuvi] Dokument-Export fehlgeschlagen:", e);
       onResult?.({ ok: false, msg: "Dokumente konnten nicht gesichert werden." });
     }
   }
@@ -3836,7 +3836,7 @@ export default function App() {
       const text = await file.text();
       const p = JSON.parse(text);
       if (p?.app !== "saidy-dokumente" || !Array.isArray(p.dateien)) {
-        return onResult?.({ ok: false, msg: "Das ist keine Saidy-Dokument-Sicherung." });
+        return onResult?.({ ok: false, msg: "Das ist keine Tuvi-Dokument-Sicherung." });
       }
       await dauerhaftenSpeicherAnfordern();
       let anzahl = 0;
@@ -3856,7 +3856,7 @@ export default function App() {
       });
       onResult?.({ ok: true, msg: `${anzahl} Dokumente wiederhergestellt.` });
     } catch (e) {
-      console.warn("[Saidy] Dokument-Import fehlgeschlagen:", e);
+      console.warn("[Tuvi] Dokument-Import fehlgeschlagen:", e);
       onResult?.({ ok: false, msg: "Die Dokument-Sicherung konnte nicht gelesen werden." });
     }
   }
@@ -3865,11 +3865,11 @@ export default function App() {
     const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data: { ...data, deletedSnapshot: null } };
     const json = JSON.stringify(payload, null, 2);
     const stamp = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
-    const fileName = `Saidy-Backup-${stamp}.json`;
+    const fileName = `Tuvi-Backup-${stamp}.json`;
     try {
       const file = new File([json], fileName, { type: "application/json" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Saidy-Backup" });
+        await navigator.share({ files: [file], title: "Tuvi-Backup" });
         recordBackup();
         return;
       }
@@ -3892,7 +3892,7 @@ export default function App() {
        Attesten und Gutachten waere das der schwerste Teil eines vergessenen
        Loeschvorgangs. Sie kommen bewusst nicht in den 30-Tage-Papierkorb:
        dessen Momentaufnahme liegt in localStorage und wuerde daran zerbrechen. */
-    docAllesLoeschen().catch((e) => console.warn("[Saidy] Dokumente löschen fehlgeschlagen:", e));
+    docAllesLoeschen().catch((e) => console.warn("[Tuvi] Dokumente löschen fehlgeschlagen:", e));
     update((d) => {
       const snapshot = { deletedAt: new Date().toISOString(), data: { ...d, deletedSnapshot: null, documents: [] } };
       return { ...EMPTY_DATA, deletedSnapshot: snapshot };
@@ -3913,7 +3913,7 @@ export default function App() {
         const parsed = JSON.parse(String(reader.result));
         const imported = parsed?.data && (parsed?.app === "saidy" || parsed?.app === "lehrertool") ? parsed.data : parsed;
         if (!imported || !Array.isArray(imported.classes)) {
-          onResult?.({ ok: false, msg: "Diese Datei konnte nicht eingelesen werden. Bitte stelle sicher, dass du die Datei direkt aus Saidy gesichert hast (Einstellungen → Sichern)." });
+          onResult?.({ ok: false, msg: "Diese Datei konnte nicht eingelesen werden. Bitte stelle sicher, dass du die Datei direkt aus Tuvi gesichert hast (Einstellungen → Sichern)." });
           return;
         }
         const merged = { ...EMPTY_DATA, ...imported };
@@ -3979,7 +3979,7 @@ export default function App() {
             : "Backup erfolgreich geladen.",
         });
       } catch (e) {
-        console.warn("[Saidy] Backup-Import fehlgeschlagen:", e);
+        console.warn("[Tuvi] Backup-Import fehlgeschlagen:", e);
         onResult?.({ ok: false, msg: "Die Datei konnte nicht gelesen werden." });
       }
     };
@@ -4358,7 +4358,7 @@ export default function App() {
             <div className="flex items-center gap-2.5">
               <SaidyLogoMark size={34} className="shrink-0" />
               <div>
-                <div className="text-sm font-semibold text-stone-800 leading-tight tracking-wide">Saidy</div>
+                <div className="text-sm font-semibold text-stone-800 leading-tight tracking-wide">Tuvi</div>
                 <div className="text-[10px] text-stone-400 leading-none mt-0.5">
                   {saveState === "saving" ? "Speichert …" : saveState === "error" ? "⚠ Kein Speicherplatz" : "Gespeichert"}
                 </div>
@@ -4899,7 +4899,7 @@ function nextFerienCountdown(events, schooldaysOnly) {
 }
 
 /* Schnellerfassung nach der Stunde: Note, Notiz und Auffälligkeit pro Schüler:in in einer kompakten Liste */
-/* Stunden-Abschluss in 30 Sekunden. Nach dem Kern-Purpose: "Saidy merkt sich
+/* Stunden-Abschluss in 30 Sekunden. Nach dem Kern-Purpose: "Tuvi merkt sich
    fuer dich, was du im Alltag nicht alles im Kopf haben kannst". Statt einer
    leeren Notizseite oder Notenformular gibt es 4 One-Tap-Aktionen pro Kind:
    + (Mitarbeit), - (Stoerung), Vergessen (kontextabhaengig: Sport → Sportzeug,
@@ -5241,7 +5241,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
       <div className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet overflow-x-hidden" onClick={(e) => e.stopPropagation()}>
 
         {/* Kopf bleibt beim Scrollen sichtbar - Klasse und Fach gross und klar,
-            damit auffaellt wenn Saidy die falsche Stunde vorgewaehlt hat. Ein Tipp
+            damit auffaellt wenn Tuvi die falsche Stunde vorgewaehlt hat. Ein Tipp
             auf die Zeile oeffnet die Liste der anderen Stunden des Tages. */}
         <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-200 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)]">
           <div className="px-4 py-3 flex items-center gap-2">
@@ -6123,15 +6123,157 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
     };
   }
 
+  /* ═══════════════════════════════════════════════════════════════════════
+     Neue Startseiten-Struktur „Heute": JETZT · ALS NÄCHSTES · Aufmerksamkeit
+     · Nicht vergessen · Danach heute. Die App zeigt nicht alles auf einmal,
+     sondern das, was gerade zählt. Berechnungen unten, JSX weiter unten. */
+
+  const nowHMValue = isToday && now ? formatHM(now) : null;
+
+  /* Aktuelle Einheit: die, in deren Zeitfenster (Start erste Periode bis Ende
+     letzte Periode) jetzt liegt. Doppelstunde funktioniert automatisch, weil
+     `dayUnits` Blöcke schon zusammenfasst. */
+  const currentUnit = (() => {
+    if (!nowHMValue) return null;
+    return dayUnits.find((u) => {
+      const start = data.periodTimes?.[u.firstPeriod]?.start;
+      const end = data.periodTimes?.[u.lastPeriod]?.end;
+      return start && end && nowHMValue >= start && nowHMValue <= end;
+    }) || null;
+  })();
+
+  /* Nächste Einheit nach dem Ende der aktuellen (oder nach jetzt, wenn gerade
+     keine läuft). „Nur wenn sie tatsächlich noch kommt heute" – nach 15 Uhr
+     ist die Liste leer. */
+  const nextUnit = (() => {
+    if (!nowHMValue) return null;
+    const ab = currentUnit ? data.periodTimes?.[currentUnit.lastPeriod]?.end : nowHMValue;
+    if (!ab) return null;
+    return dayUnits.find((u) => {
+      const start = data.periodTimes?.[u.firstPeriod]?.start;
+      return start && start > ab;
+    }) || null;
+  })();
+
+  /* „Danach heute" – alle weiteren Einheiten nach der nächsten. Am Wochenende
+     oder wenn nichts läuft: die gesamte Tagesliste ab jetzt. */
+  const danachUnits = (() => {
+    if (!nowHMValue) return dayUnits;
+    const ab = nextUnit
+      ? data.periodTimes?.[nextUnit.lastPeriod]?.end
+      : currentUnit
+        ? data.periodTimes?.[currentUnit.lastPeriod]?.end
+        : nowHMValue;
+    if (!ab) return dayUnits;
+    return dayUnits.filter((u) => {
+      const start = data.periodTimes?.[u.firstPeriod]?.start;
+      return start && start > ab;
+    });
+  })();
+
+  /* Menschliche Restzeit bis HH:MM heute – „in 12 Min.", „in 1 Std. 5 Min." */
+  function minsUntilHM(hm) {
+    if (!hm || !now) return null;
+    const [h, m] = hm.split(":").map(Number);
+    const target = new Date(now);
+    target.setHours(h, m, 0, 0);
+    return Math.round((target - now) / 60000);
+  }
+  function restZeitLabel(mins) {
+    if (mins == null) return "";
+    if (mins < 0) return "läuft";
+    if (mins < 60) return `in ${mins} Min.`;
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return m ? `in ${h} Std. ${m} Min.` : `in ${h} Std.`;
+  }
+
+  /* Offene Entschuldigungen einer Klasse – für die JETZT- und NÄCHSTES-Karte. */
+  function offeneEntschKlasse(clsId) {
+    if (!clsId) return 0;
+    const kidIds = new Set(data.students.filter((s) => s.classId === clsId).map((s) => s.id));
+    return (data.absences || []).filter(
+      (a) => kidIds.has(a.studentId) && (a.excuseStatus === "ausstehend" || a.excuseStatus === "eingereicht")
+    ).length;
+  }
+
+  /* Aufgaben aus dem Nicht-vergessen-Bereich, die mit dieser Klasse verknüpft
+     sind (falls das Feld existiert). Ohne Verknüpfung: leer, um die Karte
+     nicht mit fremden ToDos zu überfüllen. */
+  function taskDerKlasse(clsId) {
+    if (!clsId) return [];
+    return (data.tasks || []).filter((t) => !t.done && t.linkedClassId === clsId);
+  }
+
+  /* „Aufmerksamkeit" = automatisch erkannte, heute relevante Signale. Nicht
+     dasselbe wie „Nicht vergessen" – das sind manuelle ToDos. Hier landen:
+     dringliche Briefing-Sätze, kritisches Klassenradar, offene Nachträge. */
+  const attentionItems = (() => {
+    if (!isToday) return [];
+    const items = [];
+    // 1. Nachtrag offen
+    if ((pendingLessons || []).length) {
+      const n = pendingLessons.length;
+      items.push({
+        id: "pending",
+        titel: `${n} ${n === 1 ? "Stunde nachtragen" : "Stunden nachtragen"}`,
+        sub: n === 1 ? "vom heutigen Tag" : "vom heutigen Tag",
+        onClick: () => setShowPending(true),
+        icon: ClipboardCheck,
+      });
+    }
+    // 2. Klassenradar (nur kritische/warn)
+    (data.classes || []).forEach((c) => {
+      const sig = computeKlassenradar(data, c, todayStr);
+      const erst = sig[0];
+      if (erst && (erst.level === "krit" || erst.level === "warn")) {
+        items.push({
+          id: `radar-${c.id}`,
+          titel: `${c.name}: ${erst.kurz}`,
+          sub: sig.length > 1 ? `+${sig.length - 1} weitere Signale` : null,
+          onClick: () => onOpenKlassenDashboard?.(c.id),
+          icon: erst.level === "krit" ? AlertTriangle : Bell,
+        });
+      }
+    });
+    // 3. Dringliche Briefing-Sätze (urgent), Begrüßung weggelassen
+    briefingSentences.slice(1).filter((s) => s.urgent).forEach((s, i) => {
+      items.push({
+        id: `brief-${i}`,
+        titel: s.text,
+        sub: null,
+        onClick: s.action || null,
+        icon: AlertTriangle,
+      });
+    });
+    return items;
+  })();
+
+  const nichtVergessenItems = (data.tasks || []).filter((t) => !t.done).slice(0, 5);
+
+  const [showAttentionSheet, setShowAttentionSheet] = useState(false);
+  const [showNichtVergessen, setShowNichtVergessen] = useState(false);
+  const [neueAufgabe, setNeueAufgabe] = useState("");
+  function addQuickTask() {
+    const text = neueAufgabe.trim();
+    if (!text) return;
+    update((d) => {
+      d.tasks = d.tasks || [];
+      d.tasks.push({ id: uid(), title: text, color: TASK_COLORS[0], done: false });
+      return d;
+    });
+    setNeueAufgabe("");
+  }
+
   return (
     <div className="space-y-3">
       {/* Zeile 1: Wordmark + Icon-Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 select-none">
           <span className="w-7 h-7 rounded-lg akzent-ton flex items-center justify-center shrink-0" aria-hidden="true">
-            <span className="text-sm font-bold akzent-text leading-none">S</span>
+            <span className="text-sm font-bold akzent-text leading-none">T</span>
           </span>
-          <span className="text-[11px] font-bold tracking-[0.22em] uppercase akzent-text">Saidy</span>
+          <span className="text-[11px] font-bold tracking-[0.22em] uppercase akzent-text">Tuvi</span>
         </div>
         <div className="flex items-center gap-1.5">
           {showImportReminder && (
@@ -6289,123 +6431,374 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         </Card>
       )}
 
-      {/* Kennzahl-Kacheln - drei kompakte Kacheln nebeneinander, Inhalt waagerecht
-          und senkrecht zentriert. Der Nullfall (Haken) ist niedriger als der
-          Zahlfall (Zahl + Unterzeile); ohne justify-center saesse der kuerzere
-          Inhalt oben und liesse unten Luft, weil das Raster alle Kacheln auf die
-          Hoehe der hoechsten zieht. Die Abstaende kommen aus gap statt aus
-          Einzelmargins, damit der Rhythmus in beiden Faellen gleich bleibt. */}
-      <div className="grid grid-cols-3 gap-2">
-        {kacheln.map((k) => {
-          const Icon = k.icon;
-          const aktiv = k.warn && k.value > 0;
-          return (
-            <button
-              key={k.label}
-              onClick={k.onClick}
-              className="karte-luft w-full h-full text-center flex flex-col items-center justify-center gap-1 px-2 py-3 press-scale"
-            >
-              <span className="w-6 h-6 flex items-center justify-center shrink-0">
-                <Icon
-                  size={16}
-                  strokeWidth={1.5}
-                  className={aktiv && isColor ? "text-amber-600" : "akzent-text"}
-                />
-              </span>
-              {/* Zwei Zeilen erlaubt: „Entschuldigungen" und „Stunden nachtragen"
-                  wuerden auf Handybreite sonst abgeschnitten. */}
-              <div className="text-[10px] text-stone-500 leading-tight line-clamp-2">{k.label}</div>
-              {/* Kacheln mit Wert 0 zeigen einen kleinen Haken statt einer riesigen 0 –
-                  eine 0 wirkte sonst wie ein Fehler- oder Leerzustand. */}
-              {k.value === 0 ? (
-                <div className="flex items-center justify-center gap-1 text-stone-400">
-                  <Check size={14} strokeWidth={2.5} />
-                  <span className="text-[11px]">nichts offen</span>
-                </div>
-              ) : (
-                <>
-                  <div className={`text-[22px] font-bold leading-none tabular-nums ${aktiv && isColor ? "text-amber-600" : "akzent-text"}`}>
-                    {k.value}
-                  </div>
-                  <div className="text-[10px] text-stone-400 leading-tight line-clamp-1 w-full">{k.sub}</div>
-                </>
+      {/* ───────── JETZT ─────────
+          Die dominanteste Karte: was gerade läuft. Wenn heute nichts mehr,
+          zeigt sie stattdessen den ganzen Tag. Kein „großes Nichts" mehr. */}
+      {isToday && currentUnit && (() => {
+        const { fach, cls, startZeit, endZeit, topic, cd } = lessonInfo(currentUnit);
+        const restMin = minsUntilHM(endZeit);
+        const entsch = offeneEntschKlasse(cls?.id);
+        const tasksHier = taskDerKlasse(cls?.id);
+        const material = fach?.material || [];
+        return (
+          <Card className="px-4 py-4 space-y-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Jetzt</span>
+                <span className="text-xs text-stone-500 tabular-nums">{startZeit}{endZeit ? ` – ${endZeit}` : ""}</span>
+              </div>
+              {restMin != null && restMin >= 0 && (
+                <span className="text-[11px] text-stone-500 shrink-0 tabular-nums">Noch {restMin} Min.</span>
               )}
-            </button>
-          );
-        })}
-      </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-11 h-11 rounded-2xl akzent-ton flex items-center justify-center shrink-0" style={{ backgroundColor: isColor && fach?.color ? `${fach.color}20` : undefined }}>
+                <span className="text-base font-bold akzent-text" style={{ color: isColor && fach?.color ? fach.color : undefined }}>
+                  {fach?.subject?.slice(0, 2) || "—"}
+                </span>
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-xl font-bold leading-tight" style={{ color: "var(--ink)" }}>
+                  {fach?.subject || "—"}{cls ? <span className="text-stone-400 font-semibold"> · {cls.name}</span> : null}
+                </div>
+                {topic?.text && <div className="text-sm text-stone-500 truncate">{topic.text}</div>}
+              </div>
+            </div>
 
-      {/* Morgen-Briefing – lokal erzeugte Tageszusammenfassung */}
-      {isToday && !briefingDismissed && !!briefingSorted.length && (
-        <Card className="px-4 py-3.5 border-l-2 akzent-rand">
-          <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-semibold uppercase tracking-wide akzent-text">Heute im Blick</span>
+            {/* Aufgaben, die zu dieser Stunde gehören */}
+            {(entsch > 0 || tasksHier.length > 0 || (cd && cd.level === "krit") || material.length > 0) && (
+              <div className="space-y-1.5 pt-1">
+                {cd && cd.istHeute && (
+                  <div className="flex items-center gap-2 text-sm text-red-700">
+                    <FileText size={15} className="shrink-0" />
+                    <span className="truncate">Heute: „{cd.label}"</span>
+                  </div>
+                )}
+                {entsch > 0 && (
+                  <button onClick={() => onOpenEntschuldigungen?.()} className="w-full flex items-center gap-2 text-sm text-stone-700 press-scale text-left">
+                    <User size={15} className="shrink-0 text-stone-400" />
+                    <span className="truncate">{entsch} {entsch === 1 ? "Entschuldigung prüfen" : "Entschuldigungen prüfen"}</span>
+                  </button>
+                )}
+                {tasksHier.slice(0, 3).map((t) => (
+                  <div key={t.id} className="flex items-center gap-2 text-sm text-stone-700">
+                    <FileText size={15} className="shrink-0 text-stone-400" />
+                    <span className="truncate">{t.title}</span>
+                  </div>
+                ))}
+                {material.length > 0 && (
+                  <div className="flex items-start gap-2 text-sm text-stone-700">
+                    <Folder size={15} className="shrink-0 text-stone-400 mt-0.5" />
+                    <span className="min-w-0">{material.join(" · ")}</span>
+                  </div>
+                )}
+              </div>
+            )}
+
             <button
-              onClick={dismissBriefing}
-              className="w-11 h-11 -mr-3 -mt-3 flex items-center justify-center text-stone-400 hover:text-stone-600 shrink-0"
-              aria-label="Briefing für heute ausblenden"
+              onClick={() => setCaptureLesson?.({ fach, cls, date: selStr })}
+              className="w-full py-2.5 rounded-xl akzent-ton akzent-text text-sm font-medium press-scale flex items-center justify-center gap-2"
             >
-              <X size={16} />
+              <BookOpen size={15} /> Stunde öffnen
+            </button>
+          </Card>
+        );
+      })()}
+
+      {/* ───────── ALS NÄCHSTES ─────────
+          Zweitprominent. Zeigt Material + „Vorher mitnehmen" schon während der
+          aktuellen Stunde, damit die Lehrkraft rechtzeitig alles einsammelt. */}
+      {isToday && nextUnit && (() => {
+        const { fach, cls, startZeit, endZeit, topic } = lessonInfo(nextUnit);
+        const bisStart = minsUntilHM(startZeit);
+        const material = fach?.material || [];
+        const entsch = offeneEntschKlasse(cls?.id);
+        const raum = fach?.room;
+        return (
+          <Card className="px-4 py-3.5 space-y-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">Als Nächstes</span>
+                <span className="text-xs text-stone-500 tabular-nums">
+                  {startZeit}{endZeit ? ` – ${endZeit}` : ""}
+                  {bisStart != null && bisStart > 0 && <span className="text-stone-400"> · {restZeitLabel(bisStart)}</span>}
+                </span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="w-9 h-9 rounded-xl akzent-ton flex items-center justify-center shrink-0" style={{ backgroundColor: isColor && fach?.color ? `${fach.color}20` : undefined }}>
+                <span className="text-sm font-bold akzent-text" style={{ color: isColor && fach?.color ? fach.color : undefined }}>
+                  {fach?.subject?.slice(0, 2) || "—"}
+                </span>
+              </span>
+              <div className="min-w-0 flex-1">
+                <div className="text-base font-bold text-stone-800 leading-tight">
+                  {fach?.subject || "—"}{cls ? <span className="text-stone-400 font-semibold"> · {cls.name}</span> : null}
+                </div>
+                {(topic?.text || raum) && (
+                  <div className="text-[11px] text-stone-500 truncate">
+                    {topic?.text}{topic?.text && raum ? " · " : ""}{raum}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {material.length > 0 && (
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">Vorher mitnehmen</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {material.map((m, i) => (
+                    <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
+                      {m}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {entsch > 0 && (
+              <button onClick={() => onOpenEntschuldigungen?.()} className="w-full flex items-center gap-2 pt-1 text-xs text-stone-600 press-scale text-left">
+                <AlertCircle size={13} className="shrink-0 text-amber-600" />
+                <span>Noch offen: {entsch} {entsch === 1 ? "Entschuldigung" : "Entschuldigungen"}</span>
+              </button>
+            )}
+          </Card>
+        );
+      })()}
+
+      {/* ───────── Aufmerksamkeit + Nicht vergessen (2-spaltig auf Desktop) ───────── */}
+      <div className="flex flex-col gap-2 md:grid md:grid-cols-2 md:items-start">
+        {/* Aufmerksamkeit */}
+        <button
+          onClick={() => setShowAttentionSheet(true)}
+          disabled={!attentionItems.length}
+          className="karte-luft text-left px-4 py-3 press-scale disabled:opacity-60 disabled:cursor-default"
+        >
+          <div className="flex items-center gap-2 mb-1.5">
+            <Star size={14} className={attentionItems.length ? "text-violet-600" : "text-stone-300"} />
+            <span className="text-sm font-semibold text-stone-800">
+              {attentionItems.length
+                ? `${attentionItems.length} ${attentionItems.length === 1 ? "Ding braucht" : "Dinge brauchen"} deine Aufmerksamkeit`
+                : "Nichts Dringendes"}
+            </span>
+            {!!attentionItems.length && <ChevronRight size={14} className="text-stone-400 ml-auto" />}
+          </div>
+          {attentionItems.length ? (
+            <ul className="space-y-1 pt-0.5">
+              {attentionItems.slice(0, 3).map((it) => {
+                const Icon = it.icon || AlertCircle;
+                return (
+                  <li key={it.id} className="flex items-start gap-2 text-xs text-stone-600">
+                    <Icon size={12} className="shrink-0 text-stone-400 mt-0.5" />
+                    <span className="truncate">{it.titel}</span>
+                  </li>
+                );
+              })}
+              {attentionItems.length > 3 && (
+                <li className="text-[11px] text-stone-400 pl-5">+{attentionItems.length - 3} weitere</li>
+              )}
+            </ul>
+          ) : (
+            <p className="text-xs text-stone-400">Alles im Blick</p>
+          )}
+        </button>
+
+        {/* Nicht vergessen */}
+        <Card className="px-4 py-3">
+          <div className="flex items-center gap-2 mb-2">
+            <Check size={14} className="text-stone-500" />
+            <span className="text-sm font-semibold text-stone-800">Nicht vergessen</span>
+          </div>
+          {nichtVergessenItems.length ? (
+            <ul className="space-y-1.5">
+              {nichtVergessenItems.map((t) => (
+                <li key={t.id} className="flex items-center gap-2">
+                  <button
+                    onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
+                    className="w-6 h-6 shrink-0 flex items-center justify-center press-scale"
+                    aria-label={`„${t.title}" als erledigt markieren`}
+                  >
+                    <span className="w-4 h-4 rounded border border-stone-300 block" />
+                  </button>
+                  <span className="text-sm text-stone-700 leading-tight flex-1 truncate">{t.title}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-xs text-stone-400 mb-1">Nichts offen</p>
+          )}
+          <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-stone-100">
+            <input
+              value={neueAufgabe}
+              onChange={(e) => setNeueAufgabe(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") addQuickTask(); }}
+              placeholder="Aufgabe hinzufügen …"
+              className="flex-1 min-w-0 text-sm border-none outline-none bg-transparent placeholder:text-stone-400 py-1"
+              maxLength={120}
+            />
+            <button
+              onClick={addQuickTask}
+              disabled={!neueAufgabe.trim()}
+              className="shrink-0 w-8 h-8 rounded-full akzent-ton akzent-text flex items-center justify-center press-scale disabled:opacity-30"
+              aria-label="Aufgabe hinzufügen"
+            >
+              <Plus size={14} />
             </button>
           </div>
-          <p className="text-sm leading-relaxed text-stone-700">
-            {briefingVisible.map((s, i) => (
-              <React.Fragment key={i}>
-                {i > 0 && " "}
-                {s.action ? (
-                  <button
-                    onClick={s.action}
-                    className={`text-left underline underline-offset-2 decoration-stone-400 hover:decoration-stone-600 ${s.urgent ? "text-red-700 font-medium" : "text-stone-700"}`}
-                  >
-                    {s.text}
-                  </button>
-                ) : (
-                  <span className={s.urgent ? "text-red-700 font-medium" : ""}>{s.text}</span>
-                )}
-              </React.Fragment>
-            ))}
-          </p>
-          {(briefingHidden > 0 || showAllBriefing) && (
-            <button
-              onClick={() => setShowAllBriefing((v) => !v)}
-              className="mt-1.5 text-xs akzent-text hover:underline min-h-[44px] flex items-center"
-            >
-              {showAllBriefing ? "weniger anzeigen" : `+ ${briefingHidden} weitere`}
-            </button>
-          )}
         </Card>
+      </div>
+
+      {/* Aufmerksamkeit-Sheet – volle Liste beim Klick auf die Kachel */}
+      {showAttentionSheet && (
+        <div className="fixed inset-0 bg-stone-900/40 z-50 flex items-end md:items-center justify-center" onClick={() => setShowAttentionSheet(false)}>
+          <div className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-xl p-4 pb-[max(2rem,env(safe-area-inset-bottom))] max-h-[85vh] overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold text-stone-800">Deine Aufmerksamkeit</div>
+              <button onClick={() => setShowAttentionSheet(false)} className="w-9 h-9 flex items-center justify-center text-stone-400"><X size={18} /></button>
+            </div>
+            <ul className="space-y-2">
+              {attentionItems.map((it) => {
+                const Icon = it.icon || AlertCircle;
+                return (
+                  <li key={it.id}>
+                    <button
+                      onClick={() => { it.onClick?.(); setShowAttentionSheet(false); }}
+                      disabled={!it.onClick}
+                      className="w-full flex items-start gap-3 py-2 text-left press-scale disabled:cursor-default"
+                    >
+                      <Icon size={16} className="shrink-0 text-stone-400 mt-0.5" />
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm text-stone-800 leading-tight">{it.titel}</div>
+                        {it.sub && <div className="text-[11px] text-stone-500 mt-0.5">{it.sub}</div>}
+                      </div>
+                      {it.onClick && <ChevronRight size={14} className="text-stone-300 shrink-0 mt-0.5" />}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
       )}
 
-      {/* Aufklappbare Liste der nachzutragenden Stunden */}
+      {/* Aufklappbare Liste der nachzutragenden Stunden – öffnet als Sheet */}
       {isToday && showPending && !!(pendingLessons || []).length && (
-        <Card className="p-3">
-          <div className="text-xs font-medium text-stone-500 mb-2">Noch nicht erfasst</div>
-          <ul className="space-y-1.5">
-            {pendingLessons.map((p) => (
-              <li key={p.key} className="flex items-center gap-2 text-sm">
-                <span className="text-xs text-stone-400 w-11 shrink-0">{p.start}</span>
-                <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? p.fach.color : "#C0BBA8" }} />
-                <span className="flex-1 text-stone-700 truncate">
-                  {p.cls?.name} – {p.fach.subject}
-                  {p.anzahl > 1 && <span className="text-stone-400"> · {p.anzahl} Stunden</span>}
-                </span>
+        <div className="fixed inset-0 bg-stone-900/40 z-50 flex items-end md:items-center justify-center" onClick={() => setShowPending(false)}>
+          <div className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-xl p-4 pb-[max(2rem,env(safe-area-inset-bottom))] max-h-[85vh] overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold text-stone-800">Noch nicht erfasst</div>
+              <button onClick={() => setShowPending(false)} className="w-9 h-9 flex items-center justify-center text-stone-400"><X size={18} /></button>
+            </div>
+            <ul className="space-y-2">
+              {pendingLessons.map((p) => (
+                <li key={p.key} className="flex items-center gap-2 text-sm">
+                  <span className="text-xs text-stone-400 w-11 shrink-0">{p.start}</span>
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: isColor ? p.fach.color : "#C0BBA8" }} />
+                  <span className="flex-1 text-stone-700 truncate">
+                    {p.cls?.name} – {p.fach.subject}
+                    {p.anzahl > 1 && <span className="text-stone-400"> · {p.anzahl} Stunden</span>}
+                  </span>
+                  <button
+                    onClick={() => { setAbschluss?.({ fach: p.fach, cls: p.cls }); setShowPending(false); }}
+                    className="shrink-0 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 px-2.5 py-1 rounded-lg"
+                  >
+                    Erfassen
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {/* ───────── Danach heute – kompakte Liste der restlichen Stunden ───────── */}
+      {isToday && danachUnits.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-1.5 px-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Danach heute</span>
+            <button onClick={() => onNavigate?.("stundenplan")} className="text-[11px] text-stone-400 hover:text-stone-600">Stundenplan →</button>
+          </div>
+          <div className="rounded-2xl border border-stone-200 bg-white divide-y divide-stone-100 overflow-hidden">
+            {danachUnits.map((unit) => {
+              const { fach, cls, startZeit, endZeit, topic } = lessonInfo(unit);
+              return (
                 <button
-                  onClick={() => { setAbschluss?.({ fach: p.fach, cls: p.cls }); setShowPending(false); }}
-                  className="shrink-0 text-xs font-medium text-white bg-amber-600 hover:bg-amber-700 px-2.5 py-1 rounded-lg"
+                  key={unit.id}
+                  onClick={() => fach && setCaptureLesson?.({ fach, cls, date: selStr })}
+                  className="w-full px-3 py-2.5 flex items-center gap-3 text-left press-scale"
                 >
-                  Erfassen
+                  <span className="text-xs text-stone-500 tabular-nums w-[3.5rem] shrink-0 leading-tight">
+                    {startZeit}
+                    {endZeit && <span className="block text-[10px] text-stone-400">–{endZeit}</span>}
+                  </span>
+                  <span className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: isColor && fach?.color ? fach.color : "var(--linie)" }} />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm font-semibold text-stone-800 truncate">
+                      {fach?.subject || "—"}{cls ? <span className="text-stone-400 font-medium"> · {cls.name}</span> : null}
+                    </div>
+                    {topic?.text && <div className="text-[11px] text-stone-500 truncate">{topic.text}</div>}
+                  </div>
+                  <ChevronRight size={14} className="text-stone-300 shrink-0" />
                 </button>
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Fallback: kein Heute (Wochenende / anderer Tag ausgewählt) – Tagesübersicht */}
+      {!isToday && (
+        <div>
+          <div className="flex items-center justify-between mb-1.5 px-1">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
+              {selectedDate.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
+            </span>
+            <button onClick={() => setSelectedDate(new Date())} className="text-[11px] akzent-text hover:underline">↩ Heute</button>
+          </div>
+          {!dayKey || dayUnits.length === 0 ? (
+            <Card className="px-3 py-3 text-xs text-stone-500">Kein regulärer Unterricht</Card>
+          ) : (
+            <div className="rounded-2xl border border-stone-200 bg-white divide-y divide-stone-100 overflow-hidden">
+              {dayUnits.map((unit) => {
+                const { fach, cls, startZeit, endZeit, topic } = lessonInfo(unit);
+                return (
+                  <button
+                    key={unit.id}
+                    onClick={() => fach && setCaptureLesson?.({ fach, cls, date: selStr })}
+                    className="w-full px-3 py-2.5 flex items-center gap-3 text-left press-scale"
+                  >
+                    <span className="text-xs text-stone-500 tabular-nums w-[3.5rem] shrink-0 leading-tight">
+                      {startZeit}
+                      {endZeit && <span className="block text-[10px] text-stone-400">–{endZeit}</span>}
+                    </span>
+                    <span className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: isColor && fach?.color ? fach.color : "var(--linie)" }} />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-semibold text-stone-800 truncate">
+                        {fach?.subject || "—"}{cls ? <span className="text-stone-400 font-medium"> · {cls.name}</span> : null}
+                      </div>
+                      {topic?.text && <div className="text-[11px] text-stone-500 truncate">{topic.text}</div>}
+                    </div>
+                    <ChevronRight size={14} className="text-stone-300 shrink-0" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Feiertagsfall Heute: kein Unterricht mehr, aber weiterhin ein sanfter Hinweis */}
+      {isToday && !currentUnit && !nextUnit && danachUnits.length === 0 && (
+        <Card className="px-3 py-3 text-xs text-stone-500">
+          {dayUnits.length === 0 ? "Heute kein regulärer Unterricht." : "Alle Stunden für heute vorbei."}
         </Card>
       )}
 
-      {/* Wochentagsleiste – schlank, kein Rahmen */}
-      <div>
+      {/* Kompakte Wochentagsleiste am Ende – zum Vor-/Zurückblättern */}
+      <div className="pt-1">
         <div className="flex items-center gap-0.5">
-          <button onClick={() => setSelectedDate((d) => addDays(d, -7))} aria-label="Vorherige Woche" className="w-11 h-11 -my-3 text-stone-300 hover:text-stone-600 shrink-0 flex items-center justify-center">
-            <ChevronLeft size={15} />
+          <button onClick={() => setSelectedDate((d) => addDays(d, -7))} aria-label="Vorherige Woche" className="w-9 h-9 text-stone-300 hover:text-stone-600 shrink-0 flex items-center justify-center">
+            <ChevronLeft size={13} />
           </button>
           <div className="flex-1 grid grid-cols-7">
             {week.map((d, i) => {
@@ -6413,10 +6806,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
               const isTodayCol = isoDate(d) === todayStr;
               return (
                 <button key={i} onClick={() => setSelectedDate(d)} className="flex flex-col items-center gap-0.5 py-0.5 rounded-lg press-scale">
-                  <span className={`text-[10px] ${isTodayCol ? "text-red-400" : "text-stone-400"}`}>{WEEKDAY_LABELS[i]}</span>
+                  <span className={`text-[9px] ${isTodayCol ? "text-red-400" : "text-stone-400"}`}>{WEEKDAY_LABELS[i]}</span>
                   <span
-                    className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-medium ${
-                      active ? "akzent-flaeche text-white" : isTodayCol ? "text-red-400" : "text-stone-600"
+                    className={`w-5 h-5 flex items-center justify-center rounded-full text-[11px] font-medium ${
+                      active ? "akzent-flaeche text-white" : isTodayCol ? "text-red-400" : "text-stone-500"
                     }`}
                   >
                     {d.getDate()}
@@ -6425,431 +6818,12 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
               );
             })}
           </div>
-          <button onClick={() => setSelectedDate((d) => addDays(d, 7))} aria-label="Naechste Woche" className="w-11 h-11 -my-3 text-stone-300 hover:text-stone-600 shrink-0 flex items-center justify-center">
-            <ChevronRight size={15} />
+          <button onClick={() => setSelectedDate((d) => addDays(d, 7))} aria-label="Naechste Woche" className="w-9 h-9 text-stone-300 hover:text-stone-600 shrink-0 flex items-center justify-center">
+            <ChevronRight size={13} />
           </button>
         </div>
-        {!isToday && (
-          <button onClick={() => setSelectedDate(new Date())} className="text-[11px] akzent-text hover:underline ml-7 mt-0.5">
-            ↩ Heute
-          </button>
-        )}
       </div>
 
-      {/* Abschnittsüberschrift mit Akzentstrich + Sprung in den Stundenplan.
-          Ganze Zeile ist ein Button, nicht nur der Chip rechts – wer die
-          Überschrift tippt, will genauso in den Stundenplan. */}
-      <button
-        type="button"
-        onClick={() => onNavigate?.("stundenplan")}
-        className="w-full flex items-center justify-between gap-2 pt-1 text-left press-scale"
-        aria-label="Stundenplan öffnen"
-      >
-        <div>
-          <h2 className="text-base font-bold text-stone-800 leading-tight">
-            {isToday ? "Dein Unterricht heute" : "Dein Unterricht"}
-          </h2>
-          <span className="block w-7 h-[3px] rounded-full akzent-flaeche mt-1" />
-        </div>
-        <span
-          className="shrink-0 flex items-center gap-1.5 bg-white border border-stone-200 rounded-full pl-2.5 pr-3 py-1.5 text-xs font-medium text-stone-600"
-        >
-          <CalendarDays size={13} className="text-stone-400" />
-          Stundenplan
-        </span>
-      </button>
-
-      {/* Stunden – jede als eigene Karte */}
-      {!dayKey && <Card className="px-3 py-3 text-xs text-stone-500">Wochenende – kein regulärer Unterricht</Card>}
-      {dayKey && !dayUnits.length && <Card className="px-3 py-3 text-xs text-stone-500">Keine Stunden im Plan</Card>}
-      <div className="space-y-2">
-        {(showAllLessons ? dayUnits : dayUnits.slice(0, 4)).map((unit) => {
-          const { fach, cls, startZeit, endZeit, periodLabel, topic, cd, gehalten, gesamt, pct, offen, istLetzte } = lessonInfo(unit);
-          const detailOpen = openTestDetail === unit.id;
-          const barCol = !cd || !isColor ? "var(--oliv)" : cd.level === "krit" ? "#ef4444" : cd.level === "warn" ? "#f59e0b" : "var(--oliv)";
-          const istDoppel = unit.slots.length > 1;
-          /* Zwei getrennte visuelle Rollen, damit man auf einen Blick erkennt, was
-             Aufgabe (Amber-Rand links) und was reine Orientierung ist (dezenter
-             Akzentton als Hintergrund). Ist die gerade eben gehaltene Stunde auch
-             noch offen, gewinnt Amber. */
-          const zeigeLetzte = istLetzte && !offen;
-          /* Amber-Anker fuer offene Stunden: border-left direkt auf der Karte -
-             laeuft entlang der linken Kontur, folgt der border-radius oben und
-             unten und endet dadurch in der Kurve. Kein schwebendes Element mehr,
-             der Balken ist Teil der Karten-Kontur. */
-          return (
-            <Card
-              key={unit.id}
-              className={`overflow-hidden p-0 min-h-[76px] ${zeigeLetzte ? "akzent-ton" : ""} ${offen ? "!border-l-[3px] !border-l-amber-600" : ""}`}
-            >
-              <div className="flex items-stretch h-full">
-                {/* Zeitspalte – bei Doppelstunde durchgehend von 07:55 bis 09:30 */}
-                <div className="shrink-0 w-[3.5rem] py-2.5 pl-2 pr-1">
-                  <div className="text-[13px] font-semibold text-stone-800 tabular-nums leading-tight whitespace-nowrap">
-                    {startZeit || periodLabel}
-                  </div>
-                  {endZeit && <div className="text-[11px] text-stone-400 tabular-nums leading-tight whitespace-nowrap">–{endZeit}</div>}
-                  {istDoppel && <div className="text-[9px] uppercase tracking-wide text-stone-400 mt-0.5">Doppel</div>}
-                </div>
-
-                <div className="w-px bg-stone-100 my-2.5 shrink-0" />
-
-                {/* Klasse, Fach, Einheit – öffnet das Fach */}
-                <button
-                  onClick={() => fach && onOpenFach?.(fach.id)}
-                  disabled={!fach}
-                  className="shrink-0 w-[6.8rem] text-left py-2.5 px-1.5 disabled:cursor-default press-scale"
-                  aria-label={fach && cls ? `${cls.name} – ${fach.subject} öffnen` : undefined}
-                >
-                  <div className="flex items-center gap-1 min-w-0">
-                    {cls && (
-                      <span className="shrink-0 text-[10px] font-bold px-1 py-0.5 rounded bg-stone-100 text-stone-600 leading-none">
-                        {cls.name}
-                      </span>
-                    )}
-                    <span className="font-bold text-stone-800 text-[12px] truncate">{fach?.subject || "—"}</span>
-                  </div>
-                  {/* Der KA-Titel steht nur da, wenn rechts kein Thema konkurriert -
-                      sonst kaempfen zwei Textzeilen um dieselbe Kartenbreite. Beim
-                      Aufklappen des Balkens ist er ohnehin wieder zu sehen. */}
-                  {cd?.label && !topic && <div className="text-[10px] text-stone-400 mt-1 leading-tight line-clamp-2 break-words">{cd.label}</div>}
-                </button>
-
-                {/* Thema + Lernfortschritt. Der Thema-Text ist klickbar
-                    und springt in die Schnellerfassung dieser Stunde -
-                    dort steht das Themenfeld ganz oben. Ohne fach/cls
-                    (leere Stunde) bleibt es reiner Text. */}
-                <div className="flex-1 min-w-0 py-2.5 pr-1">
-                  {fach && cls ? (
-                    <button
-                      onClick={() => setCaptureLesson({ fach, cls, date: selStr })}
-                      className={`text-[11px] truncate mb-1.5 w-full text-left press-scale ${
-                        topic ? "text-stone-500 hover:text-stone-700" : "text-stone-400 hover:text-stone-600"
-                      }`}
-                      aria-label={topic ? `Thema ${topic.text} bearbeiten` : "Thema hinzufügen"}
-                    >
-                      {topic ? `Thema: ${topic.text}` : "+ Thema hinzufügen"}
-                    </button>
-                  ) : (
-                    <div className="text-[11px] text-stone-300 truncate mb-1.5">Kein Thema notiert</div>
-                  )}
-                  {cd && pct !== null && (
-                    <button
-                      onClick={() => setOpenTestDetail(detailOpen ? null : unit.id)}
-                      className="w-full text-left press-scale"
-                      aria-label={`${cd.label} – Details ${detailOpen ? "ausblenden" : "anzeigen"}`}
-                    >
-                      {/* Fortschrittsbalken - schmale Schiene mit farbiger Fuellung.
-                          Kein Slider-Knubbel: der Balken ist nicht ziehbar, ein Knubbel
-                          weckt falsche Erwartungen und sitzt bei pct=0 halb links neben
-                          der leeren Schiene, was nach Renderfehler aussieht. */}
-                      <div className="relative h-1 rounded-full overflow-hidden" style={{ backgroundColor: "var(--linie)" }}>
-                        <div className="absolute inset-y-0 left-0 rounded-full transition-[width]" style={{ width: `${pct}%`, backgroundColor: barCol }} />
-                      </div>
-                      <div className="flex items-center justify-between gap-2 mt-1.5">
-                        <span className="text-[10px] text-stone-400 shrink-0 tabular-nums">
-                          {gesamt !== null ? (
-                            <><span className="font-bold" style={{ color: barCol }}>{gehalten}</span> / {gesamt} Stunden</>
-                          ) : (
-                            <span className="font-bold" style={{ color: barCol }}>{cd.rem === 0 ? "letzte Stunde" : `noch ${cd.rem}`}</span>
-                          )}
-                        </span>
-                        <span className="text-[10px] truncate text-right leading-tight" style={{ color: barCol }}>
-                          {/* Links steht schon die Restzahl - hier reicht Termin oder „heute". */}
-                          {cd.istHeute ? "Arbeit heute" : `Arbeit am ${cd.datum}`}
-                        </span>
-                      </div>
-                      {detailOpen && (
-                        <div className="mt-1.5 text-[10px] text-stone-500">
-                          {cd.label} · {cd.istHeute ? "heute" : cd.datum}
-                          {cd.rem !== null && ` · ${cd.rem === 0 ? "keine Übungsstunde mehr" : `${cd.rem} ${cd.rem === 1 ? "Übungsstunde" : "Übungsstunden"} übrig`}`}
-                        </div>
-                      )}
-                    </button>
-                  )}
-                </div>
-
-                {/* Klemmbrett: oeffnet den 30-Sek-Stundenabschluss (nicht mehr
-                    direkt die ausfuehrliche Erfassung). Von dort kann man
-                    per Link in die klassische Noten-Erfassung wechseln. */}
-                {fach && cls && (
-                  <button
-                    onClick={() => setAbschluss?.({ fach, cls })}
-                    className={`shrink-0 w-9 flex items-center justify-center transition-colors press-scale ${
-                      offen ? (isColor ? "text-amber-600" : "text-stone-700 font-semibold") : "text-stone-300 hover:text-stone-500"
-                    }`}
-                    aria-label="Stunde abschließen"
-                    title="Stunde in 30 Sek abschließen"
-                  >
-                    {offen ? <ClipboardCheck size={16} /> : <ChevronRight size={16} />}
-                  </button>
-                )}
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      {dayUnits.length > 4 && (
-        <button
-          onClick={() => setShowAllLessons((v) => !v)}
-          className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs font-medium text-stone-500 hover:akzent-text transition-colors"
-        >
-          {showAllLessons ? "Weniger anzeigen" : `Alle ${dayUnits.length} Stunden ansehen`}
-          <ChevronDown size={14} className={showAllLessons ? "rotate-180 transition-transform" : "transition-transform"} />
-        </button>
-      )}
-
-      {/* Termine, Geburtstage, Aufgaben - auf Handy vollbreit untereinander,
-          auf Desktop in einer Dreierreihe. */}
-      <div className="flex flex-col gap-2 md:grid md:grid-cols-3 md:items-stretch">
-        {/* Termine */}
-        <Card className="px-3 py-3 flex flex-col">
-          <div className="flex items-center gap-1.5 mb-2">
-            <span className="w-5 h-5 rounded bg-stone-100 flex items-center justify-center shrink-0">
-              <CalendarDays size={12} className="text-stone-500" />
-            </span>
-            <span className="text-xs font-semibold text-stone-700">Termine</span>
-          </div>
-          {terminEvents.length ? (
-            <ul className="space-y-1.5">
-              {terminEvents.slice(0, 3).map((e) => (
-                <li key={e.id} className="min-w-0 flex items-center gap-2">
-                  <div className="text-xs text-stone-700 truncate leading-tight flex-1">{e.title}</div>
-                  {e.time && <div className="text-[11px] text-stone-400 tabular-nums shrink-0">{e.time}</div>}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-stone-400">Nichts geplant</p>
-          )}
-          <button onClick={() => onNavigate?.("kalender")} className="mt-2 py-1.5 -mx-1 px-1 text-xs text-stone-500 hover:text-stone-700 text-left">
-            Alle Termine →
-          </button>
-        </Card>
-
-        {/* Geburtstage */}
-        <Card className="px-3 py-3 flex flex-col">
-          <div className="flex items-center gap-1.5 mb-2">
-            <span className="w-5 h-5 rounded bg-stone-100 flex items-center justify-center shrink-0">
-              <PartyPopper size={12} className="text-stone-500" />
-            </span>
-            <span className="text-xs font-semibold text-stone-700">Geburtstage</span>
-          </div>
-          {birthdays.length || kommendeGeburtstage.length ? (
-            <ul className="space-y-1.5">
-              {birthdays.slice(0, 2).map((s) => {
-                const info = birthdayInfo(s, selectedDate);
-                return (
-                  <li key={s.id} className="flex items-center gap-2 min-w-0">
-                    <StudentAvatar student={s} size={20} />
-                    <div className="min-w-0 flex-1 flex items-center gap-2">
-                      <span className="text-xs font-medium text-stone-800 truncate leading-tight flex-1">{s.name.split(" ")[0]}</span>
-                      {info?.alter != null && <span className="text-[11px] text-stone-400 shrink-0">{info.alter} J.</span>}
-                    </div>
-                  </li>
-                );
-              })}
-              {kommendeGeburtstage.slice(0, birthdays.length ? 1 : 3).map(({ s, info }) => (
-                <li key={s.id} className="flex items-center gap-2 min-w-0">
-                  <StudentAvatar student={s} size={20} />
-                  <div className="min-w-0 flex-1 flex items-center gap-2">
-                    <span className="text-xs text-stone-600 truncate leading-tight flex-1">{s.name.split(" ")[0]}</span>
-                    <span className="text-[11px] text-stone-400 tabular-nums shrink-0">
-                      {info.next.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}
-                    </span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-stone-400">Keine in 3 Wochen</p>
-          )}
-          <button onClick={() => onOpenGeburtstage?.()} className="mt-2 py-1.5 -mx-1 px-1 text-xs text-stone-500 hover:text-stone-700 text-left">
-            Alle Geburtstage →
-          </button>
-        </Card>
-
-        {/* Aufgaben */}
-        <Card className="px-3 py-3 flex flex-col">
-          <div className="flex items-center gap-1.5 mb-2">
-            <span className="w-5 h-5 rounded bg-stone-100 flex items-center justify-center shrink-0">
-              <ListChecks size={12} className="text-stone-500" />
-            </span>
-            <span className="text-xs font-semibold text-stone-700">To-dos</span>
-            {!!alleOffenenTasks.length && <span className="ml-auto text-[11px] text-stone-400 shrink-0">{alleOffenenTasks.length}</span>}
-          </div>
-          {openTasks.length ? (
-            <ul className="space-y-1.5">
-              {openTasks.slice(0, 3).map((t) => (
-                <li key={t.id} className="flex items-start gap-2">
-                  <button
-                    onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
-                    className="w-9 h-9 -m-2 shrink-0 flex items-center justify-center press-scale"
-                    aria-label={`"${t.title}" als erledigt markieren`}
-                  >
-                    <span className="w-4 h-4 rounded-full border-2 block" style={{ borderColor: isColor ? t.color : "#A8A29E" }} />
-                  </button>
-                  <span className="text-xs text-stone-700 leading-tight line-clamp-2 pt-0.5">{t.title}</span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-xs text-stone-400">Nichts offen</p>
-          )}
-          <button onClick={() => onNavigate?.("aufgaben")} className="mt-2 py-1.5 -mx-1 px-1 text-xs text-stone-500 hover:text-stone-700 text-left">
-            Alle Aufgaben →
-          </button>
-        </Card>
-      </div>
-
-      {/* Klassenradar - listet Klassen mit Auffaelligkeitssignalen. Zeigt sich nur,
-          wenn mindestens eine Klasse ein Signal hat; sonst verschwindet die ganze Karte. */}
-      {(() => {
-        const radar = (data.classes || [])
-          .map((c) => ({ klasse: c, signale: computeKlassenradar(data, c, todayStr) }))
-          .filter((x) => x.signale.length)
-          .sort((a, b) => {
-            const rang = { krit: 0, warn: 1 };
-            const ra = rang[a.signale[0].level] ?? 9;
-            const rb = rang[b.signale[0].level] ?? 9;
-            return ra - rb;
-          });
-        if (!radar.length) return null;
-        return (
-          <Card className="px-3 py-2.5">
-            <div className="flex items-center gap-1.5 mb-2">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Klassenradar</span>
-            </div>
-            <ul className="divide-y divide-stone-100">
-              {radar.map(({ klasse, signale }) => {
-                const erst = signale[0];
-                const rest = signale.length - 1;
-                const dotCls = erst.level === "krit"
-                  ? (isColor ? "bg-red-500" : "bg-stone-600")
-                  : (isColor ? "bg-amber-500" : "bg-stone-400");
-                return (
-                  <li key={klasse.id}>
-                    <button
-                      onClick={() => onOpenKlassenDashboard?.(klasse.id)}
-                      className="w-full flex items-center gap-2 py-2 text-left press-scale"
-                      aria-label={`${klasse.name}: ${erst.kurz}${rest ? ` und ${rest} weitere` : ""}`}
-                    >
-                      <span className={`w-2 h-2 rounded-full shrink-0 ${dotCls}`} />
-                      <span className="shrink-0 text-[11px] font-bold text-stone-700 w-8">{klasse.name}</span>
-                      <span className="flex-1 text-xs text-stone-700 truncate">{erst.kurz}</span>
-                      {rest > 0 && <span className="text-[10px] text-stone-400 shrink-0">+{rest}</span>}
-                      <ChevronRight size={12} className="text-stone-300 shrink-0" />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </Card>
-        );
-      })()}
-
-      {/* Weitere Karten – Reihenfolge aus den Einstellungen */}
-      {(() => {
-        const sections = {
-          dienste: (
-            <Card className="px-3 py-2.5 h-full">
-              <div className="flex items-center justify-between mb-1.5">
-                <button onClick={() => onNavigate?.("klassen", "dienste")} className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500">
-                  Dienste <ChevronRight size={10} />
-                </button>
-                <span className="text-[10px] text-stone-400">{currentSchoolWeek().label}</span>
-              </div>
-              {(() => {
-                const alleDienste = data.duties || [];
-                if (!alleDienste.length) {
-                  return <p className="text-xs text-stone-500">Keine Dienste angelegt</p>;
-                }
-                return (
-                  <div className="space-y-2">
-                    {data.classes.map((c) => {
-                      const cDuties = alleDienste.filter((d) => d.classId === c.id);
-                      if (!cDuties.length) return null;
-                      const cStudents = data.students.filter((s) => s.classId === c.id);
-                      const { map } = computeDutyAssignments(cDuties, cStudents);
-                      return (
-                        <div key={c.id}>
-                          <div className="text-[10px] font-medium text-stone-400 mb-0.5">{c.name}</div>
-                          <ul className="space-y-1">
-                            {cDuties.map((duty) => {
-                              const kinder = (map[duty.id] || [])
-                                .map((id) => data.students.find((s) => s.id === id))
-                                .filter(Boolean);
-                              return (
-                                <li key={duty.id} className="flex items-start gap-1.5 text-xs">
-                                  <span className="w-1 h-3.5 rounded-full shrink-0 mt-0.5" style={{ backgroundColor: isColor ? duty.color : "#4F5844" }} />
-                                  <span className="text-stone-700 shrink-0">{duty.name}</span>
-                                  <span className="flex-1 text-right text-stone-400 truncate">
-                                    {kinder.length ? kinder.map((s) => s.name.split(" ")[0]).join(", ") : "—"}
-                                  </span>
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </Card>
-          ),
-          fehlzeiten: (() => {
-            const absences = (data.absences || []);
-            const ausstehend = absences.filter((a) => a.excuseStatus === "ausstehend" || a.excuseStatus === "eingereicht");
-            if (!absences.length) return null;
-            const byStudent = {};
-            ausstehend.forEach((a) => {
-              if (!byStudent[a.studentId]) byStudent[a.studentId] = [];
-              byStudent[a.studentId].push(a);
-            });
-            const studentEntries = Object.entries(byStudent).map(([sid, as]) => ({
-              student: data.students.find((s) => s.id === sid),
-              absences: as.sort((a, b) => b.date.localeCompare(a.date)),
-            })).filter((e) => e.student).sort((a, b) => a.student.name.localeCompare(b.student.name, "de"));
-            return (
-              <Card className="px-3 py-2.5 h-full">
-                <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">
-                  Entschuldigungen
-                  {ausstehend.length > 0 && <span className="text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{ausstehend.length}</span>}
-                </div>
-                {!studentEntries.length
-                  ? <p className="text-xs text-stone-500">Alle erledigt 👍</p>
-                  : (
-                    <ul className="divide-y divide-stone-100">
-                      {studentEntries.slice(0, 4).map(({ student, absences: sa }) => (
-                        <li key={student.id} className="py-1.5 flex items-center gap-1.5 text-xs">
-                          <StudentAvatar student={student} size={18} />
-                          <span className="flex-1 text-stone-700 truncate">{student.name.split(" ")[0]}</span>
-                          <span className="text-amber-700 font-medium shrink-0">{sa.length}×</span>
-                        </li>
-                      ))}
-                      {studentEntries.length > 4 && <li className="pt-1 text-[10px] text-stone-400">+{studentEntries.length - 4} weitere</li>}
-                    </ul>
-                  )}
-              </Card>
-            );
-          })(),
-        };
-
-        const gespeichert = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
-        const order = [
-          ...gespeichert.filter((k) => sections[k]),
-          ...Object.keys(sections).filter((k) => !gespeichert.includes(k) && sections[k]),
-        ];
-        if (!order.length) return null;
-
-        return (
-          <div className="flex flex-col gap-2 md:grid md:grid-cols-2 md:items-start">
-            {order.map((key) => (sections[key] ? <div key={key}>{sections[key]}</div> : null))}
-          </div>
-        );
-      })()}
 
       {/* Unterrichtstipp des Tages - dezent am Ende der Uebersicht. Klick oeffnet
           das Detail-Sheet mit Warum, Umsetzung und einem "Naechster Tipp"-Knopf. */}
@@ -6931,6 +6905,20 @@ function FachModal({ data, initial, onSave, onClose }) {
   const [weights, setWeights] = useState(initial?.weights || DEFAULT_WEIGHTS);
   const [nextTestDate, setNextTestDate] = useState(initial?.nextTestDate || "");
   const [nextTestTitle, setNextTestTitle] = useState(initial?.nextTestTitle || "");
+  /* „Immer mitnehmen" pro Fach – Bälle, Hütchen, Leibchen für Sport, Beamer für Physik.
+     Wird als Chip-Reihe unter „Als Nächstes" auf der Startseite gezeigt, damit die
+     Lehrkraft in der Vorstunde schon weiß, was sie einsammeln muss. */
+  const [material, setMaterial] = useState(initial?.material || []);
+  const [materialInput, setMaterialInput] = useState("");
+  function addMaterial() {
+    const t = materialInput.trim();
+    if (!t) return;
+    setMaterial((m) => [...m, t]);
+    setMaterialInput("");
+  }
+  function removeMaterial(i) {
+    setMaterial((m) => m.filter((_, k) => k !== i));
+  }
 
   const existingSubjects = Array.from(new Set(data.faecher.map((f) => f.subject))).filter(Boolean).sort((a, b) => a.localeCompare(b, "de"));
 
@@ -6945,7 +6933,7 @@ function FachModal({ data, initial, onSave, onClose }) {
     if (classId !== "__new__" && !classId) return;
     if (classId === "__new__" && !finalClassName) return;
     if (!subject.trim()) return;
-    onSave({ classId: classId === "__new__" ? null : classId, newClassName: finalClassName, subject: subject.trim(), color, room: room.trim(), weights, nextTestDate: nextTestDate || null, nextTestTitle: nextTestTitle.trim() || null });
+    onSave({ classId: classId === "__new__" ? null : classId, newClassName: finalClassName, subject: subject.trim(), color, room: room.trim(), weights, nextTestDate: nextTestDate || null, nextTestTitle: nextTestTitle.trim() || null, material });
   }
 
   return (
@@ -7064,6 +7052,47 @@ function FachModal({ data, initial, onSave, onClose }) {
               Zeigt auf der Übersicht und in der Schnellerfassung, wie viele Unterrichtsstunden bis dahin bleiben.
               Ferien werden abgezogen. Klappt nur, wenn das Fach im Stundenplan steht.
             </p>
+          </Field>
+
+          <Field label="Immer mitnehmen">
+            <p className="text-xs text-stone-500 mb-2">
+              Material, das du jedes Mal brauchst – z. B. „12 Volleybälle", „Beamer", „Leibchen".
+              Erscheint auf der Startseite unter „Als Nächstes", damit du es rechtzeitig einsammelst.
+            </p>
+            {material.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {material.map((m, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
+                    {m}
+                    <button
+                      onClick={() => removeMaterial(i)}
+                      className="text-stone-400 hover:text-red-500 ml-0.5"
+                      aria-label={`„${m}" entfernen`}
+                    >
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-1.5">
+              <input
+                value={materialInput}
+                onChange={(e) => setMaterialInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addMaterial(); } }}
+                className={`${inputCls} flex-1`}
+                placeholder="z. B. 12 Volleybälle"
+                maxLength={60}
+              />
+              <button
+                onClick={addMaterial}
+                disabled={!materialInput.trim()}
+                className="shrink-0 w-11 h-11 rounded-lg akzent-ton akzent-text flex items-center justify-center disabled:opacity-30"
+                aria-label="Material hinzufügen"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
           </Field>
         </div>
 
@@ -7455,7 +7484,7 @@ function VoiceNoteButton({ onTranscript }) {
               <div className="font-semibold text-stone-800">Sprachnotizen</div>
             </div>
             <p className="text-sm text-stone-600 leading-relaxed mb-4">
-              Saidy nutzt die Sprach-zu-Text-Funktion deines Geräts. Die Audioaufnahme wird dabei <strong>kurzzeitig an Apple (Safari) bzw. Google (Chrome/Edge) in die USA übertragen</strong> und danach nicht gespeichert. Nur der fertige Text bleibt lokal auf deinem Gerät. Nenne in Aufnahmen keine Schülernamen.
+              Tuvi nutzt die Sprach-zu-Text-Funktion deines Geräts. Die Audioaufnahme wird dabei <strong>kurzzeitig an Apple (Safari) bzw. Google (Chrome/Edge) in die USA übertragen</strong> und danach nicht gespeichert. Nur der fertige Text bleibt lokal auf deinem Gerät. Nenne in Aufnahmen keine Schülernamen.
             </p>
             <div className="flex gap-2">
               <button onClick={() => setShowConsent(false)} className="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-600 font-medium">Abbrechen</button>
@@ -7609,7 +7638,7 @@ function DokumenteBlock({ scope, scopeId, documents, update, hinweis }) {
         return d;
       });
     } catch (e) {
-      console.warn("[Saidy] Dokument speichern fehlgeschlagen:", e);
+      console.warn("[Tuvi] Dokument speichern fehlgeschlagen:", e);
       /* Der haeufigste echte Grund ist ein volles Speicherkontingent - das
          soll die Lehrkraft erfahren, nicht nur „hat nicht geklappt". */
       setFehler(e?.name === "QuotaExceededError"
@@ -11512,7 +11541,7 @@ function FaecherTab({ data, update, onOpenFach }) {
     return na - nb || ca.localeCompare(cb, "de") || a.subject.localeCompare(b.subject, "de");
   });
 
-  function saveFach({ classId, newClassName, subject, color, room, weights, nextTestDate, nextTestTitle }) {
+  function saveFach({ classId, newClassName, subject, color, room, weights, nextTestDate, nextTestTitle, material }) {
     update((d) => {
       let finalClassId = classId;
       if (!finalClassId && newClassName) {
@@ -11522,11 +11551,12 @@ function FaecherTab({ data, update, onOpenFach }) {
       if (!d.subjectColors) d.subjectColors = {};
       d.subjectColors[subject] = color;
 
+      const mat = Array.isArray(material) ? material.filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim()) : [];
       if (editingFach) {
         const f = d.faecher.find((x) => x.id === editingFach.id);
-        if (f) { f.classId = finalClassId; f.subject = subject; f.color = color; f.room = room; f.weights = weights || DEFAULT_WEIGHTS; f.nextTestDate = nextTestDate || null; f.nextTestTitle = nextTestTitle || null; }
+        if (f) { f.classId = finalClassId; f.subject = subject; f.color = color; f.room = room; f.weights = weights || DEFAULT_WEIGHTS; f.nextTestDate = nextTestDate || null; f.nextTestTitle = nextTestTitle || null; f.material = mat; }
       } else {
-        d.faecher.push({ id: uid(), classId: finalClassId, subject, color, room, weights: weights || DEFAULT_WEIGHTS, nextTestDate: nextTestDate || null, nextTestTitle: nextTestTitle || null });
+        d.faecher.push({ id: uid(), classId: finalClassId, subject, color, room, weights: weights || DEFAULT_WEIGHTS, nextTestDate: nextTestDate || null, nextTestTitle: nextTestTitle || null, material: mat });
       }
       return d;
     });
@@ -12791,7 +12821,7 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
               </div>
               <div className="text-right text-[10px] text-stone-500">
                 <div>Stand: {heute}</div>
-                <div>Saidy – vertraulich</div>
+                <div>Tuvi – vertraulich</div>
               </div>
             </div>
           </div>
@@ -12916,13 +12946,13 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
                   </li>
                 ))}
               </ul>
-              <p className="text-[10px] text-stone-400 mt-1">Dokumente selbst liegen im Saidy-Speicher, nicht im PDF.</p>
+              <p className="text-[10px] text-stone-400 mt-1">Dokumente selbst liegen im Tuvi-Speicher, nicht im PDF.</p>
             </section>
           )}
 
           {/* Fuss */}
           <div className="mt-8 pt-3 border-t border-stone-300 text-[9px] text-stone-400 leading-tight">
-            Diese Übersicht enthält personenbezogene Daten nach Art. 6 DSGVO und dient ausschließlich der pädagogischen Übergabe zwischen Lehrkräften. Vertrauliche Behandlung, keine Weitergabe an Unbefugte. Erzeugt mit Saidy · Stand: {heute}.
+            Diese Übersicht enthält personenbezogene Daten nach Art. 6 DSGVO und dient ausschließlich der pädagogischen Übergabe zwischen Lehrkräften. Vertrauliche Behandlung, keine Weitergabe an Unbefugte. Erzeugt mit Tuvi · Stand: {heute}.
           </div>
         </div>
       </div>
