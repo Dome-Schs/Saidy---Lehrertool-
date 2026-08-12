@@ -11729,6 +11729,394 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
   );
 }
 
+/* Winzige Notentrend-Linie (SVG). Erwartet vorsortierte Noten [{date, value}]
+   und zeichnet eine polyline in Notenskala (1 oben, 6 unten). Bei < 2 Noten
+   ein einzelner Punkt oder Strich, damit der Slot nicht leer aussieht. */
+function NotenSparkline({ noten, w = 44, h = 14, color = "#4F5844" }) {
+  if (!noten || noten.length === 0) {
+    return <span className="inline-block text-[10px] text-stone-300 tabular-nums" style={{ width: w }}>–</span>;
+  }
+  if (noten.length === 1) {
+    return (
+      <svg width={w} height={h} className="inline-block align-middle shrink-0">
+        <circle cx={w / 2} cy={h - ((noten[0].value - 1) / 5) * (h - 2) - 1} r="1.6" fill={color} />
+      </svg>
+    );
+  }
+  const step = w / (noten.length - 1);
+  const points = noten.map((n, i) => {
+    const y = h - ((n.value - 1) / 5) * (h - 2) - 1;
+    return `${(i * step).toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  return (
+    <svg width={w} height={h} className="inline-block align-middle shrink-0">
+      <polyline points={points} fill="none" stroke={color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/* Grosse Notenentwicklung: zwei Linien (muendlich + schriftlich), Punkte,
+   dezente Y-Grid-Lines. Zeitachse chronologisch. Fuer die Schüler-Detail-
+   Ansicht in der Klassen-Vollbild-Sheet. */
+function NotenLineChart({ muendlich, schriftlich, w = 320, h = 160 }) {
+  const alle = [...(muendlich || []), ...(schriftlich || [])].filter((n) => n && n.date && n.value != null);
+  if (alle.length === 0) {
+    return <div className="text-xs text-stone-400 text-center py-6">Noch keine Noten für diese Auswahl.</div>;
+  }
+  const paddingLeft = 22, paddingRight = 8, paddingTop = 8, paddingBottom = 18;
+  const chartW = w - paddingLeft - paddingRight;
+  const chartH = h - paddingTop - paddingBottom;
+  const toDate = (s) => new Date(s).getTime();
+  const dates = alle.map((n) => toDate(n.date));
+  const minT = Math.min(...dates);
+  const maxT = Math.max(...dates);
+  const span = Math.max(1, maxT - minT);
+  const xFor = (dateStr) => paddingLeft + ((toDate(dateStr) - minT) / span) * chartW;
+  const yFor = (val) => paddingTop + ((val - 1) / 5) * chartH; // 1 oben, 6 unten
+  const line = (arr) => arr
+    .slice()
+    .sort((a, b) => (a.date || "").localeCompare(b.date || ""))
+    .map((n, i) => `${i === 0 ? "M" : "L"} ${xFor(n.date).toFixed(1)} ${yFor(n.value).toFixed(1)}`)
+    .join(" ");
+  return (
+    <svg width={w} height={h} className="block">
+      {/* Y-Grid: Notenlinien 1..6 */}
+      {[1, 2, 3, 4, 5, 6].map((v) => (
+        <g key={v}>
+          <line x1={paddingLeft} x2={w - paddingRight} y1={yFor(v)} y2={yFor(v)} stroke="#E4DFD2" strokeWidth="0.5" strokeDasharray={v === 4 ? "0" : "2 3"} />
+          <text x={paddingLeft - 6} y={yFor(v) + 3} fontSize="9" fill="#A8A29E" textAnchor="end">{v}</text>
+        </g>
+      ))}
+      {/* Linien */}
+      {muendlich && muendlich.length > 0 && (
+        <path d={line(muendlich)} fill="none" stroke="#4F5844" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      )}
+      {schriftlich && schriftlich.length > 0 && (
+        <path d={line(schriftlich)} fill="none" stroke="#B45309" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4 3" />
+      )}
+      {/* Punkte */}
+      {(muendlich || []).map((n, i) => (
+        <circle key={`m-${i}`} cx={xFor(n.date)} cy={yFor(n.value)} r="2.5" fill="#4F5844" />
+      ))}
+      {(schriftlich || []).map((n, i) => (
+        <circle key={`s-${i}`} cx={xFor(n.date)} cy={yFor(n.value)} r="3" fill="#B45309" stroke="#fff" strokeWidth="1" />
+      ))}
+      {/* Datum-Achse: Anfang + Ende */}
+      <text x={paddingLeft} y={h - 4} fontSize="9" fill="#A8A29E">{localDate(new Date(minT).toISOString().slice(0, 10)).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</text>
+      <text x={w - paddingRight} y={h - 4} fontSize="9" fill="#A8A29E" textAnchor="end">{localDate(new Date(maxT).toISOString().slice(0, 10)).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</text>
+    </svg>
+  );
+}
+
+/* Vollbild-Sheet fuer eine Klasse. Zwei Tabs oben: "Unterricht" (Faecher +
+   Reihenplanung) und "Noten" (Schüler-Sparklines + Line-Chart-Details).
+   Loest die alten aufklappbaren Klassenkarten und den separaten Faecher-Tab
+   funktional ab. */
+function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onClose, onOpenStudent, onFachActions }) {
+  const [activeTab, setActiveTab] = useState(initialTab === "noten" ? "noten" : "unterricht");
+  const [reihenZoom, setReihenZoom] = useState(8); // Wochen sichtbar: 8 oder Halbjahr
+  const [studentDetail, setStudentDetail] = useState(null); // studentId fuer grosse Ansicht
+  const cls = data.classes.find((c) => c.id === klasseId);
+  if (!cls) return null;
+  const faecher = data.faecher.filter((f) => f.classId === klasseId);
+  const students = data.students.filter((s) => s.classId === klasseId && !s.deletedAt).sort((a, b) => a.name.localeCompare(b.name, "de"));
+  const isColor = data.settings?.colorMode === true;
+  const heuteStr = isoDate(new Date());
+
+  /* Halbjahres-Start ermitteln: 01.02. bzw. 01.08. je nach halbjahr-Prop.
+     Fuer Sparklines und Filter im Noten-Tab. */
+  const halbjahresStart = (() => {
+    const j = new Date().getFullYear();
+    const monat = new Date().getMonth();
+    // 1. Halbjahr: 1.8. - 31.1., 2. Halbjahr: 1.2. - 31.7.
+    const inH1 = monat >= 7 || monat < 1;
+    if (halbjahr === "1" || (halbjahr == null && inH1)) {
+      return isoDate(new Date(monat < 1 ? j - 1 : j, 7, 1));
+    }
+    return isoDate(new Date(j, 1, 1));
+  })();
+
+  function notenFuerKind(studentId, category = null) {
+    return (data.grades || [])
+      .filter((g) => g.studentId === studentId && (category == null || g.category === category))
+      .filter((g) => (g.date || "") >= halbjahresStart)
+      .sort((a, b) => (a.date || "").localeCompare(b.date || ""))
+      .map((g) => ({ date: g.date, value: Number(g.value), title: g.title, fachId: g.fachId }));
+  }
+
+  /* Reihenplanung-Grid: naechste N Wochen ab aktueller KW */
+  const reihenSpalten = (() => {
+    const wochen = [];
+    const start = currentSchoolWeek();
+    for (let i = 0; i < reihenZoom; i++) {
+      const wDate = addDays(start.monday, i * 7);
+      const w = currentSchoolWeek(wDate);
+      wochen.push({
+        key: `${w.monday.getFullYear()}-W${String(w.kw).padStart(2, "0")}`,
+        label: `KW ${w.kw}`,
+        istHeute: i === 0,
+      });
+    }
+    return wochen;
+  })();
+
+  function setReihenZelle(fachId, kw, thema) {
+    update((d) => {
+      const f = d.faecher.find((x) => x.id === fachId);
+      if (!f) return d;
+      f.reihe = Array.isArray(f.reihe) ? [...f.reihe] : [];
+      const bestehend = f.reihe.find((r) => r.kw === kw);
+      const clean = (thema || "").trim();
+      if (bestehend) {
+        if (clean) bestehend.thema = clean;
+        else f.reihe = f.reihe.filter((r) => r !== bestehend);
+      } else if (clean) {
+        f.reihe.push({ id: uid(), kw, thema: clean });
+      }
+      return d;
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 bg-white z-[55] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      {/* Header */}
+      <div className="shrink-0 bg-white/95 backdrop-blur-xl border-b border-stone-100">
+        <div className="px-3 pt-[max(env(safe-area-inset-top),0.75rem)] pb-2 flex items-center gap-2">
+          <button onClick={onClose} className="w-11 h-11 -ml-2 flex items-center justify-center text-stone-600 shrink-0" aria-label="Zurück">
+            <ChevronLeft size={22} />
+          </button>
+          <div className="min-w-0 flex-1">
+            <div className="text-xl font-bold text-stone-800 leading-tight truncate">{cls.name}</div>
+            <div className="text-[11px] text-stone-500">{students.length} Schüler:innen · {faecher.length} {faecher.length === 1 ? "Fach" : "Fächer"}</div>
+          </div>
+        </div>
+        <div className="flex border-t border-stone-100" role="tablist">
+          {[
+            { key: "unterricht", label: "Unterricht" },
+            { key: "noten", label: "Noten" },
+          ].map((t) => {
+            const aktiv = activeTab === t.key;
+            return (
+              <button
+                key={t.key}
+                role="tab"
+                aria-selected={aktiv}
+                onClick={() => setActiveTab(t.key)}
+                className={`flex-1 py-2.5 text-sm font-medium border-b-2 transition-colors ${aktiv ? "border-current akzent-text" : "border-transparent text-stone-400 hover:text-stone-600"}`}
+              >
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto px-4 py-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
+        {activeTab === "unterricht" && (
+          <div className="space-y-6">
+            {/* Fach-Kacheln */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Fächer</span>
+                <button onClick={() => onFachActions?.({ type: "neu", klasseId })} className="text-[11px] akzent-text hover:underline flex items-center gap-0.5"><Plus size={11} /> anlegen</button>
+              </div>
+              {faecher.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-stone-300 p-6 text-center">
+                  <p className="text-sm text-stone-500 mb-3">Noch keine Fächer für diese Klasse.</p>
+                  <button onClick={() => onFachActions?.({ type: "neu", klasseId })} className="text-sm akzent-flaeche text-white px-3 py-1.5 rounded-lg font-medium">
+                    Erstes Fach anlegen
+                  </button>
+                </div>
+              ) : (
+                <ul className="space-y-2">
+                  {faecher.map((f) => {
+                    const rt = reiheThemaFor(f, heuteStr);
+                    const cd = testCountdown(f, data.timetable, data.events);
+                    /* Offene Vor-Aufgaben ueber alle geplanten Stunden dieses Fachs in den kommenden 14 Tagen */
+                    const offen = (() => {
+                      let n = 0;
+                      for (let i = 0; i < 14; i++) {
+                        const d = isoDate(addDays(new Date(), i));
+                        const lt = (data.lessonTopics || []).find((x) => x.fachId === f.id && x.date === d);
+                        if (lt && Array.isArray(lt.aufgaben)) n += lt.aufgaben.filter((a) => !a.done).length;
+                      }
+                      return n;
+                    })();
+                    return (
+                      <li key={f.id}>
+                        <button
+                          onClick={() => onFachActions?.({ type: "actions", fach: f })}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-stone-100 bg-white hover:bg-stone-50 press-scale text-left"
+                        >
+                          <span className="w-2 h-10 rounded-full shrink-0" style={{ backgroundColor: isColor && f.color ? f.color : "#C0BBA8" }} />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-stone-800 truncate">{f.subject}</div>
+                            <div className="text-[11px] text-stone-500 truncate">
+                              {rt ? <>Reihe: <span className="text-stone-700">{rt}</span></> : (cd?.label ? <>{cd.label} · {cd.istHeute ? "heute" : cd.datum}</> : "Kein Thema hinterlegt")}
+                            </div>
+                            {(offen > 0 || (f.material || []).length > 0) && (
+                              <div className="flex items-center gap-2 mt-1">
+                                {(f.material || []).length > 0 && <span className="text-[10px] text-stone-500"><Folder size={10} className="inline mr-0.5" />{(f.material || []).slice(0, 2).join(" · ")}{(f.material || []).length > 2 ? "…" : ""}</span>}
+                                {offen > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">{offen} offen</span>}
+                              </div>
+                            )}
+                          </div>
+                          <ChevronRight size={14} className="text-stone-300 shrink-0" />
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </div>
+
+            {/* Reihenplanung-Grid */}
+            {faecher.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Reihenplanung</span>
+                  <button onClick={() => setReihenZoom(reihenZoom === 8 ? 24 : 8)} className="text-[11px] text-stone-500 hover:text-stone-700">
+                    {reihenZoom === 8 ? "Halbjahr" : "8 Wochen"}
+                  </button>
+                </div>
+                <div className="overflow-x-auto rounded-xl border border-stone-100 bg-white">
+                  <table className="text-xs w-full">
+                    <thead>
+                      <tr className="border-b border-stone-100">
+                        <th className="sticky left-0 z-10 bg-white text-left px-2 py-2 text-[10px] font-semibold uppercase text-stone-400">Fach</th>
+                        {reihenSpalten.map((w) => (
+                          <th key={w.key} className={`px-1.5 py-2 text-[10px] font-semibold ${w.istHeute ? "akzent-text" : "text-stone-400"}`}>{w.label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {faecher.map((f) => (
+                        <tr key={f.id} className="border-b border-stone-50 last:border-0">
+                          <th className="sticky left-0 bg-white text-left px-2 py-1.5 font-medium text-stone-700 whitespace-nowrap">
+                            <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle" style={{ backgroundColor: isColor && f.color ? f.color : "#C0BBA8" }} />
+                            {f.subject.length > 8 ? f.subject.slice(0, 8) + "…" : f.subject}
+                          </th>
+                          {reihenSpalten.map((w) => {
+                            const eintrag = (f.reihe || []).find((r) => r.kw === w.key);
+                            return (
+                              <td key={w.key} className={`px-1 py-1 ${w.istHeute ? "akzent-ton" : ""}`}>
+                                <input
+                                  defaultValue={eintrag?.thema || ""}
+                                  onBlur={(e) => { if ((eintrag?.thema || "") !== e.target.value) setReihenZelle(f.id, w.key, e.target.value); }}
+                                  placeholder="—"
+                                  className="w-16 min-w-[3rem] text-[11px] px-1 py-0.5 rounded border border-transparent bg-transparent hover:border-stone-200 focus:border-stone-300 focus:bg-white outline-none"
+                                  maxLength={30}
+                                />
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="text-[10px] text-stone-400 mt-1.5">Tipp: Zelle antippen und Thema eintragen. Aktuelle KW ist hervorgehoben.</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === "noten" && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Schüler:innen · Halbjahr</span>
+              <span className="text-[10px] text-stone-400">
+                <span className="inline-block w-2 h-0.5 align-middle bg-stone-700 mr-1"></span>mündlich
+                <span className="inline-block w-2 h-0.5 align-middle bg-amber-700 ml-2 mr-1"></span>schriftlich
+              </span>
+            </div>
+            {students.length === 0 ? (
+              <p className="text-sm text-stone-400 py-6 text-center">Keine Schüler:innen in dieser Klasse.</p>
+            ) : (
+              <ul className="rounded-xl border border-stone-100 bg-white divide-y divide-stone-50">
+                {students.map((s) => {
+                  const muendlich = notenFuerKind(s.id, "muendlich");
+                  const schriftlich = notenFuerKind(s.id, "schriftlich");
+                  const muDurch = muendlich.length ? (muendlich.reduce((a, x) => a + x.value, 0) / muendlich.length) : null;
+                  const schDurch = schriftlich.length ? (schriftlich.reduce((a, x) => a + x.value, 0) / schriftlich.length) : null;
+                  return (
+                    <li key={s.id}>
+                      <button onClick={() => setStudentDetail(s.id)} className="w-full flex items-center gap-2 px-3 py-2 text-left press-scale">
+                        <StudentAvatar student={s} size={26} />
+                        <span className="flex-1 min-w-0 text-sm text-stone-800 truncate">{s.name}</span>
+                        <span className="shrink-0 flex items-center gap-1.5">
+                          <NotenSparkline noten={muendlich} color="#4F5844" />
+                          <span className="text-[10px] tabular-nums text-stone-500 w-6 text-right">{muDurch != null ? muDurch.toFixed(1).replace(".", ",") : "–"}</span>
+                        </span>
+                        <span className="shrink-0 flex items-center gap-1.5">
+                          <NotenSparkline noten={schriftlich} color="#B45309" />
+                          <span className="text-[10px] tabular-nums text-stone-500 w-6 text-right">{schDurch != null ? schDurch.toFixed(1).replace(".", ",") : "–"}</span>
+                        </span>
+                        <ChevronRight size={12} className="text-stone-300 shrink-0" />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Detail-Overlay bei Schüler-Klick im Noten-Tab: Line-Chart + Notenliste */}
+      {studentDetail && (() => {
+        const s = students.find((x) => x.id === studentDetail);
+        if (!s) return null;
+        const mu = notenFuerKind(s.id, "muendlich");
+        const sc = notenFuerKind(s.id, "schriftlich");
+        const alle = [...mu, ...sc].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+        return (
+          <div className="absolute inset-0 bg-stone-900/40 z-10 flex items-end md:items-center justify-center p-3" onClick={() => setStudentDetail(null)}>
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto sheet anim-sheet" onClick={(e) => e.stopPropagation()}>
+              <div className="sticky top-0 bg-white/95 backdrop-blur-xl border-b border-stone-100 px-4 py-3 flex items-center gap-2">
+                <StudentAvatar student={s} size={30} />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-stone-800 truncate">{s.name}</div>
+                  <div className="text-[11px] text-stone-500">Notenentwicklung dieses Halbjahr</div>
+                </div>
+                <button onClick={() => onOpenStudent?.(s.id)} className="text-[11px] akzent-text hover:underline shrink-0" title="Profil öffnen">Profil →</button>
+                <button onClick={() => setStudentDetail(null)} className="w-9 h-9 flex items-center justify-center text-stone-400" aria-label="Schließen"><X size={16} /></button>
+              </div>
+              <div className="p-4 space-y-4">
+                <div className="rounded-xl border border-stone-100 bg-stone-50 p-3 flex justify-center">
+                  <NotenLineChart muendlich={mu} schriftlich={sc} w={340} h={170} />
+                </div>
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">Alle Noten ({alle.length})</div>
+                  {alle.length === 0 ? (
+                    <p className="text-xs text-stone-400 py-3">Noch keine Noten in diesem Halbjahr.</p>
+                  ) : (
+                    <ul className="divide-y divide-stone-100">
+                      {alle.map((n, i) => {
+                        const f = data.faecher.find((x) => x.id === n.fachId);
+                        const istMu = mu.includes(n);
+                        return (
+                          <li key={i} className="py-1.5 flex items-center gap-2 text-xs">
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${istMu ? "bg-stone-700" : "bg-amber-700"}`} />
+                            <span className="w-14 text-stone-500 tabular-nums shrink-0">{localDate(n.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</span>
+                            <span className="flex-1 truncate text-stone-700">{f?.subject || "?"} · {n.title || (istMu ? "Mündlich" : "Schriftlich")}</span>
+                            <span className="text-stone-800 font-semibold tabular-nums shrink-0">{Number(n.value).toFixed(2).replace(/\.?0+$/, "").replace(".", ",")}</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+    </div>
+  );
+}
+
 function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed, focusKlassenDashboardId, onFocusKlassenDashboardConsumed, onRegisterFab, showToast }) {
   const [selectedClass, setSelectedClass] = useState(data.classes[0]?.id ?? null);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
@@ -11746,6 +12134,10 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
   const [showSitzplan, setShowSitzplan] = useState(false);
   const [sitzplanClassId, setSitzplanClassId] = useState(null);
   const [klassenDashboardId, setKlassenDashboardId] = useState(null);
+  const [klasseVollbildId, setKlasseVollbildId] = useState(null);
+  const [klasseVollbildTab, setKlasseVollbildTab] = useState("unterricht");
+  const [fachActions, setFachActions] = useState(null); // { type: "actions", fach } oder { type: "neu", klasseId }
+  const [editFachInVollbild, setEditFachInVollbild] = useState(null);
   const [kindSuche, setKindSuche] = useState("");
 
   useEffect(() => {
@@ -11935,15 +12327,9 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
         <div className="inline-flex bg-stone-100 rounded-xl p-1">
           <button
             onClick={() => setSubTab("klassen")}
-            className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${subTab === "klassen" ? "bg-white text-stone-800 shadow-sm" : "text-stone-500"}`}
+            className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${subTab === "klassen" || subTab === "faecher" ? "bg-white text-stone-800 shadow-sm" : "text-stone-500"}`}
           >
             Klassen
-          </button>
-          <button
-            onClick={() => setSubTab("faecher")}
-            className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${subTab === "faecher" ? "bg-white text-stone-800 shadow-sm" : "text-stone-500"}`}
-          >
-            Fächer
           </button>
           <button
             onClick={() => setSubTab("dienste")}
@@ -11955,7 +12341,6 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
         </div>
       </div>
 
-      {subTab === "faecher" && <FaecherTab data={data} update={update} onOpenFach={onOpenFach} />}
       {subTab === "dienste" && <DiensteTab data={data} update={update} />}
 
       {subTab === "klassen" && (
@@ -12013,10 +12398,13 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
           const offen = expandedClass === c.id;
           return (
             <Card key={c.id} className="overflow-hidden">
-              {/* Kopf: ganze Zeile antippbar zum Auf-/Zuklappen */}
+              {/* Kopf: ganze Zeile oeffnet das Vollbild-Sheet der Klasse.
+                  Zusaetzlich ein kleiner Chevron-Button rechts fuer das
+                  Aufklappen der Schuelerliste in-place (fuer den schnellen
+                  Blick, ohne den Screen zu wechseln). */}
               <div className="flex items-center gap-2 p-4">
                 <button
-                  onClick={() => setExpandedClass(offen ? null : c.id)}
+                  onClick={() => setKlasseVollbildId(c.id)}
                   className="flex-1 flex items-center gap-2 min-w-0 text-left"
                 >
                   <span className="text-lg font-semibold text-stone-900 shrink-0">{c.name}</span>
@@ -12029,10 +12417,17 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
                     ))}
                     {!cFaecher.length && <span className="text-xs text-stone-300">noch keine Fächer</span>}
                   </span>
-                  <ChevronRight size={16} className={`text-stone-300 shrink-0 ml-auto transition-transform ${offen ? "rotate-90" : ""}`} />
+                  <ChevronRight size={16} className="text-stone-300 shrink-0 ml-auto" />
                 </button>
                 <button
-                  onClick={() => { setRenameValue(c.name); setRenamingClass(c.id); }}
+                  onClick={(e) => { e.stopPropagation(); setExpandedClass(offen ? null : c.id); }}
+                  className="w-8 h-8 rounded-full hover:bg-stone-100 text-stone-400 flex items-center justify-center shrink-0"
+                  title={offen ? "Schülerliste zuklappen" : "Schülerliste aufklappen"}
+                >
+                  <ChevronDown size={14} className={`transition-transform ${offen ? "rotate-180" : ""}`} />
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setRenameValue(c.name); setRenamingClass(c.id); }}
                   className="w-8 h-8 rounded-full hover:bg-stone-100 text-stone-400 flex items-center justify-center shrink-0"
                   title="Klasse verwalten"
                 >
@@ -12215,6 +12610,106 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
           className={cls?.name}
           onImport={importStudents}
           onClose={() => setShowImportModal(false)}
+        />
+      )}
+
+      {/* Klasse-Vollbild-Sheet: Tabs Unterricht / Noten */}
+      {klasseVollbildId && (
+        <KlasseVollbildSheet
+          data={data}
+          update={update}
+          klasseId={klasseVollbildId}
+          halbjahr={halbjahr}
+          initialTab={klasseVollbildTab}
+          onClose={() => setKlasseVollbildId(null)}
+          onOpenStudent={(studentId) => {
+            setKlasseVollbildId(null);
+            setSelectedClass(klasseVollbildId);
+            setShowStudentsModal(true);
+            setSelectedStudent(studentId);
+          }}
+          onFachActions={(payload) => setFachActions(payload)}
+        />
+      )}
+
+      {/* Fach-Aktionsmenü (auf Fach-Kachel-Klick im Vollbild): Bearbeiten oder Noten */}
+      {fachActions && fachActions.type === "actions" && (() => {
+        const f = fachActions.fach;
+        const c = data.classes.find((x) => x.id === f.classId);
+        return (
+          <div className="fixed inset-0 bg-stone-900/40 z-[65] flex items-end md:items-center justify-center" onClick={() => setFachActions(null)}>
+            <div className="bg-white w-full md:max-w-sm rounded-t-2xl md:rounded-2xl shadow-xl p-4 pb-[max(2rem,env(safe-area-inset-bottom))] sheet anim-sheet" onClick={(e) => e.stopPropagation()}>
+              <div className="mb-3">
+                <div className="text-[10px] uppercase tracking-wide text-stone-400">{c?.name}</div>
+                <div className="font-semibold text-stone-800">{f.subject}</div>
+              </div>
+              <button
+                onClick={() => { setFachActions(null); setEditFachInVollbild(f); }}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50 text-left"
+              >
+                <Settings2 size={16} className="text-stone-500 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-sm text-stone-800">Fach bearbeiten</div>
+                  <div className="text-[11px] text-stone-500">Reihe, Material, KA-Termin, Gewichtung</div>
+                </div>
+              </button>
+              <button
+                onClick={() => { setFachActions(null); setKlasseVollbildId(null); onOpenFach?.(f.id); }}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-stone-50 text-left"
+              >
+                <GraduationCap size={16} className="text-stone-500 shrink-0" />
+                <div className="min-w-0">
+                  <div className="text-sm text-stone-800">Noten anzeigen</div>
+                  <div className="text-[11px] text-stone-500">Schülerliste dieses Fachs</div>
+                </div>
+              </button>
+              <button onClick={() => setFachActions(null)} className="w-full mt-2 text-sm text-stone-500 py-2">Abbrechen</button>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Fach-Modal: neu (aus Vollbild) oder bearbeiten (aus Aktionsmenü) */}
+      {fachActions && fachActions.type === "neu" && (
+        <FachModal
+          data={data}
+          initial={{ classId: fachActions.klasseId }}
+          onSave={(payload) => {
+            update((d) => {
+              let finalClassId = payload.classId;
+              if (!finalClassId && payload.newClassName) {
+                finalClassId = uid();
+                d.classes.push({ id: finalClassId, name: payload.newClassName });
+              }
+              if (!d.subjectColors) d.subjectColors = {};
+              d.subjectColors[payload.subject] = payload.color;
+              const mat = Array.isArray(payload.material) ? payload.material.filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim()) : [];
+              const rei = Array.isArray(payload.reihe) ? payload.reihe.filter((r) => r && r.kw).map((r) => ({ id: r.id || uid(), kw: r.kw, thema: (r.thema || "").trim() })) : [];
+              d.faecher.push({ id: uid(), classId: finalClassId, subject: payload.subject, color: payload.color, room: payload.room, weights: payload.weights || DEFAULT_WEIGHTS, nextTestDate: payload.nextTestDate || null, nextTestTitle: payload.nextTestTitle || null, material: mat, reihe: rei });
+              return d;
+            });
+            setFachActions(null);
+          }}
+          onClose={() => setFachActions(null)}
+        />
+      )}
+      {editFachInVollbild && (
+        <FachModal
+          data={data}
+          initial={editFachInVollbild}
+          onSave={(payload) => {
+            update((d) => {
+              if (!d.subjectColors) d.subjectColors = {};
+              d.subjectColors[payload.subject] = payload.color;
+              const mat = Array.isArray(payload.material) ? payload.material.filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim()) : [];
+              const rei = Array.isArray(payload.reihe) ? payload.reihe.filter((r) => r && r.kw).map((r) => ({ id: r.id || uid(), kw: r.kw, thema: (r.thema || "").trim() })) : [];
+              const f = d.faecher.find((x) => x.id === editFachInVollbild.id);
+              if (f) { f.classId = payload.classId || f.classId; f.subject = payload.subject; f.color = payload.color; f.room = payload.room; f.weights = payload.weights || DEFAULT_WEIGHTS; f.nextTestDate = payload.nextTestDate || null; f.nextTestTitle = payload.nextTestTitle || null; f.material = mat; f.reihe = rei; }
+              return d;
+            });
+            setEditFachInVollbild(null);
+          }}
+          onClose={() => setEditFachInVollbild(null)}
         />
       )}
 
