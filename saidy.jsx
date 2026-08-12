@@ -2830,6 +2830,213 @@ const HELP_DATA = [
 /* Detail-Sheet fuer eine Unterrichtstipp-Karte. Zeigt Titel, Kategorie, Merksatz,
    Warum-Absatz und die Umsetzungspunkte als Liste. Der Naechster-Knopf waehlt eine
    zufaellige andere Karte, damit man ohne Zurueckgehen weiterschmoekern kann. */
+/* Stunde vorbereiten – Thema, Material, Vor-Aufgaben pro konkreter Stunde
+   (Fach + Datum). Ergaenzt das fach-eigene "Immer mitnehmen"-Material um
+   einmalige Sachen: „24 Arbeitsblaetter kopieren", „Beamer holen", „Geld
+   einsammeln". Die Angaben tauchen auf der Heute-Seite in JETZT, ALS
+   NAECHSTES und DANACH HEUTE bei der jeweiligen Stunde auf. */
+function StundeVorbereitenSheet({ data, update, fach, cls, date, onClose }) {
+  if (!fach) return null;
+  const savedTopic = (data.lessonTopics || []).find((t) => t.fachId === fach.id && t.date === date);
+  const [thema, setThema] = useState(savedTopic?.text || "");
+  const [material, setMaterial] = useState(Array.isArray(savedTopic?.material) ? savedTopic.material : []);
+  const [aufgaben, setAufgaben] = useState(Array.isArray(savedTopic?.aufgaben) ? savedTopic.aufgaben : []);
+  const [matInput, setMatInput] = useState("");
+  const [aufInput, setAufInput] = useState("");
+  const suggests = bekannteStundenthemen(data.lessonTopics, data.grades, fach.id).filter((s) => !thema || s.toLowerCase().startsWith(thema.toLowerCase())).slice(0, 5);
+
+  function persist(patch) {
+    update((d) => {
+      d.lessonTopics = d.lessonTopics || [];
+      let e = d.lessonTopics.find((t) => t.fachId === fach.id && t.date === date);
+      const next = {
+        text: (patch.thema ?? thema).trim(),
+        material: (patch.material ?? material).filter(Boolean),
+        aufgaben: (patch.aufgaben ?? aufgaben).filter((a) => a && a.text),
+      };
+      const leer = !next.text && !next.material.length && !next.aufgaben.length;
+      if (leer && e) {
+        d.lessonTopics = d.lessonTopics.filter((t) => t !== e);
+      } else if (leer) {
+        // nichts zu speichern
+      } else if (e) {
+        e.text = next.text;
+        e.material = next.material;
+        e.aufgaben = next.aufgaben;
+      } else {
+        d.lessonTopics.push({ id: uid(), fachId: fach.id, date, ...next });
+      }
+      return d;
+    });
+  }
+
+  function addMaterial() {
+    const t = matInput.trim();
+    if (!t) return;
+    const neu = [...material, t];
+    setMaterial(neu);
+    setMatInput("");
+    persist({ material: neu });
+  }
+  function removeMaterial(i) {
+    const neu = material.filter((_, k) => k !== i);
+    setMaterial(neu);
+    persist({ material: neu });
+  }
+  function addAufgabe() {
+    const t = aufInput.trim();
+    if (!t) return;
+    const neu = [...aufgaben, { id: uid(), text: t, done: false }];
+    setAufgaben(neu);
+    setAufInput("");
+    persist({ aufgaben: neu });
+  }
+  function toggleAufgabe(i) {
+    const neu = aufgaben.map((a, k) => k === i ? { ...a, done: !a.done } : a);
+    setAufgaben(neu);
+    persist({ aufgaben: neu });
+  }
+  function removeAufgabe(i) {
+    const neu = aufgaben.filter((_, k) => k !== i);
+    setAufgaben(neu);
+    persist({ aufgaben: neu });
+  }
+  function commitThema(val) {
+    setThema(val);
+    persist({ thema: val });
+  }
+
+  const datumLabel = localDate(date).toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 z-[60] flex items-end md:items-center justify-center" onClick={onClose}>
+      <div className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-xl overflow-y-auto max-h-[92vh] sheet anim-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-white/90 backdrop-blur-xl border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] uppercase tracking-wide text-stone-400">Stunde vorbereiten</div>
+            <div className="font-semibold text-stone-800 truncate">{fach.subject}{cls ? ` · ${cls.name}` : ""}</div>
+            <div className="text-[11px] text-stone-500 truncate">{datumLabel}</div>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-600 shrink-0" aria-label="Schließen">
+            <X size={18} />
+          </button>
+        </div>
+
+        <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-5">
+          {/* Thema */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 block mb-1.5">Inhalt · Thema</label>
+            <input
+              className={inputCls}
+              value={thema}
+              onChange={(e) => setThema(e.target.value)}
+              onBlur={(e) => commitThema(e.target.value)}
+              placeholder="z. B. Bruchrechnung – Erweitern"
+              maxLength={200}
+            />
+            {suggests.length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-1.5">
+                {suggests.map((s) => (
+                  <button key={s} onClick={() => commitThema(s)} className="text-[11px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200 hover:bg-stone-200">
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Material dieser Stunde */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 block mb-1.5">Material · Kopien</label>
+            <p className="text-[11px] text-stone-500 mb-2 leading-snug">
+              Nur was speziell für diese Stunde nötig ist – z. B. „24 Arbeitsblätter", „Beamer", „Klassenarbeit". Was du immer brauchst, gehört ans Fach.
+            </p>
+            {material.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {material.map((m, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
+                    {m}
+                    <button onClick={() => removeMaterial(i)} className="text-stone-400 hover:text-red-500 ml-0.5" aria-label={`„${m}" entfernen`}>
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-1.5">
+              <input
+                value={matInput}
+                onChange={(e) => setMatInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addMaterial(); } }}
+                className={`${inputCls} flex-1`}
+                placeholder="z. B. 24 Arbeitsblätter"
+                maxLength={80}
+              />
+              <button onClick={addMaterial} disabled={!matInput.trim()} className="shrink-0 w-11 h-11 rounded-lg akzent-ton akzent-text flex items-center justify-center disabled:opacity-30" aria-label="Material hinzufügen">
+                <Plus size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* Vor der Stunde erledigen */}
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 block mb-1.5">Vor der Stunde erledigen</label>
+            <p className="text-[11px] text-stone-500 mb-2 leading-snug">
+              Aufgaben mit Häkchen – z. B. „Arbeitsblätter drucken", „Geld einsammeln", „Beamer holen".
+            </p>
+            {aufgaben.length > 0 && (
+              <ul className="space-y-1 mb-2">
+                {aufgaben.map((a, i) => (
+                  <li key={a.id || i} className="flex items-center gap-2 py-1">
+                    <button
+                      onClick={() => toggleAufgabe(i)}
+                      className="w-6 h-6 shrink-0 flex items-center justify-center press-scale"
+                      aria-label={`„${a.text}" ${a.done ? "als offen markieren" : "abhaken"}`}
+                    >
+                      <span className={`w-4 h-4 rounded border-2 flex items-center justify-center ${a.done ? "akzent-flaeche border-transparent" : "border-stone-300"}`}>
+                        {a.done && <Check size={11} strokeWidth={3} className="text-white" />}
+                      </span>
+                    </button>
+                    <span className={`flex-1 text-sm ${a.done ? "text-stone-400 line-through" : "text-stone-700"}`}>{a.text}</span>
+                    <button onClick={() => removeAufgabe(i)} className="w-8 h-8 flex items-center justify-center text-stone-300 hover:text-red-500" aria-label={`„${a.text}" löschen`}>
+                      <X size={13} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-1.5">
+              <input
+                value={aufInput}
+                onChange={(e) => setAufInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addAufgabe(); } }}
+                className={`${inputCls} flex-1`}
+                placeholder="z. B. Arbeitsblätter drucken"
+                maxLength={100}
+              />
+              <button onClick={addAufgabe} disabled={!aufInput.trim()} className="shrink-0 w-11 h-11 rounded-lg akzent-ton akzent-text flex items-center justify-center disabled:opacity-30" aria-label="Aufgabe hinzufügen">
+                <Plus size={16} />
+              </button>
+            </div>
+          </div>
+
+          {/* Immer-mitnehmen des Fachs zur Info anzeigen (nicht editierbar hier) */}
+          {(fach.material || []).length > 0 && (
+            <div className="pt-2 border-t border-stone-100">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 mb-1.5">Immer mitnehmen (Fach)</div>
+              <div className="flex flex-wrap gap-1">
+                {(fach.material || []).map((m, i) => (
+                  <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-stone-50 text-stone-500 border border-stone-100">{m}</span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TippKartenSheet({ karte, alleKarten, onNaechste, onClose }) {
   if (!karte) return null;
   const kapitel = KATEGORIE_ZU_KAPITEL[karte.kategorie] || "Unterrichtsmethoden";
@@ -6288,17 +6495,30 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
   const [showAttentionSheet, setShowAttentionSheet] = useState(false);
   const [showNichtVergessen, setShowNichtVergessen] = useState(false);
   const [neueAufgabe, setNeueAufgabe] = useState("");
+  /* Sheet zum Vorbereiten einer konkreten Stunde (Fach + Datum). */
+  const [prepLesson, setPrepLesson] = useState(null); // { fach, cls, date }
+
+  /* Zieht Thema + Stunden-spezifisches Material + Vor-Aufgaben aus lessonTopics
+     fuer ein Fach an einem Datum. Undefined statt null erlaubt Kurz-Zugriff. */
+  function stundenInhalt(fachId, dateStr) {
+    const t = (data.lessonTopics || []).find((x) => x.fachId === fachId && x.date === dateStr);
+    return {
+      text: t?.text || "",
+      material: Array.isArray(t?.material) ? t.material : [],
+      aufgaben: Array.isArray(t?.aufgaben) ? t.aufgaben : [],
+    };
+  }
 
   /* Reihenfolge der Blöcke auf der Heute-Seite. Nutzt CSS-Flex-`order` –
      das JSX bleibt an seinem Platz, nur die Anzeige-Reihenfolge ändert sich.
      `HEUTE_BLOECKE` ist die Wahrheit, DEFAULT_HEUTE_ORDER ist die Startanordnung.
      Neue Blöcke in beiden Listen ergänzen; unbekannte Keys werden ignoriert. */
   const HEUTE_BLOECKE = [
+    { key: "woche",           label: "Wochentagsleiste" },
     { key: "jetzt",           label: "JETZT" },
     { key: "naechstes",       label: "ALS NÄCHSTES" },
     { key: "aufmerksamkeit",  label: "Aufmerksamkeit + Nicht vergessen" },
     { key: "danach",          label: "Danach heute" },
-    { key: "woche",           label: "Wochentagsleiste" },
     { key: "rueckblick",      label: "Wochenrückblick (Fr–So)" },
     { key: "tipp",            label: "Unterrichtstipp des Tages" },
   ];
@@ -6534,7 +6754,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         const restMin = minsUntilHM(endZeit);
         const entsch = offeneEntschKlasse(cls?.id);
         const tasksHier = taskDerKlasse(cls?.id);
-        const material = fach?.material || [];
+        const fachMaterial = fach?.material || [];
+        const stunde = stundenInhalt(fach?.id, selStr);
+        const offeneVor = stunde.aufgaben.filter((a) => !a.done);
+        const hatVorbereitung = stunde.material.length + stunde.aufgaben.length > 0;
         return (
           <Card className="px-4 py-4 space-y-3" style={{ order: orderOf("jetzt") }}>
             <div className="flex items-start justify-between gap-2">
@@ -6556,12 +6779,12 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                 <div className="text-xl font-bold leading-tight" style={{ color: "var(--ink)" }}>
                   {fach?.subject || "—"}{cls ? <span className="text-stone-400 font-semibold"> · {cls.name}</span> : null}
                 </div>
-                {topic?.text && <div className="text-sm text-stone-500 truncate">{topic.text}</div>}
+                {(stunde.text || topic?.text) && <div className="text-sm text-stone-500 truncate">{stunde.text || topic?.text}</div>}
               </div>
             </div>
 
             {/* Aufgaben, die zu dieser Stunde gehören */}
-            {(entsch > 0 || tasksHier.length > 0 || (cd && cd.level === "krit") || material.length > 0) && (
+            {(entsch > 0 || tasksHier.length > 0 || (cd && cd.level === "krit") || fachMaterial.length > 0 || stunde.material.length > 0 || offeneVor.length > 0) && (
               <div className="space-y-1.5 pt-1">
                 {cd && cd.istHeute && (
                   <div className="flex items-center gap-2 text-sm text-red-700">
@@ -6581,21 +6804,56 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                     <span className="truncate">{t.title}</span>
                   </div>
                 ))}
-                {material.length > 0 && (
+                {/* Vor-Aufgaben mit Haekchen (nur offene, max 3) */}
+                {offeneVor.slice(0, 3).map((a, idx) => {
+                  const i = stunde.aufgaben.indexOf(a);
+                  return (
+                    <button
+                      key={a.id || idx}
+                      onClick={() => update((d) => {
+                        const e = (d.lessonTopics || []).find((x) => x.fachId === fach.id && x.date === selStr);
+                        if (e && Array.isArray(e.aufgaben) && e.aufgaben[i]) e.aufgaben[i].done = !e.aufgaben[i].done;
+                        return d;
+                      })}
+                      className="w-full flex items-center gap-2 text-sm text-stone-700 press-scale text-left"
+                    >
+                      <span className="w-4 h-4 shrink-0 rounded border-2 border-stone-300" />
+                      <span className="truncate">{a.text}</span>
+                    </button>
+                  );
+                })}
+                {/* Material dieser Stunde (falls vorhanden) */}
+                {stunde.material.length > 0 && (
                   <div className="flex items-start gap-2 text-sm text-stone-700">
                     <Folder size={15} className="shrink-0 text-stone-400 mt-0.5" />
-                    <span className="min-w-0">{material.join(" · ")}</span>
+                    <span className="min-w-0">{stunde.material.join(" · ")}</span>
+                  </div>
+                )}
+                {/* Standard-Material des Fachs */}
+                {fachMaterial.length > 0 && (
+                  <div className="flex items-start gap-2 text-xs text-stone-500">
+                    <Folder size={13} className="shrink-0 text-stone-300 mt-0.5" />
+                    <span className="min-w-0">Immer: {fachMaterial.join(" · ")}</span>
                   </div>
                 )}
               </div>
             )}
 
-            <button
-              onClick={() => setCaptureLesson?.({ fach, cls, date: selStr })}
-              className="w-full py-2.5 rounded-xl akzent-ton akzent-text text-sm font-medium press-scale flex items-center justify-center gap-2"
-            >
-              <BookOpen size={15} /> Stunde öffnen
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => fach && setPrepLesson({ fach, cls, date: selStr })}
+                className={`shrink-0 h-11 px-3 rounded-xl border text-sm font-medium press-scale flex items-center gap-1.5 ${hatVorbereitung ? "akzent-ton akzent-text border-transparent" : "bg-white border-stone-200 text-stone-600"}`}
+                title="Stunde vorbereiten – Thema, Material, Aufgaben"
+              >
+                <ClipboardCheck size={15} /> Vorbereiten
+              </button>
+              <button
+                onClick={() => setCaptureLesson?.({ fach, cls, date: selStr })}
+                className="flex-1 py-2.5 rounded-xl akzent-flaeche text-white text-sm font-medium press-scale flex items-center justify-center gap-2"
+              >
+                <BookOpen size={15} /> Stunde öffnen
+              </button>
+            </div>
           </Card>
         );
       })()}
@@ -6606,7 +6864,11 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       {isToday && nextUnit && (() => {
         const { fach, cls, startZeit, endZeit, topic } = lessonInfo(nextUnit);
         const bisStart = minsUntilHM(startZeit);
-        const material = fach?.material || [];
+        const fachMaterial = fach?.material || [];
+        const stunde = stundenInhalt(fach?.id, selStr);
+        // Stunden-Material zuerst (spezifisch), dann Standard-Material des Fachs
+        const alleMaterial = [...stunde.material, ...fachMaterial.filter((m) => !stunde.material.includes(m))];
+        const offeneVor = stunde.aufgaben.filter((a) => !a.done);
         const entsch = offeneEntschKlasse(cls?.id);
         const raum = fach?.room;
         return (
@@ -6630,24 +6892,47 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                 <div className="text-base font-bold text-stone-800 leading-tight">
                   {fach?.subject || "—"}{cls ? <span className="text-stone-400 font-semibold"> · {cls.name}</span> : null}
                 </div>
-                {(topic?.text || raum) && (
+                {(stunde.text || topic?.text || raum) && (
                   <div className="text-[11px] text-stone-500 truncate">
-                    {topic?.text}{topic?.text && raum ? " · " : ""}{raum}
+                    {stunde.text || topic?.text}{(stunde.text || topic?.text) && raum ? " · " : ""}{raum}
                   </div>
                 )}
               </div>
+              <button
+                onClick={() => fach && setPrepLesson({ fach, cls, date: selStr })}
+                className="shrink-0 w-9 h-9 rounded-full text-stone-400 hover:text-stone-700 flex items-center justify-center press-scale"
+                aria-label="Stunde vorbereiten"
+                title="Stunde vorbereiten"
+              >
+                <ClipboardCheck size={15} />
+              </button>
             </div>
 
-            {material.length > 0 && (
+            {alleMaterial.length > 0 && (
               <div>
                 <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">Vorher mitnehmen</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {material.map((m, i) => (
+                  {alleMaterial.map((m, i) => (
                     <span key={i} className="text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
                       {m}
                     </span>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {offeneVor.length > 0 && (
+              <div>
+                <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">Vorher erledigen</div>
+                <ul className="space-y-1">
+                  {offeneVor.slice(0, 3).map((a, idx) => (
+                    <li key={a.id || idx} className="flex items-center gap-1.5 text-xs text-stone-700">
+                      <span className="w-3 h-3 rounded border border-stone-300 shrink-0" />
+                      <span className="truncate">{a.text}</span>
+                    </li>
+                  ))}
+                  {offeneVor.length > 3 && <li className="text-[10px] text-stone-400 pl-4">+{offeneVor.length - 3} weitere</li>}
+                </ul>
               </div>
             )}
 
@@ -6816,25 +7101,45 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           <div className="rounded-2xl border border-stone-200 bg-white divide-y divide-stone-100 overflow-hidden">
             {danachUnits.map((unit) => {
               const { fach, cls, startZeit, endZeit, topic } = lessonInfo(unit);
+              const stunde = stundenInhalt(fach?.id, selStr);
+              const chips = [
+                ...stunde.material,
+                ...stunde.aufgaben.filter((a) => !a.done).map((a) => a.text),
+              ];
+              const chipCount = chips.length;
               return (
-                <button
-                  key={unit.id}
-                  onClick={() => fach && setCaptureLesson?.({ fach, cls, date: selStr })}
-                  className="w-full px-3 py-2.5 flex items-center gap-3 text-left press-scale"
-                >
-                  <span className="text-xs text-stone-500 tabular-nums w-[3.5rem] shrink-0 leading-tight">
+                <div key={unit.id} className="px-3 py-2.5 flex items-start gap-3">
+                  <span className="text-xs text-stone-500 tabular-nums w-[3.5rem] shrink-0 leading-tight pt-0.5">
                     {startZeit}
                     {endZeit && <span className="block text-[10px] text-stone-400">–{endZeit}</span>}
                   </span>
-                  <span className="w-1 h-8 rounded-full shrink-0" style={{ backgroundColor: isColor && fach?.color ? fach.color : "var(--linie)" }} />
-                  <div className="min-w-0 flex-1">
+                  <span className="w-1 self-stretch min-h-[2rem] rounded-full shrink-0" style={{ backgroundColor: isColor && fach?.color ? fach.color : "var(--linie)" }} />
+                  <button
+                    onClick={() => fach && setCaptureLesson?.({ fach, cls, date: selStr })}
+                    className="flex-1 min-w-0 text-left press-scale"
+                  >
                     <div className="text-sm font-semibold text-stone-800 truncate">
                       {fach?.subject || "—"}{cls ? <span className="text-stone-400 font-medium"> · {cls.name}</span> : null}
                     </div>
-                    {topic?.text && <div className="text-[11px] text-stone-500 truncate">{topic.text}</div>}
-                  </div>
-                  <ChevronRight size={14} className="text-stone-300 shrink-0" />
-                </button>
+                    {(stunde.text || topic?.text) && <div className="text-[11px] text-stone-500 truncate">{stunde.text || topic?.text}</div>}
+                    {chipCount > 0 && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {chips.slice(0, 3).map((c, i) => (
+                          <span key={i} className="text-[10px] px-1.5 py-0.5 rounded bg-stone-100 text-stone-600 border border-stone-200 truncate max-w-[9rem]">{c}</span>
+                        ))}
+                        {chipCount > 3 && <span className="text-[10px] px-1.5 py-0.5 text-stone-400">+{chipCount - 3}</span>}
+                      </div>
+                    )}
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); fach && setPrepLesson({ fach, cls, date: selStr }); }}
+                    className="shrink-0 w-8 h-8 rounded-lg text-stone-300 hover:text-stone-600 flex items-center justify-center press-scale"
+                    aria-label={`${fach?.subject} vorbereiten`}
+                    title="Stunde vorbereiten"
+                  >
+                    <ClipboardCheck size={14} />
+                  </button>
+                </div>
               );
             })}
           </div>
@@ -6891,8 +7196,9 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         </Card>
       )}
 
-      {/* Kompakte Wochentagsleiste am Ende – zum Vor-/Zurückblättern */}
-      <div className="pt-1" style={{ order: orderOf("woche") }}>
+      {/* Wochentagsleiste – standardmaessig direkt unter dem Datum. Position ist
+          per Sortier-Sheet aenderbar. */}
+      <div style={{ order: orderOf("woche") }}>
         <div className="flex items-center gap-0.5">
           <button onClick={() => setSelectedDate((d) => addDays(d, -7))} aria-label="Vorherige Woche" className="w-9 h-9 text-stone-300 hover:text-stone-600 shrink-0 flex items-center justify-center">
             <ChevronLeft size={13} />
@@ -6952,6 +7258,17 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             setTippSheetKarte(andere[Math.floor(Math.random() * andere.length)]);
           }}
           onClose={() => setTippSheetKarte(null)}
+        />
+      )}
+
+      {prepLesson && (
+        <StundeVorbereitenSheet
+          data={data}
+          update={update}
+          fach={prepLesson.fach}
+          cls={prepLesson.cls}
+          date={prepLesson.date}
+          onClose={() => setPrepLesson(null)}
         />
       )}
 
