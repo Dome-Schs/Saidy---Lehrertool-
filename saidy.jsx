@@ -11814,7 +11814,8 @@ function NotenLineChart({ muendlich, schriftlich, w = 320, h = 160 }) {
    funktional ab. */
 function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onClose, onOpenStudent, onFachActions }) {
   const [activeTab, setActiveTab] = useState(initialTab === "noten" ? "noten" : "unterricht");
-  const [reihenZoom, setReihenZoom] = useState(8); // Wochen sichtbar: 8 oder Halbjahr
+  const [reihenZoom, setReihenZoom] = useState(8); // Wochen sichtbar (nur beim geoeffneten Fach): 8 oder Halbjahr
+  const [expandedFachId, setExpandedFachId] = useState(null);
   const [studentDetail, setStudentDetail] = useState(null); // studentId fuer grosse Ansicht
   const cls = data.classes.find((c) => c.id === klasseId);
   if (!cls) return null;
@@ -11943,82 +11944,74 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
                       }
                       return n;
                     })();
+                    const istOffen = expandedFachId === f.id;
                     return (
-                      <li key={f.id}>
-                        <button
-                          onClick={() => onFachActions?.({ type: "actions", fach: f })}
-                          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-stone-100 bg-white hover:bg-stone-50 press-scale text-left"
-                        >
-                          <span className="w-2 h-10 rounded-full shrink-0" style={{ backgroundColor: isColor && f.color ? f.color : "#C0BBA8" }} />
-                          <div className="min-w-0 flex-1">
-                            <div className="text-sm font-semibold text-stone-800 truncate">{f.subject}</div>
-                            <div className="text-[11px] text-stone-500 truncate">
-                              {rt ? <>Reihe: <span className="text-stone-700">{rt}</span></> : (cd?.label ? <>{cd.label} · {cd.istHeute ? "heute" : cd.datum}</> : "Kein Thema hinterlegt")}
-                            </div>
-                            {(offen > 0 || (f.material || []).length > 0) && (
-                              <div className="flex items-center gap-2 mt-1">
-                                {(f.material || []).length > 0 && <span className="text-[10px] text-stone-500"><Folder size={10} className="inline mr-0.5" />{(f.material || []).slice(0, 2).join(" · ")}{(f.material || []).length > 2 ? "…" : ""}</span>}
-                                {offen > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">{offen} offen</span>}
+                      <li key={f.id} className="rounded-xl border border-stone-100 bg-white overflow-hidden">
+                        <div className="flex items-stretch">
+                          <button
+                            onClick={() => onFachActions?.({ type: "actions", fach: f })}
+                            className="flex-1 flex items-center gap-3 px-3 py-2.5 hover:bg-stone-50 press-scale text-left min-w-0"
+                          >
+                            <span className="w-2 h-10 rounded-full shrink-0" style={{ backgroundColor: isColor && f.color ? f.color : "#C0BBA8" }} />
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-semibold text-stone-800 truncate">{f.subject}</div>
+                              <div className="text-[11px] text-stone-500 truncate">
+                                {rt ? <>Reihe: <span className="text-stone-700">{rt}</span></> : (cd?.label ? <>{cd.label} · {cd.istHeute ? "heute" : cd.datum}</> : "Kein Thema hinterlegt")}
                               </div>
-                            )}
+                              {(offen > 0 || (f.material || []).length > 0) && (
+                                <div className="flex items-center gap-2 mt-1">
+                                  {(f.material || []).length > 0 && <span className="text-[10px] text-stone-500"><Folder size={10} className="inline mr-0.5" />{(f.material || []).slice(0, 2).join(" · ")}{(f.material || []).length > 2 ? "…" : ""}</span>}
+                                  {offen > 0 && <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium">{offen} offen</span>}
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                          {/* Chevron: toggelt Reihenplanung nur fuer dieses Fach. Getrennter Klickbereich, damit der grosse Kachel-Klick weiter das Aktionsmenue oeffnet. */}
+                          <button
+                            onClick={() => setExpandedFachId(istOffen ? null : f.id)}
+                            className="shrink-0 w-11 flex items-center justify-center text-stone-400 hover:text-stone-700 border-l border-stone-100"
+                            aria-label={istOffen ? "Reihenplanung zuklappen" : "Reihenplanung aufklappen"}
+                            title={istOffen ? "Reihenplanung zuklappen" : "Reihenplanung anzeigen"}
+                          >
+                            <ChevronDown size={14} className={`transition-transform ${istOffen ? "rotate-180" : ""}`} />
+                          </button>
+                        </div>
+
+                        {/* Inline Reihenplanung nur fuer dieses Fach */}
+                        {istOffen && (
+                          <div className="border-t border-stone-100 p-3 bg-stone-50">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Reihenplanung · {f.subject}</span>
+                              <button onClick={() => setReihenZoom(reihenZoom === 8 ? 24 : 8)} className="text-[10px] text-stone-500 hover:text-stone-700">
+                                {reihenZoom === 8 ? "Halbjahr" : "8 Wochen"}
+                              </button>
+                            </div>
+                            <ul className="space-y-1">
+                              {reihenSpalten.map((w) => {
+                                const eintrag = (f.reihe || []).find((r) => r.kw === w.key);
+                                return (
+                                  <li key={w.key} className={`flex items-center gap-2 rounded-lg px-2 py-1 ${w.istHeute ? "akzent-ton" : "bg-white border border-stone-100"}`}>
+                                    <span className={`w-14 shrink-0 text-[11px] tabular-nums ${w.istHeute ? "akzent-text font-semibold" : "text-stone-500"}`}>{w.label}</span>
+                                    <input
+                                      defaultValue={eintrag?.thema || ""}
+                                      onBlur={(e) => { if ((eintrag?.thema || "") !== e.target.value) setReihenZelle(f.id, w.key, e.target.value); }}
+                                      placeholder="Thema eintragen …"
+                                      className="flex-1 min-w-0 text-[12px] px-1.5 py-1 rounded border border-transparent bg-transparent hover:border-stone-200 focus:border-stone-300 focus:bg-white outline-none"
+                                      maxLength={80}
+                                    />
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                            <p className="text-[10px] text-stone-400 mt-2">Aktuelle KW ist hervorgehoben. Thema erscheint automatisch bei jeder Stunde dieser Woche.</p>
                           </div>
-                          <ChevronRight size={14} className="text-stone-300 shrink-0" />
-                        </button>
+                        )}
                       </li>
                     );
                   })}
                 </ul>
               )}
             </div>
-
-            {/* Reihenplanung-Grid */}
-            {faecher.length > 0 && (
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Reihenplanung</span>
-                  <button onClick={() => setReihenZoom(reihenZoom === 8 ? 24 : 8)} className="text-[11px] text-stone-500 hover:text-stone-700">
-                    {reihenZoom === 8 ? "Halbjahr" : "8 Wochen"}
-                  </button>
-                </div>
-                <div className="overflow-x-auto rounded-xl border border-stone-100 bg-white">
-                  <table className="text-xs w-full">
-                    <thead>
-                      <tr className="border-b border-stone-100">
-                        <th className="sticky left-0 z-10 bg-white text-left px-2 py-2 text-[10px] font-semibold uppercase text-stone-400">Fach</th>
-                        {reihenSpalten.map((w) => (
-                          <th key={w.key} className={`px-1.5 py-2 text-[10px] font-semibold ${w.istHeute ? "akzent-text" : "text-stone-400"}`}>{w.label}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {faecher.map((f) => (
-                        <tr key={f.id} className="border-b border-stone-50 last:border-0">
-                          <th className="sticky left-0 bg-white text-left px-2 py-1.5 font-medium text-stone-700 whitespace-nowrap">
-                            <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle" style={{ backgroundColor: isColor && f.color ? f.color : "#C0BBA8" }} />
-                            {f.subject.length > 8 ? f.subject.slice(0, 8) + "…" : f.subject}
-                          </th>
-                          {reihenSpalten.map((w) => {
-                            const eintrag = (f.reihe || []).find((r) => r.kw === w.key);
-                            return (
-                              <td key={w.key} className={`px-1 py-1 ${w.istHeute ? "akzent-ton" : ""}`}>
-                                <input
-                                  defaultValue={eintrag?.thema || ""}
-                                  onBlur={(e) => { if ((eintrag?.thema || "") !== e.target.value) setReihenZelle(f.id, w.key, e.target.value); }}
-                                  placeholder="—"
-                                  className="w-16 min-w-[3rem] text-[11px] px-1 py-0.5 rounded border border-transparent bg-transparent hover:border-stone-200 focus:border-stone-300 focus:bg-white outline-none"
-                                  maxLength={30}
-                                />
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-                <p className="text-[10px] text-stone-400 mt-1.5">Tipp: Zelle antippen und Thema eintragen. Aktuelle KW ist hervorgehoben.</p>
-              </div>
-            )}
           </div>
         )}
 
