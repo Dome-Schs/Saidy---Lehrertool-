@@ -4487,7 +4487,7 @@ export default function App() {
         </aside>
 
         {/* Inhalt */}
-        <main ref={mainRef} className="flex-1 md:ml-56 overflow-y-auto px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-[calc(env(safe-area-inset-bottom)+80px)] md:pb-8 md:px-8 md:pt-8 max-w-5xl">
+        <main ref={mainRef} className="flex-1 md:ml-56 overflow-y-auto px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-6 md:pb-8 md:px-8 md:pt-8 max-w-5xl">
           {saveState === "error" && (
             <div className="mb-5 flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm">
               <span className="text-red-600 shrink-0">⚠</span>
@@ -4603,8 +4603,24 @@ export default function App() {
         </main>
       </div>
 
-      {/* Feste untere Navigation (nur mobil) – scrollt weg wenn tief gescrollt */}
-      <nav className={`md:hidden fixed inset-x-0 bottom-0 backdrop-blur-xl ${fabOpen ? "z-[46]" : "z-40"} pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-transform duration-200 ${navCollapsed ? "translate-y-[calc(100%+1.5rem)]" : "translate-y-0"}`} style={{ background: "rgba(244,241,232,0.8)", borderTop: "1px solid rgba(79,88,68,0.08)" }}>
+      {/* Untere Navigation (nur mobil) – als Flex-Item am Ende des Root-Containers,
+          NICHT mehr fixed. Der Root-Container ist bereits 100dvh und passt sich an
+          iOS' URL-Bar dynamisch an; damit sitzt die Leiste garantiert am unteren
+          Bildschirmrand, ohne das bekannte fixed-„Springen" auf iOS Safari.
+          Beim Collapse wird sie per max-height eingerollt (nicht mehr translate-y,
+          das laesst sonst einen leeren Streifen unter der App). Der FAB ragt mit
+          `-mt-5` visuell nach oben; damit er beim Einrollen nicht abgeschnitten
+          wird, greift `overflow-hidden` erst am inneren Container. */}
+      <nav
+        className={`md:hidden shrink-0 relative ${fabOpen ? "z-[46]" : "z-40"} shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-[max-height,padding] duration-200 ease-out`}
+        style={{
+          background: "rgba(244,241,232,0.95)",
+          borderTop: "1px solid rgba(79,88,68,0.08)",
+          maxHeight: navCollapsed ? 0 : "calc(6rem + env(safe-area-inset-bottom))",
+          paddingBottom: navCollapsed ? 0 : "env(safe-area-inset-bottom)",
+          overflow: navCollapsed ? "hidden" : "visible",
+        }}
+      >
         {/* Übersicht · Klassen · [+] · Noten · Mehr – „Aufgaben" liegt im Mehr-Menü
             und ist zusätzlich über den Plus-Knopf erreichbar. */}
         <div className="flex items-stretch justify-around px-2 pt-2 pb-1">
