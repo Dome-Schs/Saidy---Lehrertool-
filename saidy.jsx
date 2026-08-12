@@ -3573,22 +3573,18 @@ export default function App() {
   const toastTimer = useRef(null);
   const [notenFachId, setNotenFachId] = useState(null); // Vorauswahl für den Noten-Tab
 
-  // Scroll-Listener: Nav-Leiste einblenden/ausblenden
+  /* Frueher gab es hier einen Scroll-Handler, der die Nav-Leiste beim Runter-
+     Scrollen einklappte und einen Ersatz-Pfeil einblendete. Das flackerte auf
+     iOS Safari, weil die max-height-Animation der Nav einen Layout-Reflow
+     triggerte, der neue scroll-Events ausloeste – Race Condition zwischen
+     "einklappen" und "wieder ausklappen". Fix: kein auto-collapse mehr,
+     die Nav bleibt immer sichtbar. Der 60px-Streifen ist die Kosten wert.
+     `navCollapsed` bleibt als State fuer eventuelle spaetere Nutzung, wird
+     aber nie mehr auf true gesetzt. */
   useEffect(() => {
-    const el = mainRef.current;
-    if (!el) return;
-    let prevY = 0;
-    function handleScroll() {
-      const y = el.scrollTop;
-      if (y > 60 && y > prevY) setNavCollapsed(true);
-      else if (y < prevY - 8 || y < 20) setNavCollapsed(false);
-      prevY = y;
-    }
-    el.addEventListener("scroll", handleScroll, { passive: true });
-    return () => el.removeEventListener("scroll", handleScroll);
-    /* `loaded` muss in die Abhängigkeiten: solange die Daten laden, gibt App einen
-       Ladebildschirm zurück und <main> existiert noch gar nicht. Ohne diesen Eintrag
-       liefe der Effekt genau einmal ins Leere und der Listener hinge nie am Element. */
+    /* absichtlich leer – Platzhalter, falls wir spaeter wieder ein Scroll-
+       Verhalten einfuehren wollen. */
+    return () => {};
   }, [loaded]);
   // Tab-Wechsel: immer nach oben scrollen + Nav aufklappen
   useEffect(() => {
@@ -4705,22 +4701,19 @@ export default function App() {
         </main>
       </div>
 
-      {/* Untere Navigation (nur mobil) – als Flex-Item am Ende des Root-Containers,
-          NICHT mehr fixed. Der Root-Container ist bereits 100dvh und passt sich an
-          iOS' URL-Bar dynamisch an; damit sitzt die Leiste garantiert am unteren
-          Bildschirmrand, ohne das bekannte fixed-„Springen" auf iOS Safari.
-          Beim Collapse wird sie per max-height eingerollt (nicht mehr translate-y,
-          das laesst sonst einen leeren Streifen unter der App). Der FAB ragt mit
-          `-mt-5` visuell nach oben; damit er beim Einrollen nicht abgeschnitten
-          wird, greift `overflow-hidden` erst am inneren Container. */}
+      {/* Untere Navigation (nur mobil) – Flex-Item am Ende des Root-Containers,
+          nicht mehr fixed. Der Root-Container ist 100dvh und folgt iOS' URL-Bar
+          dynamisch – Nav klebt garantiert am Bildschirmrand. Kein auto-collapse
+          beim Scrollen (siehe Kommentar am scroll-useEffect), deshalb hier auch
+          keine max-height Animation mehr – die verursachte auf iOS ein Flackern.
+          overflow visible, damit der FAB (-mt-5) nach oben ragen darf. */}
       <nav
-        className={`md:hidden shrink-0 relative ${fabOpen ? "z-[46]" : "z-40"} shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)] transition-[max-height,padding] duration-200 ease-out`}
+        className={`md:hidden shrink-0 relative ${fabOpen ? "z-[46]" : "z-40"} shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]`}
         style={{
           background: "rgba(244,241,232,0.95)",
           borderTop: "1px solid rgba(79,88,68,0.08)",
-          maxHeight: navCollapsed ? 0 : "calc(6rem + env(safe-area-inset-bottom))",
-          paddingBottom: navCollapsed ? 0 : "env(safe-area-inset-bottom)",
-          overflow: navCollapsed ? "hidden" : "visible",
+          paddingBottom: "env(safe-area-inset-bottom)",
+          overflow: "visible",
         }}
       >
         {/* Übersicht · Klassen · [+] · Noten · Mehr – „Aufgaben" liegt im Mehr-Menü
@@ -4791,21 +4784,8 @@ export default function App() {
         </div>
       </nav>
 
-      {/* Ersatz-Knopf unten links, wenn die Nav weggescrollt ist. Zeigt bewusst NICHT
-          das Symbol des aktuellen Bereichs - das las sich wie eine Zustandsanzeige
-          ("du bist in Klassen") und niemand kam auf die Idee, dass es ein Knopf ist.
-          Ein Pfeil nach oben zeigt, was passiert: die Leiste kommt zurueck. */}
-      <button
-        onClick={() => setNavCollapsed(false)}
-        aria-label="Navigation einblenden"
-        className={`md:hidden fixed left-4 z-40 w-12 h-12 rounded-full akzent-flaeche shadow-lg flex items-center justify-center transition-all duration-200 ${
-          navCollapsed
-            ? "bottom-[calc(env(safe-area-inset-bottom)+16px)] opacity-100 scale-100"
-            : "bottom-0 opacity-0 scale-75 pointer-events-none"
-        }`}
-      >
-        <ChevronDown size={22} strokeWidth={2.4} className="text-white rotate-180" />
-      </button>
+      {/* Ehemals Ersatz-Knopf fuer die eingeklappte Nav – entfernt, weil die
+          Nav jetzt immer sichtbar bleibt (kein auto-collapse mehr). */}
 
       {/* Mehr-Menü (mobil) */}
       {showMore && (
