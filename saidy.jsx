@@ -880,9 +880,9 @@ function Toggle({ checked, onChange }) {
   );
 }
 
-function Card({ children, className = "", luft = false }) {
+function Card({ children, className = "", luft = false, style }) {
   const base = luft ? "karte-luft" : "karte";
-  return <div className={`${base} rounded-xl ${className}`}>{children}</div>;
+  return <div className={`${base} rounded-xl ${className}`} style={style}>{children}</div>;
 }
 
 /* Sicherheitsabfrage vor dem Löschen. Gesteuert über einen State { title, message, onConfirm }. */
@@ -6272,6 +6272,56 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
   const [showAttentionSheet, setShowAttentionSheet] = useState(false);
   const [showNichtVergessen, setShowNichtVergessen] = useState(false);
   const [neueAufgabe, setNeueAufgabe] = useState("");
+
+  /* Reihenfolge der Blöcke auf der Heute-Seite. Nutzt CSS-Flex-`order` –
+     das JSX bleibt an seinem Platz, nur die Anzeige-Reihenfolge ändert sich.
+     `HEUTE_BLOECKE` ist die Wahrheit, DEFAULT_HEUTE_ORDER ist die Startanordnung.
+     Neue Blöcke in beiden Listen ergänzen; unbekannte Keys werden ignoriert. */
+  const HEUTE_BLOECKE = [
+    { key: "jetzt",           label: "JETZT" },
+    { key: "naechstes",       label: "ALS NÄCHSTES" },
+    { key: "aufmerksamkeit",  label: "Aufmerksamkeit + Nicht vergessen" },
+    { key: "danach",          label: "Danach heute" },
+    { key: "woche",           label: "Wochentagsleiste" },
+    { key: "rueckblick",      label: "Wochenrückblick (Fr–So)" },
+    { key: "tipp",            label: "Unterrichtstipp des Tages" },
+  ];
+  const DEFAULT_HEUTE_ORDER = HEUTE_BLOECKE.map((b) => b.key);
+  const gespeicherteOrdnung = data.settings?.heuteOrder;
+  const heuteOrder = (() => {
+    if (!Array.isArray(gespeicherteOrdnung) || !gespeicherteOrdnung.length) return DEFAULT_HEUTE_ORDER;
+    /* Bekannte gespeicherte Keys zuerst (in gespeicherter Reihenfolge),
+       neue/unbekannte hinten dran – so tauchen neu eingeführte Blöcke
+       automatisch auf, ohne die vorhandene Sortierung zu zerschießen. */
+    const bekannt = gespeicherteOrdnung.filter((k) => DEFAULT_HEUTE_ORDER.includes(k));
+    const rest = DEFAULT_HEUTE_ORDER.filter((k) => !bekannt.includes(k));
+    return [...bekannt, ...rest];
+  })();
+  const orderOf = (key) => {
+    const i = heuteOrder.indexOf(key);
+    return i === -1 ? 999 : i + 1; // Header bleibt bei 0
+  };
+  const [showSortSheet, setShowSortSheet] = useState(false);
+  function moveBlock(key, delta) {
+    update((d) => {
+      const cur = Array.isArray(d.settings?.heuteOrder) && d.settings.heuteOrder.length ? [...d.settings.heuteOrder] : [...DEFAULT_HEUTE_ORDER];
+      // Fehlende bekannte Keys hinten ergänzen
+      DEFAULT_HEUTE_ORDER.forEach((k) => { if (!cur.includes(k)) cur.push(k); });
+      const i = cur.indexOf(key);
+      const j = i + delta;
+      if (i < 0 || j < 0 || j >= cur.length) return d;
+      [cur[i], cur[j]] = [cur[j], cur[i]];
+      d.settings = { ...d.settings, heuteOrder: cur };
+      return d;
+    });
+  }
+  function resetHeuteOrder() {
+    update((d) => { d.settings = { ...d.settings, heuteOrder: DEFAULT_HEUTE_ORDER }; return d; });
+  }
+  function neuGeordnetIstAktiv() {
+    if (!Array.isArray(gespeicherteOrdnung) || !gespeicherteOrdnung.length) return false;
+    return gespeicherteOrdnung.join(",") !== DEFAULT_HEUTE_ORDER.join(",");
+  }
   function addQuickTask() {
     const text = neueAufgabe.trim();
     if (!text) return;
@@ -6284,9 +6334,9 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
   }
 
   return (
-    <div className="space-y-3">
-      {/* Zeile 1: Wordmark + Icon-Actions */}
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col gap-3">
+      {/* Zeile 1: Wordmark + Icon-Actions – bleibt IMMER an Position 0 (Header) */}
+      <div className="flex items-center justify-between" style={{ order: 0 }}>
         <div className="flex items-center gap-2 select-none">
           <span className="w-7 h-7 rounded-lg akzent-ton flex items-center justify-center shrink-0" aria-hidden="true">
             <span className="text-sm font-bold akzent-text leading-none">T</span>
@@ -6320,6 +6370,14 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shrink-0 press-scale ${isColor ? "bg-stone-100 hover:bg-stone-200 text-stone-400" : "akzent-ton akzent-text"}`}
           >
             <Sparkles size={14} />
+          </button>
+          <button
+            onClick={() => setShowSortSheet(true)}
+            title="Reihenfolge der Bereiche anpassen"
+            aria-label="Reihenfolge der Bereiche anpassen"
+            className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shrink-0 press-scale ${neuGeordnetIstAktiv() ? "akzent-ton akzent-text" : "bg-stone-100 hover:bg-stone-200 text-stone-500"}`}
+          >
+            <GripVertical size={15} />
           </button>
         </div>
       </div>
@@ -6359,8 +6417,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       </div>
 
       {/* Wochenrueckblick: nur zwischen Freitag 12 Uhr und Sonntag Nacht sichtbar,
-          per X pro Woche ausblendbar. */}
+          per X pro Woche ausblendbar. Der Wrapper-Div traegt das flex-`order`
+          fuer die Sortierbarkeit; ohne Rueckblick wird gar nichts gerendert. */}
       {wochenBericht && (
+        <div style={{ order: orderOf("rueckblick") }}>
         <Card className="px-4 py-3.5 border-l-2 akzent-rand">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-semibold uppercase tracking-wide akzent-text">Wochenrückblick · KW {wochenBericht.kw}</span>
@@ -6447,6 +6507,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             </div>
           )}
         </Card>
+        </div>
       )}
 
       {/* ───────── JETZT ─────────
@@ -6459,7 +6520,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         const tasksHier = taskDerKlasse(cls?.id);
         const material = fach?.material || [];
         return (
-          <Card className="px-4 py-4 space-y-3">
+          <Card className="px-4 py-4 space-y-3" style={{ order: orderOf("jetzt") }}>
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Jetzt</span>
@@ -6533,7 +6594,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         const entsch = offeneEntschKlasse(cls?.id);
         const raum = fach?.room;
         return (
-          <Card className="px-4 py-3.5 space-y-2.5">
+          <Card className="px-4 py-3.5 space-y-2.5" style={{ order: orderOf("naechstes") }}>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">Als Nächstes</span>
@@ -6585,7 +6646,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       })()}
 
       {/* ───────── Aufmerksamkeit + Nicht vergessen (2-spaltig auf Desktop) ───────── */}
-      <div className="flex flex-col gap-2 md:grid md:grid-cols-2 md:items-start">
+      <div className="flex flex-col gap-2 md:grid md:grid-cols-2 md:items-start" style={{ order: orderOf("aufmerksamkeit") }}>
         {/* Aufmerksamkeit */}
         <button
           onClick={() => setShowAttentionSheet(true)}
@@ -6731,7 +6792,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
 
       {/* ───────── Danach heute – kompakte Liste der restlichen Stunden ───────── */}
       {isToday && danachUnits.length > 0 && (
-        <div>
+        <div style={{ order: orderOf("danach") }}>
           <div className="flex items-center justify-between mb-1.5 px-1">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Danach heute</span>
             <button onClick={() => onNavigate?.("stundenplan")} className="text-[11px] text-stone-400 hover:text-stone-600">Stundenplan →</button>
@@ -6764,9 +6825,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         </div>
       )}
 
-      {/* Fallback: kein Heute (Wochenende / anderer Tag ausgewählt) – Tagesübersicht */}
+      {/* Fallback: kein Heute (Wochenende / anderer Tag ausgewählt) – Tagesübersicht.
+          Nutzt denselben Slot wie "Danach heute", weil beide zur Tagesplanung gehoeren. */}
       {!isToday && (
-        <div>
+        <div style={{ order: orderOf("danach") }}>
           <div className="flex items-center justify-between mb-1.5 px-1">
             <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">
               {selectedDate.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" })}
@@ -6805,15 +6867,16 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         </div>
       )}
 
-      {/* Feiertagsfall Heute: kein Unterricht mehr, aber weiterhin ein sanfter Hinweis */}
+      {/* Feiertagsfall Heute: kein Unterricht mehr, aber weiterhin ein sanfter Hinweis.
+          Bekommt dieselbe Order wie "Danach heute" – gemeinsamer Slot fuer Tages-Info. */}
       {isToday && !currentUnit && !nextUnit && danachUnits.length === 0 && (
-        <Card className="px-3 py-3 text-xs text-stone-500">
+        <Card className="px-3 py-3 text-xs text-stone-500" style={{ order: orderOf("danach") }}>
           {dayUnits.length === 0 ? "Heute kein regulärer Unterricht." : "Alle Stunden für heute vorbei."}
         </Card>
       )}
 
       {/* Kompakte Wochentagsleiste am Ende – zum Vor-/Zurückblättern */}
-      <div className="pt-1">
+      <div className="pt-1" style={{ order: orderOf("woche") }}>
         <div className="flex items-center gap-0.5">
           <button onClick={() => setSelectedDate((d) => addDays(d, -7))} aria-label="Vorherige Woche" className="w-9 h-9 text-stone-300 hover:text-stone-600 shrink-0 flex items-center justify-center">
             <ChevronLeft size={13} />
@@ -6849,6 +6912,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         <button
           onClick={() => setTippSheetKarte(tippDesTages)}
           className="karte-luft w-full text-left flex items-center gap-3 px-3 py-2.5 press-scale"
+          style={{ order: orderOf("tipp") }}
         >
           <span className="w-9 h-9 rounded-lg akzent-ton flex items-center justify-center shrink-0">
             <Lightbulb size={16} className="akzent-text" />
@@ -6873,6 +6937,64 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           }}
           onClose={() => setTippSheetKarte(null)}
         />
+      )}
+
+      {/* Sortier-Sheet: Reihenfolge der Heute-Blöcke anpassen (hoch/runter) */}
+      {showSortSheet && (
+        <div className="fixed inset-0 bg-stone-900/40 z-50 flex items-end md:items-center justify-center" onClick={() => setShowSortSheet(false)}>
+          <div className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-xl p-4 pb-[max(2rem,env(safe-area-inset-bottom))] max-h-[85vh] overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold text-stone-800">Reihenfolge bearbeiten</div>
+              <button onClick={() => setShowSortSheet(false)} className="w-9 h-9 flex items-center justify-center text-stone-400" aria-label="Schließen"><X size={18} /></button>
+            </div>
+            <p className="text-xs text-stone-500 mb-3 leading-snug">
+              Verschiebe Bereiche der Heute-Seite mit den Pfeilen. Reihenfolge speichert sich automatisch – die Karten bleiben natürlich nur sichtbar, wenn sie etwas zu zeigen haben.
+            </p>
+            <ul className="space-y-1.5 mb-4">
+              {heuteOrder.map((key, i) => {
+                const block = HEUTE_BLOECKE.find((b) => b.key === key);
+                if (!block) return null;
+                return (
+                  <li key={key} className="flex items-center gap-2 px-2 py-2 rounded-lg bg-stone-50 border border-stone-100">
+                    <span className="w-6 h-6 rounded-full akzent-ton akzent-text text-[11px] font-bold flex items-center justify-center shrink-0 tabular-nums">{i + 1}</span>
+                    <span className="flex-1 text-sm text-stone-800 min-w-0 truncate">{block.label}</span>
+                    <button
+                      onClick={() => moveBlock(key, -1)}
+                      disabled={i === 0}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-500 hover:bg-white disabled:opacity-30 disabled:cursor-default"
+                      aria-label={`„${block.label}" nach oben`}
+                    >
+                      <ChevronLeft size={16} className="rotate-90" />
+                    </button>
+                    <button
+                      onClick={() => moveBlock(key, +1)}
+                      disabled={i === heuteOrder.length - 1}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg text-stone-500 hover:bg-white disabled:opacity-30 disabled:cursor-default"
+                      aria-label={`„${block.label}" nach unten`}
+                    >
+                      <ChevronRight size={16} className="rotate-90" />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <div className="flex gap-2">
+              <button
+                onClick={resetHeuteOrder}
+                disabled={!neuGeordnetIstAktiv()}
+                className="flex-1 py-2 rounded-lg text-sm text-stone-600 border border-stone-200 hover:bg-stone-50 disabled:opacity-40 disabled:cursor-default"
+              >
+                Standard wiederherstellen
+              </button>
+              <button
+                onClick={() => setShowSortSheet(false)}
+                className="flex-1 py-2 rounded-lg text-sm font-medium akzent-ton akzent-text"
+              >
+                Fertig
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
     </div>
