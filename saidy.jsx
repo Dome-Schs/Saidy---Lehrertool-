@@ -2827,6 +2827,107 @@ const HELP_DATA = [
   },
 ];
 
+/* Klassenarbeit-Rueckgabe-Sheet: pro Klasse eine Liste aller Klassenarbeiten
+   mit noch offenen Rueckgaben. Zeigt pro Arbeit die Kinder die noch nicht
+   returniert haben (typischerweise: waren krank am Rueckgabe-Tag) mit Haekchen
+   zum Abhaken. Aufgeraeumt: fertig zurueckgegebene Arbeiten verschwinden. */
+function KaRueckgabeSheet({ data, update, klasseId, onClose }) {
+  const klasse = data.classes.find((c) => c.id === klasseId);
+  const kinder = data.students.filter((s) => s.classId === klasseId && !s.deletedAt);
+  const kidById = Object.fromEntries(kinder.map((s) => [s.id, s]));
+  /* Gruppiere Grades zu Klassenarbeiten via fachId+date+title. Nimm nur
+     schriftliche und nur solche wo noch nicht alle returned sind. */
+  const arbeiten = (() => {
+    const map = new Map();
+    (data.grades || []).forEach((g) => {
+      if (g.category !== "schriftlich" || g.classId !== klasseId) return;
+      if (!kidById[g.studentId]) return;
+      const key = `${g.fachId}|${g.date}|${g.title || ""}`;
+      if (!map.has(key)) map.set(key, { fachId: g.fachId, date: g.date, title: g.title || "Klassenarbeit", grades: [] });
+      map.get(key).grades.push(g);
+    });
+    return [...map.values()]
+      .map((a) => ({
+        ...a,
+        fach: data.faecher.find((f) => f.id === a.fachId),
+        offen: a.grades.filter((g) => !g.returned),
+      }))
+      .filter((a) => a.offen.length > 0 && a.grades.length > a.offen.length ? true : a.offen.length > 0)
+      .sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+  })();
+
+  function markiere(gradeId, returned) {
+    update((d) => {
+      const g = (d.grades || []).find((x) => x.id === gradeId);
+      if (g) g.returned = returned;
+      return d;
+    });
+  }
+  function alleZurueckgeben(gradeIds) {
+    update((d) => {
+      const set = new Set(gradeIds);
+      (d.grades || []).forEach((g) => { if (set.has(g.id)) g.returned = true; });
+      return d;
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/40 z-[60] flex items-end md:items-center justify-center" onClick={onClose}>
+      <div className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-xl p-4 pb-[max(2rem,env(safe-area-inset-bottom))] max-h-[85vh] overflow-y-auto sheet anim-sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-3">
+          <div className="min-w-0">
+            <div className="text-[10px] uppercase tracking-wide text-stone-400">Klassenarbeiten zurückgeben</div>
+            <div className="font-semibold text-stone-800 truncate">{klasse?.name || "Klasse"}</div>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center text-stone-400" aria-label="Schließen"><X size={18} /></button>
+        </div>
+
+        {arbeiten.length === 0 ? (
+          <p className="text-sm text-stone-500 py-6 text-center">Keine offenen Rückgaben – alles zurückgegeben 👍</p>
+        ) : (
+          <ul className="space-y-3">
+            {arbeiten.map((a) => (
+              <li key={`${a.fachId}-${a.date}-${a.title}`} className="border border-stone-100 rounded-xl p-3 bg-stone-50">
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold text-stone-800 truncate">{a.title}</div>
+                    <div className="text-[11px] text-stone-500">{a.fach?.subject} · {localDate(a.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}</div>
+                  </div>
+                  <button
+                    onClick={() => alleZurueckgeben(a.offen.map((g) => g.id))}
+                    className="shrink-0 text-[11px] px-2 py-1 rounded-lg akzent-ton akzent-text press-scale"
+                    title="Alle als zurückgegeben markieren"
+                  >
+                    Alle
+                  </button>
+                </div>
+                <ul className="space-y-1">
+                  {a.offen.map((g) => {
+                    const s = kidById[g.studentId];
+                    return (
+                      <li key={g.id} className="flex items-center gap-2">
+                        <button
+                          onClick={() => markiere(g.id, true)}
+                          className="w-6 h-6 shrink-0 flex items-center justify-center press-scale"
+                          aria-label={`Klassenarbeit von ${s?.name} als zurückgegeben markieren`}
+                        >
+                          <span className="w-4 h-4 rounded border-2 border-stone-300" />
+                        </button>
+                        <span className="flex-1 text-sm text-stone-700 truncate">{s?.name || "?"}</span>
+                        {g.value != null && <span className="text-[11px] text-stone-500 tabular-nums shrink-0">{Number(g.value).toString().replace(".", ",")}</span>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* Detail-Sheet fuer eine Unterrichtstipp-Karte. Zeigt Titel, Kategorie, Merksatz,
    Warum-Absatz und die Umsetzungspunkte als Liste. Der Naechster-Knopf waehlt eine
    zufaellige andere Karte, damit man ohne Zurueckgehen weiterschmoekern kann. */
@@ -4886,6 +4987,17 @@ function localDate(str) {
 }
 
 /* Aktuelle Schulwoche: Kalenderwoche (ISO 8601) und Datumsbereich Mo–Fr. */
+/* Holt das Reihen-Thema fuer ein Fach an einem Datum (schauct in f.reihe nach
+   dem passenden KW-Eintrag). Undefined wenn nichts geplant. */
+function reiheThemaFor(fach, dateStr) {
+  if (!fach || !Array.isArray(fach.reihe) || !fach.reihe.length) return "";
+  const d = typeof dateStr === "string" ? localDate(dateStr) : dateStr;
+  const w = currentSchoolWeek(d);
+  const kw = `${w.monday.getFullYear()}-W${String(w.kw).padStart(2, "0")}`;
+  const z = fach.reihe.find((r) => r.kw === kw);
+  return (z?.thema || "").trim();
+}
+
 function currentSchoolWeek(ref = new Date()) {
   const d = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate());
   const dow = (d.getDay() + 6) % 7; // 0 = Montag
@@ -5661,6 +5773,23 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
         <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-5" hidden={activeTab !== "vorbereitung"}>
           <div>
             <label className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 block mb-1.5">Inhalt · Thema</label>
+            {(() => {
+              const rt = reiheThemaFor(fach, date);
+              if (!rt || rt === topic) return null;
+              return (
+                <button
+                  onClick={() => saveTopic(rt)}
+                  className="w-full text-left mb-2 rounded-lg akzent-ton akzent-rand border px-3 py-2 text-xs flex items-center gap-2 press-scale"
+                >
+                  <BookOpen size={13} className="akzent-text shrink-0" />
+                  <span className="min-w-0 flex-1">
+                    <span className="text-stone-500 uppercase tracking-wide text-[10px] block leading-none mb-0.5">Reihenplanung diese Woche</span>
+                    <span className="akzent-text font-medium truncate block">{rt}</span>
+                  </span>
+                  <span className="text-[10px] text-stone-500 shrink-0">übernehmen →</span>
+                </button>
+              );
+            })()}
             <input
               className={inputCls}
               value={topic}
@@ -6396,6 +6525,21 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
     return m ? `in ${h} Std. ${m} Min.` : `in ${h} Std.`;
   }
 
+  /* Offene KA-Rueckgaben einer Klasse: pro Klassenarbeit die Grades die noch
+     nicht als `returned` markiert sind – meist weil die Kinder am Rueckgabe-
+     tag gefehlt haben. */
+  function offeneRueckgabenKlasse(clsId) {
+    if (!clsId) return [];
+    const raw = (data.grades || []).filter((g) => g.category === "schriftlich" && g.classId === clsId && !g.returned);
+    const byArbeit = new Map();
+    raw.forEach((g) => {
+      const key = `${g.fachId}|${g.date}|${g.title || ""}`;
+      if (!byArbeit.has(key)) byArbeit.set(key, []);
+      byArbeit.get(key).push(g);
+    });
+    return [...byArbeit.entries()].map(([, grades]) => grades);
+  }
+
   /* Offene Entschuldigungen einer Klasse – für die JETZT- und NÄCHSTES-Karte. */
   function offeneEntschKlasse(clsId) {
     if (!clsId) return 0;
@@ -6466,17 +6610,23 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
      nutzen setCaptureLesson mit initialTab, damit alles in einem
      Sheet zusammenlaeuft und der Nutzer bei Bedarf auf Noten wechseln kann. */
   const oeffneVorbereitung = (fach, cls, date) => setCaptureLesson?.({ fach, cls, date, initialTab: "vorbereitung" });
+  const [rueckgabeKlasseId, setRueckgabeKlasseId] = useState(null);
 
   /* Zieht Thema + Stunden-spezifisches Material + Vor-Aufgaben aus lessonTopics
-     fuer ein Fach an einem Datum. Undefined statt null erlaubt Kurz-Zugriff. */
+     fuer ein Fach an einem Datum. `reihe` traegt zusaetzlich das Reihen-Thema
+     dieser Kalenderwoche (falls im FachModal geplant), damit bei leerem
+     Stundenthema wenigstens die Reihenplanung sichtbar wird. */
   function stundenInhalt(fachId, dateStr) {
+    const fach = data.faecher.find((f) => f.id === fachId);
     const t = (data.lessonTopics || []).find((x) => x.fachId === fachId && x.date === dateStr);
     return {
       text: t?.text || "",
+      reihe: fach ? reiheThemaFor(fach, dateStr) : "",
       material: Array.isArray(t?.material) ? t.material : [],
       aufgaben: Array.isArray(t?.aufgaben) ? t.aufgaben : [],
     };
   }
+  const themaAnzeige = (s) => s.text || s.reihe || "";
 
   /* Reihenfolge der Blöcke auf der Heute-Seite. Nutzt CSS-Flex-`order` –
      das JSX bleibt an seinem Platz, nur die Anzeige-Reihenfolge ändert sich.
@@ -6722,6 +6872,9 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         const { fach, cls, startZeit, endZeit, topic, cd } = lessonInfo(currentUnit);
         const restMin = minsUntilHM(endZeit);
         const entsch = offeneEntschKlasse(cls?.id);
+        const rueckgaben = offeneRueckgabenKlasse(cls?.id);
+        const rueckKinder = new Set();
+        rueckgaben.forEach((gr) => gr.forEach((g) => rueckKinder.add(g.studentId)));
         const tasksHier = taskDerKlasse(cls?.id);
         const fachMaterial = fach?.material || [];
         const stunde = stundenInhalt(fach?.id, selStr);
@@ -6751,7 +6904,16 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                 <div className="text-xl font-bold leading-tight" style={{ color: "var(--ink)" }}>
                   {fach?.subject || "—"}{cls ? <span className="text-stone-400 font-semibold"> · {cls.name}</span> : null}
                 </div>
-                {(stunde.text || topic?.text) && <div className="text-sm text-stone-500 truncate">{stunde.text || topic?.text}</div>}
+                {(() => {
+                  const anzeige = stunde.text || topic?.text || stunde.reihe;
+                  if (!anzeige) return null;
+                  const istReihe = !stunde.text && !topic?.text && !!stunde.reihe;
+                  return (
+                    <div className={`text-sm truncate ${istReihe ? "text-stone-400 italic" : "text-stone-500"}`}>
+                      {istReihe && <span className="text-[10px] uppercase tracking-wide mr-1 not-italic">Reihe: </span>}{anzeige}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -6770,6 +6932,21 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                     <span className="truncate">{entsch} {entsch === 1 ? "Entschuldigung prüfen" : "Entschuldigungen prüfen"}</span>
                   </button>
                 )}
+                {rueckKinder.size > 0 && (() => {
+                  const namen = [...rueckKinder].map((sid) => data.students.find((s) => s.id === sid)?.name?.split(" ")[0]).filter(Boolean).slice(0, 3);
+                  const rest = rueckKinder.size - namen.length;
+                  return (
+                    <button
+                      onClick={() => setRueckgabeKlasseId(cls?.id)}
+                      className="w-full flex items-center gap-2 text-sm text-amber-700 press-scale text-left"
+                    >
+                      <FileText size={15} className="shrink-0" />
+                      <span className="truncate">
+                        Klassenarbeit zurückgeben{namen.length ? `: ${namen.join(", ")}` : ""}{rest > 0 ? ` +${rest}` : ""}
+                      </span>
+                    </button>
+                  );
+                })()}
                 {tasksHier.slice(0, 3).map((t) => (
                   <div key={t.id} className="flex items-center gap-2 text-sm text-stone-700">
                     <FileText size={15} className="shrink-0 text-stone-400" />
@@ -6864,11 +7041,16 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                 <div className="text-base font-bold text-stone-800 leading-tight">
                   {fach?.subject || "—"}{cls ? <span className="text-stone-400 font-semibold"> · {cls.name}</span> : null}
                 </div>
-                {(stunde.text || topic?.text || raum) && (
-                  <div className="text-[11px] text-stone-500 truncate">
-                    {stunde.text || topic?.text}{(stunde.text || topic?.text) && raum ? " · " : ""}{raum}
-                  </div>
-                )}
+                {(() => {
+                  const thema = stunde.text || topic?.text || stunde.reihe;
+                  const istReihe = !stunde.text && !topic?.text && !!stunde.reihe;
+                  if (!thema && !raum) return null;
+                  return (
+                    <div className={`text-[11px] truncate ${istReihe ? "text-stone-400 italic" : "text-stone-500"}`}>
+                      {istReihe && thema && <span className="not-italic">Reihe: </span>}{thema}{thema && raum ? " · " : ""}{raum}
+                    </div>
+                  );
+                })()}
               </div>
               <button
                 onClick={() => fach && oeffneVorbereitung(fach, cls, selStr)}
@@ -7093,7 +7275,12 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                     <div className="text-sm font-semibold text-stone-800 truncate">
                       {fach?.subject || "—"}{cls ? <span className="text-stone-400 font-medium"> · {cls.name}</span> : null}
                     </div>
-                    {(stunde.text || topic?.text) && <div className="text-[11px] text-stone-500 truncate">{stunde.text || topic?.text}</div>}
+                    {(() => {
+                      const thema = stunde.text || topic?.text || stunde.reihe;
+                      if (!thema) return null;
+                      const istReihe = !stunde.text && !topic?.text && !!stunde.reihe;
+                      return <div className={`text-[11px] truncate ${istReihe ? "text-stone-400 italic" : "text-stone-500"}`}>{thema}</div>;
+                    })()}
                     {chipCount > 0 && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {chips.slice(0, 3).map((c, i) => (
@@ -7233,6 +7420,15 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         />
       )}
 
+      {rueckgabeKlasseId && (
+        <KaRueckgabeSheet
+          data={data}
+          update={update}
+          klasseId={rueckgabeKlasseId}
+          onClose={() => setRueckgabeKlasseId(null)}
+        />
+      )}
+
       {/* Sortier-Sheet: Reihenfolge der Heute-Blöcke anpassen (hoch/runter) */}
       {showSortSheet && (
         <div className="fixed inset-0 bg-stone-900/40 z-50 flex items-end md:items-center justify-center" onClick={() => setShowSortSheet(false)}>
@@ -7354,6 +7550,38 @@ function FachModal({ data, initial, onSave, onClose }) {
     setMaterial((m) => m.filter((_, k) => k !== i));
   }
 
+  /* Unterrichtsreihen-Planung: pro Kalenderwoche ein Thema. Beim Oeffnen
+     einer Stunde in dieser KW wird das Thema als Vorschlag angezeigt.
+     Datenmodell: reihe = [{id, kw, thema}] mit kw als "YYYY-Wnn". */
+  const [reihe, setReihe] = useState(Array.isArray(initial?.reihe) ? [...initial.reihe] : []);
+  const heuteKW = (() => {
+    const w = currentSchoolWeek();
+    return `${w.monday.getFullYear()}-W${String(w.kw).padStart(2, "0")}`;
+  })();
+  function addReiheZeile() {
+    // Neue Zeile: naechste noch nicht belegte KW ab heuteKW ODER heuteKW selbst
+    const belegt = new Set(reihe.map((r) => r.kw));
+    let neu = heuteKW;
+    if (belegt.has(neu)) {
+      // gehe wochenweise vor bis zur ersten freien KW (max 20 Wochen Suche)
+      const [y, kw] = neu.split("-W").map(Number);
+      let cursor = new Date(y, 0, 1 + (kw - 1) * 7);
+      for (let i = 0; i < 20; i++) {
+        cursor.setDate(cursor.getDate() + 7);
+        const w = currentSchoolWeek(cursor);
+        const kwStr = `${w.monday.getFullYear()}-W${String(w.kw).padStart(2, "0")}`;
+        if (!belegt.has(kwStr)) { neu = kwStr; break; }
+      }
+    }
+    setReihe((r) => [...r, { id: uid(), kw: neu, thema: "" }]);
+  }
+  function setReiheZeile(i, patch) {
+    setReihe((r) => r.map((z, k) => k === i ? { ...z, ...patch } : z));
+  }
+  function removeReiheZeile(i) {
+    setReihe((r) => r.filter((_, k) => k !== i));
+  }
+
   const existingSubjects = Array.from(new Set(data.faecher.map((f) => f.subject))).filter(Boolean).sort((a, b) => a.localeCompare(b, "de"));
 
   function pickSubject(s) {
@@ -7367,7 +7595,7 @@ function FachModal({ data, initial, onSave, onClose }) {
     if (classId !== "__new__" && !classId) return;
     if (classId === "__new__" && !finalClassName) return;
     if (!subject.trim()) return;
-    onSave({ classId: classId === "__new__" ? null : classId, newClassName: finalClassName, subject: subject.trim(), color, room: room.trim(), weights, nextTestDate: nextTestDate || null, nextTestTitle: nextTestTitle.trim() || null, material });
+    onSave({ classId: classId === "__new__" ? null : classId, newClassName: finalClassName, subject: subject.trim(), color, room: room.trim(), weights, nextTestDate: nextTestDate || null, nextTestTitle: nextTestTitle.trim() || null, material, reihe: reihe.filter((r) => r.kw) });
   }
 
   return (
@@ -7527,6 +7755,50 @@ function FachModal({ data, initial, onSave, onClose }) {
                 <Plus size={16} />
               </button>
             </div>
+          </Field>
+
+          <Field label="Unterrichtsreihe (pro Kalenderwoche)">
+            <p className="text-xs text-stone-500 mb-2">
+              Was steht in welcher KW an? Beim Öffnen einer Stunde in dieser Woche schlägt Tuvi dir das Thema als Vorschlag vor. Ferien werden übersprungen.
+            </p>
+            {reihe.length > 0 && (
+              <ul className="space-y-1.5 mb-2">
+                {[...reihe].sort((a, b) => (a.kw || "").localeCompare(b.kw || "")).map((z) => {
+                  const i = reihe.indexOf(z);
+                  const aktuell = z.kw === heuteKW;
+                  return (
+                    <li key={z.id || i} className={`flex items-center gap-1.5 rounded-lg border px-2 py-1.5 ${aktuell ? "akzent-ton akzent-rand" : "bg-stone-50 border-stone-100"}`}>
+                      <input
+                        type="week"
+                        value={z.kw}
+                        onChange={(e) => setReiheZeile(i, { kw: e.target.value })}
+                        className="text-xs px-1.5 py-1 rounded border border-stone-200 bg-white w-[7.5rem] shrink-0 tabular-nums"
+                      />
+                      <input
+                        value={z.thema}
+                        onChange={(e) => setReiheZeile(i, { thema: e.target.value })}
+                        placeholder="Thema"
+                        maxLength={120}
+                        className="flex-1 min-w-0 text-sm px-2 py-1 rounded border border-stone-200 bg-white"
+                      />
+                      <button
+                        onClick={() => removeReiheZeile(i)}
+                        className="shrink-0 w-8 h-8 flex items-center justify-center text-stone-400 hover:text-red-500"
+                        aria-label="Woche entfernen"
+                      >
+                        <X size={13} />
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+            <button
+              onClick={addReiheZeile}
+              className="w-full py-2 rounded-lg border border-dashed border-stone-300 text-sm text-stone-600 hover:bg-stone-50 flex items-center justify-center gap-1.5"
+            >
+              <Plus size={14} /> Woche hinzufügen
+            </button>
           </Field>
         </div>
 
@@ -11975,7 +12247,7 @@ function FaecherTab({ data, update, onOpenFach }) {
     return na - nb || ca.localeCompare(cb, "de") || a.subject.localeCompare(b.subject, "de");
   });
 
-  function saveFach({ classId, newClassName, subject, color, room, weights, nextTestDate, nextTestTitle, material }) {
+  function saveFach({ classId, newClassName, subject, color, room, weights, nextTestDate, nextTestTitle, material, reihe }) {
     update((d) => {
       let finalClassId = classId;
       if (!finalClassId && newClassName) {
@@ -11986,11 +12258,14 @@ function FaecherTab({ data, update, onOpenFach }) {
       d.subjectColors[subject] = color;
 
       const mat = Array.isArray(material) ? material.filter((x) => typeof x === "string" && x.trim()).map((x) => x.trim()) : [];
+      const rei = Array.isArray(reihe)
+        ? reihe.filter((r) => r && r.kw).map((r) => ({ id: r.id || uid(), kw: r.kw, thema: (r.thema || "").trim() }))
+        : [];
       if (editingFach) {
         const f = d.faecher.find((x) => x.id === editingFach.id);
-        if (f) { f.classId = finalClassId; f.subject = subject; f.color = color; f.room = room; f.weights = weights || DEFAULT_WEIGHTS; f.nextTestDate = nextTestDate || null; f.nextTestTitle = nextTestTitle || null; f.material = mat; }
+        if (f) { f.classId = finalClassId; f.subject = subject; f.color = color; f.room = room; f.weights = weights || DEFAULT_WEIGHTS; f.nextTestDate = nextTestDate || null; f.nextTestTitle = nextTestTitle || null; f.material = mat; f.reihe = rei; }
       } else {
-        d.faecher.push({ id: uid(), classId: finalClassId, subject, color, room, weights: weights || DEFAULT_WEIGHTS, nextTestDate: nextTestDate || null, nextTestTitle: nextTestTitle || null, material: mat });
+        d.faecher.push({ id: uid(), classId: finalClassId, subject, color, room, weights: weights || DEFAULT_WEIGHTS, nextTestDate: nextTestDate || null, nextTestTitle: nextTestTitle || null, material: mat, reihe: rei });
       }
       return d;
     });
