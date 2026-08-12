@@ -6728,7 +6728,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         const offeneVor = stunde.aufgaben.filter((a) => !a.done);
         const hatVorbereitung = stunde.material.length + stunde.aufgaben.length > 0;
         return (
-          <Card className="px-4 py-4 space-y-3" style={{ order: orderOf("jetzt") }}>
+          <Card
+            className="px-4 py-4 space-y-3 ring-2 ring-emerald-500/70 ring-offset-2 ring-offset-[color:var(--creme)] shadow-[0_2px_18px_-6px_rgba(16,185,129,0.35)]"
+            style={{ order: orderOf("jetzt") }}
+          >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Jetzt</span>
