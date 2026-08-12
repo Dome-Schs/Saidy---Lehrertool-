@@ -6480,8 +6480,9 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
   })();
 
   /* Nächste Einheit nach dem Ende der aktuellen (oder nach jetzt, wenn gerade
-     keine läuft). „Nur wenn sie tatsächlich noch kommt heute" – nach 15 Uhr
-     ist die Liste leer. */
+     keine läuft). Fällt heute keine mehr an (Abend, Wochenende), suchen wir
+     stattdessen die erste Stunde des nächsten Schultags – so weiß die
+     Lehrkraft schon abends was sie mitbringen muss. */
   const nextUnit = (() => {
     if (!nowHMValue) return null;
     const ab = currentUnit ? data.periodTimes?.[currentUnit.lastPeriod]?.end : nowHMValue;
@@ -6490,6 +6491,37 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       const start = data.periodTimes?.[u.firstPeriod]?.start;
       return start && start > ab;
     }) || null;
+  })();
+
+  /* Fallback fuer NAECHSTES: erste Stunde des naechsten Schultags mit Unterricht.
+     Sucht bis zu 7 Tage voraus (deckt Wochenende ab). Wird nur genutzt, wenn
+     heute keine currentUnit und keine nextUnit mehr existieren. */
+  const morgenUnit = (() => {
+    if (!isToday || currentUnit || nextUnit) return null;
+    for (let offset = 1; offset <= 7; offset++) {
+      const tag = addDays(new Date(), offset);
+      const key = DAYS[(tag.getDay() + 6) % 7];
+      if (!key) continue; // Sa/So
+      // Ferien / freier Tag?
+      const isoDay = isoDate(tag);
+      const istFrei = (data.events || []).some((e) => (e.type === "ferien" || e.type === "frei") && e.date <= isoDay && isoDay <= (e.endDate || e.date));
+      if (istFrei) continue;
+      const tagLessons = data.timetable.filter((t) => t.day === key).sort((a, b) => a.period - b.period);
+      if (!tagLessons.length) continue;
+      // Baue Einheiten (analog zu dayUnits)
+      const units = [];
+      tagLessons.forEach((slot) => {
+        const letzte = units[units.length - 1];
+        if (letzte && letzte.fachId === slot.fachId && slot.period === letzte.lastPeriod + 1) {
+          letzte.slots.push(slot);
+          letzte.lastPeriod = slot.period;
+        } else {
+          units.push({ id: `m-${slot.fachId}-${slot.period}`, fachId: slot.fachId, slots: [slot], firstPeriod: slot.period, lastPeriod: slot.period });
+        }
+      });
+      if (units.length) return { unit: units[0], datum: isoDay, offsetTage: offset };
+    }
+    return null;
   })();
 
   /* „Danach heute" – alle weiteren Einheiten nach der nächsten. Am Wochenende
@@ -7007,24 +7039,35 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         );
       })()}
 
-      {/* ───────── ALS NÄCHSTES ─────────
-          Zweitprominent. Zeigt Material + „Vorher mitnehmen" schon während der
-          aktuellen Stunde, damit die Lehrkraft rechtzeitig alles einsammelt. */}
-      {isToday && nextUnit && (() => {
-        const { fach, cls, startZeit, endZeit, topic } = lessonInfo(nextUnit);
-        const bisStart = minsUntilHM(startZeit);
+      {/* ───────── ALS NÄCHSTES / MORGEN ─────────
+          Zweitprominent. Zeigt die naechste anstehende Stunde – bevorzugt heute,
+          sonst den ersten Termin des naechsten Schultags. So sieht die Lehrkraft
+          auch am Abend was morgen frueh ansteht und was mitzunehmen ist. */}
+      {isToday && (nextUnit || morgenUnit) && (() => {
+        const unit = nextUnit || morgenUnit.unit;
+        const zielDatum = nextUnit ? selStr : morgenUnit.datum;
+        const istMorgen = !nextUnit;
+        const { fach, cls, startZeit, endZeit, topic } = lessonInfo(unit);
+        const bisStart = !istMorgen ? minsUntilHM(startZeit) : null;
         const fachMaterial = fach?.material || [];
-        const stunde = stundenInhalt(fach?.id, selStr);
-        // Stunden-Material zuerst (spezifisch), dann Standard-Material des Fachs
+        const stunde = stundenInhalt(fach?.id, zielDatum);
         const alleMaterial = [...stunde.material, ...fachMaterial.filter((m) => !stunde.material.includes(m))];
         const offeneVor = stunde.aufgaben.filter((a) => !a.done);
         const entsch = offeneEntschKlasse(cls?.id);
         const raum = fach?.room;
+        const morgenLabel = (() => {
+          if (!istMorgen) return null;
+          if (morgenUnit.offsetTage === 1) return "Morgen";
+          const tag = addDays(new Date(), morgenUnit.offsetTage);
+          return `Am ${tag.toLocaleDateString("de-DE", { weekday: "long" })}`;
+        })();
         return (
           <Card className="px-4 py-3.5 space-y-2.5" style={{ order: orderOf("naechstes") }}>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-blue-100 text-blue-800">Als Nächstes</span>
+                <span className={`text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full ${istMorgen ? "bg-violet-100 text-violet-800" : "bg-blue-100 text-blue-800"}`}>
+                  {istMorgen ? morgenLabel : "Als Nächstes"}
+                </span>
                 <span className="text-xs text-stone-500 tabular-nums">
                   {startZeit}{endZeit ? ` – ${endZeit}` : ""}
                   {bisStart != null && bisStart > 0 && <span className="text-stone-400"> · {restZeitLabel(bisStart)}</span>}
@@ -7053,7 +7096,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                 })()}
               </div>
               <button
-                onClick={() => fach && oeffneVorbereitung(fach, cls, selStr)}
+                onClick={() => fach && oeffneVorbereitung(fach, cls, zielDatum)}
                 className="shrink-0 w-9 h-9 rounded-full text-stone-400 hover:text-stone-700 flex items-center justify-center press-scale"
                 aria-label="Stunde vorbereiten"
                 title="Stunde vorbereiten"
@@ -7088,6 +7131,16 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                   {offeneVor.length > 3 && <li className="text-[10px] text-stone-400 pl-4">+{offeneVor.length - 3} weitere</li>}
                 </ul>
               </div>
+            )}
+
+            {/* Wenn nichts vorbereitet und kein Material am Fach: Einladung */}
+            {alleMaterial.length === 0 && offeneVor.length === 0 && (
+              <button
+                onClick={() => fach && oeffneVorbereitung(fach, cls, zielDatum)}
+                className="w-full py-2 rounded-lg border border-dashed border-stone-300 text-xs text-stone-500 hover:bg-stone-50 flex items-center justify-center gap-1.5"
+              >
+                <Plus size={13} /> Material oder Vor-Aufgaben eintragen
+              </button>
             )}
 
             {entsch > 0 && (
@@ -7347,9 +7400,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         </div>
       )}
 
-      {/* Feiertagsfall Heute: kein Unterricht mehr, aber weiterhin ein sanfter Hinweis.
-          Bekommt dieselbe Order wie "Danach heute" – gemeinsamer Slot fuer Tages-Info. */}
-      {isToday && !currentUnit && !nextUnit && danachUnits.length === 0 && (
+      {/* Feiertagsfall Heute: kein Unterricht mehr UND morgen auch nichts geplant –
+          erst dann greift der sanfte Hinweis. Sonst uebernimmt die NAECHSTES-Karte
+          bereits die Vorschau auf morgen. */}
+      {isToday && !currentUnit && !nextUnit && !morgenUnit && danachUnits.length === 0 && (
         <Card className="px-3 py-3 text-xs text-stone-500" style={{ order: orderOf("danach") }}>
           {dayUnits.length === 0 ? "Heute kein regulärer Unterricht." : "Alle Stunden für heute vorbei."}
         </Card>
