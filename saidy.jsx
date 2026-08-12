@@ -2830,213 +2830,6 @@ const HELP_DATA = [
 /* Detail-Sheet fuer eine Unterrichtstipp-Karte. Zeigt Titel, Kategorie, Merksatz,
    Warum-Absatz und die Umsetzungspunkte als Liste. Der Naechster-Knopf waehlt eine
    zufaellige andere Karte, damit man ohne Zurueckgehen weiterschmoekern kann. */
-/* Stunde vorbereiten – Thema, Material, Vor-Aufgaben pro konkreter Stunde
-   (Fach + Datum). Ergaenzt das fach-eigene "Immer mitnehmen"-Material um
-   einmalige Sachen: „24 Arbeitsblaetter kopieren", „Beamer holen", „Geld
-   einsammeln". Die Angaben tauchen auf der Heute-Seite in JETZT, ALS
-   NAECHSTES und DANACH HEUTE bei der jeweiligen Stunde auf. */
-function StundeVorbereitenSheet({ data, update, fach, cls, date, onClose }) {
-  if (!fach) return null;
-  const savedTopic = (data.lessonTopics || []).find((t) => t.fachId === fach.id && t.date === date);
-  const [thema, setThema] = useState(savedTopic?.text || "");
-  const [material, setMaterial] = useState(Array.isArray(savedTopic?.material) ? savedTopic.material : []);
-  const [aufgaben, setAufgaben] = useState(Array.isArray(savedTopic?.aufgaben) ? savedTopic.aufgaben : []);
-  const [matInput, setMatInput] = useState("");
-  const [aufInput, setAufInput] = useState("");
-  const suggests = bekannteStundenthemen(data.lessonTopics, data.grades, fach.id).filter((s) => !thema || s.toLowerCase().startsWith(thema.toLowerCase())).slice(0, 5);
-
-  function persist(patch) {
-    update((d) => {
-      d.lessonTopics = d.lessonTopics || [];
-      let e = d.lessonTopics.find((t) => t.fachId === fach.id && t.date === date);
-      const next = {
-        text: (patch.thema ?? thema).trim(),
-        material: (patch.material ?? material).filter(Boolean),
-        aufgaben: (patch.aufgaben ?? aufgaben).filter((a) => a && a.text),
-      };
-      const leer = !next.text && !next.material.length && !next.aufgaben.length;
-      if (leer && e) {
-        d.lessonTopics = d.lessonTopics.filter((t) => t !== e);
-      } else if (leer) {
-        // nichts zu speichern
-      } else if (e) {
-        e.text = next.text;
-        e.material = next.material;
-        e.aufgaben = next.aufgaben;
-      } else {
-        d.lessonTopics.push({ id: uid(), fachId: fach.id, date, ...next });
-      }
-      return d;
-    });
-  }
-
-  function addMaterial() {
-    const t = matInput.trim();
-    if (!t) return;
-    const neu = [...material, t];
-    setMaterial(neu);
-    setMatInput("");
-    persist({ material: neu });
-  }
-  function removeMaterial(i) {
-    const neu = material.filter((_, k) => k !== i);
-    setMaterial(neu);
-    persist({ material: neu });
-  }
-  function addAufgabe() {
-    const t = aufInput.trim();
-    if (!t) return;
-    const neu = [...aufgaben, { id: uid(), text: t, done: false }];
-    setAufgaben(neu);
-    setAufInput("");
-    persist({ aufgaben: neu });
-  }
-  function toggleAufgabe(i) {
-    const neu = aufgaben.map((a, k) => k === i ? { ...a, done: !a.done } : a);
-    setAufgaben(neu);
-    persist({ aufgaben: neu });
-  }
-  function removeAufgabe(i) {
-    const neu = aufgaben.filter((_, k) => k !== i);
-    setAufgaben(neu);
-    persist({ aufgaben: neu });
-  }
-  function commitThema(val) {
-    setThema(val);
-    persist({ thema: val });
-  }
-
-  const datumLabel = localDate(date).toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long" });
-
-  return (
-    <div className="fixed inset-0 bg-stone-900/40 z-[60] flex items-end md:items-center justify-center" onClick={onClose}>
-      <div className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-xl overflow-y-auto max-h-[92vh] sheet anim-sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white/90 backdrop-blur-xl border-b border-stone-100 px-4 py-3 flex items-center justify-between z-10">
-          <div className="min-w-0 flex-1">
-            <div className="text-[11px] uppercase tracking-wide text-stone-400">Stunde vorbereiten</div>
-            <div className="font-semibold text-stone-800 truncate">{fach.subject}{cls ? ` · ${cls.name}` : ""}</div>
-            <div className="text-[11px] text-stone-500 truncate">{datumLabel}</div>
-          </div>
-          <button onClick={onClose} className="w-9 h-9 flex items-center justify-center text-stone-400 hover:text-stone-600 shrink-0" aria-label="Schließen">
-            <X size={18} />
-          </button>
-        </div>
-
-        <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-5">
-          {/* Thema */}
-          <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 block mb-1.5">Inhalt · Thema</label>
-            <input
-              className={inputCls}
-              value={thema}
-              onChange={(e) => setThema(e.target.value)}
-              onBlur={(e) => commitThema(e.target.value)}
-              placeholder="z. B. Bruchrechnung – Erweitern"
-              maxLength={200}
-            />
-            {suggests.length > 0 && (
-              <div className="flex flex-wrap gap-1 mt-1.5">
-                {suggests.map((s) => (
-                  <button key={s} onClick={() => commitThema(s)} className="text-[11px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200 hover:bg-stone-200">
-                    {s}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Material dieser Stunde */}
-          <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 block mb-1.5">Material · Kopien</label>
-            <p className="text-[11px] text-stone-500 mb-2 leading-snug">
-              Nur was speziell für diese Stunde nötig ist – z. B. „24 Arbeitsblätter", „Beamer", „Klassenarbeit". Was du immer brauchst, gehört ans Fach.
-            </p>
-            {material.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 mb-2">
-                {material.map((m, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
-                    {m}
-                    <button onClick={() => removeMaterial(i)} className="text-stone-400 hover:text-red-500 ml-0.5" aria-label={`„${m}" entfernen`}>
-                      <X size={11} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-            <div className="flex gap-1.5">
-              <input
-                value={matInput}
-                onChange={(e) => setMatInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addMaterial(); } }}
-                className={`${inputCls} flex-1`}
-                placeholder="z. B. 24 Arbeitsblätter"
-                maxLength={80}
-              />
-              <button onClick={addMaterial} disabled={!matInput.trim()} className="shrink-0 w-11 h-11 rounded-lg akzent-ton akzent-text flex items-center justify-center disabled:opacity-30" aria-label="Material hinzufügen">
-                <Plus size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* Vor der Stunde erledigen */}
-          <div>
-            <label className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 block mb-1.5">Vor der Stunde erledigen</label>
-            <p className="text-[11px] text-stone-500 mb-2 leading-snug">
-              Aufgaben mit Häkchen – z. B. „Arbeitsblätter drucken", „Geld einsammeln", „Beamer holen".
-            </p>
-            {aufgaben.length > 0 && (
-              <ul className="space-y-1 mb-2">
-                {aufgaben.map((a, i) => (
-                  <li key={a.id || i} className="flex items-center gap-2 py-1">
-                    <button
-                      onClick={() => toggleAufgabe(i)}
-                      className="w-6 h-6 shrink-0 flex items-center justify-center press-scale"
-                      aria-label={`„${a.text}" ${a.done ? "als offen markieren" : "abhaken"}`}
-                    >
-                      <span className={`w-4 h-4 rounded border-2 flex items-center justify-center ${a.done ? "akzent-flaeche border-transparent" : "border-stone-300"}`}>
-                        {a.done && <Check size={11} strokeWidth={3} className="text-white" />}
-                      </span>
-                    </button>
-                    <span className={`flex-1 text-sm ${a.done ? "text-stone-400 line-through" : "text-stone-700"}`}>{a.text}</span>
-                    <button onClick={() => removeAufgabe(i)} className="w-8 h-8 flex items-center justify-center text-stone-300 hover:text-red-500" aria-label={`„${a.text}" löschen`}>
-                      <X size={13} />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="flex gap-1.5">
-              <input
-                value={aufInput}
-                onChange={(e) => setAufInput(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addAufgabe(); } }}
-                className={`${inputCls} flex-1`}
-                placeholder="z. B. Arbeitsblätter drucken"
-                maxLength={100}
-              />
-              <button onClick={addAufgabe} disabled={!aufInput.trim()} className="shrink-0 w-11 h-11 rounded-lg akzent-ton akzent-text flex items-center justify-center disabled:opacity-30" aria-label="Aufgabe hinzufügen">
-                <Plus size={16} />
-              </button>
-            </div>
-          </div>
-
-          {/* Immer-mitnehmen des Fachs zur Info anzeigen (nicht editierbar hier) */}
-          {(fach.material || []).length > 0 && (
-            <div className="pt-2 border-t border-stone-100">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 mb-1.5">Immer mitnehmen (Fach)</div>
-              <div className="flex flex-wrap gap-1">
-                {(fach.material || []).map((m, i) => (
-                  <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-stone-50 text-stone-500 border border-stone-100">{m}</span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 function TippKartenSheet({ karte, alleKarten, onNaechste, onClose }) {
   if (!karte) return null;
   const kapitel = KATEGORIE_ZU_KAPITEL[karte.kategorie] || "Unterrichtsmethoden";
@@ -4787,8 +4580,9 @@ export default function App() {
               students={data.students.filter((s) => s.classId === captureLesson.cls.id).sort((a, b) => a.name.localeCompare(b.name, "de"))}
               date={captureLesson.date}
               halbjahr={halbjahr}
+              initialTab={captureLesson.initialTab}
               onClose={() => setCaptureLesson(null)}
-              onSwitch={(neu) => setCaptureLesson(neu)}
+              onSwitch={(neu) => setCaptureLesson({ ...neu, initialTab: captureLesson.initialTab })}
             />
           )}
 
@@ -5325,11 +5119,17 @@ function StundenAbschlussModal({ data, update, fach, cls, students, halbjahr, on
   );
 }
 
-function QuickCaptureModal({ data, update, fach, cls, students, date: initialDate, halbjahr, onClose, onSwitch }) {
+function QuickCaptureModal({ data, update, fach, cls, students, date: initialDate, halbjahr, onClose, onSwitch, initialTab }) {
   const isColor = data.settings?.colorMode === true;
   const istSport = /sport/i.test(fach?.subject || "");
   const [date, setDate] = useState(initialDate || isoDate(new Date()));
   const [category, setCategory] = useState("muendlich");
+  /* Zwei Tabs: "noten" (Standard) und "vorbereitung". Trennt die zwei
+     Nutzungssituationen sauber – wenn ich Noten erfasse will ich nichts
+     vom Material sehen; wenn ich vorbereite umgekehrt. */
+  const [activeTab, setActiveTab] = useState(initialTab === "vorbereitung" ? "vorbereitung" : "noten");
+  const [matInput, setMatInput] = useState("");
+  const [aufInput, setAufInput] = useState("");
   const [incidentLabel, setIncidentLabel] = useState("Sportzeug");
   const [autoGrade, setAutoGrade] = useState(true);
   const [expanded, setExpanded] = useState(null); // studentId, dessen Notizfeld offen ist
@@ -5363,23 +5163,54 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
     return zeilen;
   })();
 
-  // Optionales Stundenthema für genau diese Stunde (Fach + Datum)
+  // Optionales Stundenthema + Material + Vor-Aufgaben fuer diese Stunde
   const topicId = `${fach.id}-${date}`;
   const savedTopic = (data.lessonTopics || []).find((t) => t.fachId === fach.id && t.date === date);
   const [topic, setTopic] = useState(savedTopic?.text || "");
-  function saveTopic(text) {
-    setTopic(text);
+  const [stundeMaterial, setStundeMaterial] = useState(Array.isArray(savedTopic?.material) ? savedTopic.material : []);
+  const [stundeAufgaben, setStundeAufgaben] = useState(Array.isArray(savedTopic?.aufgaben) ? savedTopic.aufgaben : []);
+
+  function persistStunde(next) {
+    const daten = {
+      text: (next.topic ?? topic).trim(),
+      material: (next.material ?? stundeMaterial).filter(Boolean),
+      aufgaben: (next.aufgaben ?? stundeAufgaben).filter((a) => a && a.text),
+    };
     update((d) => {
       d.lessonTopics = d.lessonTopics || [];
-      const existing = d.lessonTopics.find((t) => t.fachId === fach.id && t.date === date);
-      if (text.trim()) {
-        if (existing) existing.text = text.trim();
-        else d.lessonTopics.push({ id: uid(), fachId: fach.id, date, text: text.trim() });
-      } else if (existing) {
-        d.lessonTopics = d.lessonTopics.filter((t) => t !== existing);
-      }
+      let e = d.lessonTopics.find((t) => t.fachId === fach.id && t.date === date);
+      const leer = !daten.text && !daten.material.length && !daten.aufgaben.length;
+      if (leer && e) d.lessonTopics = d.lessonTopics.filter((t) => t !== e);
+      else if (leer) { /* nichts */ }
+      else if (e) { e.text = daten.text; e.material = daten.material; e.aufgaben = daten.aufgaben; }
+      else d.lessonTopics.push({ id: uid(), fachId: fach.id, date, ...daten });
       return d;
     });
+  }
+  function saveTopic(text) { setTopic(text); persistStunde({ topic: text }); }
+  function addStundeMaterial() {
+    const t = matInput.trim();
+    if (!t) return;
+    const neu = [...stundeMaterial, t];
+    setStundeMaterial(neu); setMatInput(""); persistStunde({ material: neu });
+  }
+  function removeStundeMaterial(i) {
+    const neu = stundeMaterial.filter((_, k) => k !== i);
+    setStundeMaterial(neu); persistStunde({ material: neu });
+  }
+  function addStundeAufgabe() {
+    const t = aufInput.trim();
+    if (!t) return;
+    const neu = [...stundeAufgaben, { id: uid(), text: t, done: false }];
+    setStundeAufgaben(neu); setAufInput(""); persistStunde({ aufgaben: neu });
+  }
+  function toggleStundeAufgabe(i) {
+    const neu = stundeAufgaben.map((a, k) => k === i ? { ...a, done: !a.done } : a);
+    setStundeAufgaben(neu); persistStunde({ aufgaben: neu });
+  }
+  function removeStundeAufgabe(i) {
+    const neu = stundeAufgaben.filter((_, k) => k !== i);
+    setStundeAufgaben(neu); persistStunde({ aufgaben: neu });
   }
 
   function gradeFor(studentId) {
@@ -5548,9 +5379,30 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
               </ul>
             </div>
           )}
+          {/* Tab-Bar: Noten (Standard) und Vorbereitung. Trennt die zwei
+              Nutzungssituationen, damit nichts vom anderen ablenkt. */}
+          <div className="flex border-t border-stone-100" role="tablist" aria-label="Bereich waehlen">
+            {[
+              { key: "noten", label: "Noten & Notizen" },
+              { key: "vorbereitung", label: "Vorbereitung" },
+            ].map((tab) => {
+              const aktiv = activeTab === tab.key;
+              return (
+                <button
+                  key={tab.key}
+                  role="tab"
+                  aria-selected={aktiv}
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`flex-1 py-2.5 text-sm font-medium border-b-2 transition-colors ${aktiv ? "border-current akzent-text" : "border-transparent text-stone-400 hover:text-stone-600"}`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
+        <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))]" hidden={activeTab !== "noten"}>
 
           {/* Stunden-Timer: nur zeigen, wenn es zeitlich eng wird */}
           {(() => {
@@ -5804,6 +5656,121 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
 
           <Button onClick={schliessenMitRettung} className="w-full justify-center mt-4">Fertig</Button>
         </div>
+
+        {/* Tab: Vorbereitung – Thema, Material, Vor-Aufgaben pro Stunde. */}
+        <div className="p-4 pb-[max(2rem,env(safe-area-inset-bottom))] space-y-5" hidden={activeTab !== "vorbereitung"}>
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 block mb-1.5">Inhalt · Thema</label>
+            <input
+              className={inputCls}
+              value={topic}
+              onChange={(e) => setTopic(e.target.value)}
+              onBlur={(e) => saveTopic(e.target.value)}
+              placeholder="z. B. Bruchrechnung – Erweitern"
+              maxLength={200}
+            />
+            {(() => {
+              const s = bekannteStundenthemen(data.lessonTopics, data.grades, fach.id).filter((x) => !topic || x.toLowerCase().startsWith(topic.toLowerCase())).slice(0, 5);
+              if (!s.length) return null;
+              return (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {s.map((v) => (
+                    <button key={v} onClick={() => saveTopic(v)} className="text-[11px] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600 border border-stone-200 hover:bg-stone-200">
+                      {v}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
+          </div>
+
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 block mb-1.5">Material · Kopien</label>
+            <p className="text-[11px] text-stone-500 mb-2 leading-snug">
+              Nur was speziell fuer diese Stunde noetig ist – z. B. „24 Arbeitsblaetter", „Beamer", „Klassenarbeit". Was du immer brauchst, gehoert ans Fach.
+            </p>
+            {stundeMaterial.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {stundeMaterial.map((m, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-stone-100 text-stone-700 border border-stone-200">
+                    {m}
+                    <button onClick={() => removeStundeMaterial(i)} className="text-stone-400 hover:text-red-500 ml-0.5" aria-label={`„${m}" entfernen`}>
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-1.5">
+              <input
+                value={matInput}
+                onChange={(e) => setMatInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addStundeMaterial(); } }}
+                className={`${inputCls} flex-1`}
+                placeholder="z. B. 24 Arbeitsblaetter"
+                maxLength={80}
+              />
+              <button onClick={addStundeMaterial} disabled={!matInput.trim()} className="shrink-0 w-11 h-11 rounded-lg akzent-ton akzent-text flex items-center justify-center disabled:opacity-30" aria-label="Material hinzufuegen">
+                <Plus size={16} />
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[11px] font-semibold uppercase tracking-wide text-stone-500 block mb-1.5">Vor der Stunde erledigen</label>
+            <p className="text-[11px] text-stone-500 mb-2 leading-snug">
+              Aufgaben mit Haekchen – z. B. „Kopien machen", „Geld einsammeln", „Beamer holen".
+            </p>
+            {stundeAufgaben.length > 0 && (
+              <ul className="space-y-1 mb-2">
+                {stundeAufgaben.map((a, i) => (
+                  <li key={a.id || i} className="flex items-center gap-2 py-1">
+                    <button
+                      onClick={() => toggleStundeAufgabe(i)}
+                      className="w-6 h-6 shrink-0 flex items-center justify-center press-scale"
+                      aria-label={`„${a.text}" ${a.done ? "als offen markieren" : "abhaken"}`}
+                    >
+                      <span className={`w-4 h-4 rounded border-2 flex items-center justify-center ${a.done ? "akzent-flaeche border-transparent" : "border-stone-300"}`}>
+                        {a.done && <Check size={11} strokeWidth={3} className="text-white" />}
+                      </span>
+                    </button>
+                    <span className={`flex-1 text-sm ${a.done ? "text-stone-400 line-through" : "text-stone-700"}`}>{a.text}</span>
+                    <button onClick={() => removeStundeAufgabe(i)} className="w-8 h-8 flex items-center justify-center text-stone-300 hover:text-red-500" aria-label={`„${a.text}" loeschen`}>
+                      <X size={13} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-1.5">
+              <input
+                value={aufInput}
+                onChange={(e) => setAufInput(e.target.value)}
+                onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addStundeAufgabe(); } }}
+                className={`${inputCls} flex-1`}
+                placeholder="z. B. Kopien machen"
+                maxLength={100}
+              />
+              <button onClick={addStundeAufgabe} disabled={!aufInput.trim()} className="shrink-0 w-11 h-11 rounded-lg akzent-ton akzent-text flex items-center justify-center disabled:opacity-30" aria-label="Aufgabe hinzufuegen">
+                <Plus size={16} />
+              </button>
+            </div>
+          </div>
+
+          {(fach.material || []).length > 0 && (
+            <div className="pt-2 border-t border-stone-100">
+              <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 mb-1.5">Immer mitnehmen (Fach)</div>
+              <div className="flex flex-wrap gap-1">
+                {(fach.material || []).map((m, i) => (
+                  <span key={i} className="text-[11px] px-2 py-0.5 rounded-full bg-stone-50 text-stone-500 border border-stone-100">{m}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <Button onClick={onClose} className="w-full justify-center mt-2">Fertig</Button>
+        </div>
+
       </div>
     </div>
   );
@@ -6495,8 +6462,10 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
   const [showAttentionSheet, setShowAttentionSheet] = useState(false);
   const [showNichtVergessen, setShowNichtVergessen] = useState(false);
   const [neueAufgabe, setNeueAufgabe] = useState("");
-  /* Sheet zum Vorbereiten einer konkreten Stunde (Fach + Datum). */
-  const [prepLesson, setPrepLesson] = useState(null); // { fach, cls, date }
+  /* Kurz-Helfer: oeffnet die Stunde direkt im Vorbereitungs-Tab. Wir
+     nutzen setCaptureLesson mit initialTab, damit alles in einem
+     Sheet zusammenlaeuft und der Nutzer bei Bedarf auf Noten wechseln kann. */
+  const oeffneVorbereitung = (fach, cls, date) => setCaptureLesson?.({ fach, cls, date, initialTab: "vorbereitung" });
 
   /* Zieht Thema + Stunden-spezifisches Material + Vor-Aufgaben aus lessonTopics
      fuer ein Fach an einem Datum. Undefined statt null erlaubt Kurz-Zugriff. */
@@ -6841,7 +6810,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
 
             <div className="flex items-center gap-2">
               <button
-                onClick={() => fach && setPrepLesson({ fach, cls, date: selStr })}
+                onClick={() => fach && oeffneVorbereitung(fach, cls, selStr)}
                 className={`shrink-0 h-11 px-3 rounded-xl border text-sm font-medium press-scale flex items-center gap-1.5 ${hatVorbereitung ? "akzent-ton akzent-text border-transparent" : "bg-white border-stone-200 text-stone-600"}`}
                 title="Stunde vorbereiten – Thema, Material, Aufgaben"
               >
@@ -6899,7 +6868,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                 )}
               </div>
               <button
-                onClick={() => fach && setPrepLesson({ fach, cls, date: selStr })}
+                onClick={() => fach && oeffneVorbereitung(fach, cls, selStr)}
                 className="shrink-0 w-9 h-9 rounded-full text-stone-400 hover:text-stone-700 flex items-center justify-center press-scale"
                 aria-label="Stunde vorbereiten"
                 title="Stunde vorbereiten"
@@ -7132,7 +7101,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                     )}
                   </button>
                   <button
-                    onClick={(e) => { e.stopPropagation(); fach && setPrepLesson({ fach, cls, date: selStr }); }}
+                    onClick={(e) => { e.stopPropagation(); fach && oeffneVorbereitung(fach, cls, selStr); }}
                     className="shrink-0 w-8 h-8 rounded-lg text-stone-300 hover:text-stone-600 flex items-center justify-center press-scale"
                     aria-label={`${fach?.subject} vorbereiten`}
                     title="Stunde vorbereiten"
@@ -7258,17 +7227,6 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             setTippSheetKarte(andere[Math.floor(Math.random() * andere.length)]);
           }}
           onClose={() => setTippSheetKarte(null)}
-        />
-      )}
-
-      {prepLesson && (
-        <StundeVorbereitenSheet
-          data={data}
-          update={update}
-          fach={prepLesson.fach}
-          cls={prepLesson.cls}
-          date={prepLesson.date}
-          onClose={() => setPrepLesson(null)}
         />
       )}
 
