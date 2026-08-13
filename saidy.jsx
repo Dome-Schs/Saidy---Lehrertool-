@@ -14046,6 +14046,31 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
   const sIncidents = (data.incidents || []).filter((i) => i.studentId === student.id);
   const sDocs = (data.documents || []).filter((d) => d.scope === "student" && d.scopeId === student.id);
 
+  /* Sektionen-Auswahl. Alle default an – die Lehrkraft kann einzelne
+     ausschalten, um z. B. Kontaktdaten fuer eine reine Zeugniskonferenz-
+     Uebersicht wegzulassen. Zustand nur pro Sheet-Oeffnung, kein Persist. */
+  const [sektionen, setSektionen] = useState({
+    kontakt: true,
+    foerderziele: true,
+    noten: true,
+    fehlzeiten: true,
+    gespraeche: true,
+    beobachtungen: true,
+    dokumente: true,
+  });
+  const toggle = (k) => setSektionen((s) => ({ ...s, [k]: !s[k] }));
+
+  /* Einmalige Warnung beim ersten PDF-Export: sensible Datenweitergabe.
+     Merker in localStorage – nach "Verstanden" nur noch der Art.-9-Footer im
+     PDF selbst als Reminder. */
+  const [warnungSichtbar, setWarnungSichtbar] = useState(() => {
+    try { return localStorage.getItem("saidy_pdf_warning_gesehen") !== "1"; } catch { return true; }
+  });
+  function warnungBestaetigen() {
+    try { localStorage.setItem("saidy_pdf_warning_gesehen", "1"); } catch {}
+    setWarnungSichtbar(false);
+  }
+
   const faecherOfClass = (data.faecher || []).filter((f) => f.classId === student.classId);
   const notenProFach = faecherOfClass.map((f) => {
     const fg = sGrades.filter((g) => g.fachId === f.id && g.halbjahr === halbjahr);
@@ -14077,16 +14102,59 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
         }
       `}</style>
 
-      <div className="print-hide flex items-center justify-between px-4 py-3 bg-white border-b border-stone-200 shrink-0">
-        <div>
-          <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 leading-none mb-0.5">Übergabe-Export</div>
-          <div className="font-semibold text-stone-800">Schülerakte {student.name}</div>
+      <div className="print-hide bg-white border-b border-stone-200 shrink-0">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 leading-none mb-0.5">Übergabe-Export</div>
+            <div className="font-semibold text-stone-800">Schülerakte {student.name}</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={drucken}><Printer size={14} /> Als PDF drucken</Button>
+            <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center">
+              <X size={16} />
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button onClick={drucken}><Printer size={14} /> Als PDF drucken</Button>
-          <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center">
-            <X size={16} />
-          </button>
+
+        {/* Vorwarnung beim ersten Export – sensible Daten */}
+        {warnungSichtbar && (
+          <div className="mx-4 mb-3 rounded-xl border border-amber-200 bg-amber-50 p-3">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={16} className="text-amber-600 shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-semibold text-amber-900 mb-1">Sensible pädagogische Daten</div>
+                <p className="text-xs text-amber-800 leading-snug">
+                  Die Akte kann Angaben nach Art. 9 DSGVO enthalten (Gesundheit, Herkunft, Fördermerkmale). Teile das PDF ausschließlich mit dem berechtigten Personenkreis (Nachfolge-Lehrkraft, Eltern in bestätigten Gesprächen). <strong>Kein Versand per E-Mail an Dritte.</strong> Vertrauliche Behandlung nach § 203 StGB.
+                </p>
+                <button onClick={warnungBestaetigen} className="mt-2 text-xs font-semibold text-amber-900 underline hover:text-amber-950">Verstanden – nicht mehr zeigen</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sektionen-Auswahl */}
+        <div className="px-4 pb-3 flex items-center gap-1.5 flex-wrap">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 mr-1">Sektionen:</span>
+          {[
+            { key: "kontakt", label: "Kontakt" },
+            { key: "foerderziele", label: "Förderziele" },
+            { key: "noten", label: "Noten" },
+            { key: "fehlzeiten", label: "Fehlzeiten & Vorfälle" },
+            { key: "gespraeche", label: "Gespräche" },
+            { key: "beobachtungen", label: "Beobachtungen" },
+            { key: "dokumente", label: "Dokumente" },
+          ].map((s) => {
+            const an = sektionen[s.key];
+            return (
+              <button
+                key={s.key}
+                onClick={() => toggle(s.key)}
+                className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${an ? "akzent-ton akzent-rand akzent-text font-medium" : "bg-stone-50 border-stone-200 text-stone-400 line-through"}`}
+              >
+                {s.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -14109,7 +14177,7 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
           </div>
 
           {/* Kontakt & Stamm */}
-          {(student.parentName || student.parentPhone || student.parentMail || student.address) && (
+          {sektionen.kontakt && (student.parentName || student.parentPhone || student.parentMail || student.address) && (
             <section className="mb-4">
               <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Kontakt</h2>
               <div className="grid grid-cols-2 gap-x-6 gap-y-1 text-xs">
@@ -14122,7 +14190,7 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
           )}
 
           {/* Foerderziele */}
-          {sZiele.length > 0 && (
+          {sektionen.foerderziele && sZiele.length > 0 && (
             <section className="mb-4">
               <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Förderziele</h2>
               <ul className="space-y-1 text-xs">
@@ -14140,7 +14208,7 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
           )}
 
           {/* Noten pro Fach */}
-          {notenProFach.length > 0 && (
+          {sektionen.noten && notenProFach.length > 0 && (
             <section className="mb-4">
               <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Noten – {halbjahr}. Halbjahr</h2>
               <table className="w-full text-xs">
@@ -14158,7 +14226,7 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
           )}
 
           {/* Fehlzeiten + Vorfaelle */}
-          {(fehlTage > 0 || Object.keys(incidentsGrp).length > 0) && (
+          {sektionen.fehlzeiten && (fehlTage > 0 || Object.keys(incidentsGrp).length > 0) && (
             <section className="mb-4">
               <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Fehlzeiten & Vorfälle</h2>
               <div className="text-xs space-y-0.5">
@@ -14173,7 +14241,7 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
           )}
 
           {/* Gespraeche */}
-          {sGespraeche.length > 0 && (
+          {sektionen.gespraeche && sGespraeche.length > 0 && (
             <section className="mb-4">
               <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Gespräche (jüngste zuerst)</h2>
               <ul className="space-y-2 text-xs">
@@ -14199,7 +14267,7 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
           )}
 
           {/* Notizen */}
-          {sNotes.length > 0 && (
+          {sektionen.beobachtungen && sNotes.length > 0 && (
             <section className="mb-4">
               <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Beobachtungen (jüngste zuerst)</h2>
               <ul className="space-y-1.5 text-xs">
@@ -14217,7 +14285,7 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
           )}
 
           {/* Dokumente */}
-          {sDocs.length > 0 && (
+          {sektionen.dokumente && sDocs.length > 0 && (
             <section className="mb-4">
               <h2 className="text-[10px] uppercase tracking-widest text-stone-500 mb-1.5 font-semibold">Hinterlegte Dokumente</h2>
               <ul className="space-y-0.5 text-xs">
@@ -14232,9 +14300,11 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
             </section>
           )}
 
-          {/* Fuss */}
-          <div className="mt-8 pt-3 border-t border-stone-300 text-[9px] text-stone-400 leading-tight">
-            Diese Übersicht enthält personenbezogene Daten nach Art. 6 DSGVO und dient ausschließlich der pädagogischen Übergabe zwischen Lehrkräften. Vertrauliche Behandlung, keine Weitergabe an Unbefugte. Erzeugt mit Tuvi · Stand: {heute}.
+          {/* Fuss - Art. 9 DSGVO + § 203 StGB Hinweis */}
+          <div className="mt-8 pt-3 border-t border-stone-300 text-[9px] text-stone-500 leading-snug space-y-1">
+            <div><strong>Vertraulich · Nur für den berechtigten Personenkreis.</strong> Diese Übersicht enthält personenbezogene Daten nach Art. 6 DSGVO und ggf. besondere Kategorien nach <strong>Art. 9 DSGVO</strong> (u. a. Gesundheit, ethnische Herkunft, weltanschauliche Merkmale). Verarbeitung ausschließlich zur pädagogischen Übergabe.</div>
+            <div>Weitergabe an Unbefugte oder Versand per unverschlüsselter E-Mail an Dritte ist unzulässig. Verschwiegenheitspflicht nach <strong>§ 203 StGB</strong> beachten. Nach Zweckerreichung datenschutzkonform vernichten (Papier: schreddern; Datei: sicher löschen).</div>
+            <div className="text-stone-400">Erzeugt mit Tuvi · Stand: {heute}</div>
           </div>
         </div>
       </div>
