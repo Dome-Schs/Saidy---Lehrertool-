@@ -3859,10 +3859,18 @@ export default function App() {
     setShowOnboarding(false);
   }
 
-  function showToast(msg) {
+  function showToast(msg, options) {
+    /* options?: { action: { label, onClick }, duration? }
+       Ermoeglicht Undo-Toasts (Beispiel: nach Stundenabschluss) mit einem
+       optionalen Aktion-Knopf. Rueckwaertskompatibel: showToast("foo") funktioniert
+       weiter. */
     if (toastTimer.current) clearTimeout(toastTimer.current);
-    setToast(msg);
-    toastTimer.current = setTimeout(() => setToast(null), 3500);
+    const value = typeof msg === "string" && options?.action
+      ? { text: msg, action: options.action }
+      : msg;
+    setToast(value);
+    const duration = options?.duration || (options?.action ? 8000 : 3500);
+    toastTimer.current = setTimeout(() => setToast(null), duration);
   }
 
   /* Backup vermerken. localStorage kann werfen (Safari-Privatmodus, volles Kontingent) –
@@ -4696,6 +4704,24 @@ export default function App() {
                 setCaptureLesson({ fach: abschluss.fach, cls: abschluss.cls, date: isoDate(new Date()) });
                 setAbschluss(null);
               }}
+              onSaved={(summary) => {
+                if (!summary || summary.anzahl === 0) return;
+                const noteIds = new Set(summary.undoIds.notes);
+                const incidentIds = new Set(summary.undoIds.incidents);
+                showToast(`${summary.klassenname} · ${summary.fachname} abgeschlossen`, {
+                  action: {
+                    label: "Rückgängig",
+                    onClick: () => {
+                      update((d) => {
+                        d.notes = (d.notes || []).filter((n) => !noteIds.has(n.id));
+                        d.incidents = (d.incidents || []).filter((i) => !incidentIds.has(i.id));
+                        return d;
+                      });
+                      showToast("Rückgängig gemacht.");
+                    },
+                  },
+                });
+              }}
             />
           )}
         </main>
@@ -4929,8 +4955,16 @@ export default function App() {
 
       {/* Toast-Meldung */}
       {toast && (
-        <div className="fixed bottom-[calc(env(safe-area-inset-bottom)+76px)] md:bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-stone-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg pointer-events-none">
-          {toast}
+        <div className={`fixed bottom-[calc(env(safe-area-inset-bottom)+76px)] md:bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-stone-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-3 max-w-[90vw] ${typeof toast === "object" && toast?.action ? "" : "pointer-events-none"}`}>
+          <span className="truncate">{typeof toast === "string" ? toast : toast?.text}</span>
+          {typeof toast === "object" && toast?.action && (
+            <button
+              onClick={() => { toast.action.onClick?.(); setToast(null); if (toastTimer.current) clearTimeout(toastTimer.current); }}
+              className="shrink-0 text-amber-300 font-semibold text-xs uppercase tracking-wide hover:text-amber-200 press-scale"
+            >
+              {toast.action.label}
+            </button>
+          )}
         </div>
       )}
     </div>
@@ -5033,7 +5067,7 @@ function nextFerienCountdown(events, schooldaysOnly) {
    sonst Hausaufgaben), Notiz (kurzes Textfeld). Am Ende einmal "Abschliessen"
    und alles ist gespeichert. Wer Noten vergeben will, wechselt per Link in die
    ausfuehrliche Schnellerfassung. */
-function StundenAbschlussModal({ data, update, fach, cls, students, halbjahr, onClose, onWechseln }) {
+function StundenAbschlussModal({ data, update, fach, cls, students, halbjahr, onClose, onWechseln, onSaved }) {
   const heute = isoDate(new Date());
   const istSport = /sport/i.test(fach?.subject || "");
   const vergessenLabel = istSport ? "Sportzeug" : "Hausaufgabe";
@@ -5041,6 +5075,8 @@ function StundenAbschlussModal({ data, update, fach, cls, students, halbjahr, on
   const [zustand, setZustand] = useState({});
   const [notizFor, setNotizFor] = useState(null);
   const [notizDraft, setNotizDraft] = useState("");
+  /* Doppelklick-Guard: verhindert zweifachen Abschluss bei ungeduldigem Tap. */
+  const [saving, setSaving] = useState(false);
 
   function toggleMitarbeit(sid, wert) {
     setZustand((z) => {
@@ -5073,40 +5109,55 @@ function StundenAbschlussModal({ data, update, fach, cls, students, halbjahr, on
   ).length;
 
   function abschliessen() {
+    if (saving) return; // Doppelklick-Guard
+    setSaving(true);
+    /* Sammelt IDs aller neu angelegten Eintraege - erlaubt sauberes Rueckgaengig
+       ueber den Undo-Toast im App-Container. Wir erzeugen die IDs schon hier,
+       damit wir sie an onSaved uebergeben koennen. */
+    const undoIds = { notes: [], incidents: [] };
+    const zeitpunkt = new Date().toISOString();
     update((d) => {
-      d.grades = d.grades || [];
-      d.incidents = d.incidents || [];
       d.notes = d.notes || [];
+      d.incidents = d.incidents || [];
       Object.entries(zustand).forEach(([sid, s]) => {
-        if (s.mitarbeit === "plus") {
-          d.grades.push({
-            id: uid(), studentId: sid, classId: fach.classId, fachId: fach.id,
-            category: "muendlich", value: 2, factor: 1,
-            title: "Positive Mitarbeit", date: heute, halbjahr, quick: true,
+        /* Auto-Note umgebaut: +/− speichert KEINE Grade mehr (verwaesserte
+           frueher den Notendurchschnitt ohne Nachvollziehbarkeit). Statt-
+           dessen eine Beobachtungs-Notiz mit signal-Marker. Erscheint
+           chronologisch in der Notiz-Historie und kann spaeter bewusst
+           als Grundlage fuer eine Note dienen. */
+        if (s.mitarbeit === "plus" || s.mitarbeit === "minus") {
+          const id = uid();
+          d.notes.push({
+            id, studentId: sid, date: heute, quick: true,
+            type: "mitarbeit",
+            signal: s.mitarbeit, // "plus" oder "minus"
+            fachId: fach.id,
+            text: s.mitarbeit === "plus" ? "Positive Mitarbeit" : "Stille / Störung",
+            createdAt: zeitpunkt,
           });
-        }
-        if (s.mitarbeit === "minus") {
-          d.grades.push({
-            id: uid(), studentId: sid, classId: fach.classId, fachId: fach.id,
-            category: "muendlich", value: 4, factor: 1,
-            title: "Stille / Störung", date: heute, halbjahr, quick: true,
-          });
+          undoIds.notes.push(id);
         }
         if (s.vergessen) {
-          d.incidents.push({
-            id: uid(), studentId: sid, fachId: fach.id,
-            label: vergessenLabel, date: heute,
-          });
+          const id = uid();
+          d.incidents.push({ id, studentId: sid, fachId: fach.id, label: vergessenLabel, date: heute });
+          undoIds.incidents.push(id);
         }
         const notiz = (s.notiz || "").trim();
         if (notiz) {
-          d.notes.push({
-            id: uid(), studentId: sid, date: heute, text: notiz, quick: true,
-          });
+          const id = uid();
+          d.notes.push({ id, studentId: sid, date: heute, text: notiz, quick: true });
+          undoIds.notes.push(id);
         }
       });
       return d;
     });
+    const summary = {
+      undoIds,
+      anzahl: undoIds.notes.length + undoIds.incidents.length,
+      klassenname: cls?.name,
+      fachname: fach?.subject,
+    };
+    onSaved?.(summary);
     onClose();
   }
 
@@ -5176,9 +5227,9 @@ function StundenAbschlussModal({ data, update, fach, cls, students, halbjahr, on
               <Calculator size={13} /> Auch Noten vergeben → ausführliche Erfassung
             </button>
             <div className="flex gap-2">
-              <Button variant="ghost" onClick={onClose} className="justify-center">Abbrechen</Button>
-              <Button onClick={abschliessen} className="flex-1 justify-center">
-                <Check size={15} /> Stunde abschließen {eintraege > 0 && `(${eintraege})`}
+              <Button variant="ghost" onClick={onClose} className="justify-center" disabled={saving}>Abbrechen</Button>
+              <Button onClick={abschliessen} disabled={saving} className="flex-1 justify-center">
+                {saving ? <>Speichert …</> : <><Check size={15} /> Stunde abschließen {eintraege > 0 && `(${eintraege})`}</>}
               </Button>
             </div>
           </div>
@@ -6310,7 +6361,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
     if (klassenHaeufung.length) {
       const top = klassenHaeufung[0];
       satz.push({
-        text: `In ${top.cls.name} gab es diese Woche schon ${top.anzahl} Fehlzeiten – vielleicht etwas rundgeht.`,
+        text: `In ${top.cls.name} gab es diese Woche schon ${top.anzahl} Fehlzeiten – vielleicht geht etwas rum.`,
         urgent: top.anzahl >= 8,
         action: () => onNavigate?.("klassen"),
       });
