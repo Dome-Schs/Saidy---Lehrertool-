@@ -5180,7 +5180,15 @@ function StundenAbschlussModal({ data, update, fach, cls, students, halbjahr, on
         </div>
 
         <div className="px-4 py-3 pb-[max(2rem,env(safe-area-inset-bottom))]">
-          <p className="text-xs text-stone-500 mb-3">Ein Tipp pro Kind — was fällt dir spontan ein? Speichern kannst du am Ende alles auf einmal.</p>
+          <p className="text-xs text-stone-500 mb-2">Ein Tipp pro Kind — was fällt dir spontan ein? Speichern kannst du am Ende alles auf einmal.</p>
+          {/* Symbol-Legende: verhindert dass "-" mit "abwesend" verwechselt wird
+              oder das Dreieck mit "Warnung". */}
+          <div className="mb-3 rounded-lg bg-stone-50 border border-stone-100 px-2.5 py-1.5 text-[10px] text-stone-500 leading-relaxed">
+            <span className="font-semibold text-stone-700 mr-1">+</span>positiv &nbsp;·&nbsp;
+            <span className="font-semibold text-stone-700 mr-1">−</span>still/stört &nbsp;·&nbsp;
+            <span className="font-semibold text-stone-700 mr-1">⚠</span>{istSport ? "Sportzeug" : "Hausaufgabe"} vergessen &nbsp;·&nbsp;
+            <span className="font-semibold text-stone-700 mr-1">📝</span>Notiz
+          </div>
 
           <ul className="divide-y divide-stone-100">
             {students.map((s) => {
@@ -6740,6 +6748,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
     if (!Array.isArray(gespeicherteOrdnung) || !gespeicherteOrdnung.length) return false;
     return gespeicherteOrdnung.join(",") !== DEFAULT_HEUTE_ORDER.join(",");
   }
+  const [aufgabeGespeichertBlink, setAufgabeGespeichertBlink] = useState(false);
   function addQuickTask() {
     const text = neueAufgabe.trim();
     if (!text) return;
@@ -6749,6 +6758,11 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       return d;
     });
     setNeueAufgabe("");
+    /* Sichtbares Feedback nach Enter: kurzes gruenes Blitzen des Add-Buttons,
+       damit die Lehrkraft nicht doppelt tippt weil sie nicht sicher ist ob
+       gespeichert wurde. */
+    setAufgabeGespeichertBlink(true);
+    setTimeout(() => setAufgabeGespeichertBlink(false), 800);
   }
 
   return (
@@ -6784,18 +6798,11 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           )}
           <button
             onClick={() => update((d) => { d.settings = { ...d.settings, colorMode: !isColor }; return d; })}
-            title={isColor ? "Mono-Modus" : "Bring Farbe in mein Leben"}
+            title={isColor ? "Farbmodus aus – schlicht" : "Farbmodus an – bunt"}
+            aria-label={isColor ? "Farbmodus ausschalten" : "Farbmodus einschalten"}
             className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shrink-0 press-scale ${isColor ? "bg-stone-100 hover:bg-stone-200 text-stone-400" : "akzent-ton akzent-text"}`}
           >
             <Sparkles size={14} />
-          </button>
-          <button
-            onClick={() => setShowSortSheet(true)}
-            title="Reihenfolge der Bereiche anpassen"
-            aria-label="Reihenfolge der Bereiche anpassen"
-            className={`w-11 h-11 rounded-full flex items-center justify-center transition-colors shrink-0 press-scale ${neuGeordnetIstAktiv() ? "akzent-ton akzent-text" : "bg-stone-100 hover:bg-stone-200 text-stone-500"}`}
-          >
-            <GripVertical size={15} />
           </button>
         </div>
       </div>
@@ -6978,6 +6985,15 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                   );
                 })()}
               </div>
+              {/* Dezenter Vorbereiten-Sprung – konsistent zur ALS-NAECHSTES-Karte. */}
+              <button
+                onClick={() => fach && oeffneVorbereitung(fach, cls, selStr)}
+                className="shrink-0 w-9 h-9 rounded-full text-stone-400 hover:text-stone-700 flex items-center justify-center press-scale"
+                aria-label="Stunde vorbereiten"
+                title="Stunde vorbereiten – Thema, Material, Aufgaben"
+              >
+                <ClipboardCheck size={15} />
+              </button>
             </div>
 
             {/* Aufgaben, die zu dieser Stunde gehören */}
@@ -7051,21 +7067,16 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
               </div>
             )}
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => fach && oeffneVorbereitung(fach, cls, selStr)}
-                className={`shrink-0 h-11 px-3 rounded-xl border text-sm font-medium press-scale flex items-center gap-1.5 ${hatVorbereitung ? "akzent-ton akzent-text border-transparent" : "bg-white border-stone-200 text-stone-600"}`}
-                title="Stunde vorbereiten – Thema, Material, Aufgaben"
-              >
-                <ClipboardCheck size={15} /> Vorbereiten
-              </button>
-              <button
-                onClick={() => setCaptureLesson?.({ fach, cls, date: selStr })}
-                className="flex-1 py-2.5 rounded-xl akzent-flaeche text-white text-sm font-medium press-scale flex items-center justify-center gap-2"
-              >
-                <BookOpen size={15} /> Stunde öffnen
-              </button>
-            </div>
+            {/* Nur EIN CTA – Vorbereitung ist als Tab im geöffneten Sheet erreichbar.
+                Vermeidet die Verwirrung "Was ist der Unterschied zwischen Vorbereiten
+                und Stunde öffnen?". Wenn Vorbereitung existiert, ist ein dezentes
+                Klemmbrett-Icon oben rechts in der Karte (siehe Kopfbereich der Karte). */}
+            <button
+              onClick={() => setCaptureLesson?.({ fach, cls, date: selStr })}
+              className="w-full py-2.5 rounded-xl akzent-flaeche text-white text-sm font-medium press-scale flex items-center justify-center gap-2"
+            >
+              <BookOpen size={15} /> Stunde öffnen
+            </button>
           </Card>
         );
       })()}
@@ -7257,10 +7268,11 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             <button
               onClick={addQuickTask}
               disabled={!neueAufgabe.trim()}
-              className="shrink-0 w-8 h-8 rounded-full akzent-ton akzent-text flex items-center justify-center press-scale disabled:opacity-30"
+              className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center press-scale disabled:opacity-30 transition-colors ${aufgabeGespeichertBlink ? "bg-emerald-500 text-white" : "akzent-ton akzent-text"}`}
               aria-label="Aufgabe hinzufügen"
+              title={aufgabeGespeichertBlink ? "Gespeichert!" : "Aufgabe hinzufügen"}
             >
-              <Plus size={14} />
+              {aufgabeGespeichertBlink ? <Check size={14} strokeWidth={3} /> : <Plus size={14} />}
             </button>
           </div>
         </Card>
@@ -7469,6 +7481,19 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             <ChevronRight size={13} />
           </button>
         </div>
+      </div>
+
+      {/* Dezenter Sortier-Link ganz am Ende – ersetzt den frueheren Griff-Icon
+          oben. Wird erst bewusst wahrgenommen, wenn jemand die Seite ordnen will.
+          Fester Order-Slot am Ende (999). */}
+      <div className="flex items-center justify-center pt-1" style={{ order: 999 }}>
+        <button
+          onClick={() => setShowSortSheet(true)}
+          className={`text-[11px] flex items-center gap-1 py-1 px-2 rounded-full transition-colors ${neuGeordnetIstAktiv() ? "akzent-text bg-white/60" : "text-stone-400 hover:text-stone-600"}`}
+        >
+          <GripVertical size={11} />
+          <span>{neuGeordnetIstAktiv() ? "Reihenfolge angepasst – ändern" : "Reihenfolge der Bereiche ändern"}</span>
+        </button>
       </div>
 
 
@@ -11999,9 +12024,13 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
                     return (
                       <li key={f.id} className="rounded-xl border border-stone-100 bg-white overflow-hidden">
                         <div className="flex items-stretch">
+                          {/* Hauptklick klappt die Reihenplanung auf – das ist das
+                              erwartbare Verhalten. Das Menue (Bearbeiten / Noten)
+                              liegt hinter dem separaten ...-Icon rechts. */}
                           <button
-                            onClick={() => onFachActions?.({ type: "actions", fach: f })}
+                            onClick={() => setExpandedFachId(istOffen ? null : f.id)}
                             className="flex-1 flex items-center gap-3 px-3 py-2.5 hover:bg-stone-50 press-scale text-left min-w-0"
+                            aria-expanded={istOffen}
                           >
                             <span className="w-2 h-10 rounded-full shrink-0" style={{ backgroundColor: isColor && f.color ? f.color : "#C0BBA8" }} />
                             <div className="min-w-0 flex-1">
@@ -12016,15 +12045,15 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
                                 </div>
                               )}
                             </div>
+                            <ChevronDown size={14} className={`shrink-0 text-stone-300 transition-transform ${istOffen ? "rotate-180" : ""}`} />
                           </button>
-                          {/* Chevron: toggelt Reihenplanung nur fuer dieses Fach. Getrennter Klickbereich, damit der grosse Kachel-Klick weiter das Aktionsmenue oeffnet. */}
                           <button
-                            onClick={() => setExpandedFachId(istOffen ? null : f.id)}
+                            onClick={(e) => { e.stopPropagation(); onFachActions?.({ type: "actions", fach: f }); }}
                             className="shrink-0 w-11 flex items-center justify-center text-stone-400 hover:text-stone-700 border-l border-stone-100"
-                            aria-label={istOffen ? "Reihenplanung zuklappen" : "Reihenplanung aufklappen"}
-                            title={istOffen ? "Reihenplanung zuklappen" : "Reihenplanung anzeigen"}
+                            aria-label="Aktionen: Fach bearbeiten oder Noten anzeigen"
+                            title="Fach bearbeiten oder Noten anzeigen"
                           >
-                            <ChevronDown size={14} className={`transition-transform ${istOffen ? "rotate-180" : ""}`} />
+                            <MoreHorizontal size={16} />
                           </button>
                         </div>
 
