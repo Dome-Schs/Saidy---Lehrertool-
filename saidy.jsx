@@ -4192,7 +4192,7 @@ export default function App() {
      - Dann die restlichen globalen Aktionen. */
   const kindSuchenAction = { label: "Kind suchen", icon: Search, onClick: () => setShowSearch(true) };
   const globalFabActions = [
-    { label: "Stunde erfassen", icon: ClipboardCheck, onClick: startQuickCapture },
+    { label: "Stunde nachtragen", icon: ClipboardCheck, onClick: startQuickCapture },
     { label: "Gespräch notieren", icon: MessageSquare, onClick: () => setQuickAdd("gespraech") },
     { label: "Notiz zu einem Kind", icon: StickyNote, onClick: () => setQuickAdd("notiz") },
     { label: "Aufgabe", icon: ListChecks, onClick: () => setQuickAdd("aufgabe") },
@@ -4715,7 +4715,11 @@ export default function App() {
                 if (!summary || summary.anzahl === 0) return;
                 const noteIds = new Set(summary.undoIds.notes);
                 const incidentIds = new Set(summary.undoIds.incidents);
-                showToast(`${summary.klassenname} · ${summary.fachname} abgeschlossen`, {
+                /* Anzahl im Text: schafft Vertrauen, dass es angekommen ist.
+                   12s Dauer: die Lehrkraft raeumt oft Materialien ein und will
+                   noch Zeit haben, "Rueckgaengig" zu erwischen. */
+                const n = summary.anzahl;
+                showToast(`${summary.klassenname} · ${summary.fachname}: ${n} Eintrag${n === 1 ? "" : "e"} gespeichert`, {
                   action: {
                     label: "Rückgängig",
                     onClick: () => {
@@ -4727,6 +4731,7 @@ export default function App() {
                       showToast("Rückgängig gemacht.");
                     },
                   },
+                  duration: 12000,
                 });
               }}
             />
@@ -5190,11 +5195,14 @@ function StundenAbschlussModal({ data, update, fach, cls, students, halbjahr, on
           <p className="text-xs text-stone-500 mb-2">Ein Tipp pro Kind — was fällt dir spontan ein? Speichern kannst du am Ende alles auf einmal.</p>
           {/* Symbol-Legende: verhindert dass "-" mit "abwesend" verwechselt wird
               oder das Dreieck mit "Warnung". */}
-          <div className="mb-3 rounded-lg bg-stone-50 border border-stone-100 px-2.5 py-1.5 text-[10px] text-stone-500 leading-relaxed">
-            <span className="font-semibold text-stone-700 mr-1">+</span>positiv &nbsp;·&nbsp;
-            <span className="font-semibold text-stone-700 mr-1">−</span>still/stört &nbsp;·&nbsp;
-            <span className="font-semibold text-stone-700 mr-1">⚠</span>{istSport ? "Sportzeug" : "Hausaufgabe"} vergessen &nbsp;·&nbsp;
-            <span className="font-semibold text-stone-700 mr-1">📝</span>Notiz
+          <div className="mb-3 rounded-lg bg-stone-50 border border-stone-100 px-2.5 py-1.5 text-[10px] text-stone-500 leading-relaxed flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className="inline-flex items-center gap-1"><span className="font-semibold text-stone-700">+</span>positiv</span>
+            <span className="text-stone-300">·</span>
+            <span className="inline-flex items-center gap-1" title="Wenig aktiv - kein Vermerk fuer Stoerung"><span className="font-semibold text-stone-700">−</span>zurückhaltend</span>
+            <span className="text-stone-300">·</span>
+            <span className="inline-flex items-center gap-1"><AlertTriangle size={10} className="text-stone-600" />{istSport ? "Sportzeug" : "Hausaufgabe"} vergessen</span>
+            <span className="text-stone-300">·</span>
+            <span className="inline-flex items-center gap-1"><StickyNote size={10} className="text-stone-600" />Notiz</span>
           </div>
 
           <ul className="divide-y divide-stone-100">
@@ -6952,17 +6960,20 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
         const hatVorbereitung = stunde.material.length + stunde.aufgaben.length > 0;
         return (
           <Card
-            className="px-4 py-4 space-y-3 ring-2 ring-emerald-500/70 ring-offset-2 ring-offset-[color:var(--creme)] shadow-[0_2px_18px_-6px_rgba(16,185,129,0.35)]"
+            className="px-4 py-4 space-y-3 ring-2 akzent-rand ring-offset-2 ring-offset-[color:var(--creme)]"
             style={{ order: orderOf("jetzt") }}
           >
+            {/* JETZT ist mit dem Marken-Akzent (Oliv) gekennzeichnet - eindeutig
+                das primaere Element der Heute-Seite. Kein emerald/blau/violett
+                mehr, damit der Akzent nicht mit anderen Farben konkurriert. */}
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800">Jetzt</span>
-                <span className="text-xs text-stone-500 tabular-nums">{startZeit}{endZeit ? ` – ${endZeit}` : ""}</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full akzent-flaeche text-white">Jetzt</span>
+                <span className="text-xs text-stone-500 tabular-nums">
+                  {startZeit}{endZeit ? ` – ${endZeit}` : ""}
+                  {restMin != null && restMin >= 0 && <span className="text-stone-400"> · Noch {restMin} Min.</span>}
+                </span>
               </div>
-              {restMin != null && restMin >= 0 && (
-                <span className="text-[11px] text-stone-500 shrink-0 tabular-nums">Noch {restMin} Min.</span>
-              )}
             </div>
             <div className="flex items-center gap-3">
               <span className="w-11 h-11 rounded-2xl akzent-ton flex items-center justify-center shrink-0" style={{ backgroundColor: isColor && fach?.color ? `${fach.color}20` : undefined }}>
@@ -6985,15 +6996,19 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
                   );
                 })()}
               </div>
-              {/* Dezenter Vorbereiten-Sprung – konsistent zur ALS-NAECHSTES-Karte. */}
-              <button
-                onClick={() => fach && oeffneVorbereitung(fach, cls, selStr)}
-                className="shrink-0 w-9 h-9 rounded-full text-stone-400 hover:text-stone-700 flex items-center justify-center press-scale"
-                aria-label="Stunde vorbereiten"
-                title="Stunde vorbereiten – Thema, Material, Aufgaben"
-              >
-                <ClipboardCheck size={15} />
-              </button>
+              {/* Klemmbrett-Icon nur zeigen wenn Vorbereitung existiert - dann wirkt
+                  es wie ein Badge ("da liegt was fuer dich bereit"). Sonst weglassen,
+                  damit der Primaer-CTA "Stunde oeffnen" alleine steht. */}
+              {hatVorbereitung && (
+                <button
+                  onClick={() => fach && oeffneVorbereitung(fach, cls, selStr)}
+                  className="shrink-0 w-9 h-9 rounded-full akzent-ton akzent-text flex items-center justify-center press-scale"
+                  aria-label="Vorbereitung ansehen"
+                  title="Vorbereitung ansehen - Thema, Material, Aufgaben"
+                >
+                  <ClipboardCheck size={15} />
+                </button>
+              )}
             </div>
 
             {/* Aufgaben, die zu dieser Stunde gehören */}
@@ -7107,7 +7122,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           <Card className="px-4 py-3.5 space-y-2.5" style={{ order: orderOf("naechstes") }}>
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className={`text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full ${istMorgen ? "bg-violet-100 text-violet-800" : "bg-blue-100 text-blue-800"}`}>
+                <span className="text-[10px] font-bold uppercase tracking-[0.2em] px-2 py-0.5 rounded-full bg-stone-100 text-stone-600">
                   {istMorgen ? morgenLabel : "Als Nächstes"}
                 </span>
                 <span className="text-xs text-stone-500 tabular-nums">
@@ -9661,6 +9676,33 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
                   </div>
                 )}
 
+                {/* Mitarbeits-Bilanz dieses Halbjahr - macht die +/-Signale aus dem
+                    Stundenabschluss sichtbar, ohne dass die Lehrkraft durch alle
+                    Notizen scrollen muss. Klick fuehrt in den Notizen-Tab. */}
+                {(() => {
+                  const jetzt = new Date();
+                  const halbjahrStart = jetzt.getMonth() + 1 >= 2 && jetzt.getMonth() + 1 <= 7
+                    ? new Date(jetzt.getFullYear(), 1, 1)  // Feb
+                    : new Date(jetzt.getMonth() + 1 === 1 ? jetzt.getFullYear() - 1 : jetzt.getFullYear(), 7, 1);  // Aug
+                  const startIso = isoDate(halbjahrStart);
+                  const mitarbeit = (notes || []).filter((n) => n.studentId === s.id && n.type === "mitarbeit" && (n.date || "") >= startIso);
+                  const plus = mitarbeit.filter((n) => n.signal === "plus").length;
+                  const minus = mitarbeit.filter((n) => n.signal === "minus").length;
+                  if (plus + minus === 0) return null;
+                  return (
+                    <button
+                      onClick={() => setProfileTab("notizen")}
+                      className="w-full flex items-center justify-between gap-3 rounded-xl bg-stone-50 border border-stone-100 px-3 py-2 press-scale hover:bg-stone-100"
+                    >
+                      <span className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">Mitarbeit · Halbjahr</span>
+                      <span className="flex items-center gap-3 text-sm tabular-nums">
+                        <span className="flex items-center gap-1 text-emerald-700"><span className="font-bold">+</span>{plus}</span>
+                        <span className="flex items-center gap-1 text-stone-500"><span className="font-bold">−</span>{minus}</span>
+                      </span>
+                    </button>
+                  );
+                })()}
+
                 {/* 3-Spalten Statistik-Gitter */}
                 <div className="grid grid-cols-3 gap-2">
                   {/* Förderstatus */}
@@ -12099,32 +12141,28 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
           <div className="space-y-3">
             <div className="flex items-center justify-between px-1">
               <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Schüler:innen · Halbjahr</span>
-              <span className="text-[10px] text-stone-400">
-                <span className="inline-block w-2 h-0.5 align-middle bg-stone-700 mr-1"></span>mündlich
-                <span className="inline-block w-2 h-0.5 align-middle bg-amber-700 ml-2 mr-1"></span>schriftlich
-              </span>
+              <span className="text-[10px] text-stone-400">Gesamt-Ø</span>
             </div>
             {students.length === 0 ? (
               <p className="text-sm text-stone-400 py-6 text-center">Keine Schüler:innen in dieser Klasse.</p>
             ) : (
+              /* Mobile-first: eine einzige Sparkline mit dem Gesamt-Notenverlauf
+                 pro Kind. Die Aufteilung muendlich/schriftlich zeigt das
+                 Detail-Sheet - dort ist Platz fuer beide Linien. */
               <ul className="rounded-xl border border-stone-100 bg-white divide-y divide-stone-50">
                 {students.map((s) => {
                   const muendlich = notenFuerKind(s.id, "muendlich");
                   const schriftlich = notenFuerKind(s.id, "schriftlich");
-                  const muDurch = muendlich.length ? (muendlich.reduce((a, x) => a + x.value, 0) / muendlich.length) : null;
-                  const schDurch = schriftlich.length ? (schriftlich.reduce((a, x) => a + x.value, 0) / schriftlich.length) : null;
+                  const alle = [...muendlich, ...schriftlich].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
+                  const gesamt = alle.length ? (alle.reduce((a, x) => a + x.value, 0) / alle.length) : null;
                   return (
                     <li key={s.id}>
                       <button onClick={() => setStudentDetail(s.id)} className="w-full flex items-center gap-2 px-3 py-2 text-left press-scale">
                         <StudentAvatar student={s} size={26} />
                         <span className="flex-1 min-w-0 text-sm text-stone-800 truncate">{s.name}</span>
                         <span className="shrink-0 flex items-center gap-1.5">
-                          <NotenSparkline noten={muendlich} color="#4F5844" />
-                          <span className="text-[10px] tabular-nums text-stone-500 w-6 text-right">{muDurch != null ? muDurch.toFixed(1).replace(".", ",") : "–"}</span>
-                        </span>
-                        <span className="shrink-0 flex items-center gap-1.5">
-                          <NotenSparkline noten={schriftlich} color="#B45309" />
-                          <span className="text-[10px] tabular-nums text-stone-500 w-6 text-right">{schDurch != null ? schDurch.toFixed(1).replace(".", ",") : "–"}</span>
+                          <NotenSparkline noten={alle} color="#4F5844" />
+                          <span className="text-[11px] tabular-nums font-medium text-stone-700 w-6 text-right">{gesamt != null ? gesamt.toFixed(1).replace(".", ",") : "–"}</span>
                         </span>
                         <ChevronRight size={12} className="text-stone-300 shrink-0" />
                       </button>
@@ -14193,7 +14231,7 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
               <button
                 key={s.key}
                 onClick={() => toggle(s.key)}
-                className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${an ? "akzent-ton akzent-rand akzent-text font-medium" : "bg-stone-50 border-stone-200 text-stone-400 line-through"}`}
+                className={`text-[11px] px-2 py-1 rounded-full border transition-colors ${an ? "akzent-ton akzent-rand akzent-text font-medium" : "bg-stone-50 border-stone-100 text-stone-400"}`}
               >
                 {s.label}
               </button>
