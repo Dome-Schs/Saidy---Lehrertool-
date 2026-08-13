@@ -4185,10 +4185,13 @@ export default function App() {
     }
   }
 
-  /* Aktionen des Plus-Knopfs. Bereichsspezifische Aktionen (z. B. „Neue Klasse")
-     hängen sich über onRegisterFab vorne an. */
+  /* Aktionen des Plus-Knopfs.
+     - "Kind suchen" steht IMMER ganz oben (haeufigste schnelle Aktion,
+       verhindert dass die Lehrkraft 4 Klicks zum Kind braucht).
+     - Bereichsspezifische Aktionen (z. B. "Neue Klasse") kommen danach.
+     - Dann die restlichen globalen Aktionen. */
+  const kindSuchenAction = { label: "Kind suchen", icon: Search, onClick: () => setShowSearch(true) };
   const globalFabActions = [
-    { label: "Kind suchen", icon: Search, onClick: () => setShowSearch(true) },
     { label: "Stunde erfassen", icon: ClipboardCheck, onClick: startQuickCapture },
     { label: "Gespräch notieren", icon: MessageSquare, onClick: () => setQuickAdd("gespraech") },
     { label: "Notiz zu einem Kind", icon: StickyNote, onClick: () => setQuickAdd("notiz") },
@@ -4506,17 +4509,21 @@ export default function App() {
                 {/* Klick ausserhalb schliesst das Dropdown */}
                 <div className="fixed inset-0 z-40" onClick={() => setFabOpen(false)} />
                 <div className="absolute left-3 right-3 mt-1.5 z-50 bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden">
-                  {[...fabActions, ...globalFabActions].map(({ label, icon: Icon, onClick }) => (
-                    <button
-                      key={label}
-                      onClick={() => { setFabOpen(false); onClick(); }}
-                      className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-stone-700 hover:bg-stone-50 text-left"
-                    >
-                      <span className="w-6 h-6 rounded-full akzent-flaeche flex items-center justify-center flex-shrink-0">
-                        <Icon size={12} className="text-white" />
-                      </span>
-                      {label}
-                    </button>
+                  {/* Kind suchen: immer die erste Aktion, mit Trennlinie darunter -
+                      der schnellste Weg zum Kind bei Zwischen-Stunden-Zeitdruck. */}
+                  {[kindSuchenAction, ...fabActions, ...globalFabActions].map(({ label, icon: Icon, onClick }, i) => (
+                    <React.Fragment key={label}>
+                      {i === 1 && <div className="h-px bg-stone-100" />}
+                      <button
+                        onClick={() => { setFabOpen(false); onClick(); }}
+                        className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-stone-700 hover:bg-stone-50 text-left ${i === 0 ? "font-semibold" : ""}`}
+                      >
+                        <span className="w-6 h-6 rounded-full akzent-flaeche flex items-center justify-center flex-shrink-0">
+                          <Icon size={12} className="text-white" />
+                        </span>
+                        {label}
+                      </button>
+                    </React.Fragment>
                   ))}
                 </div>
               </>
@@ -4929,14 +4936,14 @@ export default function App() {
             className="md:hidden fixed z-[45] left-0 right-0 px-4 flex flex-col items-center gap-2"
             style={{ bottom: "calc(env(safe-area-inset-bottom) + 90px)" }}
           >
-            {[...fabActions, ...globalFabActions].map(({ label, icon: Icon, onClick }, i) => (
+            {[kindSuchenAction, ...fabActions, ...globalFabActions].map(({ label, icon: Icon, onClick }, i) => (
               <button
                 key={label}
                 onClick={() => { setFabOpen(false); onClick(); }}
-                className="w-full max-w-xs flex items-center gap-2.5 bg-white border border-stone-100 shadow-lg px-4 py-2.5 rounded-full text-sm font-medium text-stone-800 press-scale anim-item"
+                className={`w-full max-w-xs flex items-center gap-2.5 shadow-lg px-4 py-2.5 rounded-full text-sm press-scale anim-item ${i === 0 ? "akzent-flaeche text-white font-semibold border border-transparent" : "bg-white border border-stone-100 font-medium text-stone-800"}`}
                 style={{ animationDelay: `${i * 35}ms`, animationFillMode: "both" }}
               >
-                <span className="w-7 h-7 rounded-full akzent-flaeche flex items-center justify-center flex-shrink-0">
+                <span className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${i === 0 ? "bg-white/20" : "akzent-flaeche"}`}>
                   <Icon size={13} className="text-white" />
                 </span>
                 {label}
@@ -6776,16 +6783,9 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           <span className="text-[11px] font-bold tracking-[0.22em] uppercase akzent-text">Tuvi</span>
         </div>
         <div className="flex items-center gap-1.5">
-          {showImportReminder && (
-            <button
-              onClick={() => onOpenUntisImport?.()}
-              className="relative w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center transition-colors press-scale"
-              title={daysSinceLast === null ? "Fehlzeiten noch nie importiert" : `Fehlzeiten-Import fällig (vor ${daysSinceLast} Tagen)`}
-            >
-              <Upload size={15} />
-              <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-amber-400 border-2 border-[#F4F1E8]" />
-            </button>
-          )}
+          {/* WebUntis-Import-Icon aus dem Header entfernt (Icon war unklar und
+              "WebUntis" ist Fachjargon). Import laeuft jetzt ueber
+              Einstellungen → "WebUntis / Fehlzeiten". */}
           {isToday && !!(pendingLessons || []).length && (
             <button
               onClick={() => setShowPending((v) => !v)}
