@@ -13328,7 +13328,18 @@ function KalenderTab({ data, update, autoOpenForm, onAutoFormConsumed }) {
       )}
 
       {(() => {
-        const ferienList = open.filter((e) => e.type === "ferien");
+        /* Nur laufende und kommende Ferien anzeigen — vergangene ausblenden.
+           Sortierung: laufende zuerst (die man gerade hat), dann nach Startdatum. */
+        const heuteIso = isoDate(new Date());
+        const ferienList = open
+          .filter((e) => e.type === "ferien")
+          .filter((e) => (e.endDate || e.date) >= heuteIso)
+          .sort((a, b) => {
+            const aLauft = a.date <= heuteIso && heuteIso <= (a.endDate || a.date);
+            const bLauft = b.date <= heuteIso && heuteIso <= (b.endDate || b.date);
+            if (aLauft !== bLauft) return aLauft ? -1 : 1;
+            return a.date.localeCompare(b.date);
+          });
         if (!ferienList.length) return null;
         const visible = showAllFerien ? ferienList : ferienList.slice(0, 1);
         return (
@@ -13340,9 +13351,13 @@ function KalenderTab({ data, update, autoOpenForm, onAutoFormConsumed }) {
               {visible.map((e) => {
                 const von = localDate(e.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
                 const bis = e.endDate ? localDate(e.endDate).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" }) : null;
+                const laeuftGerade = e.date <= heuteIso && heuteIso <= (e.endDate || e.date);
                 return (
                   <li key={e.id} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 text-sm">
-                    <span className="text-emerald-900">{e.title}</span>
+                    <span className="text-emerald-900 flex items-center gap-1.5">
+                      {e.title}
+                      {laeuftGerade && <span className="text-[10px] uppercase tracking-wider bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded-full">jetzt</span>}
+                    </span>
                     <span className="text-emerald-600 text-xs tnum whitespace-nowrap text-right">
                       {von}{bis ? <span className="text-emerald-300"> – </span> : ""}{bis}
                     </span>
