@@ -6726,8 +6726,8 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
     { key: "woche",           label: "Wochentagsleiste" },
     { key: "jetzt",           label: "JETZT" },
     { key: "naechstes",       label: "ALS NÄCHSTES" },
-    { key: "aufmerksamkeit",  label: "Aufmerksamkeit + Nicht vergessen" },
     { key: "danach",          label: "Danach heute" },
+    { key: "aufmerksamkeit",  label: "Aufmerksamkeit + Nicht vergessen" },
     { key: "rueckblick",      label: "Wochenrückblick (Fr–So)" },
     { key: "tipp",            label: "Unterrichtstipp des Tages" },
   ];
