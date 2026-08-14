@@ -1279,9 +1279,9 @@ function LegalModal({ onClose }) {
             <>
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Angaben gemäß § 5 DDG</div>
-                <p className="font-medium text-stone-800">[VORNAME NACHNAME]</p>
-                <p>[STRASSE HAUSNUMMER]</p>
-                <p>[PLZ ORT]</p>
+                <p className="font-medium text-stone-800">Dominik Schusser</p>
+                <p>Niederwall 7</p>
+                <p>33602 Bielefeld</p>
                 <p>Deutschland</p>
               </div>
               <div>
@@ -1302,8 +1302,8 @@ function LegalModal({ onClose }) {
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">1. Verantwortlicher (Webangebot)</div>
                 <p className="text-xs text-stone-600 mb-1">Verantwortlicher für das Webangebot im Sinne der DSGVO:</p>
-                <p className="font-medium text-stone-800">[VORNAME NACHNAME]</p>
-                <p className="text-xs text-stone-600">[STRASSE HAUSNUMMER], [PLZ ORT]</p>
+                <p className="font-medium text-stone-800">Dominik Schusser</p>
+                <p className="text-xs text-stone-600">Niederwall 7, 33602 Bielefeld</p>
                 <p className="text-xs text-stone-600">E-Mail: kontakt@tu-vi.de</p>
               </div>
               <div>
