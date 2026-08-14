@@ -1286,7 +1286,7 @@ function LegalModal({ onClose }) {
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-1">Kontakt</div>
-                <p>E-Mail: [EMAIL]</p>
+                <p>E-Mail: kontakt@tuvi.com</p>
               </div>
               <div className="bg-stone-50 rounded-xl p-3 text-xs text-stone-500 space-y-1.5">
                 <p>Dieses Projekt wird als privates, nicht-kommerzielles Vorhaben ohne Gewinnerzielungsabsicht betrieben.</p>
@@ -1304,7 +1304,7 @@ function LegalModal({ onClose }) {
                 <p className="text-xs text-stone-600 mb-1">Verantwortlicher für das Webangebot im Sinne der DSGVO:</p>
                 <p className="font-medium text-stone-800">[VORNAME NACHNAME]</p>
                 <p className="text-xs text-stone-600">[STRASSE HAUSNUMMER], [PLZ ORT]</p>
-                <p className="text-xs text-stone-600">E-Mail: [EMAIL]</p>
+                <p className="text-xs text-stone-600">E-Mail: kontakt@tuvi.com</p>
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">2. Hosting (GitHub Pages)</div>
@@ -3076,6 +3076,10 @@ function HilfeSheet({ onClose }) {
               </div>
             ))
           )}
+          {/* Kontakt-Hinweis am Ende: dezent, nur wenn was fehlt oder haengt. */}
+          <div className="mt-4 pt-4 border-t border-stone-100 text-center text-xs text-stone-400">
+            Frage nicht dabei? <a href="mailto:kontakt@tuvi.com" className="akzent-text hover:underline">kontakt@tuvi.com</a>
+          </div>
         </div>
       </div>
     </div>
