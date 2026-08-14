@@ -1366,6 +1366,8 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
   const [confirmICloud, setConfirmICloud] = useState(false);
   const [showPromote, setShowPromote] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
+  /* Sport-Druckvorlagen ohne Kind-Kontext (Ersatzkopien fuer die Schublade) */
+  const [druckSportVorlage, setDruckSportVorlage] = useState(null); // "protokoll" | "regelbruch"
 
   function promoteClasses(ids) {
     update((d) => {
@@ -1831,7 +1833,26 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
           )}
         </div>
 
-        <div className="pt-4 border-t border-stone-100 mt-2">
+        <div className="pt-4 border-t border-stone-100 mt-2 space-y-2">
+          {/* Druckvorlagen fuer Sport-Kolleg:innen: leere Vordrucke fuer die
+              Schublade. Kontextbezogen (Kind vorbelegt) gibt es sie direkt im
+              Stundenabschluss. */}
+          <div className="flex items-center gap-2 text-xs">
+            <span className="text-stone-400">Sport-Vorlagen zum Drucken:</span>
+            <button
+              onClick={() => setDruckSportVorlage("protokoll")}
+              className="akzent-text hover:underline flex items-center gap-1"
+            >
+              <Printer size={11} /> Stundenprotokoll
+            </button>
+            <span className="text-stone-300">·</span>
+            <button
+              onClick={() => setDruckSportVorlage("regelbruch")}
+              className="akzent-text hover:underline flex items-center gap-1"
+            >
+              <Printer size={11} /> Regelbruch-Auftrag
+            </button>
+          </div>
           <button
             onClick={() => setShowLegal(true)}
             className="w-full flex items-center gap-2 text-xs text-stone-400 hover:text-stone-600 py-2 justify-center transition-colors"
@@ -1844,6 +1865,16 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
         </div>
 
         {showLegal && <LegalModal onClose={() => setShowLegal(false)} />}
+
+        {druckSportVorlage && (
+          <SportDruckVorlage
+            vorlage={druckSportVorlage}
+            student={null}
+            klasse={null}
+            datum={isoDate(new Date())}
+            onClose={() => setDruckSportVorlage(null)}
+          />
+        )}
 
         {showPromote && (
           <PromoteModal
@@ -2768,7 +2799,8 @@ const HELP_DATA = [
       { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten & Berichte", wähle Klasse und Fach. Tippe auf eine:n Schüler:in – in der Karte „Neue Note" Kategorie und Note wählen und auf „+" tippen. Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Tuvi bildet den gewichteten Durchschnitt aus mündlichen und schriftlichen Noten. Voreingestellt ist 50 zu 50 Prozent – änderbar unter „Klassen & Schüler" → Reiter „Fächer" → Zahnrad beim Fach → „Gewichtung der Noten". Einzelne Noten lassen sich zusätzlich stärker gewichten (Faktor beim Bearbeiten der Note). Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
-      { q: "Was ist der Stunden-Abschluss (30 Sekunden)?", a: `Das Klemmbrett-Symbol neben einer Stunde öffnet den 30-Sekunden-Abschluss – die neue Standard-Erfassung nach einer Stunde. Kein Formular mit leerem Notenfeld, sondern eine Liste aller Kinder mit vier One-Tap-Aktionen pro Zeile: + (positive Mitarbeit) · − (Störung / still) · ⚠︎ (Sportzeug bzw. Hausaufgabe vergessen) · Notiz (kurzes Textfeld). Ein Tipp pro Kind, alles wird am Ende auf einmal gespeichert. + wird als mündliche 2 vermerkt, − als 4, das Vergessen als Vorfall (bei Sport als „Sportzeug", sonst als „Hausaufgabe"). Wer eine echte Note vergeben will, wechselt unten über „Auch Noten vergeben →" in die ausführliche Schnellerfassung.` },
+      { q: "Was ist der Stunden-Abschluss (30 Sekunden)?", a: `Das Klemmbrett-Symbol neben einer Stunde öffnet den 30-Sekunden-Abschluss – die neue Standard-Erfassung nach einer Stunde. Kein Formular mit leerem Notenfeld, sondern eine Liste aller Kinder mit vier One-Tap-Aktionen pro Zeile: + (positive Mitarbeit) · − (zurückhaltend) · ⚠︎ (Sportzeug bzw. Hausaufgabe vergessen) · Notiz (kurzes Textfeld). Ein Tipp pro Kind, alles wird am Ende auf einmal gespeichert. + und − werden als Beobachtungs-Notiz gespeichert (nicht als automatische Note, damit der Durchschnitt nicht verwässert wird); das Vergessen als Vorfall (bei Sport als „Sportzeug", sonst als „Hausaufgabe"). Wer eine echte Note vergeben will, wechselt unten über „Auch Noten vergeben →" in die ausführliche Schnellerfassung. Bei Sport-Stunden erscheint zusätzlich ein Drucker-Symbol pro Kind – dahinter liegen zwei druckbare Vorlagen: „Stundenprotokoll" (für Kinder die z.B. Sportzeug vergessen haben und mitschreiben statt teilnehmen) und „Regelbruch-Arbeitsauftrag" (Regeln abschreiben, Verhaltensplan, Elternunterschrift). Kindnamen und Klasse werden automatisch eingetragen.` },
+      { q: "Wo finde ich die Sport-Druckvorlagen ohne Kind-Kontext?", a: `„Mehr" → „Einstellungen" → ganz unten „Sport-Vorlagen zum Drucken": „Stundenprotokoll" und „Regelbruch-Auftrag". Das öffnet eine leere Vorlage zum Ausdrucken – nützlich für die Ersatzkopien in der Schublade oder wenn du sie spontan brauchst.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Die ausführliche Erfassung wird aus dem Stunden-Abschluss über den Link „Auch Noten vergeben" erreicht. Dort kannst du für alle Schüler:innen einer Klasse Noten (mündlich / schriftlich), ausführliche Notizen und Gespräche eintragen. Eine Doppelstunde wird einmal erfasst, nicht zweimal. Die Notenbuttons sind immer sichtbar. Neben dem Namen liegt das ⚠︎-Symbol für „Vergessen"; Notiz und Gespräch öffnen sich über das ···-Symbol.` },
       { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Tuvi an, wie viele Unterrichtsstunden bis dahin noch bleiben. Gezählt wird in Unterrichtseinheiten: ein Tag mit diesem Fach ist eine Einheit – eine Doppelstunde aus zwei 45-Minuten-Blöcken zählt also einmal, genau wie eine einzelne Stunde. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Tuvi die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
       { q: "Wo sehe ich auf der Heute-Seite, wie viel Zeit bis zur Klassenarbeit bleibt?", a: `Am Prüfungstag selbst zeigt die JETZT-Karte deutlich rot „Heute: [Titel der Arbeit]" – nicht zu übersehen. Naht der Termin (letzte drei Übungsstunden), landet der Countdown zusätzlich in der Kachel „X Dinge brauchen deine Aufmerksamkeit" als dringliches Signal. Die volle Restzeit-Rechnung („noch 5 Stunden bis zur Arbeit, Ferien abgezogen") siehst du in der Schnellerfassung oder in der Notenübersicht des Fachs. Voraussetzung ist jeweils, dass für das Fach ein Termin unter „Klassen & Schüler" → Fach-Zahnrad → „Nächste Klassenarbeit / Test" eingetragen ist und das Fach im Stundenplan steht.` },
@@ -5075,6 +5107,196 @@ function nextFerienCountdown(events, schooldaysOnly) {
   return { inFerien: false, title: next.title, date: next.date, days };
 }
 
+/* Druckbare Sport-Vorlagen. Zwei Typen:
+   - "protokoll": Stundenprotokoll fuer Kinder ohne Sportzeug (schreiben mit,
+     statt teilzunehmen).
+   - "regelbruch": Arbeitsauftrag bei wiederholten Stoerungen (Regeln abschreiben,
+     Verhaltensplan, Elternunterschrift).
+   Layout ist bewusst schlanker als die Originalvorlagen (weniger Papier), aber
+   die paedagogisch relevanten Kernbestandteile bleiben identisch. Druck ueber
+   window.print(); Modal blockiert dabei nichts. Vorbelegung optional -
+   ohne Kontext (Menu aus Einstellungen) bleiben Name/Klasse/Datum leer. */
+function SportDruckVorlage({ vorlage, student, klasse, datum, thema, onClose }) {
+  const name = student?.name || "";
+  const klassenName = klasse?.name || "";
+  const heutigesDatum = datum || isoDate(new Date());
+  const datumAnzeige = localDate(heutigesDatum).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const [themaEingabe, setThemaEingabe] = useState(thema || "");
+  const [anwesend, setAnwesend] = useState("");
+  const titel = vorlage === "regelbruch" ? "Störungen im Sportunterricht" : "Sport-Stundenprotokoll";
+
+  function drucken() {
+    setTimeout(() => window.print(), 50);
+  }
+
+  return (
+    <div className="fixed inset-0 bg-stone-900/50 z-[70] flex items-stretch md:items-center justify-center md:p-4" onClick={onClose}>
+      <style>{`
+        @media print {
+          @page { size: A4; margin: 15mm 15mm; }
+          body { background: white !important; }
+          .druck-hide { display: none !important; }
+          .druck-vorlage { box-shadow: none !important; margin: 0 !important; max-width: none !important; padding: 0 !important; border: none !important; }
+          .druck-linie { background: transparent !important; border-bottom: 1px solid #333 !important; height: 22px !important; }
+          .druck-kasten { border: 1px solid #333 !important; }
+        }
+      `}</style>
+      <div className="bg-white w-full md:max-w-[720px] h-full md:h-auto md:max-h-[95vh] flex flex-col md:rounded-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        {/* Toolbar - nur am Bildschirm sichtbar */}
+        <div className="druck-hide flex items-center justify-between px-4 py-3 border-b border-stone-200 shrink-0">
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-400 leading-none mb-0.5">Sport-Vorlage</div>
+            <div className="font-semibold text-stone-800">{titel}</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={drucken}><Printer size={14} /> Drucken</Button>
+            <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 text-stone-500 flex items-center justify-center"><X size={16} /></button>
+          </div>
+        </div>
+
+        <div className="flex-1 overflow-y-auto bg-stone-100 py-6 px-4 print:overflow-visible print:bg-white print:p-0">
+          <div className="druck-vorlage bg-white max-w-[680px] mx-auto shadow-md p-8 text-stone-800 text-sm leading-relaxed" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif" }}>
+            {/* Kopf */}
+            <div className="flex items-baseline justify-between border-b border-stone-300 pb-2 mb-4">
+              <h1 className="text-lg font-semibold">{titel}</h1>
+              <span className="text-xs text-stone-500">{datumAnzeige}</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4 mb-5 text-sm">
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-stone-500 mb-0.5">Name</div>
+                <div className="druck-linie border-b border-stone-400 min-h-[22px] pb-0.5">{name}</div>
+              </div>
+              <div>
+                <div className="text-[10px] uppercase tracking-wide text-stone-500 mb-0.5">Klasse</div>
+                <div className="druck-linie border-b border-stone-400 min-h-[22px] pb-0.5">{klassenName}</div>
+              </div>
+            </div>
+
+            {vorlage === "protokoll" ? (
+              <>
+                {/* Thema + Anzahl */}
+                <div className="grid grid-cols-[2fr_1fr] gap-4 mb-5 text-sm">
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-stone-500 mb-0.5">Thema der Stunde</div>
+                    <input
+                      type="text"
+                      value={themaEingabe}
+                      onChange={(e) => setThemaEingabe(e.target.value)}
+                      className="druck-linie w-full border-b border-stone-400 focus:border-stone-700 focus:outline-none pb-0.5 bg-transparent"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-[10px] uppercase tracking-wide text-stone-500 mb-0.5">Anwesend</div>
+                    <input
+                      type="text"
+                      value={anwesend}
+                      onChange={(e) => setAnwesend(e.target.value)}
+                      className="druck-linie w-full border-b border-stone-400 focus:border-stone-700 focus:outline-none pb-0.5 bg-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Aufgabenbeschreibung kurz */}
+                <div className="mb-5 text-xs text-stone-600 italic">
+                  Schreibe die Stunde in ganzen Sätzen mit. Gib das Protokoll am Ende ab.
+                </div>
+
+                {/* Abschnitte */}
+                {[
+                  { label: "Materialien / Geräte", zeilen: 2 },
+                  { label: "Erwärmung", zeilen: 4 },
+                  { label: "Hauptteil", zeilen: 8 },
+                  { label: "Abschluss", zeilen: 3 },
+                  { label: "Was hat dir gefallen? Was nicht?", zeilen: 3 },
+                ].map((abschnitt) => (
+                  <div key={abschnitt.label} className="mb-4">
+                    <div className="font-semibold text-sm mb-1.5">{abschnitt.label}</div>
+                    {[...Array(abschnitt.zeilen)].map((_, i) => (
+                      <div key={i} className="druck-linie border-b border-stone-300 h-6 mb-0.5" />
+                    ))}
+                  </div>
+                ))}
+
+                {/* Formulierungshilfen als kompakter Kasten */}
+                <div className="druck-kasten mt-4 rounded border border-stone-300 px-3 py-2 text-xs text-stone-600">
+                  <span className="font-semibold text-stone-700">Formulierungshilfen: </span>
+                  Zu Beginn der Stunde… · Zuerst… · Danach… · Als Nächstes… · Außerdem… · Anschließend… · Zuletzt…
+                </div>
+
+                <div className="mt-6">
+                  <div className="font-semibold text-sm mb-1.5">Platz für Skizze</div>
+                  <div className="druck-kasten border border-stone-300 rounded" style={{ height: "180px" }} />
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Regelbruch-Arbeitsauftrag */}
+                <div className="mb-5 space-y-1.5 text-sm">
+                  <div><span className="font-semibold">Aufgabe 1:</span> Schreibe alle Regeln ab und umkreise die, die du gebrochen hast.</div>
+                  <div><span className="font-semibold">Aufgabe 2:</span> Begründe, wieso das störende Verhalten dir und der Klasse schadet.</div>
+                  <div><span className="font-semibold">Aufgabe 3:</span> Beschreibe, wie du dich in Zukunft im Sportunterricht verhalten willst.</div>
+                </div>
+
+                {/* Regeln */}
+                <div className="druck-kasten border border-stone-300 rounded p-3 mb-4 text-sm">
+                  <div className="font-semibold mb-2">Regeln</div>
+                  <ol className="list-decimal pl-5 space-y-1.5">
+                    <li>In Gesprächsrunden redet immer nur <b>eine Person</b> — die Lehrkraft oder ein Kind.</li>
+                    <li>Wenn ich etwas sagen möchte, <b>melde ich mich</b>.</li>
+                    <li><b>Ich höre auf zu reden</b>, wenn um Ruhe gebeten wird.</li>
+                    <li>In Gruppenphasen <b>lenke ich andere nicht ab</b>, sondern übe konzentriert und helfe mit.</li>
+                    <li>Ich verlasse nicht unerlaubt die Sporthalle.</li>
+                    <li>Die Regeln einzelner Spiele werden eingehalten.</li>
+                  </ol>
+                </div>
+
+                {/* Info zu den Regeln (kompakt) */}
+                <div className="mb-5 text-xs text-stone-600 leading-relaxed space-y-2">
+                  <p>In Gesprächsrunden werden Übungen und Stationen erklärt. Wer dabei redet, hört die Erklärung nicht und lenkt andere ab.</p>
+                  <p>In Gruppenphasen hilfst du, die Aufgabe zu lösen. Toben, schubsen, quatschen oder herumsitzen schadet der Gruppe.</p>
+                  <p>Werden Spielregeln nicht eingehalten, entstehen Konflikte — Ärger für die ganze Klasse. Und deine Sportnote kann sich verschlechtern.</p>
+                </div>
+
+                {/* Antwortfelder */}
+                <div className="mb-5">
+                  <div className="font-semibold text-sm mb-1.5">Zu Aufgabe 2 (Begründung)</div>
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="druck-linie border-b border-stone-300 h-6 mb-0.5" />
+                  ))}
+                </div>
+                <div className="mb-5">
+                  <div className="font-semibold text-sm mb-1.5">Zu Aufgabe 3 (Verhaltensplan)</div>
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="druck-linie border-b border-stone-300 h-6 mb-0.5" />
+                  ))}
+                </div>
+
+                {/* Eltern-Abschnitt */}
+                <div className="druck-kasten border-t-2 border-dashed border-stone-400 pt-4 mt-6">
+                  <div className="font-semibold text-sm mb-2">Information für die Eltern</div>
+                  <p className="text-xs text-stone-600 mb-4 leading-relaxed">
+                    Ihr Kind hat im Sportunterricht mehrfach gestört. Als Konsequenz muss es die oben aufgelisteten Aufgaben erledigen. Mit Ihrer Unterschrift bestätigen Sie, dass Sie über das Verhalten informiert wurden, es mit Ihrem Kind besprochen haben und mit dem Verhaltensplan (Aufgabe 3) einverstanden sind.
+                  </p>
+                  <div className="grid grid-cols-2 gap-6 mt-6">
+                    <div>
+                      <div className="druck-linie border-b border-stone-500 h-6 mb-1" />
+                      <div className="text-[10px] text-stone-500">Ort, Datum</div>
+                    </div>
+                    <div>
+                      <div className="druck-linie border-b border-stone-500 h-6 mb-1" />
+                      <div className="text-[10px] text-stone-500">Unterschrift</div>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* Schnellerfassung nach der Stunde: Note, Notiz und Auffälligkeit pro Schüler:in in einer kompakten Liste */
 /* Stunden-Abschluss in 30 Sekunden. Nach dem Kern-Purpose: "Tuvi merkt sich
    fuer dich, was du im Alltag nicht alles im Kopf haben kannst". Statt einer
@@ -5093,6 +5315,9 @@ function StundenAbschlussModal({ data, update, fach, cls, students, halbjahr, on
   const [notizDraft, setNotizDraft] = useState("");
   /* Doppelklick-Guard: verhindert zweifachen Abschluss bei ungeduldigem Tap. */
   const [saving, setSaving] = useState(false);
+  /* Sport-Druckvorlagen: welches Kind + Vorlagen-Auswahl-Menu. */
+  const [druckAuswahlFuer, setDruckAuswahlFuer] = useState(null);
+  const [druckVorlage, setDruckVorlage] = useState(null); // { sid, vorlage }
 
   function toggleMitarbeit(sid, wert) {
     setZustand((z) => {
@@ -5240,6 +5465,18 @@ function StundenAbschlussModal({ data, update, fach, cls, students, halbjahr, on
                     aria-label="Kurze Notiz"
                     title="Kurze Notiz"
                   ><StickyNote size={14} /></button>
+                  {/* Sport-Druckvorlagen: kleines Drucker-Icon rechts. Oeffnet
+                      Auswahl "Stundenprotokoll" (wer Sportzeug vergessen hat
+                      schreibt mit) oder "Regelbruch-Arbeitsauftrag" (Regeln
+                      abschreiben + Verhaltensplan bei Stoerungen). */}
+                  {istSport && (
+                    <button
+                      onClick={() => setDruckAuswahlFuer(s.id)}
+                      className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center border border-stone-200 text-stone-400 hover:text-stone-700 hover:border-stone-300 press-scale"
+                      aria-label="Sport-Vorlage drucken"
+                      title="Sport-Vorlage drucken"
+                    ><Printer size={13} /></button>
+                  )}
                 </li>
               );
             })}
@@ -5283,6 +5520,52 @@ function StundenAbschlussModal({ data, update, fach, cls, students, halbjahr, on
               </div>
             </div>
           </div>
+        )}
+
+        {/* Sport-Druckvorlagen-Auswahl: klein, zwei Optionen. Erscheint nach
+            Klick aufs Drucker-Icon. Danach oeffnet sich das Vorlagen-Modal. */}
+        {druckAuswahlFuer != null && (
+          <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-[60]" onClick={() => setDruckAuswahlFuer(null)}>
+            <div className="bg-white w-full md:max-w-sm rounded-t-3xl md:rounded-2xl shadow-xl p-4 pb-[max(1.5rem,env(safe-area-inset-bottom))]" onClick={(e) => e.stopPropagation()}>
+              <div className="text-xs font-semibold uppercase tracking-wide text-stone-400 mb-2">
+                Sport-Vorlage für {students.find((s) => s.id === druckAuswahlFuer)?.name}
+              </div>
+              <div className="space-y-2">
+                <button
+                  onClick={() => { setDruckVorlage({ sid: druckAuswahlFuer, vorlage: "protokoll" }); setDruckAuswahlFuer(null); }}
+                  className="w-full flex items-start gap-3 rounded-xl border border-stone-200 hover:border-stone-300 hover:bg-stone-50 p-3 text-left press-scale"
+                >
+                  <ClipboardCheck size={18} className="text-stone-500 mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-stone-800">Stundenprotokoll</div>
+                    <div className="text-xs text-stone-500">Kind schreibt die Stunde mit — z.B. bei vergessenem Sportzeug.</div>
+                  </div>
+                </button>
+                <button
+                  onClick={() => { setDruckVorlage({ sid: druckAuswahlFuer, vorlage: "regelbruch" }); setDruckAuswahlFuer(null); }}
+                  className="w-full flex items-start gap-3 rounded-xl border border-stone-200 hover:border-stone-300 hover:bg-stone-50 p-3 text-left press-scale"
+                >
+                  <AlertTriangle size={18} className="text-stone-500 mt-0.5 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-sm font-semibold text-stone-800">Regelbruch-Arbeitsauftrag</div>
+                    <div className="text-xs text-stone-500">Regeln abschreiben, Verhaltensplan, Elternunterschrift.</div>
+                  </div>
+                </button>
+              </div>
+              <button onClick={() => setDruckAuswahlFuer(null)} className="w-full mt-3 py-2 text-xs text-stone-500 hover:akzent-text">Abbrechen</button>
+            </div>
+          </div>
+        )}
+
+        {/* Vorlage selbst */}
+        {druckVorlage && (
+          <SportDruckVorlage
+            vorlage={druckVorlage.vorlage}
+            student={students.find((s) => s.id === druckVorlage.sid)}
+            klasse={cls}
+            datum={heute}
+            onClose={() => setDruckVorlage(null)}
+          />
         )}
       </div>
     </div>
