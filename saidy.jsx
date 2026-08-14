@@ -4599,7 +4599,7 @@ export default function App() {
         </aside>
 
         {/* Inhalt */}
-        <main ref={mainRef} className="flex-1 md:ml-56 overflow-y-auto px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-6 md:pb-8 md:px-8 md:pt-8 max-w-5xl">
+        <main ref={mainRef} className="flex-1 md:ml-56 overflow-y-auto px-4 pt-[max(env(safe-area-inset-top),1.25rem)] pb-[calc(80px+env(safe-area-inset-bottom))] md:pb-8 md:px-8 md:pt-8 max-w-5xl">
           {saveState === "error" && (
             <div className="mb-5 flex items-center gap-3 bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm">
               <span className="text-red-600 shrink-0">⚠</span>
@@ -4739,14 +4739,18 @@ export default function App() {
         </main>
       </div>
 
-      {/* Untere Navigation (nur mobil) – Flex-Item am Ende des Root-Containers,
-          nicht mehr fixed. Der Root-Container ist 100dvh und folgt iOS' URL-Bar
-          dynamisch – Nav klebt garantiert am Bildschirmrand. Kein auto-collapse
-          beim Scrollen (siehe Kommentar am scroll-useEffect), deshalb hier auch
-          keine max-height Animation mehr – die verursachte auf iOS ein Flackern.
-          overflow visible, damit der FAB (-mt-5) nach oben ragen darf. */}
+      {/* Untere Navigation (nur mobil) – position:fixed am Viewport-Rand.
+          Der frühere Ansatz (Flex-Child am Ende eines 100dvh-Containers) war
+          auf iOS unzuverlaessig: wenn Safari die URL-Bar wieder einblendet
+          oder die Tastatur ein Input-Feld verschiebt, wird der 100dvh-
+          Container umberechnet und die Nav rutscht sichtbar hoch, statt am
+          Bildschirmrand zu bleiben. Mit position:fixed ist die Nav vom
+          Viewport statt vom Container abhaengig - iOS' Bottom-Bar-Animation
+          ueberdeckt sie kurz, kann sie aber nicht abheben.
+          main hat pb-[80px+safe-area], damit Content nicht hinter der Nav
+          verschwindet. overflow:visible bleibt fuer den FAB (-mt-5). */}
       <nav
-        className={`md:hidden shrink-0 relative ${fabOpen ? "z-[46]" : "z-40"} shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]`}
+        className={`md:hidden fixed bottom-0 left-0 right-0 ${fabOpen ? "z-[46]" : "z-40"} shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]`}
         style={{
           background: "rgba(244,241,232,0.95)",
           borderTop: "1px solid rgba(79,88,68,0.08)",
