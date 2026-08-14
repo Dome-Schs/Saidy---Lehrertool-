@@ -1,5 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import Papa from "papaparse";
+import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient(
+  "https://jroaqcucjczmbqyjfsie.supabase.co",
+  "sb_publishable_a4KxJIgBvBf4fbZgy3G6hQ_t9NODQ4f"
+);
 import {
   LayoutGrid, Users, CalendarDays, GraduationCap,
   Plus, X, Trash2, ChevronLeft, ChevronRight, ChevronDown, Settings2, Check,
@@ -7,7 +13,7 @@ import {
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
   Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target, Mic,
-  Lightbulb, BookOpen, Paperclip, Camera, FolderOpen, Folder, Star, User,
+  Lightbulb, BookOpen, Paperclip, Camera, FolderOpen, Folder, Star, User, LogOut,
 } from "lucide-react";
 
 /* ---------- Konstanten ---------- */
@@ -3575,7 +3581,110 @@ function GlobalSearchModal({ data, onSelectStudent, onClose }) {
   );
 }
 
+function LoginScreen() {
+  const [mode, setMode] = useState("login");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(null);
+
+  const handle = async () => {
+    setError(null);
+    setLoading(true);
+    try {
+      if (mode === "login") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        setSuccess("Konto erstellt! Bitte bestätige deine E-Mail-Adresse, dann kannst du dich anmelden.");
+      }
+    } catch (e) {
+      setError(e.message === "Invalid login credentials" ? "E-Mail oder Passwort falsch." : e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-[#F4F1E8] flex items-center justify-center p-6">
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 rounded-2xl bg-[#4F5844] flex items-center justify-center font-serif text-4xl font-bold text-[#F4F1E8] mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
+          <h1 className="text-2xl font-semibold text-stone-800">Tuvi</h1>
+          <p className="text-sm text-stone-500 mt-1">Das pädagogische Gedächtnis</p>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200">
+          <h2 className="text-base font-semibold text-stone-800 mb-4">
+            {mode === "login" ? "Anmelden" : "Konto erstellen"}
+          </h2>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-stone-500 mb-1 block">E-Mail</label>
+              <input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F5844]/30 focus:border-[#4F5844]"
+                placeholder="deine@email.de"
+                autoComplete="email"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-stone-500 mb-1 block">Passwort</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F5844]/30 focus:border-[#4F5844]"
+                placeholder="••••••••"
+                autoComplete={mode === "login" ? "current-password" : "new-password"}
+                onKeyDown={e => e.key === "Enter" && handle()}
+              />
+            </div>
+          </div>
+          {error && <p className="text-xs text-red-600 mt-3 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+          {success && <p className="text-xs text-green-700 mt-3 bg-green-50 rounded-lg px-3 py-2">{success}</p>}
+          <button
+            onClick={handle}
+            disabled={loading || !email || !password}
+            className="w-full mt-4 bg-[#4F5844] text-white rounded-xl py-2.5 text-sm font-medium disabled:opacity-40 active:scale-[0.98] transition-transform"
+          >
+            {loading ? "…" : mode === "login" ? "Anmelden" : "Konto erstellen"}
+          </button>
+          <button
+            onClick={() => { setMode(m => m === "login" ? "signup" : "login"); setError(null); setSuccess(null); }}
+            className="w-full mt-3 text-xs text-stone-400 hover:text-stone-600 py-1"
+          >
+            {mode === "login" ? "Noch kein Konto? Jetzt erstellen" : "Bereits ein Konto? Anmelden"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
+  const [user, setUser] = useState(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const userRef = useRef(null);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const u = session?.user ?? null;
+      setUser(u);
+      userRef.current = u;
+      setAuthChecked(true);
+      if (!u) {
+        setLoaded(false);
+        setData(EMPTY_DATA);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   const [data, setData] = useState(EMPTY_DATA);
   const [loaded, setLoaded] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false); // gespeicherte Daten unlesbar – Autosave blockieren
@@ -3686,11 +3795,16 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (!user) return;
     (async () => {
       try {
-        const res = await window.storage.get("app_data");
-        if (res && res.value) {
-          const parsed = { ...EMPTY_DATA, ...JSON.parse(res.value) };
+        const { data: row } = await supabase
+          .from("user_data")
+          .select("data")
+          .eq("user_id", user.id)
+          .single();
+        if (row && row.data) {
+          const parsed = { ...EMPTY_DATA, ...row.data };
           // Migration: frühere dritte Kategorie "Klassenarbeit" in "schriftlich" überführen
           parsed.grades = (parsed.grades || []).map((g) =>
             g.category === "klassenarbeit" ? { ...g, category: "schriftlich" } : g
@@ -3806,27 +3920,30 @@ export default function App() {
           setShowOnboarding(true);
         }
       } catch (e) {
-        /* Gespeicherte Daten sind unlesbar. Auf keinen Fall Demodaten setzen – der
-           Autosave würde sie 500 ms später über den Originalbestand schreiben. */
         console.warn("[Tuvi] Laden fehlgeschlagen:", e);
         setLoadFailed(true);
         setToast("⚠ Gespeicherte Daten konnten nicht gelesen werden. Bitte ein Backup einspielen – es wurde nichts überschrieben.");
       }
       setLoaded(true);
     })();
-  }, []);
+  }, [user]);
 
   useEffect(() => {
-    if (!loaded || loadFailed) return; // nie über einen unlesbaren Bestand schreiben
+    if (!loaded || loadFailed) return;
+    if (!userRef.current) return;
     setSaveState("saving");
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(async () => {
       try {
-        await window.storage.set("app_data", JSON.stringify(data));
+        const { error } = await supabase
+          .from("user_data")
+          .upsert(
+            { user_id: userRef.current.id, data, updated_at: new Date().toISOString() },
+            { onConflict: "user_id" }
+          );
+        if (error) throw error;
         setSaveState("saved");
       } catch (e) {
-        /* Meist voller Speicher oder privater Modus. Der Grund steht sonst
-           nirgends – ueber Web Inspector am Geraet ist er so auffindbar. */
         console.warn("[Tuvi] Speichern fehlgeschlagen:", e);
         setSaveState("error");
       }
@@ -4235,6 +4352,13 @@ export default function App() {
     { label: "Termin", icon: CalendarDays, onClick: () => { setKalenderAutoForm(true); goTo("kalender"); } },
   ];
 
+  if (!authChecked) {
+    return <div className="min-h-screen bg-[#F4F1E8]" />;
+  }
+  if (!user) {
+    return <LoginScreen />;
+  }
+
   if (!loaded) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center app-bg gap-4">
@@ -4631,6 +4755,12 @@ export default function App() {
             >
               <Settings2 size={17} strokeWidth={2} /> Einstellungen
             </button>
+            <button
+              onClick={() => supabase.auth.signOut()}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-stone-400 hover:bg-stone-50 hover:text-stone-600 transition-colors"
+            >
+              <LogOut size={17} strokeWidth={2} /> Abmelden
+            </button>
           </div>
         </aside>
 
@@ -4912,6 +5042,13 @@ export default function App() {
               >
                 <MessageSquare size={22} className="text-stone-500" />
                 <span className="text-xs text-stone-600">Hilfe</span>
+              </button>
+              <button
+                onClick={() => { supabase.auth.signOut(); setShowMore(false); }}
+                className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-stone-200"
+              >
+                <LogOut size={22} className="text-stone-500" />
+                <span className="text-xs text-stone-600">Abmelden</span>
               </button>
             </div>
           </div>
