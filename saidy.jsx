@@ -3802,7 +3802,7 @@ export default function App() {
           .from("user_data")
           .select("data")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
         if (row && row.data) {
           const parsed = { ...EMPTY_DATA, ...row.data };
           // Migration: frühere dritte Kategorie "Klassenarbeit" in "schriftlich" überführen
