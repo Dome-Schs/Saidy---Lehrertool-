@@ -15,11 +15,11 @@ export default defineConfig({
         globPatterns: ["**/*.{html,js,css,png,json}"],
         runtimeCaching: [
           {
-            urlPattern: /\//,
+            urlPattern: ({ url }) => url.origin === self.location.origin,
             handler: "NetworkFirst",
             options: {
               cacheName: "saidy-runtime",
-              networkTimeoutSeconds: 3,
+              networkTimeoutSeconds: 10,
               expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 7 },
             },
           },
