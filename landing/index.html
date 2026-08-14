@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tuvi — Das pädagogische Gedächtnis für Fachlehrkräfte</title>
+  <meta name="description" content="Tuvi ist kein Notenprogramm, sondern ein pädagogisches Gedächtnis für Fachlehrkräfte der Sekundarstufe I. Kostenlos, ohne Login, 100 % lokal im Browser." />
+  <meta property="og:title" content="Tuvi — Das pädagogische Gedächtnis für Fachlehrkräfte" />
+  <meta property="og:description" content="Kein Notenprogramm. Sondern die digitale Schülerakte, die Wissen bündelt, Kontinuität schafft und Zeit für die Kinder freimacht." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#4F5844" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%234F5844'/%3E%3Ctext x='50' y='68' font-family='Georgia,serif' font-size='58' font-weight='700' fill='%23F4F1E8' text-anchor='middle'%3ET%3C/text%3E%3C/svg%3E" />
+  <style>
+    :root {
+      --oliv: #4F5844;
+      --oliv-dunkel: #3E4636;
+      --oliv-hell: #ECEEE2;
+      --creme: #F4F1E8;
+      --karte: #FFFDF8;
+      --linie: #E4DFD2;
+      --ink: #2E3328;
+      --grau: #6B6960;
+      --grau-hell: #A8A69D;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--ink);
+      background: var(--creme);
+      line-height: 1.55;
+      font-size: 17px;
+      -webkit-font-smoothing: antialiased;
+    }
+    .wrap { max-width: 940px; margin: 0 auto; padding: 0 1.5rem; }
+
+    /* Header */
+    header.top {
+      padding: 1.4rem 0;
+      border-bottom: 1px solid var(--linie);
+      background: var(--creme);
+    }
+    header.top .wrap { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .logo { display: flex; align-items: center; gap: 0.65rem; }
+    .logo-mark {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: var(--oliv); color: var(--creme);
+      display: flex; align-items: center; justify-content: center;
+      font-family: Georgia, "Iowan Old Style", ui-serif, serif;
+      font-weight: 700; font-size: 20px;
+    }
+    .logo-text { font-weight: 600; letter-spacing: 0.02em; color: var(--ink); }
+    .top-link {
+      color: var(--oliv); text-decoration: none;
+      font-size: 14px; font-weight: 500;
+    }
+    .top-link:hover { text-decoration: underline; }
+
+    /* Hero */
+    .hero { padding: 4.5rem 0 3.5rem; }
+    .hero .eyebrow {
+      font-size: 12px; letter-spacing: 0.22em; text-transform: uppercase;
+      color: var(--oliv); font-weight: 600; margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-family: Georgia, "Iowan Old Style", ui-serif, serif;
+      font-weight: 500;
+      font-size: clamp(1.9rem, 4.5vw, 2.9rem);
+      line-height: 1.25;
+      color: var(--ink);
+      max-width: 720px;
+      text-wrap: balance;
+      margin-bottom: 1.4rem;
+    }
+    .hero p.lead {
+      font-size: 1.1rem;
+      color: var(--grau);
+      max-width: 620px;
+      margin-bottom: 2rem;
+    }
+    .cta-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: center; }
+    .btn {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      padding: 0.85rem 1.35rem; border-radius: 999px;
+      font-size: 15px; font-weight: 500; text-decoration: none;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-primary {
+      background: var(--oliv); color: white;
+      box-shadow: 0 6px 20px rgba(79,88,68,0.25);
+    }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(79,88,68,0.35); }
+    .btn-ghost {
+      color: var(--oliv); background: transparent;
+      border: 1px solid var(--linie);
+    }
+    .btn-ghost:hover { background: var(--karte); }
+    .btn-arrow { transition: transform 0.2s ease; }
+    .btn:hover .btn-arrow { transform: translateX(2px); }
+
+    /* Zitat */
+    .zitat {
+      background: var(--karte);
+      border-top: 1px solid var(--linie);
+      border-bottom: 1px solid var(--linie);
+      padding: 3rem 0;
+    }
+    .zitat blockquote {
+      font-family: Georgia, "Iowan Old Style", ui-serif, serif;
+      font-size: clamp(1.1rem, 2.4vw, 1.35rem);
+      line-height: 1.55;
+      color: var(--ink);
+      max-width: 720px;
+      font-style: italic;
+      text-wrap: pretty;
+    }
+    .zitat blockquote::before {
+      content: "„";
+      font-size: 3rem;
+      color: var(--oliv);
+      line-height: 0.5;
+      vertical-align: -0.4em;
+      margin-right: 0.1em;
+      opacity: 0.5;
+    }
+
+    /* Prinzipien */
+    .prinzipien { padding: 4rem 0; }
+    .prinzipien h2 {
+      font-family: Georgia, "Iowan Old Style", ui-serif, serif;
+      font-size: 1.5rem; font-weight: 500;
+      color: var(--ink); margin-bottom: 2rem;
+    }
+    .prinzip-grid {
+      display: grid; gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+    .prinzip {
+      background: var(--karte);
+      padding: 1.75rem 1.5rem;
+      border-radius: 14px;
+      border: 1px solid var(--linie);
+    }
+    .prinzip .nummer {
+      font-family: Georgia, serif;
+      font-size: 1.1rem; color: var(--oliv); font-weight: 700;
+      margin-bottom: 0.75rem;
+      display: inline-block;
+      width: 30px; height: 30px; line-height: 30px; text-align: center;
+      background: var(--oliv-hell); border-radius: 50%;
+    }
+    .prinzip h3 {
+      font-size: 1.05rem; font-weight: 600; color: var(--ink);
+      margin-bottom: 0.5rem;
+    }
+    .prinzip p { font-size: 14.5px; color: var(--grau); line-height: 1.55; }
+
+    /* Anders */
+    .anders {
+      padding: 4rem 0;
+      background: var(--karte);
+      border-top: 1px solid var(--linie);
+      border-bottom: 1px solid var(--linie);
+    }
+    .anders h2 {
+      font-family: Georgia, "Iowan Old Style", ui-serif, serif;
+      font-size: 1.5rem; font-weight: 500;
+      margin-bottom: 1.75rem;
+    }
+    .vergleich {
+      display: grid; gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    }
+    .spalte {
+      padding: 1.5rem 1.3rem;
+      border-radius: 14px;
+      background: var(--creme);
+      border: 1px solid var(--linie);
+    }
+    .spalte .label {
+      font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--grau-hell); font-weight: 600; margin-bottom: 0.75rem;
+    }
+    .spalte.gegen { opacity: 0.75; }
+    .spalte h4 {
+      font-size: 1.05rem; font-weight: 500;
+      color: var(--ink); margin-bottom: 0.5rem;
+      font-family: Georgia, serif;
+    }
+    .spalte ul { list-style: none; padding: 0; }
+    .spalte li {
+      font-size: 14.5px; color: var(--grau);
+      padding: 0.35rem 0;
+      display: flex; align-items: flex-start; gap: 0.5rem;
+    }
+    .spalte li::before {
+      content: "";
+      display: inline-block;
+      width: 5px; height: 5px; border-radius: 50%;
+      background: var(--oliv);
+      margin-top: 0.55rem; flex-shrink: 0;
+    }
+    .spalte.gegen li::before { background: var(--grau-hell); }
+
+    /* Vertrauen */
+    .vertrauen { padding: 3.5rem 0; }
+    .vertrauen-grid {
+      display: grid; gap: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+    .fakt { }
+    .fakt .icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: var(--oliv-hell); color: var(--oliv);
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 0.75rem;
+      font-family: Georgia, serif; font-weight: 700;
+    }
+    .fakt h4 { font-size: 0.98rem; font-weight: 600; margin-bottom: 0.35rem; color: var(--ink); }
+    .fakt p { font-size: 14px; color: var(--grau); }
+
+    /* CTA-Streifen */
+    .cta-band {
+      padding: 3.5rem 0;
+      background: var(--oliv);
+      color: white;
+    }
+    .cta-band h2 {
+      font-family: Georgia, "Iowan Old Style", ui-serif, serif;
+      font-size: clamp(1.3rem, 3vw, 1.7rem);
+      font-weight: 500;
+      margin-bottom: 0.75rem;
+      color: white;
+      text-wrap: balance;
+    }
+    .cta-band p {
+      color: rgba(255,255,255,0.8);
+      margin-bottom: 1.75rem;
+      max-width: 520px;
+    }
+    .cta-band .btn-primary {
+      background: white; color: var(--oliv);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+    }
+
+    /* Footer */
+    footer {
+      padding: 2.5rem 0 3rem;
+      background: var(--creme);
+      border-top: 1px solid var(--linie);
+      font-size: 13.5px;
+      color: var(--grau);
+    }
+    footer .foot-row {
+      display: flex; flex-wrap: wrap; gap: 1.75rem;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+    }
+    footer .foot-col h5 {
+      font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+      color: var(--grau-hell); font-weight: 600; margin-bottom: 0.6rem;
+    }
+    footer a { color: var(--oliv); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+    footer .rechts { color: var(--grau-hell); font-size: 12px; }
+    footer p { font-size: 13.5px; line-height: 1.55; margin: 0.15rem 0; }
+
+    @media (max-width: 640px) {
+      .hero { padding: 3rem 0 2.5rem; }
+      .prinzipien, .anders, .vertrauen, .cta-band { padding: 3rem 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="top">
+    <div class="wrap">
+      <div class="logo">
+        <div class="logo-mark">T</div>
+        <div class="logo-text">Tuvi</div>
+      </div>
+      <a class="top-link" href="#zur-app">Zur App →</a>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="wrap">
+      <div class="eyebrow">Für Fachlehrkräfte der Sek I</div>
+      <h1>Das pädagogische Gedächtnis, das mit dem Kind bleibt — nicht mit der Lehrkraft.</h1>
+      <p class="lead">
+        Kein Notenprogramm. Sondern die digitale Schülerakte, die Wissen bündelt, Kontinuität bei Lehrerwechseln schafft und Zeit für das freimacht, was wirklich zählt: die Arbeit mit den Kindern.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn-primary" id="zur-app" href="https://dome-schs.github.io/Saidy---Lehrertool-/" target="_blank" rel="noopener">
+          Tuvi öffnen <span class="btn-arrow">→</span>
+        </a>
+        <a class="btn btn-ghost" href="#warum">Was ist anders?</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="zitat">
+    <div class="wrap">
+      <blockquote>
+        Jedes Kind verdient, dass seine Geschichte, seine Stärken und seine Bedürfnisse nicht mit einem Lehrerwechsel verloren gehen.
+      </blockquote>
+    </div>
+  </section>
+
+  <section class="prinzipien">
+    <div class="wrap">
+      <h2>Drei Leitprinzipien</h2>
+      <div class="prinzip-grid">
+        <div class="prinzip">
+          <div class="nummer">1</div>
+          <h3>Wissen geht nie verloren</h3>
+          <p>Egal ob Lehrerwechsel, Klassenwechsel oder Vertretung — die Erfahrung mit dem Kind bleibt zugänglich.</p>
+        </div>
+        <div class="prinzip">
+          <div class="nummer">2</div>
+          <h3>Alles hat Kontext</h3>
+          <p>Nicht „Förderbedarf Lernen", sondern welche Maßnahmen bei diesem Kind funktionieren — und welche nicht.</p>
+        </div>
+        <div class="prinzip">
+          <div class="nummer">3</div>
+          <h3>Dokumentation wird Unterstützung</h3>
+          <p>Aus vielen kleinen Einträgen entstehen automatisch Zeugnisbegründung, Elterngespräch, Förderplan, Übergabe.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="anders" id="warum">
+    <div class="wrap">
+      <h2>Was Tuvi anders macht</h2>
+      <div class="vergleich">
+        <div class="spalte">
+          <div class="label">Tuvi ist</div>
+          <h4>Ein pädagogisches Gedächtnis</h4>
+          <ul>
+            <li>Beobachtungen, Gespräche, Vereinbarungen im Kontext des Kindes</li>
+            <li>Kontinuität über Klassenstufen und Lehrerwechsel hinweg</li>
+            <li>Ein 30-Sekunden-Stundenabschluss statt leerem Formular</li>
+            <li>Automatisches Zusammenspiel: Vor-Stunden-Vorbereitung, Klassenradar, Wochenrückblick</li>
+          </ul>
+        </div>
+        <div class="spalte gegen">
+          <div class="label">Tuvi ist nicht</div>
+          <h4>Ein weiteres Notenprogramm</h4>
+          <ul>
+            <li>Kein Ersatz für die dienstliche Notenerfassung</li>
+            <li>Kein Schulverwaltungssystem</li>
+            <li>Keine Kommunikationsplattform mit Eltern</li>
+            <li>Keine automatische Notenberechnung, die den pädagogischen Blick ersetzt</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="vertrauen">
+    <div class="wrap">
+      <div class="vertrauen-grid">
+        <div class="fakt">
+          <div class="icon">🔒</div>
+          <h4>100 % lokal</h4>
+          <p>Alle Daten bleiben auf deinem Gerät. Keine Cloud, keine Übertragung.</p>
+        </div>
+        <div class="fakt">
+          <div class="icon">✕</div>
+          <h4>Kein Login</h4>
+          <p>Keine Registrierung, kein Konto, keine E-Mail nötig zum Ausprobieren.</p>
+        </div>
+        <div class="fakt">
+          <div class="icon">€</div>
+          <h4>Kostenlos</h4>
+          <p>Privates, nicht-kommerzielles Projekt ohne Gewinnabsicht.</p>
+        </div>
+        <div class="fakt">
+          <div class="icon">□</div>
+          <h4>Auf jedem Gerät</h4>
+          <p>Läuft im Browser als PWA — auf iPhone, iPad, Laptop.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <div class="wrap">
+      <h2>Bereit für eine Stunde Test?</h2>
+      <p>Öffne Tuvi direkt im Browser. Beim ersten Start werden nur Bundesland und eine Klasse eingerichtet — mehr braucht es nicht.</p>
+      <a class="btn btn-primary" href="https://dome-schs.github.io/Saidy---Lehrertool-/" target="_blank" rel="noopener">
+        Tuvi öffnen <span class="btn-arrow">→</span>
+      </a>
+    </div>
+  </section>
+
+  <footer>
+    <div class="wrap">
+      <div class="foot-row">
+        <div class="foot-col">
+          <h5>Kontakt</h5>
+          <p><a href="mailto:kontakt@tuvi.com">kontakt@tuvi.com</a></p>
+        </div>
+        <div class="foot-col">
+          <h5>Impressum</h5>
+          <p>[Vorname Nachname]</p>
+          <p>[Straße Hausnummer]</p>
+          <p>[PLZ Ort]</p>
+        </div>
+        <div class="foot-col">
+          <h5>Rechtliches</h5>
+          <p>Privates Projekt · Nicht-kommerziell</p>
+          <p>Datenschutz: Verarbeitung ausschließlich lokal im Browser</p>
+        </div>
+      </div>
+      <div class="rechts">© 2026 Tuvi · Ein privates pädagogisches Projekt</div>
+    </div>
+  </footer>
+
+</body>
+</html>
