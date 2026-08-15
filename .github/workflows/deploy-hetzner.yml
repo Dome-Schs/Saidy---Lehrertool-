@@ -1,0 +1,29 @@
+name: Deploy to Hetzner Webhosting
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      - name: Upload App per FTP zu Hetzner
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.HETZNER_FTP_SERVER }}
+          username: ${{ secrets.HETZNER_FTP_USERNAME }}
+          password: ${{ secrets.HETZNER_FTP_PASSWORD }}
+          local-dir: ./dist/
+          server-dir: ${{ secrets.HETZNER_FTP_PATH }}
