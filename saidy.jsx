@@ -3596,16 +3596,28 @@ function LoginScreen() {
       if (mode === "login") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
-      } else {
+      } else if (mode === "signup") {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
         setSuccess("Konto erstellt! Bitte bestätige deine E-Mail-Adresse, dann kannst du dich anmelden.");
+      } else if (mode === "reset") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: "https://tu-vi.de",
+        });
+        if (error) throw error;
+        setSuccess("E-Mail gesendet! Schau in deinen Posteingang und klicke auf den Link, um dein Passwort zurückzusetzen.");
       }
     } catch (e) {
       setError(e.message === "Invalid login credentials" ? "E-Mail oder Passwort falsch." : e.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const switchMode = (newMode) => {
+    setMode(newMode);
+    setError(null);
+    setSuccess(null);
   };
 
   return (
@@ -3618,7 +3630,7 @@ function LoginScreen() {
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200">
           <h2 className="text-base font-semibold text-stone-800 mb-4">
-            {mode === "login" ? "Anmelden" : "Konto erstellen"}
+            {mode === "login" ? "Anmelden" : mode === "signup" ? "Konto erstellen" : "Passwort vergessen"}
           </h2>
           <div className="space-y-3">
             <div>
@@ -3632,33 +3644,46 @@ function LoginScreen() {
                 autoComplete="email"
               />
             </div>
-            <div>
-              <label className="text-xs font-medium text-stone-500 mb-1 block">Passwort</label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F5844]/30 focus:border-[#4F5844]"
-                placeholder="••••••••"
-                autoComplete={mode === "login" ? "current-password" : "new-password"}
-                onKeyDown={e => e.key === "Enter" && handle()}
-              />
-            </div>
+            {mode !== "reset" && (
+              <div>
+                <label className="text-xs font-medium text-stone-500 mb-1 block">Passwort</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F5844]/30 focus:border-[#4F5844]"
+                  placeholder="••••••••"
+                  autoComplete={mode === "login" ? "current-password" : "new-password"}
+                  onKeyDown={e => e.key === "Enter" && handle()}
+                />
+              </div>
+            )}
+            {mode === "reset" && (
+              <p className="text-xs text-stone-500">Wir schicken dir einen Link per E-Mail, mit dem du ein neues Passwort festlegen kannst.</p>
+            )}
           </div>
           {error && <p className="text-xs text-red-600 mt-3 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
           {success && <p className="text-xs text-green-700 mt-3 bg-green-50 rounded-lg px-3 py-2">{success}</p>}
           <button
             onClick={handle}
-            disabled={loading || !email || !password}
+            disabled={loading || !email || (mode !== "reset" && !password)}
             className="w-full mt-4 bg-[#4F5844] text-white rounded-xl py-2.5 text-sm font-medium disabled:opacity-40 active:scale-[0.98] transition-transform"
           >
-            {loading ? "…" : mode === "login" ? "Anmelden" : "Konto erstellen"}
+            {loading ? "…" : mode === "login" ? "Anmelden" : mode === "signup" ? "Konto erstellen" : "Link senden"}
           </button>
+          {mode === "login" && (
+            <button
+              onClick={() => switchMode("reset")}
+              className="w-full mt-2 text-xs text-stone-400 hover:text-stone-600 py-1"
+            >
+              Passwort vergessen?
+            </button>
+          )}
           <button
-            onClick={() => { setMode(m => m === "login" ? "signup" : "login"); setError(null); setSuccess(null); }}
-            className="w-full mt-3 text-xs text-stone-400 hover:text-stone-600 py-1"
+            onClick={() => switchMode(mode === "signup" ? "login" : mode === "reset" ? "login" : "signup")}
+            className="w-full mt-1 text-xs text-stone-400 hover:text-stone-600 py-1"
           >
-            {mode === "login" ? "Noch kein Konto? Jetzt erstellen" : "Bereits ein Konto? Anmelden"}
+            {mode === "login" ? "Noch kein Konto? Jetzt erstellen" : mode === "signup" ? "Bereits ein Konto? Anmelden" : "Zurück zur Anmeldung"}
           </button>
         </div>
       </div>
