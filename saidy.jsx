@@ -3691,17 +3691,116 @@ function LoginScreen() {
   );
 }
 
+function ResetPasswordScreen() {
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const handleReset = async () => {
+    setError(null);
+    if (newPassword.length < 6) { setError("Passwort muss mindestens 6 Zeichen lang sein."); return; }
+    if (newPassword !== confirmPassword) { setError("Passwörter stimmen nicht überein."); return; }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      setDone(true);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (done) {
+    return (
+      <div className="min-h-screen bg-[#F4F1E8] flex items-center justify-center p-6">
+        <div className="w-full max-w-sm">
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-16 h-16 rounded-2xl bg-[#4F5844] flex items-center justify-center font-serif text-4xl font-bold text-[#F4F1E8] mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
+            <h1 className="text-2xl font-semibold text-stone-800">Tuvi</h1>
+          </div>
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 text-center">
+            <div className="text-3xl mb-3">&#10003;</div>
+            <h2 className="text-base font-semibold text-stone-800 mb-2">Passwort geändert!</h2>
+            <p className="text-sm text-stone-500 mb-4">Du kannst dich jetzt mit deinem neuen Passwort anmelden.</p>
+            <button
+              onClick={() => window.location.replace(window.location.origin)}
+              className="w-full bg-[#4F5844] text-white rounded-xl py-2.5 text-sm font-medium active:scale-[0.98] transition-transform"
+            >
+              Zur Anmeldung
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F4F1E8] flex items-center justify-center p-6">
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 rounded-2xl bg-[#4F5844] flex items-center justify-center font-serif text-4xl font-bold text-[#F4F1E8] mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
+          <h1 className="text-2xl font-semibold text-stone-800">Tuvi</h1>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200">
+          <h2 className="text-base font-semibold text-stone-800 mb-4">Neues Passwort festlegen</h2>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium text-stone-500 mb-1 block">Neues Passwort</label>
+              <input
+                type="password"
+                value={newPassword}
+                onChange={e => setNewPassword(e.target.value)}
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F5844]/30 focus:border-[#4F5844]"
+                placeholder="Mindestens 6 Zeichen"
+                autoComplete="new-password"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-stone-500 mb-1 block">Passwort wiederholen</label>
+              <input
+                type="password"
+                value={confirmPassword}
+                onChange={e => setConfirmPassword(e.target.value)}
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F5844]/30 focus:border-[#4F5844]"
+                placeholder="Nochmal eingeben"
+                autoComplete="new-password"
+                onKeyDown={e => e.key === "Enter" && handleReset()}
+              />
+            </div>
+          </div>
+          {error && <p className="text-xs text-red-600 mt-3 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
+          <button
+            onClick={handleReset}
+            disabled={loading || !newPassword || !confirmPassword}
+            className="w-full mt-4 bg-[#4F5844] text-white rounded-xl py-2.5 text-sm font-medium disabled:opacity-40 active:scale-[0.98] transition-transform"
+          >
+            {loading ? "…" : "Passwort speichern"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(false);
   const userRef = useRef(null);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
       setUser(u);
       userRef.current = u;
       setAuthChecked(true);
+      if (event === "PASSWORD_RECOVERY") {
+        setShowPasswordReset(true);
+      }
       if (!u) {
         setLoaded(false);
         setData(EMPTY_DATA);
@@ -4379,6 +4478,9 @@ export default function App() {
 
   if (!authChecked) {
     return <div className="min-h-screen bg-[#F4F1E8]" />;
+  }
+  if (showPasswordReset) {
+    return <ResetPasswordScreen />;
   }
   if (!user) {
     return <LoginScreen />;
