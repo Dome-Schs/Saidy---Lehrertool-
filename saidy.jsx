@@ -2779,7 +2779,8 @@ const HELP_DATA = [
       { q: "Ersetzt die App-Sperre mein Passwort?", a: `Nein, und das ist wichtig zu verstehen. Die Sperre ist ein zusätzlicher Riegel vor der App auf diesem einen Gerät. Sie löst den Fall, der im Schulalltag wirklich vorkommt: Das entsperrte iPhone liegt auf dem Pult und jemand tippt Tu-vi an – ohne dein Gesicht sind dann keine Schülerdaten zu sehen. Sie ist aber kein zweiter Anmeldefaktor und verschlüsselt die Daten nicht zusätzlich. Dein Passwort bleibt der eigentliche Schutz deines Kontos: Wähle es sicher und gib es nicht weiter.` },
       { q: "Wie sind die Einstellungen aufgebaut?", a: `Die Einstellungen führen zu fünf Bereichen statt zu einer langen Liste: „Schuljahr & Schule" (Halbjahr, Bundesland, Schulferien, Klassen versetzen), „Darstellung" (welche Blöcke auf der Übersicht erscheinen und in welcher Reihenfolge, die Karte im Schülerprofil, Unterrichtstipps), „Sicherheit & Konto" (App-Sperre mit Face ID, angemeldete E-Mail, Abmelden), „Daten & Sicherung" (Sichern, Wiederherstellen, Freitags-Erinnerung, iCloud, WebUntis-Import und ganz am Ende das Löschen aller Daten) sowie „Über Tu-vi" (Impressum und Datenschutz). Ein Pfeil oben links führt aus jedem Bereich zurück.` },
       { q: "Wo finde ich den Papierkorb?", a: `Im Tab „Klassen & Schüler" ganz unten. Gelöschte Klassen und Kinder bleiben dort 30 Tage wiederherstellbar, danach werden sie endgültig entfernt. Solange nichts gelöscht wurde, erscheint der Papierkorb gar nicht. Früher lag er in den Einstellungen – dort sucht ihn niemand, wenn gerade aus Versehen eine Klasse verschwunden ist.` },
-      { q: "Was passiert, wenn ich eine Klasse antippe?", a: `Die Klasse öffnet sich als Vollbild mit drei Reitern. „Überblick" zeigt Kennzahlen (Anzahl Kinder, Fächer, Klassen-Ø) und führt weiter zu Schüler:innen, Sitzplan, Klassen-Dashboard, „Klasse verwalten" sowie zu den Noten je Fach. „Unterricht" listet die Fächer mit Reihenplanung und Material. „Noten" zeigt das Notenraster der Klasse. Früher führte Antippen woandershin als Aufklappen – man musste sich merken, welche Geste wohin geht. Das Aufklappen gibt es nicht mehr, alles liegt jetzt hinter dem einen Antippen.` },
+      { q: "Was passiert, wenn ich eine Klasse antippe?", a: `Die Klasse öffnet sich als Vollbild mit drei Reitern. „Überblick" zeigt Kennzahlen (Anzahl Kinder, Fächer, Klassen-Ø) und führt weiter zu Schüler:innen, Sitzplan, Klassen-Dashboard und „Klasse verwalten". „Unterricht" listet die Fächer mit Reihenplanung und Material; klappst du ein Fach auf, stehen darunter „Material, Raum & Gewichtung" und „Noten eintragen". „Noten" ist der direkte Weg zum Eintragen: Fach wählen, Kind antippen, Note vergeben. Früher führte Antippen woandershin als Aufklappen – das Aufklappen gibt es nicht mehr, alles liegt hinter dem einen Antippen.` },
+      { q: "Wie trage ich eine Note ein?", a: `Der kürzeste Weg im Alltag ist der Stundenabschluss: Auf der Übersicht in der JETZT-Karte „Stunde öffnen" – dort vergibst du für die ganze Klasse in einem Durchgang Noten. Willst du gezielt nachtragen, gehst du über die Klasse: „Klassen & Schüler" → Klasse antippen → Reiter „Noten" → Fach wählen → Kind antippen. Dort öffnet sich „Neue Note" mit Art (mündlich/schriftlich), Notenwert, Bezeichnung und Datum. Das ist derselbe Weg wie unter „Noten & Berichte", nur dass die Klasse schon feststeht.` },
       { q: `Was steht im Reiter „Listen" bei den Klassen?`, a: `Drei Übersichten über alle Klassen hinweg: Entschuldigungen, Förderziele und Geburtstage. Der Unterschied zu den Kacheln auf der Startseite: Die Listen lassen sich auch dann öffnen, wenn gerade nichts offen ist – etwa um im Elterngespräch nachzusehen, wann ein Kind zuletzt eine Entschuldigung abgegeben hat.` },
       { q: "Kann Tu-vi dunkel dargestellt werden?", a: `Ja, automatisch. Tu-vi übernimmt die Darstellung deines Geräts: Steht dein iPhone, iPad oder Computer auf „Dunkel", zeigt sich Tu-vi dunkel, bei „Hell" hell. Auf dem iPhone stellst du das unter Einstellungen → Anzeige & Helligkeit ein, auf dem Mac unter Systemeinstellungen → Erscheinungsbild. In der App selbst gibt es dafür bewusst keinen eigenen Schalter – so passt Tu-vi immer zu deinen übrigen Apps. Ausdrucke (Schülerakte, Berichte, Notenlisten) sind immer hell, damit sie auf Papier lesbar bleiben.` },
       { q: "Wie ist die Heute-Seite aufgebaut?", a: `Von oben nach unten priorisiert – die App zeigt nicht alles auf einmal, sondern das was gerade zählt: (1) Kopf mit Wortmarke, Datum und dem grünen Plus-Knopf. (2) „JETZT" – die große Karte für die laufende Stunde, mit Restzeit, Fach & Klasse, Thema, den zu dieser Stunde gehörenden offenen Punkten (Entschuldigungen, „heute Klassenarbeit"-Warnung) und dem Material aus dem Fach. Ein „Stunde öffnen"-Knopf springt in die Schnellerfassung. (3) „ALS NÄCHSTES" – die nächste Stunde, mit „in X Min." oder „in X Std." und – das ist der eigentliche Trick – den Material-Chips unter „Vorher mitnehmen", damit du in der aktuellen Stunde schon weißt, was du gleich einsammeln musst (z. B. „12 Volleybälle · 6 Hütchen · Leibchen"). (4) Zweispaltig „X Dinge brauchen deine Aufmerksamkeit" (Sheet mit allen Signalen) und „Nicht vergessen" (persönliche Aufgabenliste mit +-Feld zum sofort Ergänzen). (5) „Danach heute" – die restlichen Stunden als kompakte Zeilenliste. (6) Kleine Wochentagsleiste zum Vor- und Zurückblättern. (7) Wochenrückblick von Freitag 12 Uhr bis Sonntag Nacht, falls aktiv. (8) Unterrichtstipp des Tages, falls in den Einstellungen aktiv.` },
@@ -2822,6 +2823,7 @@ const HELP_DATA = [
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Tu-vi bildet den gewichteten Durchschnitt aus mündlichen und schriftlichen Noten. Voreingestellt ist 50 zu 50 Prozent – änderbar unter „Klassen & Schüler" → Reiter „Fächer" → Zahnrad beim Fach → „Gewichtung der Noten". Einzelne Noten lassen sich zusätzlich stärker gewichten (Faktor beim Bearbeiten der Note). Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
       { q: "Was ist der Stunden-Abschluss (30 Sekunden)?", a: `Das Klemmbrett-Symbol neben einer Stunde öffnet den 30-Sekunden-Abschluss – die neue Standard-Erfassung nach einer Stunde. Kein Formular mit leerem Notenfeld, sondern eine Liste aller Kinder mit vier One-Tap-Aktionen pro Zeile: + (positive Mitarbeit) · − (zurückhaltend) · ⚠︎ (Sportzeug bzw. Hausaufgabe vergessen) · Notiz (kurzes Textfeld). Ein Tipp pro Kind, alles wird am Ende auf einmal gespeichert. + und − werden als Beobachtungs-Notiz gespeichert (nicht als automatische Note, damit der Durchschnitt nicht verwässert wird); das Vergessen als Vorfall (bei Sport als „Sportzeug", sonst als „Hausaufgabe"). Wer eine echte Note vergeben will, wechselt unten über „Auch Noten vergeben →" in die ausführliche Schnellerfassung. Bei Sport-Stunden erscheint zusätzlich ein Drucker-Symbol pro Kind – dahinter liegen zwei druckbare Vorlagen: „Stundenprotokoll" (für Kinder die z.B. Sportzeug vergessen haben und mitschreiben statt teilnehmen) und „Regelbruch-Arbeitsauftrag" (Regeln abschreiben, Verhaltensplan, Elternunterschrift). Kindnamen und Klasse werden automatisch eingetragen.` },
+      { q: "Wie ändere ich Material, Raum oder Gewichtung eines Fachs?", a: `Klasse antippen → Reiter „Unterricht" → Fach antippen, damit es aufklappt. Unter der Reihenplanung stehen zwei Knöpfe: „Material, Raum & Gewichtung" öffnet den Fach-Editor (dort auch der Termin der nächsten Klassenarbeit), „Noten eintragen" springt in die Notenübersicht dieses Fachs. Dieselben zwei Wege liegen auch hinter dem ···-Symbol rechts in der Fach-Zeile.` },
       { q: "Wo finde ich die Sport-Druckvorlagen ohne Kind-Kontext?", a: `Im Tab „Klassen & Schüler" ganz unten unter „Vorlagen zum Drucken": „Stundenprotokoll" und „Regelbruch-Auftrag". Das öffnet eine leere Vorlage zum Ausdrucken – nützlich für die Ersatzkopien in der Schublade oder wenn du sie spontan brauchst.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Die ausführliche Erfassung wird aus dem Stunden-Abschluss über den Link „Auch Noten vergeben" erreicht. Dort kannst du für alle Schüler:innen einer Klasse Noten (mündlich / schriftlich), ausführliche Notizen und Gespräche eintragen. Eine Doppelstunde wird einmal erfasst, nicht zweimal. Die Notenbuttons sind immer sichtbar. Neben dem Namen liegt das ⚠︎-Symbol für „Vergessen"; Notiz und Gespräch öffnen sich über das ···-Symbol.` },
       { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Tu-vi an, wie viele Unterrichtsstunden bis dahin noch bleiben. Gezählt wird in Unterrichtseinheiten: ein Tag mit diesem Fach ist eine Einheit – eine Doppelstunde aus zwei 45-Minuten-Blöcken zählt also einmal, genau wie eine einzelne Stunde. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Tu-vi die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
@@ -12556,7 +12558,6 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
   const [activeTab, setActiveTab] = useState(initialTab || "ueberblick");
   const [reihenZoom, setReihenZoom] = useState(8); // Wochen sichtbar (nur beim geoeffneten Fach): 8 oder Halbjahr
   const [expandedFachId, setExpandedFachId] = useState(null);
-  const [studentDetail, setStudentDetail] = useState(null); // studentId fuer grosse Ansicht
   const cls = data.classes.find((c) => c.id === klasseId);
   if (!cls) return null;
   const faecher = data.faecher.filter((f) => f.classId === klasseId);
@@ -12576,14 +12577,6 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
     }
     return isoDate(new Date(j, 1, 1));
   })();
-
-  function notenFuerKind(studentId, category = null) {
-    return (data.grades || [])
-      .filter((g) => g.studentId === studentId && (category == null || g.category === category))
-      .filter((g) => (g.date || "") >= halbjahresStart)
-      .sort((a, b) => (a.date || "").localeCompare(b.date || ""))
-      .map((g) => ({ date: g.date, value: Number(g.value), title: g.title, fachId: g.fachId }));
-  }
 
   /* Reihenplanung-Grid: naechste N Wochen ab aktueller KW */
   const reihenSpalten = (() => {
@@ -12875,94 +12868,22 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
           </div>
         )}
 
+        {/* Volles Eintragen statt nur Anzeigen. Bisher konnte man hier nur
+            gucken; getippt wurde in "Noten & Berichte" - derselbe Weg
+            Klasse -> Fach existierte also zweimal, einmal lesend und einmal
+            schreibend. NotenTab wird mit fester Klasse eingebettet, dadurch
+            faellt dort die Klassenauswahl weg. */}
         {activeTab === "noten" && (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between px-1">
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-stone-500">Schüler:innen · Halbjahr</span>
-              <span className="text-[10px] text-stone-400">Gesamt-Ø</span>
-            </div>
-            {students.length === 0 ? (
-              <p className="text-sm text-stone-400 py-6 text-center">Keine Schüler:innen in dieser Klasse.</p>
-            ) : (
-              /* Mobile-first: eine einzige Sparkline mit dem Gesamt-Notenverlauf
-                 pro Kind. Die Aufteilung muendlich/schriftlich zeigt das
-                 Detail-Sheet - dort ist Platz fuer beide Linien. */
-              <ul className="rounded-xl border border-stone-100 bg-white divide-y divide-stone-50">
-                {students.map((s) => {
-                  const muendlich = notenFuerKind(s.id, "muendlich");
-                  const schriftlich = notenFuerKind(s.id, "schriftlich");
-                  const alle = [...muendlich, ...schriftlich].sort((a, b) => (a.date || "").localeCompare(b.date || ""));
-                  const gesamt = alle.length ? (alle.reduce((a, x) => a + x.value, 0) / alle.length) : null;
-                  return (
-                    <li key={s.id}>
-                      <button onClick={() => setStudentDetail(s.id)} className="w-full flex items-center gap-2 px-3 py-2 text-left press-scale">
-                        <StudentAvatar student={s} size={26} />
-                        <span className="flex-1 min-w-0 text-sm text-stone-800 truncate">{s.name}</span>
-                        <span className="shrink-0 flex items-center gap-1.5">
-                          <NotenSparkline noten={alle} color="#4F5844" />
-                          <span className="text-[11px] tabular-nums font-medium text-stone-700 w-6 text-right">{gesamt != null ? gesamt.toFixed(1).replace(".", ",") : "–"}</span>
-                        </span>
-                        <ChevronRight size={12} className="text-stone-300 shrink-0" />
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
+          <NotenTab
+            data={data}
+            update={update}
+            halbjahr={halbjahr}
+            lockedClassId={klasseId}
+          />
         )}
         </div>
       </div>
 
-      {/* Detail-Overlay bei Schüler-Klick im Noten-Tab: Line-Chart + Notenliste */}
-      {studentDetail && (() => {
-        const s = students.find((x) => x.id === studentDetail);
-        if (!s) return null;
-        const mu = notenFuerKind(s.id, "muendlich");
-        const sc = notenFuerKind(s.id, "schriftlich");
-        const alle = [...mu, ...sc].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-        return (
-          <div className="absolute inset-0 bg-stone-900/40 z-10 flex items-end md:items-center justify-center p-3" onClick={() => setStudentDetail(null)}>
-            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto sheet anim-sheet" onClick={(e) => e.stopPropagation()}>
-              <div className="sticky top-0 bg-white/95 backdrop-blur-xl border-b border-stone-100 px-4 py-3 flex items-center gap-2">
-                <StudentAvatar student={s} size={30} />
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold text-stone-800 truncate">{s.name}</div>
-                  <div className="text-[11px] text-stone-500">Notenentwicklung dieses Halbjahr</div>
-                </div>
-                <button onClick={() => onOpenStudent?.(s.id)} className="text-[11px] akzent-text hover:underline shrink-0" title="Profil öffnen">Profil →</button>
-                <button onClick={() => setStudentDetail(null)} className="w-9 h-9 flex items-center justify-center text-stone-400" aria-label="Schließen"><X size={16} /></button>
-              </div>
-              <div className="p-4 space-y-4">
-                <div className="rounded-xl border border-stone-100 bg-stone-50 p-3 flex justify-center">
-                  <NotenLineChart muendlich={mu} schriftlich={sc} w={340} h={170} />
-                </div>
-                <div>
-                  <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-500 mb-1.5">Alle Noten ({alle.length})</div>
-                  {alle.length === 0 ? (
-                    <p className="text-xs text-stone-400 py-3">Noch keine Noten in diesem Halbjahr.</p>
-                  ) : (
-                    <ul className="divide-y divide-stone-100">
-                      {alle.map((n, i) => {
-                        const f = data.faecher.find((x) => x.id === n.fachId);
-                        const istMu = mu.includes(n);
-                        return (
-                          <li key={i} className="py-1.5 flex items-center gap-2 text-xs">
-                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${istMu ? "bg-stone-700" : "bg-amber-700"}`} />
-                            <span className="w-14 text-stone-500 tabular-nums shrink-0">{localDate(n.date).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</span>
-                            <span className="flex-1 truncate text-stone-700">{f?.subject || "?"} · {n.title || (istMu ? "Mündlich" : "Schriftlich")}</span>
-                            <span className="text-stone-800 font-semibold tabular-nums shrink-0">{Number(n.value).toFixed(2).replace(/\.?0+$/, "").replace(".", ",")}</span>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-      })()}
     </div>
   );
 }
@@ -15965,10 +15886,13 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
   );
 }
 
-function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
+/* lockedClassId: eingebettet in die Klassenansicht. Dann faellt Schritt 1
+   (Klasse waehlen) weg - die Klasse steht ja schon fest - und die
+   Ueberschrift entfaellt, weil das Fenster bereits einen Kopf hat. */
+function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial, lockedClassId = null }) {
   const isColor = data.settings?.colorMode === true;
   const colored = isColor && data.settings?.notenfarben !== false;
-  const [selectedClass, setSelectedClass] = useState(null);
+  const [selectedClass, setSelectedClass] = useState(lockedClassId);
   const [selectedFach, setSelectedFach] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
 
@@ -15980,6 +15904,18 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
       onConsumeInitial?.();
     }
   }, [initialFachId]);
+
+  /* Wechselt die Klasse von aussen (anderes Sheet geoeffnet), muss die
+     Fachauswahl zurueckgesetzt werden - sonst zeigt die Ansicht ein Fach
+     der vorherigen Klasse. */
+  useEffect(() => {
+    if (lockedClassId && lockedClassId !== selectedClass) {
+      setSelectedClass(lockedClassId);
+      setSelectedFach(null);
+      setSelectedStudent(null);
+    }
+  }, [lockedClassId]);
+
   const [category, setCategory] = useState("muendlich");
   const [value, setValue] = useState(2);
   const [gradeTitle, setGradeTitle] = useState("");
@@ -16168,19 +16104,19 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
         </datalist>
       )}
       {/* Deutlicher Zurück-Weg, eine Ebene nach oben */}
-      {(selectedClass || fach || selectedStudent) && (
+      {(selectedStudent || fach || (selectedClass && !lockedClassId)) && (
         <button
           onClick={() => {
             if (selectedStudent) setSelectedStudent(null);
             else if (fach) { setSelectedFach(null); setSelectedStudent(null); }
-            else if (selectedClass) { setSelectedClass(null); setSelectedFach(null); setSelectedStudent(null); }
+            else if (selectedClass && !lockedClassId) { setSelectedClass(null); setSelectedFach(null); setSelectedStudent(null); }
           }}
           className="inline-flex items-center gap-1.5 text-sm akzent-text -mb-2"
         >
           <ChevronLeft size={16} /> Zurück
         </button>
       )}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className={`flex items-center gap-2 flex-wrap ${lockedClassId ? "hidden" : ""}`}>
         <h1 className="text-2xl font-semibold tracking-tight">Noten</h1>
         {(selectedClass || fach) && (
           <div className="flex items-center gap-1 text-sm text-stone-500">
@@ -16211,7 +16147,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
       {!data.classes.length && <p className="text-sm text-stone-400">Lege zunächst eine Klasse mit Fächern an.</p>}
 
       {/* Schritt 1: Klasse wählen */}
-      {!selectedClass && !!data.classes.length && (
+      {!selectedClass && !lockedClassId && !!data.classes.length && (
         <div className="space-y-3">
           {data.classes.map((c) => {
             const cFaecher = data.faecher.filter((f) => f.classId === c.id);
