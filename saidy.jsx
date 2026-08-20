@@ -4917,6 +4917,15 @@ export default function App() {
             >
               <Settings2 size={17} strokeWidth={2} /> Einstellungen
             </button>
+            {/* Die Hilfe lag zuvor nur im mobilen Mehr-Menue - am grossen
+                Bildschirm gab es keinen Weg dorthin, obwohl die langen
+                Erklaertexte genau dort am besten lesbar sind. */}
+            <button
+              onClick={() => setShowHelp(true)}
+              className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-stone-500 hover:bg-stone-50 hover:text-stone-800 transition-colors"
+            >
+              <MessageSquare size={17} strokeWidth={2} /> Hilfe
+            </button>
             <button
               onClick={() => supabase.auth.signOut()}
               className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium text-stone-400 hover:bg-stone-50 hover:text-stone-600 transition-colors"
@@ -4966,7 +4975,11 @@ export default function App() {
             </div>
           )}
           {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenKlassenDashboard={(classId) => { setFocusKlassenDashboardId(classId); goTo("klassen"); }} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} onOpenGeburtstage={() => setShowGeburtstage(true)} onOpenFoerderziele={() => setShowFoerderziele(true)} onOpenEntschuldigungen={() => setShowEntschuldigungen(true)} onOpenNachtragen={() => setShowNachtragen(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} setAbschluss={setAbschluss} pendingLessons={pendingLessons} now={now} />}
-          {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} focusKlassenDashboardId={focusKlassenDashboardId} onFocusKlassenDashboardConsumed={() => setFocusKlassenDashboardId(null)} onRegisterFab={setFabActions} showToast={showToast} />}
+          {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} focusKlassenDashboardId={focusKlassenDashboardId} onFocusKlassenDashboardConsumed={() => setFocusKlassenDashboardId(null)} onRegisterFab={setFabActions} showToast={showToast} onOpenListe={(welche) => {
+            if (welche === "entschuldigungen") setShowEntschuldigungen(true);
+            else if (welche === "foerderziele") setShowFoerderziele(true);
+            else if (welche === "geburtstage") setShowGeburtstage(true);
+          }} />}
           {tab === "stundenplan" && <StundenplanTab data={activeData} update={update} />}
           {tab === "kalender" && <KalenderTab data={activeData} update={update} autoOpenForm={kalenderAutoForm} onAutoFormConsumed={() => setKalenderAutoForm(false)} />}
           {tab === "aufgaben" && <AufgabenTab data={activeData} update={update} />}
@@ -5166,7 +5179,13 @@ export default function App() {
         <div className="md:hidden fixed inset-0 bg-stone-900/40 z-50 flex items-end" onClick={() => setShowMore(false)}>
           <div className="bg-white rounded-t-3xl w-full p-4 pb-[max(2rem,env(safe-area-inset-bottom))] anim-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="w-10 h-1 bg-stone-200 rounded-full mx-auto mb-4" />
-            <div className="grid grid-cols-2 gap-3">
+
+            {/* Zwei Gruppen statt einer Kachelwand - dieselbe Ordnung wie in
+                der Seitenleiste am Desktop: erst Bereiche (das sind eigene
+                Seiten), dann Werkzeuge (die legen sich als Fenster darueber).
+                Vorher sahen Stundenplan und Abmelden identisch aus. */}
+            <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest px-1 mb-2">Bereiche</div>
+            <div className="grid grid-cols-3 gap-2.5 mb-4">
               {[tabs[2], tabs[3], tabs[4]].map((t) => {
                 const Icon = t.icon;
                 const active = tab === t.key;
@@ -5177,46 +5196,43 @@ export default function App() {
                     className={`flex flex-col items-center gap-2 py-4 rounded-2xl border ${active ? "akzent-rand akzent-ton" : "border-stone-200"}`}
                   >
                     <Icon size={22} className={active ? "akzent-text" : "text-stone-500"} />
-                    <span className={`text-xs ${active ? "akzent-text font-medium" : "text-stone-600"}`}>{t.label}</span>
+                    <span className={`text-xs text-center leading-tight ${active ? "akzent-text font-medium" : "text-stone-600"}`}>{t.label}</span>
                   </button>
                 );
               })}
-              <button
-                onClick={() => { setShowSearch(true); setShowMore(false); }}
-                className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-stone-200"
-              >
-                <Search size={22} className="text-stone-500" />
-                <span className="text-xs text-stone-600">Suchen</span>
-              </button>
-              <button
-                onClick={() => { setShowDokumente(true); setShowMore(false); }}
-                className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-stone-200"
-              >
-                <Paperclip size={22} className="text-stone-500" />
-                <span className="text-xs text-stone-600">Dokumente</span>
-              </button>
-              <button
-                onClick={() => { setShowSettings(true); setShowMore(false); }}
-                className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-stone-200"
-              >
-                <Settings2 size={22} className="text-stone-500" />
-                <span className="text-xs text-stone-600">Einstellungen</span>
-              </button>
-              <button
-                onClick={() => { setShowHelp(true); setShowMore(false); }}
-                className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-stone-200"
-              >
-                <MessageSquare size={22} className="text-stone-500" />
-                <span className="text-xs text-stone-600">Hilfe</span>
-              </button>
-              <button
-                onClick={() => { supabase.auth.signOut(); setShowMore(false); }}
-                className="flex flex-col items-center gap-2 py-4 rounded-2xl border border-stone-200"
-              >
-                <LogOut size={22} className="text-stone-500" />
-                <span className="text-xs text-stone-600">Abmelden</span>
-              </button>
             </div>
+
+            <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest px-1 mb-2">Werkzeuge</div>
+            <div className="rounded-2xl border border-stone-200 divide-y divide-stone-100 overflow-hidden">
+              {[
+                { icon: Search, label: "Suchen", onClick: () => setShowSearch(true) },
+                { icon: Paperclip, label: "Dokumente", onClick: () => setShowDokumente(true) },
+                { icon: Settings2, label: "Einstellungen", onClick: () => setShowSettings(true) },
+                { icon: MessageSquare, label: "Hilfe", onClick: () => setShowHelp(true) },
+              ].map((w) => {
+                const Icon = w.icon;
+                return (
+                  <button
+                    key={w.label}
+                    onClick={() => { w.onClick(); setShowMore(false); }}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-stone-50 active:bg-stone-100 transition-colors"
+                  >
+                    <Icon size={18} className="text-stone-500 shrink-0" />
+                    <span className="flex-1 text-sm text-stone-700">{w.label}</span>
+                    <ChevronRight size={15} className="text-stone-300 shrink-0" />
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Abmelden abgesetzt: es beendet die Sitzung und gehoert nicht
+                neben Suchen und Dokumente. */}
+            <button
+              onClick={() => { supabase.auth.signOut(); setShowMore(false); }}
+              className="w-full flex items-center justify-center gap-2 mt-3 py-3 text-sm text-stone-500 hover:text-stone-700 transition-colors"
+            >
+              <LogOut size={16} /> Abmelden
+            </button>
           </div>
         </div>
       )}
@@ -12827,7 +12843,106 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
   );
 }
 
-function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed, focusKlassenDashboardId, onFocusKlassenDashboardConsumed, onRegisterFab, showToast }) {
+/* Sammelstelle fuer die klassenuebergreifenden Listen.
+   Vorher waren Entschuldigungen und Foerderziele nur ueber eine Kachel der
+   Heute-Seite erreichbar - und dort auch nur, solange etwas offen war. Wer
+   im Elterngespraech nachsehen wollte, wann ein Kind zuletzt eine
+   Entschuldigung gebracht hat, kam gar nicht hin. Die Geburtstagsliste war
+   ueberhaupt nicht erreichbar: die Oeffnen-Funktion wurde an die Heute-Seite
+   uebergeben und dort nie aufgerufen.
+   Die Kacheln auf der Heute-Seite bleiben als Abkuerzung bestehen. */
+function ListenUebersicht({ data, onOeffnen }) {
+  const heute = new Date(); heute.setHours(0, 0, 0, 0);
+
+  const offeneEntschuldigungen = (data.absences || []).filter(
+    (a) => a.excuseStatus === "ausstehend" || a.excuseStatus === "eingereicht"
+  ).length;
+
+  /* Gleiches Fenster wie auf der Heute-Seite (183 Tage), sonst zeigen
+     Kachel und Liste unterschiedliche Zahlen fuer dieselbe Sache. */
+  const zielFenster = isoDate(addDays(new Date(), -183));
+  const offeneZiele = (data.foerderZiele || []).filter(
+    (z) => !z.doneAt && z.typ !== "wochen" && (z.createdAt || "") >= zielFenster
+  );
+  const zielKinder = new Set(offeneZiele.map((z) => z.studentId)).size;
+
+  const geburtstageBald = data.students.filter((s) => {
+    if (s.deletedAt || !s.birthday) return false;
+    const [, bm, bd] = s.birthday.split("-").map(Number);
+    if (!bm || !bd) return false;
+    let next = new Date(heute.getFullYear(), bm - 1, bd);
+    if (next < heute) next = new Date(heute.getFullYear() + 1, bm - 1, bd);
+    return Math.round((next - heute) / 86400000) <= 21;
+  }).length;
+
+  const eintraege = [
+    {
+      key: "entschuldigungen",
+      icon: FileText,
+      titel: "Entschuldigungen",
+      zahl: offeneEntschuldigungen,
+      sub: offeneEntschuldigungen
+        ? `${offeneEntschuldigungen} offen oder eingereicht`
+        : "nichts offen – Verlauf ansehen",
+      warn: offeneEntschuldigungen > 0,
+    },
+    {
+      key: "foerderziele",
+      icon: Target,
+      titel: "Förderziele",
+      zahl: offeneZiele.length,
+      sub: offeneZiele.length
+        ? `aktiv bei ${zielKinder} ${zielKinder === 1 ? "Kind" : "Kindern"}`
+        : "keine aktiv – Verlauf ansehen",
+      warn: false,
+    },
+    {
+      key: "geburtstage",
+      icon: Sparkles,
+      titel: "Geburtstage",
+      zahl: geburtstageBald,
+      sub: geburtstageBald
+        ? `${geburtstageBald} in den nächsten 21 Tagen`
+        : "keiner in den nächsten 21 Tagen",
+      warn: false,
+    },
+  ];
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-stone-500">
+        Listen über alle Klassen hinweg. Anders als die Kacheln auf der Übersicht lassen sie sich
+        auch dann öffnen, wenn gerade nichts offen ist.
+      </p>
+      <div className="karte rounded-xl divide-y divide-stone-100 overflow-hidden">
+        {eintraege.map((e) => {
+          const Icon = e.icon;
+          return (
+            <button
+              key={e.key}
+              onClick={() => onOeffnen?.(e.key)}
+              className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-stone-50 active:bg-stone-100 transition-colors press-scale"
+            >
+              <span className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${e.warn ? "s-warn" : "akzent-ton"}`}>
+                <Icon size={17} />
+              </span>
+              <div className="flex-1 min-w-0">
+                <div className="text-sm font-medium text-stone-800">{e.titel}</div>
+                <div className="t-caption truncate">{e.sub}</div>
+              </div>
+              {e.zahl > 0 && (
+                <span className={`chip ${e.warn ? "chip-warn" : "chip-neutral"} tabular-nums shrink-0`}>{e.zahl}</span>
+              )}
+              <ChevronRight size={15} className="text-stone-300 shrink-0" />
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed, focusKlassenDashboardId, onFocusKlassenDashboardConsumed, onRegisterFab, showToast, onOpenListe }) {
   const [selectedClass, setSelectedClass] = useState(data.classes[0]?.id ?? null);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -13047,11 +13162,19 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
           >
             Dienste
           </button>
+          <button
+            onClick={() => setSubTab("listen")}
+            className={`px-3.5 py-1.5 rounded-lg text-sm font-medium transition-colors ${subTab === "listen" ? "bg-white text-stone-800 shadow-sm" : "text-stone-500"}`}
+          >
+            Listen
+          </button>
         </div>
         </div>
       </div>
 
       {subTab === "dienste" && <DiensteTab data={data} update={update} />}
+
+      {subTab === "listen" && <ListenUebersicht data={data} onOeffnen={onOpenListe} />}
 
       {subTab === "klassen" && (
       <div className="space-y-3">
