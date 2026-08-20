@@ -2,10 +2,460 @@
 @tailwind components;
 @tailwind utilities;
 
-/* html + body auf den App-Cremeton, damit kein weisser Streifen
-   erscheint, wenn der App-Container (100dvh) kuerzer als der
-   Viewport ist - z. B. wenn iOS Safari die URL-Bar animiert. */
+/* html + body tragen den Seitengrund, damit kein heller Streifen erscheint,
+   wenn der App-Container (100dvh) kuerzer als der Viewport ist - z. B. wenn
+   iOS Safari die URL-Bar animiert. */
 html, body {
-  background-color: #F4F1E8;
+  background-color: var(--creme);
   overscroll-behavior-y: none;
+}
+
+/* Formularelemente und Scrollbars vom Browser im passenden Schema rendern
+   lassen - sonst bleiben Dropdowns und Datumsfelder hell im Dunkelmodus. */
+:root { color-scheme: light dark; }
+
+/* ═══════════════════════════════════════════════════
+   TP-01 · Design-Fundament
+   ─────────────────────────────────────────────────
+   Tokens, Semantik, Typographie, Karten, Chips
+   ═══════════════════════════════════════════════════ */
+:root {
+  /* Marke */
+  --oliv: #4F5844;
+  --oliv-dunkel: #3E4636;
+  --oliv-hell: #E9EDE1;
+  --auf-akzent: #fff;      /* Textfarbe auf gefüllten Akzentflächen */
+  --creme: #F2F2F6;        /* Seitengrund (Name historisch) */
+  --karte: #FFFFFF;
+  --karte-warm: #FFFFFF;
+  --linie: #E2E2E7;
+  --linie-fein: rgba(60,60,67,0.10);
+  --ink: #1C1C1E;
+
+  /* Neutrale Graustufen — Basis für die Tailwind-stone-Brücke weiter unten.
+     Hell = warmes Stone, Dunkel = iOS-Grau. */
+  --n-0:  #FFFFFF;   /* Kartengrund   */
+  --n-50: #FAFAFA;   /* Zebra / Hover */
+  --n-100:#F1F1F4;
+  --n-200:#E2E2E7;
+  --n-300:#C9C9CF;
+  --n-400:#8E8E93;   /* Sekundärtext  */
+  --n-500:#6E6E73;
+  --n-600:#48484A;
+  --n-700:#333336;
+  --n-800:#1C1C1E;   /* Primärtext    */
+  --n-900:#000000;
+  --schleier: rgba(28,28,30,0.45);  /* Dimm-Ebene hinter Sheets */
+
+  /* Semantische Status-Farben
+     Grün = gut · Amber = Aufmerksamkeit · Rot = dringend · Blau = Info
+     Grau = neutral/Standard — nur diese 5 Farben für Status */
+  --s-gut:  #166534; --s-gut-bg:  #DCFCE7; --s-gut-rand:  #86EFAC;
+  --s-warn: #92400E; --s-warn-bg: #FEF3C7; --s-warn-rand: #FCD34D;
+  --s-krit: #991B1B; --s-krit-bg: #FEE2E2; --s-krit-rand: #FCA5A5;
+  --s-info: #1E40AF; --s-info-bg: #DBEAFE; --s-info-rand: #93C5FD;
+  --s-neu:  #4F5844; --s-neu-bg:  #E9EDE1; --s-neu-rand:  #C5CDB8;
+
+  /* Abstände — 24 außen / 16 zwischen Karten / 12 innen */
+  --sp-out:  1.5rem;
+  --sp-card: 1rem;
+  --sp-in:   0.75rem;
+
+  /* Schatten */
+  --shadow-card: 0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.04);
+  --shadow-md:   0 4px 16px rgba(0,0,0,0.09), 0 1px 4px rgba(0,0,0,0.05);
+  --shadow-xl:   0 8px 32px rgba(0,0,0,0.13), 0 2px 8px rgba(0,0,0,0.07);
+}
+
+/* ═══════════════════════════════════════════════════
+   Dunkelmodus — folgt der Systemeinstellung des Geräts
+   ─────────────────────────────────────────────────
+   Nur Tokens werden getauscht; alle Komponenten unten
+   lesen ausschliesslich Tokens und ziehen automatisch mit.
+   ═══════════════════════════════════════════════════ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Akzent wird aufgehellt — #4F5844 hat auf Schwarz zu wenig Kontrast */
+    --oliv: #A6B392;
+    --oliv-dunkel: #BCC7AA;
+    --oliv-hell: rgba(166,179,146,0.18);
+    --auf-akzent: #1C1C1E;
+    --creme: #000000;
+    --karte: #1C1C1E;
+    --karte-warm: #1C1C1E;
+    --linie: #38383A;
+    --linie-fein: rgba(255,255,255,0.12);
+    --ink: #F2F2F7;
+
+    --n-0:  #1C1C1E;
+    --n-50: #1C1C1E;
+    --n-100:#2C2C2E;
+    --n-200:#38383A;
+    --n-300:#48484A;
+    --n-400:#98989F;
+    --n-500:#AEAEB4;
+    --n-600:#C7C7CC;
+    --n-700:#DEDEE3;
+    --n-800:#F2F2F7;
+    --n-900:#FFFFFF;
+    --schleier: rgba(0,0,0,0.65);
+
+    /* Status: kräftige Schrift, gedämpfte Fläche — Pastelltöne
+       blenden auf dunklem Grund. */
+    --s-gut:  #6EE7A0; --s-gut-bg:  rgba(34,197,94,0.18);  --s-gut-rand:  rgba(110,231,160,0.32);
+    --s-warn: #FBBF24; --s-warn-bg: rgba(245,158,11,0.18); --s-warn-rand: rgba(251,191,36,0.32);
+    --s-krit: #FCA5A5; --s-krit-bg: rgba(239,68,68,0.20);  --s-krit-rand: rgba(252,165,165,0.32);
+    --s-info: #93C5FD; --s-info-bg: rgba(59,130,246,0.20); --s-info-rand: rgba(147,197,253,0.32);
+    --s-neu:  #A6B392; --s-neu-bg:  rgba(166,179,146,0.18);--s-neu-rand:  rgba(166,179,146,0.32);
+
+    --shadow-card: 0 1px 2px rgba(0,0,0,0.5);
+    --shadow-md:   0 4px 16px rgba(0,0,0,0.55);
+    --shadow-xl:   0 8px 32px rgba(0,0,0,0.65);
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Tailwind-Brücke
+   ─────────────────────────────────────────────────
+   Die App nutzt an ~1800 Stellen feste stone-/white-
+   Utilities. Statt jede Fundstelle anzufassen, werden
+   die Utilities hier auf die Tokens umgebogen — damit
+   zieht der Dunkelmodus ueberall automatisch mit.
+   ═══════════════════════════════════════════════════ */
+.bg-white   { background-color: var(--n-0) !important; }
+.bg-stone-50{ background-color: var(--n-50) !important; }
+.bg-stone-100{background-color: var(--n-100) !important; }
+.bg-stone-200{background-color: var(--n-200) !important; }
+.bg-stone-300{background-color: var(--n-300) !important; }
+.bg-stone-500{background-color: var(--n-500) !important; }
+.bg-stone-700{background-color: var(--n-700) !important; }
+.bg-stone-800{background-color: var(--n-800) !important; }
+.bg-stone-900{background-color: var(--n-900) !important; }
+.bg-white\/95 { background-color: color-mix(in srgb, var(--n-0) 95%, transparent) !important; }
+.bg-white\/80 { background-color: color-mix(in srgb, var(--n-0) 80%, transparent) !important; }
+.bg-white\/70 { background-color: color-mix(in srgb, var(--n-0) 70%, transparent) !important; }
+.bg-white\/60 { background-color: color-mix(in srgb, var(--n-0) 60%, transparent) !important; }
+.bg-white\/20 { background-color: color-mix(in srgb, var(--n-0) 20%, transparent) !important; }
+.bg-stone-50\/50  { background-color: color-mix(in srgb, var(--n-50) 50%, transparent) !important; }
+.bg-stone-200\/70 { background-color: color-mix(in srgb, var(--n-200) 70%, transparent) !important; }
+
+.text-stone-200 { color: var(--n-200) !important; }
+.text-stone-300 { color: var(--n-300) !important; }
+.text-stone-400 { color: var(--n-400) !important; }
+.text-stone-500 { color: var(--n-500) !important; }
+.text-stone-600 { color: var(--n-600) !important; }
+.text-stone-700 { color: var(--n-700) !important; }
+.text-stone-800 { color: var(--n-800) !important; }
+.text-stone-900 { color: var(--n-900) !important; }
+.hover\:text-stone-600:hover { color: var(--n-600) !important; }
+.hover\:text-stone-700:hover { color: var(--n-700) !important; }
+.hover\:text-stone-800:hover { color: var(--n-800) !important; }
+.hover\:bg-stone-50:hover  { background-color: var(--n-50) !important; }
+.hover\:bg-stone-100:hover { background-color: var(--n-100) !important; }
+.hover\:border-stone-200:hover { border-color: var(--n-200) !important; }
+.placeholder-stone-400::placeholder { color: var(--n-400) !important; }
+
+.border-stone-100 { border-color: var(--n-100) !important; }
+.border-stone-200 { border-color: var(--n-200) !important; }
+.border-stone-200\/60 { border-color: color-mix(in srgb, var(--n-200) 60%, transparent) !important; }
+.border-stone-300 { border-color: var(--n-300) !important; }
+.border-stone-400 { border-color: var(--n-400) !important; }
+.border-stone-500 { border-color: var(--n-500) !important; }
+.border-stone-700 { border-color: var(--n-700) !important; }
+.border-stone-800 { border-color: var(--n-800) !important; }
+.focus\:border-stone-300:focus { border-color: var(--n-300) !important; }
+.divide-stone-50  > * + * { border-color: var(--n-50) !important; }
+.divide-stone-100 > * + * { border-color: var(--n-100) !important; }
+.ring-stone-400 { --tw-ring-color: var(--n-400); }
+.ring-stone-500 { --tw-ring-color: var(--n-500); }
+
+/* Dimm-Ebenen hinter Sheets/Dialogen */
+.bg-stone-900\/20 { background-color: color-mix(in srgb, var(--schleier) 45%, transparent) !important; }
+.bg-stone-900\/40 { background-color: var(--schleier) !important; }
+.bg-stone-900\/50 { background-color: var(--schleier) !important; }
+
+/* Farbige Hinweisflaechen im Dunkelmodus: Tailwinds -50/-100-Toene sind
+   Pastellflaechen fuer hellen Grund und blenden auf Schwarz. Ersetzt durch
+   getoente Transparenz plus aufgehellte Schrift. Der Hellmodus bleibt
+   unveraendert bei den Tailwind-Standardwerten. */
+@media (prefers-color-scheme: dark) {
+  .bg-amber-50,   .bg-amber-100                 { background-color: rgba(245,158,11,0.16) !important; }
+  .bg-red-50,     .bg-red-100                   { background-color: rgba(239,68,68,0.18) !important; }
+  .bg-green-50,   .bg-emerald-100               { background-color: rgba(34,197,94,0.16) !important; }
+
+  .border-amber-100, .border-amber-200          { border-color: rgba(251,191,36,0.30) !important; }
+  .border-red-200,   .border-red-500            { border-color: rgba(252,165,165,0.32) !important; }
+  .border-emerald-200, .border-green-500        { border-color: rgba(110,231,160,0.32) !important; }
+
+  .text-amber-500, .text-amber-600,
+  .text-amber-700, .text-amber-800, .text-amber-900 { color: #FBBF24 !important; }
+  .text-red-400,   .text-red-500                { color: #F87171 !important; }
+  .text-red-600,   .text-red-700,
+  .text-red-800,   .text-red-900                { color: #FCA5A5 !important; }
+  .text-green-700, .text-emerald-500, .text-emerald-600,
+  .text-emerald-700, .text-emerald-800, .text-emerald-900 { color: #6EE7A0 !important; }
+  .text-blue-500                                { color: #93C5FD !important; }
+  .text-violet-600                              { color: #C4B5FD !important; }
+}
+
+/* Lesespalte: begrenzt Vollbild-Ansichten auf eine ruhige Breite. Auf dem
+   Handy voll, ab Tablet zentriert - sonst laufen Zeilen auf einem 27-Zoll-
+   Monitor ueber die gesamte Breite und werden unlesbar. */
+.lese-spalte { width: 100%; max-width: 52rem; margin-inline: auto; }
+
+/* Vollflächige Overlays: ein Eltern-Container mit space-y-*
+   vererbt margin-top auf JEDES Folgekind - auch auf fixed
+   positionierte Sheets, die dadurch vom Rand abrutschen und
+   die Ebene darunter durchblitzen lassen. */
+.fixed.inset-0 { margin: 0 !important; }
+
+/* ── Hintergrund ── */
+.app-bg  { background: var(--creme); }
+.bg-karte { background: var(--karte); }
+
+/* ── Karten (shadow-first, kein schwerer Rahmen) ──
+   .card        weißer Grund, weiches Shadow
+   .card-warm   creme-weißer Grund (wie bisher --karte)
+   .karte       Rückwärtskompatibel: bleibt mit Rand */
+.card      { background: var(--karte);    border-radius: 1rem; box-shadow: var(--shadow-card); }
+.card-warm { background: var(--karte);    border-radius: 1rem; box-shadow: var(--shadow-card); }
+.card-p    { padding: var(--sp-in); }
+/* Design B - "warm & luftig": Karten gehoeren visuell zum Grund,
+   harte Rahmen fallen weg. Nur eine haarfeine Rille markiert die
+   Kante - fuehlt sich wie eine Nut im Papier an, nicht wie ein
+   Kaesten-Rahmen. Global: alle .karte-Verwendungen sind betroffen
+   (Uebersichts-Kacheln, Kalender-Karten, etc.). */
+.karte {
+  background: var(--karte-warm);
+  border: 1px solid var(--linie-fein);
+}
+
+/* Icons einheitlich duenner - lucide-react Default ist 2, nach
+   Apple-Konvention wirkt 1.75 leichter und edler. Trifft nur
+   Icons ohne expliziten strokeWidth-Prop. */
+svg[stroke-width="2"] { stroke-width: 1.75; }
+.karte-luft {
+  background: var(--karte-warm);
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.karte-luft:hover { border-color: var(--linie-fein); }
+.karte-luft:focus-visible { outline: 2px solid var(--oliv); outline-offset: 2px; }
+
+/* ── Akzent (unverändert, Rückwärtskompatibilität) ── */
+.akzent-flaeche { background: var(--oliv); color: var(--auf-akzent); }
+.akzent-flaeche:hover { background: var(--oliv-dunkel); }
+.akzent-text { color: var(--oliv); }
+.akzent-ton  { background: var(--oliv-hell); color: var(--oliv); }
+.akzent-rand { border-color: var(--oliv); }
+.hover\:akzent-rand:hover { border-color: var(--oliv); }
+.hover\:akzent-text:hover { color: var(--oliv); }
+.hover\:akzent-ton:hover  { background: var(--oliv-hell); color: var(--oliv); }
+
+/* ── Semantische Status-Klassen ── */
+.s-gut  { background: var(--s-gut-bg);  color: var(--s-gut);  border-color: var(--s-gut-rand); }
+.s-warn { background: var(--s-warn-bg); color: var(--s-warn); border-color: var(--s-warn-rand); }
+.s-krit { background: var(--s-krit-bg); color: var(--s-krit); border-color: var(--s-krit-rand); }
+.s-info { background: var(--s-info-bg); color: var(--s-info); border-color: var(--s-info-rand); }
+.s-neu  { background: var(--s-neu-bg);  color: var(--s-neu);  border-color: var(--s-neu-rand); }
+
+/* ── Chips (Status-Badges) ── */
+.chip        { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.6875rem; font-weight: 500; padding: 0.2rem 0.625rem; border-radius: 9999px; border: 1px solid transparent; line-height: 1.4; white-space: nowrap; }
+.chip-gut    { background: var(--s-gut-bg);  color: var(--s-gut);  border-color: var(--s-gut-rand); }
+.chip-warn   { background: var(--s-warn-bg); color: var(--s-warn); border-color: var(--s-warn-rand); }
+.chip-krit   { background: var(--s-krit-bg); color: var(--s-krit); border-color: var(--s-krit-rand); }
+.chip-info   { background: var(--s-info-bg); color: var(--s-info); border-color: var(--s-info-rand); }
+.chip-akzent { background: var(--s-neu-bg);  color: var(--s-neu);  border-color: var(--s-neu-rand); }
+.chip-neutral{ background: var(--n-100); color: var(--n-600); border-color: var(--n-200); }
+
+/* ── Status-Punkte (●) ── */
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+.dot-gut  { background: var(--s-gut); }
+.dot-warn { background: var(--s-warn); }
+.dot-krit { background: var(--s-krit); }
+.dot-info { background: var(--s-info); }
+.dot-neutral { background: var(--n-400); }
+
+/* ── Typographie-Hierarchie ──
+   Nur Labels, Captions, Section-Header — Lauftext via Tailwind */
+.t-section { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--n-400); }
+.t-label   { font-size: 0.75rem;   font-weight: 500; color: var(--n-500); line-height: 1.4; }
+.t-value   { font-size: 0.875rem;  font-weight: 500; color: var(--n-800); }
+.t-caption { font-size: 0.6875rem; color: var(--n-400); line-height: 1.4; }
+.t-mono    { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
+
+/* ── Eingabefelder (nur diese bekommen Rahmen) ── */
+.input-base {
+  background: var(--karte);
+  border: 1.5px solid var(--linie);
+  border-radius: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  width: 100%;
+  color: var(--ink);
+  transition: border-color 0.15s;
+  -webkit-appearance: none;
+}
+.input-base:focus { outline: none; border-color: var(--oliv); }
+.input-base::placeholder { color: var(--n-400); }
+
+/* ── Timeline (TP-05) ── */
+.tl-wrap { position: relative; }
+.tl-rail { position: absolute; left: 19px; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--linie); pointer-events: none; }
+.tl-entry { display: flex; align-items: flex-start; gap: 12px; position: relative; padding-bottom: 12px; }
+.tl-entry:last-child { padding-bottom: 0; }
+.tl-icon { width: 40px; height: 40px; border-radius: 14px; background: var(--karte); border: 1px solid var(--linie); display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 1; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.tl-body { flex: 1; min-width: 0; background: var(--karte); border-radius: 14px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
+.tl-group-label { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--n-400); padding: 10px 0 6px 52px; }
+.tl-line { width: 2px; border-radius: 1px; background: var(--linie); flex-shrink: 0; }
+.tl-dot  { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--linie); background: var(--karte); flex-shrink: 0; }
+.tl-dot-filled { border-color: var(--oliv); background: var(--oliv); }
+
+/* ── Hilfsprogramme ── */
+.chip-scroll { scrollbar-width: none; }
+.chip-scroll::-webkit-scrollbar { display: none; }
+.tnum { font-variant-numeric: tabular-nums; }
+
+/* ── Sheets & Dialoge ── */
+.sheet {
+  max-height: calc(100dvh - env(safe-area-inset-top) - 64px);
+  margin-top: max(env(safe-area-inset-top), 12px);
+  overscroll-behavior: contain;
+}
+.dialog {
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px);
+  overscroll-behavior: contain;
+}
+
+/* ── Micro-Interactions ── */
+.press-scale { transition: transform 0.12s ease, opacity 0.12s ease; }
+.press-scale:active { transform: scale(0.97); opacity: 0.85; }
+
+/* ── Eingangs-Animationen ── */
+@keyframes slide-up-sheet {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+@keyframes slide-from-right {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+@keyframes item-pop {
+  from { transform: scale(0.88) translateY(6px); opacity: 0; }
+  to   { transform: scale(1)    translateY(0);   opacity: 1; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes fade-in-tab {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.anim-sheet       { animation: slide-up-sheet  0.28s cubic-bezier(0.32, 0.72, 0, 1) both; }
+.anim-slide-right { animation: slide-from-right 0.26s cubic-bezier(0.32, 0.72, 0, 1) both; }
+.anim-item        { animation: item-pop 0.20s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.anim-bg          { animation: fade-in 0.22s ease both; }
+.anim-tab         { animation: fade-in-tab 0.18s ease both; }
+
+/* Sheet-Titel: dezenter negativer Letter-Spacing wie Apple-Sheets
+   (San Francisco kerns Semibold-Ueberschriften optisch enger). */
+.sheet .font-semibold.text-stone-800,
+.dialog .font-semibold.text-stone-800 {
+  letter-spacing: -0.015em;
+}
+
+/* Systemeinstellung "Bewegung reduzieren": Cross-Fade statt Slide.
+   Die Bewegungen sind subtile Orientierungshilfen, kein Deko-Effekt -
+   bei reduced-motion wird daraus ein weiches Ein-/Ausblenden. */
+@media (prefers-reduced-motion: reduce) {
+  .anim-sheet,
+  .anim-slide-right,
+  .anim-item,
+  .anim-tab {
+    animation: fade-in 0.12s ease both !important;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Systemeinstellung "Transparenz reduzieren": Glasflaechen werden
+   deckend, backdrop-blur aus. Sonst wird Text auf glaskaeltigem
+   Grund fuer Betroffene schwer lesbar. Attribut-Selektoren umgehen
+   Tailwind's Slash-Escaping-Feinheiten. */
+@media (prefers-reduced-transparency: reduce) {
+  [class~="bg-white/70"],
+  [class~="bg-white/95"],
+  [class~="bg-white/80"],
+  [class~="bg-white/60"] {
+    background-color: var(--n-0) !important;
+  }
+  [class*="backdrop-blur"] {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════
+   Druck — immer im Hellmodus
+   ─────────────────────────────────────────────────
+   prefers-color-scheme bleibt beim Drucken auf "dark", wenn das
+   Geraet dunkel eingestellt ist. Ohne diesen Block landen helle
+   Schrift und dunkle Flaechen auf weissem Papier: Schuelerakten
+   und Berichte waeren unlesbar. Setzt die Tokens auf die
+   Hellwerte zurueck.
+   ═══════════════════════════════════════════════════ */
+@media print {
+  :root {
+    color-scheme: light;
+    --oliv: #4F5844;
+    --oliv-dunkel: #3E4636;
+    --oliv-hell: #E9EDE1;
+    --auf-akzent: #fff;
+    --creme: #FFFFFF;
+    --karte: #FFFFFF;
+    --karte-warm: #FFFFFF;
+    --linie: #E2E2E7;
+    --linie-fein: rgba(60,60,67,0.10);
+    --ink: #1C1C1E;
+
+    --n-0:  #FFFFFF;
+    --n-50: #FAFAFA;
+    --n-100:#F1F1F4;
+    --n-200:#E2E2E7;
+    --n-300:#C9C9CF;
+    --n-400:#6E6E73;
+    --n-500:#57575C;
+    --n-600:#3A3A3D;
+    --n-700:#2A2A2D;
+    --n-800:#1C1C1E;
+    --n-900:#000000;
+    --schleier: transparent;
+
+    --s-gut:  #166534; --s-gut-bg:  #DCFCE7; --s-gut-rand:  #86EFAC;
+    --s-warn: #92400E; --s-warn-bg: #FEF3C7; --s-warn-rand: #FCD34D;
+    --s-krit: #991B1B; --s-krit-bg: #FEE2E2; --s-krit-rand: #FCA5A5;
+    --s-info: #1E40AF; --s-info-bg: #DBEAFE; --s-info-rand: #93C5FD;
+    --s-neu:  #4F5844; --s-neu-bg:  #E9EDE1; --s-neu-rand:  #C5CDB8;
+
+    --shadow-card: none;
+    --shadow-md: none;
+    --shadow-xl: none;
+  }
+
+  .text-amber-500, .text-amber-600, .text-amber-700,
+  .text-amber-800, .text-amber-900              { color: #92400E !important; }
+  .text-red-400,   .text-red-500                { color: #DC2626 !important; }
+  .text-red-600,   .text-red-700,
+  .text-red-800,   .text-red-900                { color: #991B1B !important; }
+  .text-green-700, .text-emerald-500, .text-emerald-600,
+  .text-emerald-700, .text-emerald-800, .text-emerald-900 { color: #166534 !important; }
+  .text-blue-500                                { color: #1D4ED8 !important; }
+  .text-violet-600                              { color: #6D28D9 !important; }
+  .bg-amber-50, .bg-amber-100                   { background-color: #FEF3C7 !important; }
+  .bg-red-50,   .bg-red-100                     { background-color: #FEE2E2 !important; }
+  .bg-green-50, .bg-emerald-100                 { background-color: #DCFCE7 !important; }
 }

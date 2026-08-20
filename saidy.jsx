@@ -1544,7 +1544,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
                 <input
                   type="checkbox"
                   className="w-4 h-4"
-                  style={{ accentColor: "#4F5844" }}
+                  style={{ accentColor: "var(--oliv)" }}
                   checked={aktiv}
                   onChange={(e) => setSetting("neuSeitAnzeige", { ...(data.settings?.neuSeitAnzeige || {}), [key]: e.target.checked })}
                 />
@@ -1565,7 +1565,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             <input
               type="checkbox"
               className="w-4 h-4"
-              style={{ accentColor: "#4F5844" }}
+              style={{ accentColor: "var(--oliv)" }}
               checked={data.settings?.tippsAn !== false}
               onChange={(e) => setSetting("tippsAn", e.target.checked)}
             />
@@ -2519,7 +2519,7 @@ function OnboardingModal({ onSave, onDone, onSkip }) {
               <input
                 type="checkbox"
                 className="w-4 h-4 shrink-0"
-                style={{ accentColor: "#4F5844" }}
+                style={{ accentColor: "var(--oliv)" }}
                 checked={withFerien}
                 onChange={(e) => setWithFerien(e.target.checked)}
               />
@@ -2766,7 +2766,8 @@ const HELP_DATA = [
       { q: "Wie füge ich Schüler:innen hinzu?", a: `Öffne eine Klasse und tippe auf „+ Schüler:in". Namen können einzeln oder als Liste eingegeben werden.` },
       { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Tuvi automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr" → „Einstellungen" → Bundesland wählen → „Schulferien eintragen".` },
       { q: "Was passiert beim ersten Start?", a: `Tuvi führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
-      { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus.` },
+      { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus. Der Farb-Modus ist unabhängig von Hell/Dunkel und funktioniert in beiden.` },
+      { q: "Kann Tuvi dunkel dargestellt werden?", a: `Ja, automatisch. Tuvi übernimmt die Darstellung deines Geräts: Steht dein iPhone, iPad oder Computer auf „Dunkel", zeigt sich Tuvi dunkel, bei „Hell" hell. Auf dem iPhone stellst du das unter Einstellungen → Anzeige & Helligkeit ein, auf dem Mac unter Systemeinstellungen → Erscheinungsbild. In der App selbst gibt es dafür bewusst keinen eigenen Schalter – so passt Tuvi immer zu deinen übrigen Apps. Ausdrucke (Schülerakte, Berichte, Notenlisten) sind immer hell, damit sie auf Papier lesbar bleiben.` },
       { q: "Wie ist die Heute-Seite aufgebaut?", a: `Von oben nach unten priorisiert – die App zeigt nicht alles auf einmal, sondern das was gerade zählt: (1) Kopf mit Wortmarke, Datum und dem grünen Plus-Knopf. (2) „JETZT" – die große Karte für die laufende Stunde, mit Restzeit, Fach & Klasse, Thema, den zu dieser Stunde gehörenden offenen Punkten (Entschuldigungen, „heute Klassenarbeit"-Warnung) und dem Material aus dem Fach. Ein „Stunde öffnen"-Knopf springt in die Schnellerfassung. (3) „ALS NÄCHSTES" – die nächste Stunde, mit „in X Min." oder „in X Std." und – das ist der eigentliche Trick – den Material-Chips unter „Vorher mitnehmen", damit du in der aktuellen Stunde schon weißt, was du gleich einsammeln musst (z. B. „12 Volleybälle · 6 Hütchen · Leibchen"). (4) Zweispaltig „X Dinge brauchen deine Aufmerksamkeit" (Sheet mit allen Signalen) und „Nicht vergessen" (persönliche Aufgabenliste mit +-Feld zum sofort Ergänzen). (5) „Danach heute" – die restlichen Stunden als kompakte Zeilenliste. (6) Kleine Wochentagsleiste zum Vor- und Zurückblättern. (7) Wochenrückblick von Freitag 12 Uhr bis Sonntag Nacht, falls aktiv. (8) Unterrichtstipp des Tages, falls in den Einstellungen aktiv.` },
       { q: "Was zeigen die Karten JETZT und ALS NÄCHSTES?", a: `Beide Karten führen dich durch den aktuellen Moment. JETZT ist die dominante Karte für die laufende Stunde: Fach·Klasse·Thema groß, darunter die konkret zu dieser Stunde relevanten Punkte – Zahl der offenen Entschuldigungen dieser Klasse, „Heute: [Klassenarbeit-Titel]" wenn eine Prüfung ansteht, verknüpfte Aufgaben, und ganz wichtig: das Material, das du für dieses Fach eingetragen hast (Feld „Immer mitnehmen" im Fach-Editor). Rechts oben läuft die Restzeit. „Stunde öffnen" springt in die Schnellerfassung. Die ALS-NÄCHSTES-Karte ist etwas kleiner: Anfangszeit + „in X Std. Y Min.", Fach·Klasse·Raum, Thema falls hinterlegt, und die Material-Chips als „Vorher mitnehmen". Der Sinn: du bist noch in Mathe, siehst aber schon dass du gleich zwölf Volleybälle brauchst, und kannst sie auf dem Weg mitnehmen.` },
       { q: `Was steht in der Kachel „X Dinge brauchen deine Aufmerksamkeit"?`, a: `Automatisch erkannte Signale für heute – nur solche die tatsächlich anstehen, sonst verschwindet die Kachel. Sie sammelt: (1) noch nachzutragende Stunden, (2) auffällige Klassen aus dem Klassenradar (kritisch/warnend), (3) dringliche Erinnerungen (Kinder mit vielen Fehltagen, Kinder ohne Eintrag seit 14+ Tagen, wiederholte Vorfälle, offene Zeugnisnoten). Ein Tipp öffnet ein Sheet mit der vollständigen Liste; ein Tipp auf einen Eintrag springt direkt in den passenden Bereich (Klassen-Dashboard, Entschuldigungen usw.). Alles lokal berechnet – keine externen Datenübertragungen. „Nicht vergessen" daneben ist bewusst getrennt: dort stehen nur deine manuell erfassten Aufgaben.` },
@@ -3622,10 +3623,10 @@ function LoginScreen() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F1E8] flex items-center justify-center p-6">
+    <div className="min-h-screen app-bg flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-[#4F5844] flex items-center justify-center font-serif text-4xl font-bold text-[#F4F1E8] mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
+          <div className="w-16 h-16 rounded-2xl akzent-flaeche flex items-center justify-center font-serif text-4xl font-bold mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
           <h1 className="text-2xl font-semibold text-stone-800">Tuvi</h1>
           <p className="text-sm text-stone-500 mt-1">Das pädagogische Gedächtnis</p>
         </div>
@@ -3640,7 +3641,7 @@ function LoginScreen() {
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F5844]/30 focus:border-[#4F5844]"
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--oliv)]/30 focus:border-[color:var(--oliv)]"
                 placeholder="deine@email.de"
                 autoComplete="email"
               />
@@ -3652,7 +3653,7 @@ function LoginScreen() {
                   type="password"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F5844]/30 focus:border-[#4F5844]"
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--oliv)]/30 focus:border-[color:var(--oliv)]"
                   placeholder="••••••••"
                   autoComplete={mode === "login" ? "current-password" : "new-password"}
                   onKeyDown={e => e.key === "Enter" && handle()}
@@ -3668,7 +3669,7 @@ function LoginScreen() {
           <button
             onClick={handle}
             disabled={loading || !email || (mode !== "reset" && !password)}
-            className="w-full mt-4 bg-[#4F5844] text-white rounded-xl py-2.5 text-sm font-medium disabled:opacity-40 active:scale-[0.98] transition-transform"
+            className="w-full mt-4 akzent-flaeche rounded-xl py-2.5 text-sm font-medium disabled:opacity-40 active:scale-[0.98] transition-transform"
           >
             {loading ? "…" : mode === "login" ? "Anmelden" : mode === "signup" ? "Konto erstellen" : "Link senden"}
           </button>
@@ -3717,10 +3718,10 @@ function ResetPasswordScreen() {
 
   if (done) {
     return (
-      <div className="min-h-screen bg-[#F4F1E8] flex items-center justify-center p-6">
+      <div className="min-h-screen app-bg flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 rounded-2xl bg-[#4F5844] flex items-center justify-center font-serif text-4xl font-bold text-[#F4F1E8] mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
+            <div className="w-16 h-16 rounded-2xl akzent-flaeche flex items-center justify-center font-serif text-4xl font-bold mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
             <h1 className="text-2xl font-semibold text-stone-800">Tuvi</h1>
           </div>
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 text-center">
@@ -3729,7 +3730,7 @@ function ResetPasswordScreen() {
             <p className="text-sm text-stone-500 mb-4">Du kannst dich jetzt mit deinem neuen Passwort anmelden.</p>
             <button
               onClick={() => window.location.replace(window.location.origin)}
-              className="w-full bg-[#4F5844] text-white rounded-xl py-2.5 text-sm font-medium active:scale-[0.98] transition-transform"
+              className="w-full akzent-flaeche rounded-xl py-2.5 text-sm font-medium active:scale-[0.98] transition-transform"
             >
               Zur Anmeldung
             </button>
@@ -3740,10 +3741,10 @@ function ResetPasswordScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F1E8] flex items-center justify-center p-6">
+    <div className="min-h-screen app-bg flex items-center justify-center p-6">
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 rounded-2xl bg-[#4F5844] flex items-center justify-center font-serif text-4xl font-bold text-[#F4F1E8] mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
+          <div className="w-16 h-16 rounded-2xl akzent-flaeche flex items-center justify-center font-serif text-4xl font-bold mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
           <h1 className="text-2xl font-semibold text-stone-800">Tuvi</h1>
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200">
@@ -3755,7 +3756,7 @@ function ResetPasswordScreen() {
                 type="password"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F5844]/30 focus:border-[#4F5844]"
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--oliv)]/30 focus:border-[color:var(--oliv)]"
                 placeholder="Mindestens 6 Zeichen"
                 autoComplete="new-password"
               />
@@ -3766,7 +3767,7 @@ function ResetPasswordScreen() {
                 type="password"
                 value={confirmPassword}
                 onChange={e => setConfirmPassword(e.target.value)}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#4F5844]/30 focus:border-[#4F5844]"
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--oliv)]/30 focus:border-[color:var(--oliv)]"
                 placeholder="Nochmal eingeben"
                 autoComplete="new-password"
                 onKeyDown={e => e.key === "Enter" && handleReset()}
@@ -3777,7 +3778,7 @@ function ResetPasswordScreen() {
           <button
             onClick={handleReset}
             disabled={loading || !newPassword || !confirmPassword}
-            className="w-full mt-4 bg-[#4F5844] text-white rounded-xl py-2.5 text-sm font-medium disabled:opacity-40 active:scale-[0.98] transition-transform"
+            className="w-full mt-4 akzent-flaeche rounded-xl py-2.5 text-sm font-medium disabled:opacity-40 active:scale-[0.98] transition-transform"
           >
             {loading ? "…" : "Passwort speichern"}
           </button>
@@ -4483,7 +4484,7 @@ export default function App() {
   ];
 
   if (!authChecked) {
-    return <div className="min-h-screen bg-[#F4F1E8]" />;
+    return <div className="min-h-screen app-bg" />;
   }
   if (showPasswordReset) {
     return <ResetPasswordScreen />;
@@ -4538,234 +4539,6 @@ export default function App() {
       className="flex flex-col overflow-hidden app-bg text-[color:var(--ink)] font-sans"
       style={{ height: "var(--app-vh, 100dvh)" }}
     >
-      <style>{`
-        /* ═══════════════════════════════════════════════════
-           TP-01 · Design-Fundament
-           ─────────────────────────────────────────────────
-           Tokens, Semantik, Typographie, Karten, Chips
-           ═══════════════════════════════════════════════════ */
-        :root {
-          /* Marke */
-          --oliv: #4F5844;
-          --oliv-dunkel: #3E4636;
-          --oliv-hell: #ECEEE2;
-          --creme: #F4F1E8;
-          --karte: #FFFDF8;
-          --karte-warm: #FBF8ED;  /* nah am Grund, "gehoert dazu" statt "schwebt drauf" */
-          --linie: #E4DFD2;
-          --linie-fein: rgba(79,88,68,0.08);  /* haarfein, wirkt wie Rille statt Rahmen */
-          --ink: #2E3328;
-
-          /* Semantische Status-Farben
-             Grün = gut · Amber = Aufmerksamkeit · Rot = dringend · Blau = Info
-             Grau = neutral/Standard — nur diese 5 Farben für Status */
-          --s-gut:  #166534; --s-gut-bg:  #DCFCE7; --s-gut-rand:  #86EFAC;
-          --s-warn: #92400E; --s-warn-bg: #FEF3C7; --s-warn-rand: #FCD34D;
-          --s-krit: #991B1B; --s-krit-bg: #FEE2E2; --s-krit-rand: #FCA5A5;
-          --s-info: #1E40AF; --s-info-bg: #DBEAFE; --s-info-rand: #93C5FD;
-          --s-neu:  #4F5844; --s-neu-bg:  #ECEEE2; --s-neu-rand:  #C5CDB8;
-
-          /* Abstände — 24 außen / 16 zwischen Karten / 12 innen */
-          --sp-out:  1.5rem;
-          --sp-card: 1rem;
-          --sp-in:   0.75rem;
-
-          /* Schatten */
-          --shadow-card: 0 1px 3px rgba(46,51,40,0.07), 0 1px 2px rgba(46,51,40,0.04);
-          --shadow-md:   0 4px 16px rgba(46,51,40,0.10), 0 1px 4px rgba(46,51,40,0.06);
-          --shadow-xl:   0 8px 32px rgba(46,51,40,0.14), 0 2px 8px rgba(46,51,40,0.08);
-        }
-
-        /* ── Hintergrund ── */
-        .app-bg  { background: var(--creme); }
-        .bg-karte { background: var(--karte); }
-
-        /* ── Karten (shadow-first, kein schwerer Rahmen) ──
-           .card        weißer Grund, weiches Shadow
-           .card-warm   creme-weißer Grund (wie bisher --karte)
-           .karte       Rückwärtskompatibel: bleibt mit Rand */
-        .card      { background: #fff;            border-radius: 1rem; box-shadow: var(--shadow-card); }
-        .card-warm { background: var(--karte);    border-radius: 1rem; box-shadow: var(--shadow-card); }
-        .card-p    { padding: var(--sp-in); }
-        /* Design B - "warm & luftig": Karten gehoeren visuell zum Grund,
-           harte Rahmen fallen weg. Nur eine haarfeine Rille markiert die
-           Kante - fuehlt sich wie eine Nut im Papier an, nicht wie ein
-           Kaesten-Rahmen. Global: alle .karte-Verwendungen sind betroffen
-           (Uebersichts-Kacheln, Kalender-Karten, etc.). */
-        .karte {
-          background: var(--karte-warm);
-          border: 1px solid var(--linie-fein);
-        }
-
-        /* Icons einheitlich duenner - lucide-react Default ist 2, nach
-           Apple-Konvention wirkt 1.75 leichter und edler. Trifft nur
-           Icons ohne expliziten strokeWidth-Prop. */
-        svg[stroke-width="2"] { stroke-width: 1.75; }
-        .karte-luft {
-          background: var(--karte-warm);
-          border: 1px solid transparent;
-          border-radius: 1rem;
-          transition: background 0.15s ease, border-color 0.15s ease;
-        }
-        .karte-luft:hover { border-color: var(--linie-fein); }
-        .karte-luft:focus-visible { outline: 2px solid var(--oliv); outline-offset: 2px; }
-
-        /* ── Akzent (unverändert, Rückwärtskompatibilität) ── */
-        .akzent-flaeche { background: var(--oliv); color: #fff; }
-        .akzent-flaeche:hover { background: var(--oliv-dunkel); }
-        .akzent-text { color: var(--oliv); }
-        .akzent-ton  { background: var(--oliv-hell); color: var(--oliv); }
-        .akzent-rand { border-color: var(--oliv); }
-        .hover\\:akzent-rand:hover { border-color: var(--oliv); }
-        .hover\\:akzent-text:hover { color: var(--oliv); }
-        .hover\\:akzent-ton:hover  { background: var(--oliv-hell); color: var(--oliv); }
-
-        /* ── Semantische Status-Klassen ── */
-        .s-gut  { background: var(--s-gut-bg);  color: var(--s-gut);  border-color: var(--s-gut-rand); }
-        .s-warn { background: var(--s-warn-bg); color: var(--s-warn); border-color: var(--s-warn-rand); }
-        .s-krit { background: var(--s-krit-bg); color: var(--s-krit); border-color: var(--s-krit-rand); }
-        .s-info { background: var(--s-info-bg); color: var(--s-info); border-color: var(--s-info-rand); }
-        .s-neu  { background: var(--s-neu-bg);  color: var(--s-neu);  border-color: var(--s-neu-rand); }
-
-        /* ── Chips (Status-Badges) ── */
-        .chip        { display: inline-flex; align-items: center; gap: 0.25rem; font-size: 0.6875rem; font-weight: 500; padding: 0.2rem 0.625rem; border-radius: 9999px; border: 1px solid transparent; line-height: 1.4; white-space: nowrap; }
-        .chip-gut    { background: var(--s-gut-bg);  color: var(--s-gut);  border-color: var(--s-gut-rand); }
-        .chip-warn   { background: var(--s-warn-bg); color: var(--s-warn); border-color: var(--s-warn-rand); }
-        .chip-krit   { background: var(--s-krit-bg); color: var(--s-krit); border-color: var(--s-krit-rand); }
-        .chip-info   { background: var(--s-info-bg); color: var(--s-info); border-color: var(--s-info-rand); }
-        .chip-akzent { background: var(--s-neu-bg);  color: var(--s-neu);  border-color: var(--s-neu-rand); }
-        .chip-neutral{ background: #f5f5f4; color: #57534e; border-color: #e7e5e4; }
-
-        /* ── Status-Punkte (●) ── */
-        .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
-        .dot-gut  { background: var(--s-gut); }
-        .dot-warn { background: var(--s-warn); }
-        .dot-krit { background: var(--s-krit); }
-        .dot-info { background: var(--s-info); }
-        .dot-neutral { background: #a8a29e; }
-
-        /* ── Typographie-Hierarchie ──
-           Nur Labels, Captions, Section-Header — Lauftext via Tailwind */
-        .t-section { font-size: 0.6875rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #a8a29e; }
-        .t-label   { font-size: 0.75rem;   font-weight: 500; color: #78716c; line-height: 1.4; }
-        .t-value   { font-size: 0.875rem;  font-weight: 500; color: #1c1917; }
-        .t-caption { font-size: 0.6875rem; color: #a8a29e; line-height: 1.4; }
-        .t-mono    { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
-
-        /* ── Eingabefelder (nur diese bekommen Rahmen) ── */
-        .input-base {
-          background: #fff;
-          border: 1.5px solid var(--linie);
-          border-radius: 0.625rem;
-          padding: 0.5rem 0.75rem;
-          font-size: 0.875rem;
-          width: 100%;
-          color: var(--ink);
-          transition: border-color 0.15s;
-          -webkit-appearance: none;
-        }
-        .input-base:focus { outline: none; border-color: var(--oliv); }
-        .input-base::placeholder { color: #a8a29e; }
-
-        /* ── Timeline (TP-05) ── */
-        .tl-wrap { position: relative; }
-        .tl-rail { position: absolute; left: 19px; top: 0; bottom: 0; width: 2px; border-radius: 1px; background: var(--linie); pointer-events: none; }
-        .tl-entry { display: flex; align-items: flex-start; gap: 12px; position: relative; padding-bottom: 12px; }
-        .tl-entry:last-child { padding-bottom: 0; }
-        .tl-icon { width: 40px; height: 40px; border-radius: 14px; background: #fff; border: 1px solid var(--linie); display: flex; align-items: center; justify-content: center; flex-shrink: 0; z-index: 1; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
-        .tl-body { flex: 1; min-width: 0; background: #fff; border-radius: 14px; padding: 10px 12px; box-shadow: 0 1px 2px rgba(0,0,0,.05); }
-        .tl-group-label { font-size: 0.625rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #a8a29e; padding: 10px 0 6px 52px; }
-        .tl-line { width: 2px; border-radius: 1px; background: var(--linie); flex-shrink: 0; }
-        .tl-dot  { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--linie); background: #fff; flex-shrink: 0; }
-        .tl-dot-filled { border-color: var(--oliv); background: var(--oliv); }
-
-        /* ── Hilfsprogramme ── */
-        .chip-scroll { scrollbar-width: none; }
-        .chip-scroll::-webkit-scrollbar { display: none; }
-        .tnum { font-variant-numeric: tabular-nums; }
-
-        /* ── Sheets & Dialoge ── */
-        .sheet {
-          max-height: calc(100dvh - env(safe-area-inset-top) - 64px);
-          margin-top: max(env(safe-area-inset-top), 12px);
-          overscroll-behavior: contain;
-        }
-        .dialog {
-          max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 32px);
-          overscroll-behavior: contain;
-        }
-
-        /* ── Micro-Interactions ── */
-        .press-scale { transition: transform 0.12s ease, opacity 0.12s ease; }
-        .press-scale:active { transform: scale(0.97); opacity: 0.85; }
-
-        /* ── Eingangs-Animationen ── */
-        @keyframes slide-up-sheet {
-          from { transform: translateY(100%); }
-          to   { transform: translateY(0); }
-        }
-        @keyframes slide-from-right {
-          from { transform: translateX(100%); opacity: 0; }
-          to   { transform: translateX(0);    opacity: 1; }
-        }
-        @keyframes item-pop {
-          from { transform: scale(0.88) translateY(6px); opacity: 0; }
-          to   { transform: scale(1)    translateY(0);   opacity: 1; }
-        }
-        @keyframes fade-in {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-        @keyframes fade-in-tab {
-          from { opacity: 0; transform: translateY(6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .anim-sheet       { animation: slide-up-sheet  0.28s cubic-bezier(0.32, 0.72, 0, 1) both; }
-        .anim-slide-right { animation: slide-from-right 0.26s cubic-bezier(0.32, 0.72, 0, 1) both; }
-        .anim-item        { animation: item-pop 0.20s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
-        .anim-bg          { animation: fade-in 0.22s ease both; }
-        .anim-tab         { animation: fade-in-tab 0.18s ease both; }
-
-        /* Sheet-Titel: dezenter negativer Letter-Spacing wie Apple-Sheets
-           (San Francisco kerns Semibold-Ueberschriften optisch enger). */
-        .sheet .font-semibold.text-stone-800,
-        .dialog .font-semibold.text-stone-800 {
-          letter-spacing: -0.015em;
-        }
-
-        /* Systemeinstellung "Bewegung reduzieren": Cross-Fade statt Slide.
-           Die Bewegungen sind subtile Orientierungshilfen, kein Deko-Effekt -
-           bei reduced-motion wird daraus ein weiches Ein-/Ausblenden. */
-        @media (prefers-reduced-motion: reduce) {
-          .anim-sheet,
-          .anim-slide-right,
-          .anim-item,
-          .anim-tab {
-            animation: fade-in 0.12s ease both !important;
-          }
-          * {
-            transition-duration: 0.01ms !important;
-          }
-        }
-
-        /* Systemeinstellung "Transparenz reduzieren": Glasflaechen werden
-           deckend, backdrop-blur aus. Sonst wird Text auf glaskaeltigem
-           Grund fuer Betroffene schwer lesbar. Attribut-Selektoren umgehen
-           Tailwind's Slash-Escaping-Feinheiten. */
-        @media (prefers-reduced-transparency: reduce) {
-          [class~="bg-white/70"],
-          [class~="bg-white/95"],
-          [class~="bg-white/80"],
-          [class~="bg-white/60"] {
-            background-color: rgb(255 255 255) !important;
-          }
-          [class*="backdrop-blur"] {
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-          }
-        }
-      `}</style>
       {showOnboarding && (
         <OnboardingModal onSave={applyBundesland} onDone={handleOnboardingDone} onSkip={() => setShowOnboarding(false)} />
       )}
@@ -7362,7 +7135,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
               title={`${pendingLessons.length} ${pendingLessons.length === 1 ? "Stunde" : "Stunden"} nachtragen`}
             >
               <ClipboardCheck size={15} />
-              <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-amber-400 border-2 border-[#F4F1E8]" />
+              <span className="absolute top-0.5 right-0.5 w-2 h-2 rounded-full bg-amber-400 border-2 border-[color:var(--creme)]" />
             </button>
           )}
           <button
@@ -11825,7 +11598,7 @@ function SitzplanModal({ cls, students, sitzplan, onSave, onClose }) {
           <div
             ref={canvasRef}
             className="relative w-full h-full rounded-2xl overflow-hidden"
-            style={{ background: "#F4F1E8", minHeight: "380px", height: "100%" }}
+            style={{ background: "var(--creme)", minHeight: "380px", height: "100%" }}
             onPointerDown={handleCanvasPointerDown}
             onPointerUp={handleCanvasPointerUp}
           >
@@ -12558,10 +12331,10 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
   }
 
   return (
-    <div className="fixed inset-0 bg-white z-[55] flex flex-col" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 app-bg z-[55] flex flex-col" onClick={(e) => e.stopPropagation()}>
       {/* Header */}
       <div className="shrink-0 bg-white/95 backdrop-blur-xl border-b border-stone-100">
-        <div className="px-3 pt-[max(env(safe-area-inset-top),0.75rem)] pb-2 flex items-center gap-2">
+        <div className="lese-spalte px-3 pt-[max(env(safe-area-inset-top),0.75rem)] pb-2 flex items-center gap-2">
           <button onClick={onClose} className="w-11 h-11 -ml-2 flex items-center justify-center text-stone-600 shrink-0" aria-label="Zurück">
             <ChevronLeft size={22} />
           </button>
@@ -12570,7 +12343,7 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
             <div className="text-[11px] text-stone-500">{students.length} Schüler:innen · {faecher.length} {faecher.length === 1 ? "Fach" : "Fächer"}</div>
           </div>
         </div>
-        <div className="flex border-t border-stone-100" role="tablist">
+        <div className="lese-spalte flex border-t border-stone-100" role="tablist">
           {[
             { key: "unterricht", label: "Unterricht" },
             { key: "noten", label: "Noten" },
@@ -12592,7 +12365,8 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
+      <div className="flex-1 overflow-y-auto">
+        <div className="lese-spalte px-4 py-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
         {activeTab === "unterricht" && (
           <div className="space-y-6">
             {/* Fach-Kacheln */}
@@ -12734,6 +12508,7 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* Detail-Overlay bei Schüler-Klick im Noten-Tab: Line-Chart + Notenliste */}
@@ -14503,7 +14278,7 @@ function IncidentModal({ cls, students, defaultLabel, onSave, onClose }) {
 
         <div className="rounded-xl border border-stone-200 p-3 mb-4">
           <label className="flex items-center gap-2 text-sm text-stone-700 py-2 cursor-pointer">
-            <input type="checkbox" className="w-5 h-5 shrink-0" style={{ accentColor: "#4F5844" }} checked={autoGrade} onChange={(e) => setAutoGrade(e.target.checked)} />
+            <input type="checkbox" className="w-5 h-5 shrink-0" style={{ accentColor: "var(--oliv)" }} checked={autoGrade} onChange={(e) => setAutoGrade(e.target.checked)} />
             Automatisch eine mündliche Note vergeben
           </label>
           {autoGrade && (
@@ -16523,7 +16298,7 @@ function NotenTab({ data, update, halbjahr, initialFachId, onConsumeInitial }) {
                                 <input
                                   type="checkbox"
                                   className="w-5 h-5 shrink-0 rounded"
-                                  style={{ accentColor: "#4F5844" }}
+                                  style={{ accentColor: "var(--oliv)" }}
                                   checked={!!g.reason}
                                   onChange={(e) => updateGrade(g.id, { reason: e.target.checked ? "Sportzeug" : undefined })}
                                 />
