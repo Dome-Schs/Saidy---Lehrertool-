@@ -4,7 +4,8 @@ import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   "https://jroaqcucjczmbqyjfsie.supabase.co",
-  "sb_publishable_a4KxJIgBvBf4fbZgy3G6hQ_t9NODQ4f"
+  "sb_publishable_a4KxJIgBvBf4fbZgy3G6hQ_t9NODQ4f",
+  { auth: { flowType: "implicit" } }
 );
 import {
   LayoutGrid, Users, CalendarDays, GraduationCap,
@@ -3786,10 +3787,15 @@ function ResetPasswordScreen() {
   );
 }
 
+function isRecoveryUrl() {
+  const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  return hash.get("type") === "recovery";
+}
+
 export default function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
-  const [showPasswordReset, setShowPasswordReset] = useState(false);
+  const [showPasswordReset, setShowPasswordReset] = useState(isRecoveryUrl);
   const userRef = useRef(null);
 
   useEffect(() => {
