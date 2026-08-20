@@ -19,11 +19,14 @@ jobs:
 
       - run: npm run build
 
-      - name: Upload App per FTP zu Hetzner
+      - name: Upload App per FTPS zu Hetzner
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.HETZNER_FTP_SERVER }}
           username: ${{ secrets.HETZNER_FTP_USERNAME }}
           password: ${{ secrets.HETZNER_FTP_PASSWORD }}
+          # Hetzner weist unverschluesseltes FTP ab:
+          # "550 SSL/TLS required on the control channel".
+          protocol: ftps
           local-dir: ./dist/
           server-dir: ${{ secrets.HETZNER_FTP_PATH }}

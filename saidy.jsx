@@ -411,7 +411,7 @@ function SaidyLogoMark({ size = 32, className = "" }) {
       viewBox="0 0 128 128"
       className={className}
       style={{ width: size, height: size, display: "block" }}
-      aria-label="Tuvi"
+      aria-label="Tu-vi"
       role="img"
     >
       <rect width="128" height="128" rx="28" fill="#4F5844" />
@@ -742,7 +742,7 @@ const S_ZEIT = (v) => {
 const S_LISTE = (v) => (Array.isArray(v) ? v : []);
 /* Farben landen direkt in style={{ backgroundColor: ... }}. Ein Wert wie
    url(https://…) wuerde von dort aus nachladen - das widerspricht dem
-   Versprechen, dass Tuvi nichts nach aussen sendet. */
+   Versprechen, dass Tu-vi nichts nach aussen sendet. */
 const S_FARBE = (v) => (typeof v === "string" && /^#[0-9a-fA-F]{3,8}$/.test(v) ? v : null);
 /* Schluessel wie __proto__ oder constructor haben in Nutzdaten nichts zu
    suchen und haben frueher schon zu weissen Seiten gefuehrt. */
@@ -1189,7 +1189,7 @@ function WebUntisImportModal({ students, existingAbsences, onImport, onClose }) 
                     ))}
                   </ul>
                   {matched === 0 && (
-                    <p className="text-xs text-red-600 mt-2">Keine Schüler:innen konnten zugeordnet werden. Bitte prüfe, ob die Namen in Tuvi und WebUntis übereinstimmen.</p>
+                    <p className="text-xs text-red-600 mt-2">Keine Schüler:innen konnten zugeordnet werden. Bitte prüfe, ob die Namen in Tu-vi und WebUntis übereinstimmen.</p>
                   )}
                 </div>
               )}
@@ -1241,12 +1241,12 @@ function LegalModal({ onClose }) {
             <>
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Zielgruppe</div>
-                <p className="text-xs text-stone-600">Tuvi richtet sich ausschließlich an volljährige Lehrkräfte für den beruflichen Gebrauch. Die App ist nicht für die Nutzung durch Schülerinnen und Schüler oder Erziehungsberechtigte bestimmt.</p>
+                <p className="text-xs text-stone-600">Tu-vi richtet sich ausschließlich an volljährige Lehrkräfte für den beruflichen Gebrauch. Die App ist nicht für die Nutzung durch Schülerinnen und Schüler oder Erziehungsberechtigte bestimmt.</p>
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">Gerätesicherheit</div>
                 <div className="space-y-2 text-xs text-stone-600">
-                  <p>Tuvi speichert alle Daten lokal im Browser-Speicher. Daher gilt:</p>
+                  <p>Tu-vi speichert alle Daten lokal im Browser-Speicher. Daher gilt:</p>
                   <div className="space-y-1.5 pl-1">
                     <div className="flex items-start gap-2"><span className="text-red-500 font-bold shrink-0 mt-0.5">✕</span><span>Nicht auf geteilten Schulcomputern oder öffentlichen Geräten nutzen</span></div>
                     <div className="flex items-start gap-2"><span className="text-red-500 font-bold shrink-0 mt-0.5">✕</span><span>Nicht im privaten Browser-Modus (InPrivate / Inkognito) – Daten gehen beim Schließen verloren</span></div>
@@ -1279,7 +1279,7 @@ function LegalModal({ onClose }) {
                 </div>
               </div>
               <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 text-xs text-amber-800">
-                Tuvi ist ein privates Werkzeug, kein offiziell geprüftes Schulverwaltungssystem. Ob die Nutzung mit den Datenschutzrichtlinien deiner Schule und deines Bundeslandes vereinbar ist, kläre bitte mit deiner Schulleitung oder dem Datenschutzbeauftragten.
+                Tu-vi ist ein privates Werkzeug, kein offiziell geprüftes Schulverwaltungssystem. Ob die Nutzung mit den Datenschutzrichtlinien deiner Schule und deines Bundeslandes vereinbar ist, kläre bitte mit deiner Schulleitung oder dem Datenschutzbeauftragten.
               </div>
             </>
           ) : activeTab === "impressum" ? (
@@ -1329,7 +1329,7 @@ function LegalModal({ onClose }) {
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">4. Lokale Datenspeicherung</div>
-                <p className="text-xs text-stone-600">Tuvi verwendet ausschließlich den localStorage des Browsers. Es werden keine Tracking-Cookies gesetzt. Die gespeicherten Daten verlassen das Gerät nicht automatisch.</p>
+                <p className="text-xs text-stone-600">Tu-vi verwendet ausschließlich den localStorage des Browsers. Es werden keine Tracking-Cookies gesetzt. Die gespeicherten Daten verlassen das Gerät nicht automatisch.</p>
               </div>
               <div>
                 <div className="text-[10px] font-semibold text-stone-400 uppercase tracking-widest mb-2">5. Haftungsausschluss</div>
@@ -1583,7 +1583,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, user, onExport, on
           <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 mb-3 flex items-start gap-2">
             <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
             <p className="text-[11px] text-stone-600 leading-relaxed">
-              <strong>Geteilte Schulcomputer:</strong> Tuvi speichert Daten im Browser. Wenn mehrere Lehrkräfte dasselbe Browser-Profil nutzen, können alle auf diese Daten zugreifen. Nutze Tuvi nur in deinem <strong>eigenen, privaten Browser-Profil</strong>.
+              <strong>Geteilte Schulcomputer:</strong> Tu-vi speichert Daten im Browser. Wenn mehrere Lehrkräfte dasselbe Browser-Profil nutzen, können alle auf diese Daten zugreifen. Nutze Tu-vi nur in deinem <strong>eigenen, privaten Browser-Profil</strong>.
             </p>
           </div>
           <div className="flex gap-2 mb-2">
@@ -1654,7 +1654,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, user, onExport, on
                 <div className="min-w-0">
                   <div className="text-xs font-medium text-stone-500">Freitags-Erinnerung</div>
                   <div className="text-[11px] text-stone-400 mt-0.5">
-                    Erinnert dich freitags beim Öffnen von Tuvi, wenn dein letztes Backup älter als 3 Tage ist.
+                    Erinnert dich freitags beim Öffnen von Tu-vi, wenn dein letztes Backup älter als 3 Tage ist.
                   </div>
                 </div>
                 <Toggle
@@ -1668,7 +1668,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, user, onExport, on
                       const perm = await Notification.requestPermission();
                       if (perm !== "granted") return;
                       setSetting("backupNotifications", true);
-                      notify("Tuvi – Erinnerung aktiv", "Du wirst freitags daran erinnert, dein Backup zu erneuern.");
+                      notify("Tu-vi – Erinnerung aktiv", "Du wirst freitags daran erinnert, dein Backup zu erneuern.");
                     } catch {
                       // Manche Browser (u. a. ältere Android-WebViews) werfen hier – Schalter bleibt dann aus
                     }
@@ -1720,7 +1720,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, user, onExport, on
             <>
               <p className="text-xs text-stone-500 mb-2">So nutzt du iCloud Drive zur manuellen Synchronisation:</p>
               <ol className="text-xs text-stone-500 space-y-1 mb-3 pl-4 list-decimal">
-                <li>„Sichern" → Datei in <strong>iCloud Drive → Tuvi</strong> ablegen</li>
+                <li>„Sichern" → Datei in <strong>iCloud Drive → Tu-vi</strong> ablegen</li>
                 <li>Auf dem anderen Gerät: „Gesichertes wiederherstellen" → Datei aus iCloud Drive wählen</li>
               </ol>
               <div className="flex gap-2">
@@ -2497,7 +2497,7 @@ function OnboardingModal({ onSave, onDone, onSkip }) {
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-5">
         <div className="flex flex-col items-center mb-4">
           <SaidyLogoMark size={56} className="mb-3" />
-          <div className="text-xl font-semibold tracking-widest text-stone-800 uppercase">Tuvi</div>
+          <div className="text-xl font-semibold tracking-widest text-stone-800 uppercase">Tu-vi</div>
           <div className="text-xs text-stone-400 tracking-widest uppercase mt-0.5">Noten. Notizen. Organisiert.</div>
         </div>
 
@@ -2766,20 +2766,20 @@ const HELP_DATA = [
     items: [
       { q: "Wie lege ich eine neue Klasse an?", a: `Tippe auf „Klassen" in der Navigation, dann oben rechts auf „+". Gib den Klassennamen ein und bestätige mit „Anlegen".` },
       { q: "Wie füge ich Schüler:innen hinzu?", a: `Öffne eine Klasse und tippe auf „+ Schüler:in". Namen können einzeln oder als Liste eingegeben werden.` },
-      { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Tuvi automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr" → „Einstellungen" → Bundesland wählen → „Schulferien eintragen".` },
-      { q: "Was passiert beim ersten Start?", a: `Tuvi führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
+      { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Tu-vi automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr" → „Einstellungen" → Bundesland wählen → „Schulferien eintragen".` },
+      { q: "Was passiert beim ersten Start?", a: `Tu-vi führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
       { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus. Der Farb-Modus ist unabhängig von Hell/Dunkel und funktioniert in beiden.` },
-      { q: "Wie sperre ich Tuvi mit Face ID oder Touch ID?", a: `„Mehr" → „Einstellungen" → Abschnitt „App-Sperre" → Schalter „Mit Face ID / Touch ID sperren" einschalten. Dein Gerät fragt einmal nach der Bestätigung, danach ist die Sperre aktiv. Ab dann verlangt Tuvi Face ID oder Touch ID, bevor Klassen und Schülerdaten sichtbar werden – beim Öffnen der App und immer dann, wenn sie länger als zwei Minuten im Hintergrund war. Kurzes Wegwischen (eine Nachricht lesen) löst die Sperre nicht aus. Wichtig: Die Sperre gilt nur auf diesem Gerät. Nutzt du Tuvi zusätzlich auf dem iPad, musst du sie dort separat einschalten. Erscheint der Abschnitt gar nicht oder als Hinweis, kann dein Gerät oder Browser keine Face ID für Webseiten – auf dem iPhone brauchst du dafür Safari und eine https-Verbindung.` },
+      { q: "Wie sperre ich Tu-vi mit Face ID oder Touch ID?", a: `„Mehr" → „Einstellungen" → Abschnitt „App-Sperre" → Schalter „Mit Face ID / Touch ID sperren" einschalten. Dein Gerät fragt einmal nach der Bestätigung, danach ist die Sperre aktiv. Ab dann verlangt Tu-vi Face ID oder Touch ID, bevor Klassen und Schülerdaten sichtbar werden – beim Öffnen der App und immer dann, wenn sie länger als zwei Minuten im Hintergrund war. Kurzes Wegwischen (eine Nachricht lesen) löst die Sperre nicht aus. Wichtig: Die Sperre gilt nur auf diesem Gerät. Nutzt du Tu-vi zusätzlich auf dem iPad, musst du sie dort separat einschalten. Erscheint der Abschnitt gar nicht oder als Hinweis, kann dein Gerät oder Browser keine Face ID für Webseiten – auf dem iPhone brauchst du dafür Safari und eine https-Verbindung.` },
       { q: "Was, wenn Face ID beim Entsperren nicht funktioniert?", a: `Auf dem Sperrbildschirm steht unter dem Entsperren-Knopf „Stattdessen mit Passwort anmelden". Das meldet dich ab und du kommst zur normalen Anmeldung mit E-Mail und Passwort – danach bist du wieder drin. Du sperrst dich also nie aus. Die Sperre bleibt dabei eingerichtet; ausschalten kannst du sie in den Einstellungen unter „App-Sperre".` },
-      { q: "Ersetzt die App-Sperre mein Passwort?", a: `Nein, und das ist wichtig zu verstehen. Die Sperre ist ein zusätzlicher Riegel vor der App auf diesem einen Gerät. Sie löst den Fall, der im Schulalltag wirklich vorkommt: Das entsperrte iPhone liegt auf dem Pult und jemand tippt Tuvi an – ohne dein Gesicht sind dann keine Schülerdaten zu sehen. Sie ist aber kein zweiter Anmeldefaktor und verschlüsselt die Daten nicht zusätzlich. Dein Passwort bleibt der eigentliche Schutz deines Kontos: Wähle es sicher und gib es nicht weiter.` },
-      { q: "Kann Tuvi dunkel dargestellt werden?", a: `Ja, automatisch. Tuvi übernimmt die Darstellung deines Geräts: Steht dein iPhone, iPad oder Computer auf „Dunkel", zeigt sich Tuvi dunkel, bei „Hell" hell. Auf dem iPhone stellst du das unter Einstellungen → Anzeige & Helligkeit ein, auf dem Mac unter Systemeinstellungen → Erscheinungsbild. In der App selbst gibt es dafür bewusst keinen eigenen Schalter – so passt Tuvi immer zu deinen übrigen Apps. Ausdrucke (Schülerakte, Berichte, Notenlisten) sind immer hell, damit sie auf Papier lesbar bleiben.` },
+      { q: "Ersetzt die App-Sperre mein Passwort?", a: `Nein, und das ist wichtig zu verstehen. Die Sperre ist ein zusätzlicher Riegel vor der App auf diesem einen Gerät. Sie löst den Fall, der im Schulalltag wirklich vorkommt: Das entsperrte iPhone liegt auf dem Pult und jemand tippt Tu-vi an – ohne dein Gesicht sind dann keine Schülerdaten zu sehen. Sie ist aber kein zweiter Anmeldefaktor und verschlüsselt die Daten nicht zusätzlich. Dein Passwort bleibt der eigentliche Schutz deines Kontos: Wähle es sicher und gib es nicht weiter.` },
+      { q: "Kann Tu-vi dunkel dargestellt werden?", a: `Ja, automatisch. Tu-vi übernimmt die Darstellung deines Geräts: Steht dein iPhone, iPad oder Computer auf „Dunkel", zeigt sich Tu-vi dunkel, bei „Hell" hell. Auf dem iPhone stellst du das unter Einstellungen → Anzeige & Helligkeit ein, auf dem Mac unter Systemeinstellungen → Erscheinungsbild. In der App selbst gibt es dafür bewusst keinen eigenen Schalter – so passt Tu-vi immer zu deinen übrigen Apps. Ausdrucke (Schülerakte, Berichte, Notenlisten) sind immer hell, damit sie auf Papier lesbar bleiben.` },
       { q: "Wie ist die Heute-Seite aufgebaut?", a: `Von oben nach unten priorisiert – die App zeigt nicht alles auf einmal, sondern das was gerade zählt: (1) Kopf mit Wortmarke, Datum und dem grünen Plus-Knopf. (2) „JETZT" – die große Karte für die laufende Stunde, mit Restzeit, Fach & Klasse, Thema, den zu dieser Stunde gehörenden offenen Punkten (Entschuldigungen, „heute Klassenarbeit"-Warnung) und dem Material aus dem Fach. Ein „Stunde öffnen"-Knopf springt in die Schnellerfassung. (3) „ALS NÄCHSTES" – die nächste Stunde, mit „in X Min." oder „in X Std." und – das ist der eigentliche Trick – den Material-Chips unter „Vorher mitnehmen", damit du in der aktuellen Stunde schon weißt, was du gleich einsammeln musst (z. B. „12 Volleybälle · 6 Hütchen · Leibchen"). (4) Zweispaltig „X Dinge brauchen deine Aufmerksamkeit" (Sheet mit allen Signalen) und „Nicht vergessen" (persönliche Aufgabenliste mit +-Feld zum sofort Ergänzen). (5) „Danach heute" – die restlichen Stunden als kompakte Zeilenliste. (6) Kleine Wochentagsleiste zum Vor- und Zurückblättern. (7) Wochenrückblick von Freitag 12 Uhr bis Sonntag Nacht, falls aktiv. (8) Unterrichtstipp des Tages, falls in den Einstellungen aktiv.` },
       { q: "Was zeigen die Karten JETZT und ALS NÄCHSTES?", a: `Beide Karten führen dich durch den aktuellen Moment. JETZT ist die dominante Karte für die laufende Stunde: Fach·Klasse·Thema groß, darunter die konkret zu dieser Stunde relevanten Punkte – Zahl der offenen Entschuldigungen dieser Klasse, „Heute: [Klassenarbeit-Titel]" wenn eine Prüfung ansteht, verknüpfte Aufgaben, und ganz wichtig: das Material, das du für dieses Fach eingetragen hast (Feld „Immer mitnehmen" im Fach-Editor). Rechts oben läuft die Restzeit. „Stunde öffnen" springt in die Schnellerfassung. Die ALS-NÄCHSTES-Karte ist etwas kleiner: Anfangszeit + „in X Std. Y Min.", Fach·Klasse·Raum, Thema falls hinterlegt, und die Material-Chips als „Vorher mitnehmen". Der Sinn: du bist noch in Mathe, siehst aber schon dass du gleich zwölf Volleybälle brauchst, und kannst sie auf dem Weg mitnehmen.` },
       { q: `Was steht in der Kachel „X Dinge brauchen deine Aufmerksamkeit"?`, a: `Automatisch erkannte Signale für heute – nur solche die tatsächlich anstehen, sonst verschwindet die Kachel. Sie sammelt: (1) noch nachzutragende Stunden, (2) auffällige Klassen aus dem Klassenradar (kritisch/warnend), (3) dringliche Erinnerungen (Kinder mit vielen Fehltagen, Kinder ohne Eintrag seit 14+ Tagen, wiederholte Vorfälle, offene Zeugnisnoten). Ein Tipp öffnet ein Sheet mit der vollständigen Liste; ein Tipp auf einen Eintrag springt direkt in den passenden Bereich (Klassen-Dashboard, Entschuldigungen usw.). Alles lokal berechnet – keine externen Datenübertragungen. „Nicht vergessen" daneben ist bewusst getrennt: dort stehen nur deine manuell erfassten Aufgaben.` },
       { q: "Wie lege ich Material für ein Fach fest, das immer mitzunehmen ist?", a: `Fach bearbeiten (Klassen-Tab → Fach → Zahnrad) → im Editor die Sektion „Immer mitnehmen". Trage ein Ding pro Zeile ein und tippe das +-Symbol oder drücke Enter – z. B. „12 Volleybälle", „6 Hütchen", „Leibchen", „Beamer". Die Einträge erscheinen automatisch auf der Heute-Seite: in der JETZT-Karte beim aktiven Fach, und – wichtiger – in der ALS-NÄCHSTES-Karte als Chip-Reihe „Vorher mitnehmen", damit du sie in der Vorstunde noch einsammeln kannst. Kannst du jederzeit über das × am Chip löschen. Wird pro Fach gespeichert, nicht pro Stunde – Sport hat also für jede Sportstunde dieselben Bälle.` },
       { q: "Was ist der Unterrichtstipp des Tages?", a: `Ganz unten auf der Übersicht liegt eine kompakte Zeile mit einem Tipp aus dem Wissenspool – Titel plus Merksatz. Der Tipp wechselt automatisch mit jedem Tag (er ist an das Datum gekoppelt, bleibt also bei mehrmaligem Öffnen am selben Tag gleich). Tippe drauf, dann öffnet sich die volle Karte: „Warum?" mit Kurzbegründung, „So setzt du es um" als praktische Punkte, und der Merksatz zum Mitnehmen. Ein „Nächster Tipp"-Knopf springt zufällig zu einer anderen Karte, so kannst du zwischendurch etwas schmökern. In den Einstellungen unter „Übersicht (Startseite)" lässt sich die Kachel abschalten.` },
       { q: "Was ist der Wochenrückblick auf der Übersicht?", a: `Eine Karte, die von Freitag 12 Uhr bis Sonntag Nacht ganz oben auf der Übersicht erscheint (ab Montag ist sie automatisch weg). Sie zeigt drei Dinge: die Zahlen der Woche (gehaltene Stunden, vergebene Noten, geführte Gespräche, neue Notizen), was aufgefallen ist (Klassen mit Signalen aus dem Klassenradar, Kinder ohne Eintrag in dieser Woche) und einen Ausblick auf die nächste Woche (Klassenarbeiten, Termine). Ein × blendet die Karte für den Rest dieser Woche aus – am nächsten Freitag kommt sie wieder.` },
-      { q: "Was macht der grüne Plus-Knopf in der Mitte?", a: `Er ist der Schnellzugriff zum Erfassen und funktioniert aus jedem Bereich heraus. Ein Tipp öffnet fünf Einträge: „Stunde erfassen" springt direkt in die Schnellerfassung – Tuvi wählt dabei selbst die passende Stunde, zuerst eine noch nicht erfasste, sonst die zuletzt gehaltene von heute. „Gespräch notieren" und „Notiz zu einem Kind" fragen zuerst nach dem Kind (einfach den Namen tippen) und dann nach dem Text; beim Gespräch kommen Art (Schüler, Eltern, Förder) und Stimmung dazu. „Aufgabe" und „Termin" legen einen To-do beziehungsweise einen Kalendereintrag an. Bist du gerade in einem Bereich mit eigener Aktion – etwa im Klassen-Tab – steht diese zusätzlich ganz oben in der Liste. Auf Tablet und Desktop heißt der Knopf „Schnell erfassen" und sitzt in der linken Seitenleiste, ganz oben; das aufklappende Menü enthält dieselben Aktionen.` },
+      { q: "Was macht der grüne Plus-Knopf in der Mitte?", a: `Er ist der Schnellzugriff zum Erfassen und funktioniert aus jedem Bereich heraus. Ein Tipp öffnet fünf Einträge: „Stunde erfassen" springt direkt in die Schnellerfassung – Tu-vi wählt dabei selbst die passende Stunde, zuerst eine noch nicht erfasste, sonst die zuletzt gehaltene von heute. „Gespräch notieren" und „Notiz zu einem Kind" fragen zuerst nach dem Kind (einfach den Namen tippen) und dann nach dem Text; beim Gespräch kommen Art (Schüler, Eltern, Förder) und Stimmung dazu. „Aufgabe" und „Termin" legen einen To-do beziehungsweise einen Kalendereintrag an. Bist du gerade in einem Bereich mit eigener Aktion – etwa im Klassen-Tab – steht diese zusätzlich ganz oben in der Liste. Auf Tablet und Desktop heißt der Knopf „Schnell erfassen" und sitzt in der linken Seitenleiste, ganz oben; das aufklappende Menü enthält dieselben Aktionen.` },
       { q: "Wo finde ich die Aufgaben in der unteren Leiste?", a: `Die Leiste zeigt Übersicht, Klassen, den Plus-Knopf, Noten und „Mehr". Die Aufgaben sind unter „Mehr" zu finden – zusammen mit Stundenplan, Kalender, Suche, Einstellungen und Hilfe. Eine neue Aufgabe legst du schneller über den grünen Plus-Knopf an.` },
       { q: "Warum verschwindet die Navigationsleiste beim Scrollen?", a: `Damit mehr Platz für den Inhalt bleibt. Scrollst du auf einer Seite nach unten, gleitet die untere Leiste weg und stattdessen erscheint unten links ein olivfarbener Kreis mit einem Pfeil nach oben. Ein Tipp darauf holt die vollständige Leiste zurück. Scrollst du wieder nach oben, erscheint sie ohnehin von selbst. Auf dem Desktop bleibt die Seitenleiste immer sichtbar.` }
     ],
@@ -2794,7 +2794,7 @@ const HELP_DATA = [
       { q: "Kann ich ein Gespräch von gestern nachträglich eintragen?", a: `Ja. Grünes Plus → „Gespräch notieren" – neben dem Notizfeld gibt es ein Datumsfeld, das standardmäßig auf heute steht. Ändere es auf das gewünschte Datum, dann bleibt der Eintrag im Verlauf an der richtigen Stelle stehen. Dasselbe gilt für „Notiz zu einem Kind".` },
       { q: "Wie bearbeite ich eine:n Schüler:in?", a: `Tippe in der Klassenliste auf den Namen. Im Profil kannst du Name, Foto und weitere Angaben bearbeiten.` },
       { q: "Wie lösche ich eine Klasse?", a: `Öffne die Klasse, tippe auf das Bearbeiten-Symbol und wähle „Klasse löschen". Achtung: alle Daten dieser Klasse werden unwiderruflich entfernt.` },
-      { q: "Was sind Dienste?", a: `Dienste sind Aufgaben, die Tuvi Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste", mit einem Tippen weiter zum nächsten Kind.` },
+      { q: "Was sind Dienste?", a: `Dienste sind Aufgaben, die Tu-vi Schüler:innen der Reihe nach zuweist (z. B. Tafeldienst). Anlegen unter Klasse → „Dienste", mit einem Tippen weiter zum nächsten Kind.` },
       { q: "Wie erfasse ich Fehlzeiten?", a: `Gehe zu Klasse → „Fehlzeiten" → „+ Fehlzeit". Wähle Schüler:in, Datum und ob die Fehlzeit entschuldigt oder unentschuldigt ist.` },
       { q: "Wie lege ich einen Sitzplan an?", a: `Öffne eine Klasse im Klassen-Tab und tippe auf „Sitzplan". Tippe auf eine freie Stelle in der Fläche – es erscheint eine Auswahlliste zum Auswählen des Kindes. Alternativ auf „Kind hinzufügen" tippen. Platzierte Kinder lassen sich frei auf der Fläche verschieben. Die Tafel oben lässt sich an jeden Rand ziehen (oben, unten, links, rechts). Einmal antippen (ohne zu schieben) markiert den Sitzplatz farbig: grün = klappt gut, amber = beobachten, rot = klappt nicht. Ein Kind entfernen: Token nach unten über den Rand der Fläche in die rote Toolbar ziehen und loslassen. „Aufräumen" richtet alle Kinder gleichzeitig in einem sauberen Raster aus. „Löschen" entfernt den gesamten Sitzplan. Am Ende „Speichern" tippen.` },
       { q: "Was zeigt die Zusammenfassung im Schülerprofil?", a: `Im Profil-Tab „Übersicht" erscheint eine automatisch generierte Zusammenfassung – erkennbar am Sparkles-Symbol. Sie fasst Stimmung, Notendurchschnitt, Tendenz, Aktivität der letzten 30 Tage, Förderbedarfe und aktive Ziele in einem Satz zusammen. Die Zusammenfassung wird lokal aus den gespeicherten Daten berechnet und nur angezeigt, wenn genügend Informationen vorliegen.` },
@@ -2810,12 +2810,12 @@ const HELP_DATA = [
     category: "Noten & Berichte",
     items: [
       { q: "Wie trage ich eine Note ein?", a: `Gehe zu „Noten & Berichte", wähle Klasse und Fach. Tippe auf eine:n Schüler:in – in der Karte „Neue Note" Kategorie und Note wählen und auf „+" tippen. Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
-      { q: "Wie berechnet sich die Zeugnisnote?", a: `Tuvi bildet den gewichteten Durchschnitt aus mündlichen und schriftlichen Noten. Voreingestellt ist 50 zu 50 Prozent – änderbar unter „Klassen & Schüler" → Reiter „Fächer" → Zahnrad beim Fach → „Gewichtung der Noten". Einzelne Noten lassen sich zusätzlich stärker gewichten (Faktor beim Bearbeiten der Note). Die berechnete Note erscheint in der Notenübersicht.` },
+      { q: "Wie berechnet sich die Zeugnisnote?", a: `Tu-vi bildet den gewichteten Durchschnitt aus mündlichen und schriftlichen Noten. Voreingestellt ist 50 zu 50 Prozent – änderbar unter „Klassen & Schüler" → Reiter „Fächer" → Zahnrad beim Fach → „Gewichtung der Noten". Einzelne Noten lassen sich zusätzlich stärker gewichten (Faktor beim Bearbeiten der Note). Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
       { q: "Was ist der Stunden-Abschluss (30 Sekunden)?", a: `Das Klemmbrett-Symbol neben einer Stunde öffnet den 30-Sekunden-Abschluss – die neue Standard-Erfassung nach einer Stunde. Kein Formular mit leerem Notenfeld, sondern eine Liste aller Kinder mit vier One-Tap-Aktionen pro Zeile: + (positive Mitarbeit) · − (zurückhaltend) · ⚠︎ (Sportzeug bzw. Hausaufgabe vergessen) · Notiz (kurzes Textfeld). Ein Tipp pro Kind, alles wird am Ende auf einmal gespeichert. + und − werden als Beobachtungs-Notiz gespeichert (nicht als automatische Note, damit der Durchschnitt nicht verwässert wird); das Vergessen als Vorfall (bei Sport als „Sportzeug", sonst als „Hausaufgabe"). Wer eine echte Note vergeben will, wechselt unten über „Auch Noten vergeben →" in die ausführliche Schnellerfassung. Bei Sport-Stunden erscheint zusätzlich ein Drucker-Symbol pro Kind – dahinter liegen zwei druckbare Vorlagen: „Stundenprotokoll" (für Kinder die z.B. Sportzeug vergessen haben und mitschreiben statt teilnehmen) und „Regelbruch-Arbeitsauftrag" (Regeln abschreiben, Verhaltensplan, Elternunterschrift). Kindnamen und Klasse werden automatisch eingetragen.` },
       { q: "Wo finde ich die Sport-Druckvorlagen ohne Kind-Kontext?", a: `„Mehr" → „Einstellungen" → ganz unten „Sport-Vorlagen zum Drucken": „Stundenprotokoll" und „Regelbruch-Auftrag". Das öffnet eine leere Vorlage zum Ausdrucken – nützlich für die Ersatzkopien in der Schublade oder wenn du sie spontan brauchst.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Die ausführliche Erfassung wird aus dem Stunden-Abschluss über den Link „Auch Noten vergeben" erreicht. Dort kannst du für alle Schüler:innen einer Klasse Noten (mündlich / schriftlich), ausführliche Notizen und Gespräche eintragen. Eine Doppelstunde wird einmal erfasst, nicht zweimal. Die Notenbuttons sind immer sichtbar. Neben dem Namen liegt das ⚠︎-Symbol für „Vergessen"; Notiz und Gespräch öffnen sich über das ···-Symbol.` },
-      { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Tuvi an, wie viele Unterrichtsstunden bis dahin noch bleiben. Gezählt wird in Unterrichtseinheiten: ein Tag mit diesem Fach ist eine Einheit – eine Doppelstunde aus zwei 45-Minuten-Blöcken zählt also einmal, genau wie eine einzelne Stunde. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Tuvi die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
+      { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Tu-vi an, wie viele Unterrichtsstunden bis dahin noch bleiben. Gezählt wird in Unterrichtseinheiten: ein Tag mit diesem Fach ist eine Einheit – eine Doppelstunde aus zwei 45-Minuten-Blöcken zählt also einmal, genau wie eine einzelne Stunde. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Tu-vi die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
       { q: "Wo sehe ich auf der Heute-Seite, wie viel Zeit bis zur Klassenarbeit bleibt?", a: `Am Prüfungstag selbst zeigt die JETZT-Karte deutlich rot „Heute: [Titel der Arbeit]" – nicht zu übersehen. Naht der Termin (letzte drei Übungsstunden), landet der Countdown zusätzlich in der Kachel „X Dinge brauchen deine Aufmerksamkeit" als dringliches Signal. Die volle Restzeit-Rechnung („noch 5 Stunden bis zur Arbeit, Ferien abgezogen") siehst du in der Schnellerfassung oder in der Notenübersicht des Fachs. Voraussetzung ist jeweils, dass für das Fach ein Termin unter „Klassen & Schüler" → Fach-Zahnrad → „Nächste Klassenarbeit / Test" eingetragen ist und das Fach im Stundenplan steht.` },
       { q: "Wie finde ich heraus, bei welchem Thema die Klasse Lücken hat?", a: `Beim Eintragen einer schriftlichen Note kannst du ein Thema angeben, z. B. „Bruchrechnung". Bereits verwendete Themen werden beim Tippen vorgeschlagen – nimm die Vorschläge, dann bleibt die Auswertung sauber. Auch die Schnellerfassung übernimmt das oben eingetragene Stundenthema automatisch, wenn du dort schriftliche Noten vergibst. Umgekehrt schlägt das Stundenthema-Feld bereits bekannte Themen desselben Fachs vor – so bleibt „Bruchrechnung" über Wochen dasselbe Wort und der Fortschrittsbalken zählt sauber weiter, statt bei jeder Tippvariante von vorn. In der Fachansicht („Noten & Berichte" → Klasse → Fach) erscheint dann die Karte „Wissensgebiete": Alle Themen mit dem Klassenschnitt, das schwächste zuerst. Ein langer Balken bedeutet gut beherrscht. Tippst du ein Thema an, siehst du, welche Kinder dort Lücken haben – daraus wird direkt eine Fördergruppe.` },
       { q: "Wie sehe ich, wie weit ich mit den Zeugnisnoten bin?", a: `In der Zeugnisphase (Januar, Februar, Juni, Juli) zeigt jede Klassenkarte unter „Noten & Berichte" einen Fortschrittsbalken: wie viele Zeugnisnoten von wie vielen bereits gesetzt sind und wie viele noch offen sind. Über mehrere Klassen hinweg siehst du so auf einen Blick, wo noch Arbeit liegt. Ist alles vollständig, wird der Balken grün.` },
@@ -2829,7 +2829,7 @@ const HELP_DATA = [
     items: [
       { q: "Wie lege ich einen Termin an?", a: `Tippe auf „Mehr" in der Navigation und dann auf „Kalender". Tippe dort auf „+ Neuen Termin anlegen" und gib Titel, Datum, Uhrzeit und Art ein.` },
       { q: "Wie lege ich einen wiederkehrenden Termin an?", a: `Beim Anlegen eines Termins gibt es das Feld „Wiederholung" – dort kannst du Wöchentlich, Alle 2 Wochen oder Monatlich wählen. Der Termin erscheint dann automatisch an allen folgenden Termintagen im Kalender.` },
-      { q: "Wie trage ich Schulferien ein?", a: `Stelle zuerst dein Bundesland in den Einstellungen ein. Dann erscheint dort „Schulferien eintragen" – Tuvi übernimmt alle Ferien automatisch.` },
+      { q: "Wie trage ich Schulferien ein?", a: `Stelle zuerst dein Bundesland in den Einstellungen ein. Dann erscheint dort „Schulferien eintragen" – Tu-vi übernimmt alle Ferien automatisch.` },
       { q: "Wie erledige ich einen Termin?", a: `Tippe auf den Kreis links neben dem Termin. Er wandert in den „Erledigt"-Bereich ganz unten.` },
     ],
   },
@@ -2846,26 +2846,26 @@ const HELP_DATA = [
       { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung". Dort erscheint zuerst ein kurzer Datenschutz-Hinweis, den du bestätigst. Danach: „Sichern" legt die Datei im Download-Ordner ab, „Teilen" öffnet die Teilen-Ansicht (z. B. für „In Dateien sichern" oder AirDrop). Wichtig: abgelegte Dokumente sind darin nicht enthalten – die brauchen eine eigene Sicherung, direkt darunter unter „Dokumente sichern".` },
       { q: "Wie lege ich ein Dokument bei einem Kind ab?", a: `Öffne die Klasse, tippe das Kind an und wechsle auf den Reiter „Mehr". Ganz unten steht „Dokumente" mit zwei Knöpfen: „Foto" öffnet direkt die Kamera – ideal, um eine Entschuldigung abzufotografieren. „Datei" öffnet die Dateien-App, dort wählst du ein PDF oder ein vorhandenes Bild. Fotos werden automatisch verkleinert, damit sie wenig Platz brauchen. Ein Tipp auf einen Eintrag öffnet ihn, das Papierkorb-Symbol löscht ihn.` },
       { q: "Kann ich Dokumente auch bei einer Klasse, einem Fach oder ganz allgemein ablegen?", a: `Ja. Im Klassen-Dashboard (Klasse aufklappen → „Klassen-Dashboard") liegt ganz unten die Ablage für die ganze Klasse – etwa Sitzplan oder Elternbrief. In der Notenübersicht eines Fachs (Noten → Klasse → Fach) findest du dieselbe Ablage für Arbeitsblätter oder Lösungen. Für alles ohne festen Bezug – Konferenzprotokolle, Formulare, Schulordnung – gibt es unter „Mehr" → „Dokumente" einen eigenen allgemeinen Bereich. Dort steht auch eine durchsuchbare Liste aller abgelegten Dokumente, egal wo sie hängen.` },
-      { q: "Wo werden meine Dokumente gespeichert?", a: `Auf deinem Gerät, genau wie alles andere in Tuvi – nichts wird ins Internet übertragen. Dokumente liegen allerdings in einem eigenen Speicherbereich, weil sie für die normale Ablage zu groß wären. Deshalb sind sie auch nicht in der normalen Datensicherung enthalten, sondern brauchen unter „Einstellungen" → „Datensicherung" den eigenen Knopf „Dokumente sichern".` },
+      { q: "Wo werden meine Dokumente gespeichert?", a: `Auf deinem Gerät, genau wie alles andere in Tu-vi – nichts wird ins Internet übertragen. Dokumente liegen allerdings in einem eigenen Speicherbereich, weil sie für die normale Ablage zu groß wären. Deshalb sind sie auch nicht in der normalen Datensicherung enthalten, sondern brauchen unter „Einstellungen" → „Datensicherung" den eigenen Knopf „Dokumente sichern".` },
       { q: "Warum sind meine Dokumente nach dem Wiederherstellen weg?", a: `Die normale Datensicherung enthält nur die Liste der Dokumente (Name, Datum, zu welchem Kind), nicht die Dateien selbst. Nach dem Wiederherstellen siehst du deshalb die Einträge, aber beim Öffnen kommt der Hinweis, dass die Datei fehlt. Spiel dann zusätzlich deine Dokument-Sicherung ein: „Einstellungen" → „Datensicherung" → „Einspielen" im Abschnitt „Dokumente sichern".` },
-      { q: "Kann ich mir Dokumente direkt an Tuvi schicken lassen?", a: `Nein. Tuvi hat bewusst keinen Server und kann deshalb weder E-Mails abrufen noch Nachrichten empfangen. Auf dem iPhone lässt Apple Web-Apps auch nicht als Ziel im Teilen-Menü zu. Der Weg ist deshalb: Datei zuerst in „Dateien" sichern (bei einer E-Mail: Anhang antippen → Teilen → „In Dateien sichern"), danach in Tuvi beim Kind auf „Datei" tippen und sie dort auswählen. Für Papier-Entschuldigungen ist „Foto" der schnellere Weg.` },
+      { q: "Kann ich mir Dokumente direkt an Tu-vi schicken lassen?", a: `Nein. Tu-vi hat bewusst keinen Server und kann deshalb weder E-Mails abrufen noch Nachrichten empfangen. Auf dem iPhone lässt Apple Web-Apps auch nicht als Ziel im Teilen-Menü zu. Der Weg ist deshalb: Datei zuerst in „Dateien" sichern (bei einer E-Mail: Anhang antippen → Teilen → „In Dateien sichern"), danach in Tu-vi beim Kind auf „Datei" tippen und sie dort auswählen. Für Papier-Entschuldigungen ist „Foto" der schnellere Weg.` },
       { q: "Wie sichere ich am einfachsten auf dem iPhone oder iPad?", a: `Einstellungen → „Datensicherung" → „Teilen" antippen. In der Teilen-Ansicht dann „In Dateien sichern" wählen und „Auf meinem iPhone" (oder iPad) als Ort. Ein Schritt, kein Tippen – und die Daten verlassen dein Gerät nicht. Verschicke Backups nicht per E-Mail oder Messenger: Die Datei enthält alle Schülerdaten im Klartext, und der Versand über einen privaten Mailanbieter ist für Schülerdaten in der Regel nicht zulässig.` },
-      { q: "Wie aktiviere ich die Freitags-Erinnerung?", a: `In den Einstellungen unter „Datensicherung" → „Freitags-Erinnerung" den Schalter aktivieren. Beim ersten Mal fragt der Browser nach der Erlaubnis für Benachrichtigungen. Wichtig zu wissen: Die Erinnerung erscheint, wenn du Tuvi an einem Freitag öffnest und dein letztes Backup mindestens 3 Tage her ist. Tuvi läuft nicht im Hintergrund – öffnest du die App freitags nicht, kommt auch keine Erinnerung. Verlass dich also nicht allein darauf.` },
-      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung" → „Gesichertes wiederherstellen" und wähle deine Backup-Datei. Achtung: Die aktuell gespeicherten Daten werden dabei ersetzt – am besten vorher einmal „Sichern". Sollten sich die Daten beim Start einmal nicht lesen lassen, zeigt Tuvi direkt einen Wiederherstellen-Knopf und überschreibt nichts.` },
+      { q: "Wie aktiviere ich die Freitags-Erinnerung?", a: `In den Einstellungen unter „Datensicherung" → „Freitags-Erinnerung" den Schalter aktivieren. Beim ersten Mal fragt der Browser nach der Erlaubnis für Benachrichtigungen. Wichtig zu wissen: Die Erinnerung erscheint, wenn du Tu-vi an einem Freitag öffnest und dein letztes Backup mindestens 3 Tage her ist. Tu-vi läuft nicht im Hintergrund – öffnest du die App freitags nicht, kommt auch keine Erinnerung. Verlass dich also nicht allein darauf.` },
+      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung" → „Gesichertes wiederherstellen" und wähle deine Backup-Datei. Achtung: Die aktuell gespeicherten Daten werden dabei ersetzt – am besten vorher einmal „Sichern". Sollten sich die Daten beim Start einmal nicht lesen lassen, zeigt Tu-vi direkt einen Wiederherstellen-Knopf und überschreibt nichts.` },
       { q: "Wo werden meine Daten gespeichert?", a: `Alle Daten bleiben ausschließlich auf deinem Gerät (lokaler Browser-Speicher). Es werden keine Daten an Server übertragen.` },
-      { q: "Warum bekomme ich eine Backup-Erinnerung?", a: `Tuvi erinnert automatisch wenn seit 7 Tagen kein Backup erstellt wurde oder wenn seit dem letzten Backup 10 oder mehr neue Einträge (Noten, Notizen, Fehlzeiten) hinzugekommen sind. Das Morgen-Briefing zeigt ebenfalls einen Hinweis, wenn Backup fällig ist.` },
+      { q: "Warum bekomme ich eine Backup-Erinnerung?", a: `Tu-vi erinnert automatisch wenn seit 7 Tagen kein Backup erstellt wurde oder wenn seit dem letzten Backup 10 oder mehr neue Einträge (Noten, Notizen, Fehlzeiten) hinzugekommen sind. Das Morgen-Briefing zeigt ebenfalls einen Hinweis, wenn Backup fällig ist.` },
     ],
   },
   {
     category: "Import",
     items: [
-      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: `Öffne den „Klassen"-Tab und tippe oben rechts auf „Fehlzeiten". Alternativ: „Mehr" → „Einstellungen" → „WebUntis-Import". Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Tuvi übernimmt sie automatisch in die passenden Klassen.` },
+      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: `Öffne den „Klassen"-Tab und tippe oben rechts auf „Fehlzeiten". Alternativ: „Mehr" → „Einstellungen" → „WebUntis-Import". Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Tu-vi übernimmt sie automatisch in die passenden Klassen.` },
     ],
   },
   {
     category: "Datenschutz & Rechtliches",
     items: [
-      { q: "Wer ist verantwortlich für die Schülerdaten?", a: `Du als Lehrkraft bist gemäß Art. 4 Nr. 7 DSGVO selbst datenschutzrechtlich Verantwortliche:r für die eingegebenen Daten. Der Entwickler von Tuvi hat keinen Zugriff auf deine Daten.` },
+      { q: "Wer ist verantwortlich für die Schülerdaten?", a: `Du als Lehrkraft bist gemäß Art. 4 Nr. 7 DSGVO selbst datenschutzrechtlich Verantwortliche:r für die eingegebenen Daten. Der Entwickler von Tu-vi hat keinen Zugriff auf deine Daten.` },
       { q: "Wo finde ich das Impressum und die Datenschutzerklärung?", a: `Tippe auf „Mehr" → „Einstellungen" und scrolle ganz nach unten. Dort findest du den Link „Impressum & Datenschutz".` },
       { q: "Werden meine Daten irgendwohin übertragen?", a: `Nein. Alle Daten bleiben ausschließlich auf deinem Gerät (Browser-localStorage). Es werden keine Daten an den Entwickler oder Dritte übermittelt. Beim Aufrufen der App werden lediglich technische Zugriffsdaten (IP-Adresse, Zeitstempel) durch den Hosting-Anbieter GitHub Pages verarbeitet.` },
     ],
@@ -3595,7 +3595,7 @@ function GlobalSearchModal({ data, onSelectStudent, onClose }) {
    Ersatz fuer das Passwort. Die Supabase-Sitzung liegt weiterhin im
    Browser-Speicher. Was die Sperre loest, ist der Fall der im Schulalltag
    tatsaechlich vorkommt: das entsperrte Geraet liegt auf dem Pult und
-   jemand tippt Tuvi an. Ohne Gesichts- oder Fingerabdruck-Pruefung sind
+   jemand tippt Tu-vi an. Ohne Gesichts- oder Fingerabdruck-Pruefung sind
    dann keine Schuelerdaten sichtbar.
 
    Der Zustand liegt bewusst in localStorage und nicht in data.settings:
@@ -3646,11 +3646,11 @@ async function appLockEinrichten(user) {
   const cred = await navigator.credentials.create({
     publicKey: {
       challenge: crypto.getRandomValues(new Uint8Array(32)),
-      rp: { id: location.hostname, name: "Tuvi" },
+      rp: { id: location.hostname, name: "Tu-vi" },
       user: {
         id: crypto.getRandomValues(new Uint8Array(16)),
-        name: user?.email || "Tuvi",
-        displayName: user?.email || "Tuvi",
+        name: user?.email || "Tu-vi",
+        displayName: user?.email || "Tu-vi",
       },
       pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
       authenticatorSelection: {
@@ -3709,11 +3709,11 @@ function LockScreen({ onEntsperrt, onAbmelden }) {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 rounded-2xl akzent-flaeche flex items-center justify-center font-serif text-4xl font-bold mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
-          <h1 className="text-2xl font-semibold text-stone-800">Tuvi</h1>
+          <h1 className="text-2xl font-semibold text-stone-800">Tu-vi</h1>
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 text-center">
           <Lock size={26} className="mx-auto mb-3 text-stone-400" />
-          <h2 className="text-base font-semibold text-stone-800 mb-1">Tuvi ist gesperrt</h2>
+          <h2 className="text-base font-semibold text-stone-800 mb-1">Tu-vi ist gesperrt</h2>
           <p className="text-sm text-stone-500 mb-5">
             Entsperre mit Face ID oder Touch ID, um deine Klassen zu sehen.
           </p>
@@ -3774,7 +3774,7 @@ function AppSperreEinstellung({ user }) {
     <div className="pt-5 border-t border-stone-100">
       <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">App-Sperre</div>
       <p className="text-xs text-stone-500 mb-3">
-        Verlangt Face ID oder Touch ID, bevor Tuvi Klassen und Schülerdaten zeigt –
+        Verlangt Face ID oder Touch ID, bevor Tu-vi Klassen und Schülerdaten zeigt –
         beim Öffnen und wenn die App länger als zwei Minuten im Hintergrund war.
         Gilt nur auf diesem Gerät.
       </p>
@@ -3852,7 +3852,7 @@ function LoginScreen() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 rounded-2xl akzent-flaeche flex items-center justify-center font-serif text-4xl font-bold mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
-          <h1 className="text-2xl font-semibold text-stone-800">Tuvi</h1>
+          <h1 className="text-2xl font-semibold text-stone-800">Tu-vi</h1>
           <p className="text-sm text-stone-500 mt-1">Das pädagogische Gedächtnis</p>
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200">
@@ -3947,7 +3947,7 @@ function ResetPasswordScreen() {
         <div className="w-full max-w-sm">
           <div className="flex flex-col items-center mb-8">
             <div className="w-16 h-16 rounded-2xl akzent-flaeche flex items-center justify-center font-serif text-4xl font-bold mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
-            <h1 className="text-2xl font-semibold text-stone-800">Tuvi</h1>
+            <h1 className="text-2xl font-semibold text-stone-800">Tu-vi</h1>
           </div>
           <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 text-center">
             <div className="text-3xl mb-3">&#10003;</div>
@@ -3970,7 +3970,7 @@ function ResetPasswordScreen() {
       <div className="w-full max-w-sm">
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 rounded-2xl akzent-flaeche flex items-center justify-center font-serif text-4xl font-bold mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
-          <h1 className="text-2xl font-semibold text-stone-800">Tuvi</h1>
+          <h1 className="text-2xl font-semibold text-stone-800">Tu-vi</h1>
         </div>
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200">
           <h2 className="text-base font-semibold text-stone-800 mb-4">Neues Passwort festlegen</h2>
@@ -4286,11 +4286,11 @@ export default function App() {
               } else if (daysSince >= 7 || totalChanges >= 10) {
                 setBackupReminderDays(daysSince);
               }
-              // Freitags-Erinnerung – greift nur, wenn Tuvi an dem Tag geöffnet wird
+              // Freitags-Erinnerung – greift nur, wenn Tu-vi an dem Tag geöffnet wird
               if (parsed.settings?.backupNotifications && new Date().getDay() === 5 && (daysSince === null || daysSince >= 3)) {
                 setTimeout(() => {
                   notify(
-                    "Tuvi – Backup nicht vergessen",
+                    "Tu-vi – Backup nicht vergessen",
                     daysSince === null ? "Du hast noch nie ein Backup gemacht. Jetzt nachholen?" : `Letztes Backup vor ${daysSince} Tagen. Jetzt kurz sichern?`
                   );
                 }, 1500);
@@ -4302,7 +4302,7 @@ export default function App() {
           setShowOnboarding(true);
         }
       } catch (e) {
-        console.warn("[Tuvi] Laden fehlgeschlagen:", e);
+        console.warn("[Tu-vi] Laden fehlgeschlagen:", e);
         setLoadFailed(true);
         setToast("⚠ Gespeicherte Daten konnten nicht gelesen werden. Bitte ein Backup einspielen – es wurde nichts überschrieben.");
       }
@@ -4326,7 +4326,7 @@ export default function App() {
         if (error) throw error;
         setSaveState("saved");
       } catch (e) {
-        console.warn("[Tuvi] Speichern fehlgeschlagen:", e);
+        console.warn("[Tu-vi] Speichern fehlgeschlagen:", e);
         setSaveState("error");
       }
     }, 500);
@@ -4409,7 +4409,7 @@ export default function App() {
   }
 
   /* Backup vermerken. localStorage kann werfen (Safari-Privatmodus, volles Kontingent) –
-     die Oberfläche muss trotzdem zurückgesetzt werden, sonst mahnt Tuvi weiter,
+     die Oberfläche muss trotzdem zurückgesetzt werden, sonst mahnt Tu-vi weiter,
      obwohl gerade gesichert wurde. */
   function recordBackup() {
     try {
@@ -4428,7 +4428,7 @@ export default function App() {
     const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data: { ...data, deletedSnapshot: null } };
     const json = JSON.stringify(payload, null, 2);
     const stamp = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
-    const fileName = `Tuvi-Backup-${stamp}.json`;
+    const fileName = `Tu-vi-Backup-${stamp}.json`;
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -4469,7 +4469,7 @@ export default function App() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `Tuvi-Dokumente-${stamp}.json`;
+      a.download = `Tu-vi-Dokumente-${stamp}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -4481,7 +4481,7 @@ export default function App() {
           : `${dateien.length} Dokumente gesichert (${byteText(blob.size)}).`,
       });
     } catch (e) {
-      console.warn("[Tuvi] Dokument-Export fehlgeschlagen:", e);
+      console.warn("[Tu-vi] Dokument-Export fehlgeschlagen:", e);
       onResult?.({ ok: false, msg: "Dokumente konnten nicht gesichert werden." });
     }
   }
@@ -4494,7 +4494,7 @@ export default function App() {
       const text = await file.text();
       const p = JSON.parse(text);
       if (p?.app !== "saidy-dokumente" || !Array.isArray(p.dateien)) {
-        return onResult?.({ ok: false, msg: "Das ist keine Tuvi-Dokument-Sicherung." });
+        return onResult?.({ ok: false, msg: "Das ist keine Tu-vi-Dokument-Sicherung." });
       }
       await dauerhaftenSpeicherAnfordern();
       let anzahl = 0;
@@ -4514,7 +4514,7 @@ export default function App() {
       });
       onResult?.({ ok: true, msg: `${anzahl} Dokumente wiederhergestellt.` });
     } catch (e) {
-      console.warn("[Tuvi] Dokument-Import fehlgeschlagen:", e);
+      console.warn("[Tu-vi] Dokument-Import fehlgeschlagen:", e);
       onResult?.({ ok: false, msg: "Die Dokument-Sicherung konnte nicht gelesen werden." });
     }
   }
@@ -4523,11 +4523,11 @@ export default function App() {
     const payload = { app: "saidy", version: 1, exportedAt: new Date().toISOString(), data: { ...data, deletedSnapshot: null } };
     const json = JSON.stringify(payload, null, 2);
     const stamp = new Date().toISOString().slice(0, 16).replace(/[T:]/g, "-");
-    const fileName = `Tuvi-Backup-${stamp}.json`;
+    const fileName = `Tu-vi-Backup-${stamp}.json`;
     try {
       const file = new File([json], fileName, { type: "application/json" });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "Tuvi-Backup" });
+        await navigator.share({ files: [file], title: "Tu-vi-Backup" });
         recordBackup();
         return;
       }
@@ -4550,7 +4550,7 @@ export default function App() {
        Attesten und Gutachten waere das der schwerste Teil eines vergessenen
        Loeschvorgangs. Sie kommen bewusst nicht in den 30-Tage-Papierkorb:
        dessen Momentaufnahme liegt in localStorage und wuerde daran zerbrechen. */
-    docAllesLoeschen().catch((e) => console.warn("[Tuvi] Dokumente löschen fehlgeschlagen:", e));
+    docAllesLoeschen().catch((e) => console.warn("[Tu-vi] Dokumente löschen fehlgeschlagen:", e));
     update((d) => {
       const snapshot = { deletedAt: new Date().toISOString(), data: { ...d, deletedSnapshot: null, documents: [] } };
       return { ...EMPTY_DATA, deletedSnapshot: snapshot };
@@ -4571,7 +4571,7 @@ export default function App() {
         const parsed = JSON.parse(String(reader.result));
         const imported = parsed?.data && (parsed?.app === "saidy" || parsed?.app === "lehrertool") ? parsed.data : parsed;
         if (!imported || !Array.isArray(imported.classes)) {
-          onResult?.({ ok: false, msg: "Diese Datei konnte nicht eingelesen werden. Bitte stelle sicher, dass du die Datei direkt aus Tuvi gesichert hast (Einstellungen → Sichern)." });
+          onResult?.({ ok: false, msg: "Diese Datei konnte nicht eingelesen werden. Bitte stelle sicher, dass du die Datei direkt aus Tu-vi gesichert hast (Einstellungen → Sichern)." });
           return;
         }
         const merged = { ...EMPTY_DATA, ...imported };
@@ -4637,7 +4637,7 @@ export default function App() {
             : "Backup erfolgreich geladen.",
         });
       } catch (e) {
-        console.warn("[Tuvi] Backup-Import fehlgeschlagen:", e);
+        console.warn("[Tu-vi] Backup-Import fehlgeschlagen:", e);
         onResult?.({ ok: false, msg: "Die Datei konnte nicht gelesen werden." });
       }
     };
@@ -4806,7 +4806,7 @@ export default function App() {
             <div className="flex items-center gap-2.5">
               <SaidyLogoMark size={34} className="shrink-0" />
               <div>
-                <div className="text-sm font-semibold text-stone-800 leading-tight tracking-wide">Tuvi</div>
+                <div className="text-sm font-semibold text-stone-800 leading-tight tracking-wide">Tu-vi</div>
                 <div className="text-[10px] text-stone-400 leading-none mt-0.5">
                   {saveState === "saving" ? "Speichert …" : saveState === "error" ? "⚠ Kein Speicherplatz" : "Gespeichert"}
                 </div>
@@ -5602,7 +5602,7 @@ function SportDruckVorlage({ vorlage, student, klasse, datum, thema, onClose }) 
 }
 
 /* Schnellerfassung nach der Stunde: Note, Notiz und Auffälligkeit pro Schüler:in in einer kompakten Liste */
-/* Stunden-Abschluss in 30 Sekunden. Nach dem Kern-Purpose: "Tuvi merkt sich
+/* Stunden-Abschluss in 30 Sekunden. Nach dem Kern-Purpose: "Tu-vi merkt sich
    fuer dich, was du im Alltag nicht alles im Kopf haben kannst". Statt einer
    leeren Notizseite oder Notenformular gibt es 4 One-Tap-Aktionen pro Kind:
    + (Mitarbeit), - (Stoerung), Vergessen (kontextabhaengig: Sport → Sportzeug,
@@ -6070,7 +6070,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
       <div className="bg-white w-full md:max-w-lg rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet overflow-x-hidden" onClick={(e) => e.stopPropagation()}>
 
         {/* Kopf bleibt beim Scrollen sichtbar - Klasse und Fach gross und klar,
-            damit auffaellt wenn Tuvi die falsche Stunde vorgewaehlt hat. Ein Tipp
+            damit auffaellt wenn Tu-vi die falsche Stunde vorgewaehlt hat. Ein Tipp
             auf die Zeile oeffnet die Liste der anderen Stunden des Tages. */}
         <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-200 z-10 shadow-[0_4px_10px_-6px_rgba(0,0,0,0.15)]">
           <div className="px-4 py-3 flex items-center gap-2">
@@ -7379,7 +7379,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           <span className="w-7 h-7 rounded-lg akzent-ton flex items-center justify-center shrink-0" aria-hidden="true">
             <span className="text-sm font-bold akzent-text leading-none">T</span>
           </span>
-          <span className="text-[11px] font-bold tracking-[0.22em] uppercase akzent-text">Tuvi</span>
+          <span className="text-[11px] font-bold tracking-[0.22em] uppercase akzent-text">Tu-vi</span>
         </div>
         <div className="flex items-center gap-1.5">
           {/* WebUntis-Import-Icon aus dem Header entfernt (Icon war unklar und
@@ -8475,7 +8475,7 @@ function FachModal({ data, initial, onSave, onClose }) {
 
           <Field label="Unterrichtsreihe (pro Kalenderwoche)">
             <p className="text-xs text-stone-500 mb-2">
-              Was steht in welcher KW an? Beim Öffnen einer Stunde in dieser Woche schlägt Tuvi dir das Thema als Vorschlag vor. Ferien werden übersprungen.
+              Was steht in welcher KW an? Beim Öffnen einer Stunde in dieser Woche schlägt Tu-vi dir das Thema als Vorschlag vor. Ferien werden übersprungen.
             </p>
             {reihe.length > 0 && (
               <ul className="space-y-1.5 mb-2">
@@ -8906,7 +8906,7 @@ function VoiceNoteButton({ onTranscript }) {
               <div className="font-semibold text-stone-800">Sprachnotizen</div>
             </div>
             <p className="text-sm text-stone-600 leading-relaxed mb-4">
-              Tuvi nutzt die Sprach-zu-Text-Funktion deines Geräts. Die Audioaufnahme wird dabei <strong>kurzzeitig an Apple (Safari) bzw. Google (Chrome/Edge) in die USA übertragen</strong> und danach nicht gespeichert. Nur der fertige Text bleibt lokal auf deinem Gerät. Nenne in Aufnahmen keine Schülernamen.
+              Tu-vi nutzt die Sprach-zu-Text-Funktion deines Geräts. Die Audioaufnahme wird dabei <strong>kurzzeitig an Apple (Safari) bzw. Google (Chrome/Edge) in die USA übertragen</strong> und danach nicht gespeichert. Nur der fertige Text bleibt lokal auf deinem Gerät. Nenne in Aufnahmen keine Schülernamen.
             </p>
             <div className="flex gap-2">
               <button onClick={() => setShowConsent(false)} className="flex-1 py-2.5 rounded-xl border border-stone-200 text-sm text-stone-600 font-medium">Abbrechen</button>
@@ -9060,7 +9060,7 @@ function DokumenteBlock({ scope, scopeId, documents, update, hinweis }) {
         return d;
       });
     } catch (e) {
-      console.warn("[Tuvi] Dokument speichern fehlgeschlagen:", e);
+      console.warn("[Tu-vi] Dokument speichern fehlgeschlagen:", e);
       /* Der haeufigste echte Grund ist ein volles Speicherkontingent - das
          soll die Lehrkraft erfahren, nicht nur „hat nicht geklappt". */
       setFehler(e?.name === "QuotaExceededError"
@@ -14846,7 +14846,7 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
               </div>
               <div className="text-right text-[10px] text-stone-500">
                 <div>Stand: {heute}</div>
-                <div>Tuvi – vertraulich</div>
+                <div>Tu-vi – vertraulich</div>
               </div>
             </div>
           </div>
@@ -14971,7 +14971,7 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
                   </li>
                 ))}
               </ul>
-              <p className="text-[10px] text-stone-400 mt-1">Dokumente selbst liegen im Tuvi-Speicher, nicht im PDF.</p>
+              <p className="text-[10px] text-stone-400 mt-1">Dokumente selbst liegen im Tu-vi-Speicher, nicht im PDF.</p>
             </section>
           )}
 
@@ -14979,7 +14979,7 @@ function SchuelerakteExportModal({ student, cls, data, halbjahr, onClose }) {
           <div className="mt-8 pt-3 border-t border-stone-300 text-[9px] text-stone-500 leading-snug space-y-1">
             <div><strong>Vertraulich · Nur für den berechtigten Personenkreis.</strong> Diese Übersicht enthält personenbezogene Daten nach Art. 6 DSGVO und ggf. besondere Kategorien nach <strong>Art. 9 DSGVO</strong> (u. a. Gesundheit, ethnische Herkunft, weltanschauliche Merkmale). Verarbeitung ausschließlich zur pädagogischen Übergabe.</div>
             <div>Weitergabe an Unbefugte oder Versand per unverschlüsselter E-Mail an Dritte ist unzulässig. Verschwiegenheitspflicht nach <strong>§ 203 StGB</strong> beachten. Nach Zweckerreichung datenschutzkonform vernichten (Papier: schreddern; Datei: sicher löschen).</div>
-            <div className="text-stone-400">Erzeugt mit Tuvi · Stand: {heute}</div>
+            <div className="text-stone-400">Erzeugt mit Tu-vi · Stand: {heute}</div>
           </div>
         </div>
       </div>

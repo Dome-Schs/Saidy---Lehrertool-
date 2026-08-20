@@ -26,13 +26,13 @@ export default defineConfig({
         ],
       },
       manifest: {
-        name: "Saidy – Lehrertool",
-        short_name: "Saidy",
-        description: "Digitales Lehrertool für Grundschullehrkräfte",
+        name: "Tu-vi – Lehrertool",
+        short_name: "Tu-vi",
+        description: "Das pädagogische Gedächtnis für Fachlehrkräfte",
         start_url: ".",
         display: "standalone",
-        background_color: "#F4F1E8",
-        theme_color: "#4F5844",
+        background_color: "#F2F2F6",
+        theme_color: "#F2F2F6",
         lang: "de",
         orientation: "portrait-primary",
         icons: [
