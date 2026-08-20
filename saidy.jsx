@@ -2779,6 +2779,7 @@ const HELP_DATA = [
       { q: "Ersetzt die App-Sperre mein Passwort?", a: `Nein, und das ist wichtig zu verstehen. Die Sperre ist ein zusätzlicher Riegel vor der App auf diesem einen Gerät. Sie löst den Fall, der im Schulalltag wirklich vorkommt: Das entsperrte iPhone liegt auf dem Pult und jemand tippt Tu-vi an – ohne dein Gesicht sind dann keine Schülerdaten zu sehen. Sie ist aber kein zweiter Anmeldefaktor und verschlüsselt die Daten nicht zusätzlich. Dein Passwort bleibt der eigentliche Schutz deines Kontos: Wähle es sicher und gib es nicht weiter.` },
       { q: "Wie sind die Einstellungen aufgebaut?", a: `Die Einstellungen führen zu fünf Bereichen statt zu einer langen Liste: „Schuljahr & Schule" (Halbjahr, Bundesland, Schulferien, Klassen versetzen), „Darstellung" (welche Blöcke auf der Übersicht erscheinen und in welcher Reihenfolge, die Karte im Schülerprofil, Unterrichtstipps), „Sicherheit & Konto" (App-Sperre mit Face ID, angemeldete E-Mail, Abmelden), „Daten & Sicherung" (Sichern, Wiederherstellen, Freitags-Erinnerung, iCloud, WebUntis-Import und ganz am Ende das Löschen aller Daten) sowie „Über Tu-vi" (Impressum und Datenschutz). Ein Pfeil oben links führt aus jedem Bereich zurück.` },
       { q: "Wo finde ich den Papierkorb?", a: `Im Tab „Klassen & Schüler" ganz unten. Gelöschte Klassen und Kinder bleiben dort 30 Tage wiederherstellbar, danach werden sie endgültig entfernt. Solange nichts gelöscht wurde, erscheint der Papierkorb gar nicht. Früher lag er in den Einstellungen – dort sucht ihn niemand, wenn gerade aus Versehen eine Klasse verschwunden ist.` },
+      { q: "Was passiert, wenn ich eine Klasse antippe?", a: `Die Klasse öffnet sich als Vollbild mit drei Reitern. „Überblick" zeigt Kennzahlen (Anzahl Kinder, Fächer, Klassen-Ø) und führt weiter zu Schüler:innen, Sitzplan, Klassen-Dashboard, „Klasse verwalten" sowie zu den Noten je Fach. „Unterricht" listet die Fächer mit Reihenplanung und Material. „Noten" zeigt das Notenraster der Klasse. Früher führte Antippen woandershin als Aufklappen – man musste sich merken, welche Geste wohin geht. Das Aufklappen gibt es nicht mehr, alles liegt jetzt hinter dem einen Antippen.` },
       { q: `Was steht im Reiter „Listen" bei den Klassen?`, a: `Drei Übersichten über alle Klassen hinweg: Entschuldigungen, Förderziele und Geburtstage. Der Unterschied zu den Kacheln auf der Startseite: Die Listen lassen sich auch dann öffnen, wenn gerade nichts offen ist – etwa um im Elterngespräch nachzusehen, wann ein Kind zuletzt eine Entschuldigung abgegeben hat.` },
       { q: "Kann Tu-vi dunkel dargestellt werden?", a: `Ja, automatisch. Tu-vi übernimmt die Darstellung deines Geräts: Steht dein iPhone, iPad oder Computer auf „Dunkel", zeigt sich Tu-vi dunkel, bei „Hell" hell. Auf dem iPhone stellst du das unter Einstellungen → Anzeige & Helligkeit ein, auf dem Mac unter Systemeinstellungen → Erscheinungsbild. In der App selbst gibt es dafür bewusst keinen eigenen Schalter – so passt Tu-vi immer zu deinen übrigen Apps. Ausdrucke (Schülerakte, Berichte, Notenlisten) sind immer hell, damit sie auf Papier lesbar bleiben.` },
       { q: "Wie ist die Heute-Seite aufgebaut?", a: `Von oben nach unten priorisiert – die App zeigt nicht alles auf einmal, sondern das was gerade zählt: (1) Kopf mit Wortmarke, Datum und dem grünen Plus-Knopf. (2) „JETZT" – die große Karte für die laufende Stunde, mit Restzeit, Fach & Klasse, Thema, den zu dieser Stunde gehörenden offenen Punkten (Entschuldigungen, „heute Klassenarbeit"-Warnung) und dem Material aus dem Fach. Ein „Stunde öffnen"-Knopf springt in die Schnellerfassung. (3) „ALS NÄCHSTES" – die nächste Stunde, mit „in X Min." oder „in X Std." und – das ist der eigentliche Trick – den Material-Chips unter „Vorher mitnehmen", damit du in der aktuellen Stunde schon weißt, was du gleich einsammeln musst (z. B. „12 Volleybälle · 6 Hütchen · Leibchen"). (4) Zweispaltig „X Dinge brauchen deine Aufmerksamkeit" (Sheet mit allen Signalen) und „Nicht vergessen" (persönliche Aufgabenliste mit +-Feld zum sofort Ergänzen). (5) „Danach heute" – die restlichen Stunden als kompakte Zeilenliste. (6) Kleine Wochentagsleiste zum Vor- und Zurückblättern. (7) Wochenrückblick von Freitag 12 Uhr bis Sonntag Nacht, falls aktiv. (8) Unterrichtstipp des Tages, falls in den Einstellungen aktiv.` },
@@ -2810,7 +2811,7 @@ const HELP_DATA = [
       { q: `Wie exportiere ich eine Schülerakte für die Übergabe?`, a: `Im Kind-Profil unter der Gesprächs-Erfassung: „Schülerakte als PDF – für Übergabe an nächste Lehrkraft". Es öffnet sich eine druckbare Vorschau mit Stammdaten, Kontakten, aktuellen Förderzielen, Noten pro Fach, Fehlzeiten, Vorfällen, Gesprächen (letzte 15) und Beobachtungen (letzte 25). Ein Klick auf „Als PDF drucken" öffnet den Browser-Druckdialog – dort „In PDF speichern" wählen. So kann die nächste Klassen- oder Fachlehrkraft in Minuten das pädagogische Wissen übernehmen, statt sich durch Papier zu wühlen. Datenschutz-Hinweis am Fuß der Seite eingebaut.` },
       { q: "Wie funktionieren Sprachnotizen?", a: `Im Schülerprofil (Tab „Übersicht" oder „Notizen") gibt es neben dem Notiz-Eingabefeld ein Mikrofon-Symbol. Antippen startet die Aufnahme – beim ersten Mal erscheint ein kurzer Hinweis zur Datenverarbeitung. Während der Aufnahme erscheint eine Live-Vorschau des erkannten Textes. Nach der Aufnahme wird der Text automatisch ins Eingabefeld übernommen, wo er noch bearbeitet werden kann. Unterstützte Browser: Safari (iOS/macOS), Chrome und Edge. Firefox unterstützt diese Funktion nicht. Das Mikrofon-Symbol erscheint nur, wenn dein Browser Spracherkennung unterstützt.` },
       { q: "Was ist der Klassenradar?", a: `Signale die auffällige Klassen automatisch erkennen und in die Kachel „X Dinge brauchen deine Aufmerksamkeit" auf der Heute-Seite spielen. Drei Signale werden über die letzten 14 Tage berechnet: (1) häufige Klassenbucheinträge – ab 3 in 14 Tagen Warnung, ab 5 kritisch; (2) Klassenschnitt in einem Fach schlechter als 3,5 – ab 3,5 Warnung, ab 4,0 kritisch (nur ab 3 Noten im Fach, sonst Rauschen); (3) mindestens 4 Kinder mit „nicht so gut" oder „schlecht" in Gesprächen – ab 4 Warnung, ab 6 kritisch. Ist alles ruhig, bleibt die Kachel unauffällig oder verschwindet ganz. Ein Tipp im Aufmerksamkeits-Sheet öffnet direkt das Klassen-Dashboard mit allen Details.` },
-      { q: "Was zeigt das Klassen-Dashboard?", a: `Im Klassen-Tab eine Klasse aufklappen → „Klassen-Dashboard" antippen. Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf als Kacheln; eine Notenverteilungs-Leiste; eine Anwesenheits-Übersicht der letzten 12 Wochen als Farbfeld (je dunkler, desto mehr Kinder fehlten an dem Tag, rot heißt unentschuldigt dabei) mit Hinweis, auf welchen Wochentag die meisten Fehltage fallen; eine Liste „Lange kein Eintrag" mit den Kindern die am längsten keine Note oder Notiz bekommen haben – mit Name und Anzahl Tage, direkt antippbar; eine „Aufmerksamkeit"-Liste; Geburtstage der nächsten 21 Tage sowie die letzten Notizen und Gespräche. Tippen auf ein Kind oder einen Punkt öffnet das Schülerprofil.` },
+      { q: "Was zeigt das Klassen-Dashboard?", a: `Klasse antippen → Reiter „Überblick" → „Klassen-Dashboard". Es zeigt: Anzahl Schüler:innen, Klassen-Ø und Förderbedarf als Kacheln; eine Notenverteilungs-Leiste; eine Anwesenheits-Übersicht der letzten 12 Wochen als Farbfeld (je dunkler, desto mehr Kinder fehlten an dem Tag, rot heißt unentschuldigt dabei) mit Hinweis, auf welchen Wochentag die meisten Fehltage fallen; eine Liste „Lange kein Eintrag" mit den Kindern die am längsten keine Note oder Notiz bekommen haben – mit Name und Anzahl Tage, direkt antippbar; eine „Aufmerksamkeit"-Liste; Geburtstage der nächsten 21 Tage sowie die letzten Notizen und Gespräche. Tippen auf ein Kind oder einen Punkt öffnet das Schülerprofil.` },
       { q: "Was sind die farbigen Signale im Schülerprofil?", a: `Direkt unter der Profilkarte erscheinen farbige Signale: Rot (kritisch), Gelb (beobachten), Grün (positiv) und Blau (Info). Sie werden automatisch aus den Daten berechnet – z. B. kritischer Notenschnitt, kein Eintrag seit mehr als 14 Tagen, negative Stimmung in Folge, Förderbedarf ohne aktives Ziel, oder Geburtstag in den nächsten 7 Tagen. Tippe auf ein Signal, um direkt zum betreffenden Tab zu springen.` },
     ],
   },
@@ -2853,7 +2854,7 @@ const HELP_DATA = [
     items: [
       { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Daten & Sicherung". Dort erscheint zuerst ein kurzer Datenschutz-Hinweis, den du bestätigst. Danach: „Sichern" legt die Datei im Download-Ordner ab, „Teilen" öffnet die Teilen-Ansicht (z. B. für „In Dateien sichern" oder AirDrop). Wichtig: abgelegte Dokumente sind darin nicht enthalten – die brauchen eine eigene Sicherung, direkt darunter unter „Dokumente sichern".` },
       { q: "Wie lege ich ein Dokument bei einem Kind ab?", a: `Öffne die Klasse, tippe das Kind an und wechsle auf den Reiter „Mehr". Ganz unten steht „Dokumente" mit zwei Knöpfen: „Foto" öffnet direkt die Kamera – ideal, um eine Entschuldigung abzufotografieren. „Datei" öffnet die Dateien-App, dort wählst du ein PDF oder ein vorhandenes Bild. Fotos werden automatisch verkleinert, damit sie wenig Platz brauchen. Ein Tipp auf einen Eintrag öffnet ihn, das Papierkorb-Symbol löscht ihn.` },
-      { q: "Kann ich Dokumente auch bei einer Klasse, einem Fach oder ganz allgemein ablegen?", a: `Ja. Im Klassen-Dashboard (Klasse aufklappen → „Klassen-Dashboard") liegt ganz unten die Ablage für die ganze Klasse – etwa Sitzplan oder Elternbrief. In der Notenübersicht eines Fachs (Noten → Klasse → Fach) findest du dieselbe Ablage für Arbeitsblätter oder Lösungen. Für alles ohne festen Bezug – Konferenzprotokolle, Formulare, Schulordnung – gibt es unter „Mehr" → „Dokumente" einen eigenen allgemeinen Bereich. Dort steht auch eine durchsuchbare Liste aller abgelegten Dokumente, egal wo sie hängen.` },
+      { q: "Kann ich Dokumente auch bei einer Klasse, einem Fach oder ganz allgemein ablegen?", a: `Ja. Im Klassen-Dashboard (Klasse antippen → „Überblick" → „Klassen-Dashboard") liegt ganz unten die Ablage für die ganze Klasse – etwa Sitzplan oder Elternbrief. In der Notenübersicht eines Fachs (Noten → Klasse → Fach) findest du dieselbe Ablage für Arbeitsblätter oder Lösungen. Für alles ohne festen Bezug – Konferenzprotokolle, Formulare, Schulordnung – gibt es unter „Mehr" → „Dokumente" einen eigenen allgemeinen Bereich. Dort steht auch eine durchsuchbare Liste aller abgelegten Dokumente, egal wo sie hängen.` },
       { q: "Wo werden meine Dokumente gespeichert?", a: `Auf deinem Gerät, genau wie alles andere in Tu-vi – nichts wird ins Internet übertragen. Dokumente liegen allerdings in einem eigenen Speicherbereich, weil sie für die normale Ablage zu groß wären. Deshalb sind sie auch nicht in der normalen Datensicherung enthalten, sondern brauchen unter „Einstellungen" → „Daten & Sicherung" den eigenen Knopf „Dokumente sichern".` },
       { q: "Warum sind meine Dokumente nach dem Wiederherstellen weg?", a: `Die normale Datensicherung enthält nur die Liste der Dokumente (Name, Datum, zu welchem Kind), nicht die Dateien selbst. Nach dem Wiederherstellen siehst du deshalb die Einträge, aber beim Öffnen kommt der Hinweis, dass die Datei fehlt. Spiel dann zusätzlich deine Dokument-Sicherung ein: „Einstellungen" → „Daten & Sicherung" → „Einspielen" im Abschnitt „Dokumente sichern".` },
       { q: "Kann ich mir Dokumente direkt an Tu-vi schicken lassen?", a: `Nein. Tu-vi hat bewusst keinen Server und kann deshalb weder E-Mails abrufen noch Nachrichten empfangen. Auf dem iPhone lässt Apple Web-Apps auch nicht als Ziel im Teilen-Menü zu. Der Weg ist deshalb: Datei zuerst in „Dateien" sichern (bei einer E-Mail: Anhang antippen → Teilen → „In Dateien sichern"), danach in Tu-vi beim Kind auf „Datei" tippen und sie dort auswählen. Für Papier-Entschuldigungen ist „Foto" der schnellere Weg.` },
@@ -12551,8 +12552,8 @@ function NotenLineChart({ muendlich, schriftlich, w = 320, h = 160 }) {
    Reihenplanung) und "Noten" (Schüler-Sparklines + Line-Chart-Details).
    Loest die alten aufklappbaren Klassenkarten und den separaten Faecher-Tab
    funktional ab. */
-function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onClose, onOpenStudent, onFachActions }) {
-  const [activeTab, setActiveTab] = useState(initialTab === "noten" ? "noten" : "unterricht");
+function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onClose, onOpenStudent, onFachActions, onOpenSchueler, onOpenSitzplan, onOpenDashboard, onUmbenennen, onOpenFach }) {
+  const [activeTab, setActiveTab] = useState(initialTab || "ueberblick");
   const [reihenZoom, setReihenZoom] = useState(8); // Wochen sichtbar (nur beim geoeffneten Fach): 8 oder Halbjahr
   const [expandedFachId, setExpandedFachId] = useState(null);
   const [studentDetail, setStudentDetail] = useState(null); // studentId fuer grosse Ansicht
@@ -12632,6 +12633,7 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
         </div>
         <div className="lese-spalte flex border-t border-stone-100" role="tablist">
           {[
+            { key: "ueberblick", label: "Überblick" },
             { key: "unterricht", label: "Unterricht" },
             { key: "noten", label: "Noten" },
           ].map((t) => {
@@ -12654,6 +12656,108 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <div className="lese-spalte px-4 py-4 pb-[max(2rem,env(safe-area-inset-bottom))]">
+        {/* Ueberblick buendelt, was frueher hinter dem Aufklappen der
+            Klassenkarte lag. Damit hat die Karte nur noch eine Geste:
+            antippen oeffnet die Klasse, alles Weitere steht hier. */}
+        {activeTab === "ueberblick" && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-2">
+              <div className="card card-p">
+                <div className="t-caption mb-1">Schüler:innen</div>
+                <div className="text-2xl font-bold tnum text-stone-800">{students.length}</div>
+              </div>
+              <div className="card card-p">
+                <div className="t-caption mb-1">Fächer</div>
+                <div className="text-2xl font-bold tnum text-stone-800">{faecher.length}</div>
+              </div>
+              <div className="card card-p">
+                <div className="t-caption mb-1">Klassen-Ø</div>
+                <div className="text-2xl font-bold tnum text-stone-800">
+                  {(() => {
+                    const alle = (data.grades || []).filter(
+                      (g) => students.some((s) => s.id === g.studentId) && (g.date || "") >= halbjahresStart
+                    );
+                    if (!alle.length) return "–";
+                    const summe = alle.reduce((akk, g) => akk + Number(g.value) * (g.factor || 1), 0);
+                    const gewicht = alle.reduce((akk, g) => akk + (g.factor || 1), 0);
+                    return (summe / gewicht).toFixed(1).replace(".", ",");
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            <div className="karte rounded-xl divide-y divide-stone-100 overflow-hidden">
+              <button
+                onClick={() => onOpenSchueler?.(klasseId)}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-stone-50 active:bg-stone-100 transition-colors"
+              >
+                <span className="w-9 h-9 rounded-xl akzent-ton flex items-center justify-center shrink-0"><Users size={17} /></span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-stone-800">Schüler:innen</div>
+                  <div className="t-caption">Liste, Profile und neue Kinder anlegen</div>
+                </div>
+                <span className="t-caption tnum shrink-0">{students.length}</span>
+                <ChevronRight size={15} className="text-stone-300 shrink-0" />
+              </button>
+
+              <button
+                onClick={() => onOpenSitzplan?.(klasseId)}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-stone-50 active:bg-stone-100 transition-colors"
+              >
+                <span className="w-9 h-9 rounded-xl akzent-ton flex items-center justify-center shrink-0"><LayoutGrid size={17} /></span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-stone-800">Sitzplan</div>
+                  <div className="t-caption">{data.sitzplaene?.[klasseId] ? "vorhanden – bearbeiten" : "noch keiner angelegt"}</div>
+                </div>
+                <ChevronRight size={15} className="text-stone-300 shrink-0" />
+              </button>
+
+              <button
+                onClick={() => onOpenDashboard?.(klasseId)}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-stone-50 active:bg-stone-100 transition-colors"
+              >
+                <span className="w-9 h-9 rounded-xl akzent-ton flex items-center justify-center shrink-0"><BarChart2 size={17} /></span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-stone-800">Klassen-Dashboard</div>
+                  <div className="t-caption">Notenverteilung, Fehlzeiten, Aufmerksamkeit</div>
+                </div>
+                <ChevronRight size={15} className="text-stone-300 shrink-0" />
+              </button>
+
+              <button
+                onClick={() => onUmbenennen?.(klasseId, cls.name)}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-stone-50 active:bg-stone-100 transition-colors"
+              >
+                <span className="w-9 h-9 rounded-xl bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"><Settings2 size={17} /></span>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-stone-800">Klasse verwalten</div>
+                  <div className="t-caption">Umbenennen oder löschen</div>
+                </div>
+                <ChevronRight size={15} className="text-stone-300 shrink-0" />
+              </button>
+            </div>
+
+            {faecher.length > 0 && (
+              <div>
+                <div className="t-section mb-2">Noten nach Fach</div>
+                <div className="karte rounded-xl divide-y divide-stone-100 overflow-hidden">
+                  {faecher.map((f) => (
+                    <button
+                      key={f.id}
+                      onClick={() => onOpenFach?.(f.id)}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-stone-50 active:bg-stone-100 transition-colors"
+                    >
+                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: isColor && f.color ? f.color : "#C0BBA8" }} />
+                      <span className="flex-1 text-sm text-stone-700 truncate">{f.subject}</span>
+                      <ChevronRight size={15} className="text-stone-300 shrink-0" />
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === "unterricht" && (
           <div className="space-y-6">
             {/* Fach-Kacheln */}
@@ -13066,14 +13170,13 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
   const [showStudentsModal, setShowStudentsModal] = useState(false);
   const [renamingClass, setRenamingClass] = useState(null);
   const [confirmState, setConfirmState] = useState(null); // { title, message, onConfirm }
-  const [expandedClass, setExpandedClass] = useState(null); // aufgeklappte Klassenkarte
   const [renameValue, setRenameValue] = useState("");
   const [overviewStudentId, setOverviewStudentId] = useState(null);
   const [showSitzplan, setShowSitzplan] = useState(false);
   const [sitzplanClassId, setSitzplanClassId] = useState(null);
   const [klassenDashboardId, setKlassenDashboardId] = useState(null);
   const [klasseVollbildId, setKlasseVollbildId] = useState(null);
-  const [klasseVollbildTab, setKlasseVollbildTab] = useState("unterricht");
+  const [klasseVollbildTab, setKlasseVollbildTab] = useState("ueberblick"); // Einstieg der Klassenansicht
   const [fachActions, setFachActions] = useState(null); // { type: "actions", fach } oder { type: "neu", klasseId }
   const [editFachInVollbild, setEditFachInVollbild] = useState(null);
   const [kindSuche, setKindSuche] = useState("");
@@ -13341,94 +13444,32 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
         {data.classes.map((c) => {
           const cFaecher = data.faecher.filter((f) => f.classId === c.id);
           const cCount = data.students.filter((s) => s.classId === c.id).length;
-          const offen = expandedClass === c.id;
           return (
             <Card key={c.id} className="overflow-hidden">
-              {/* Kopf: ganze Zeile oeffnet das Vollbild-Sheet der Klasse.
-                  Zusaetzlich ein kleiner Chevron-Button rechts fuer das
-                  Aufklappen der Schuelerliste in-place (fuer den schnellen
-                  Blick, ohne den Screen zu wechseln). */}
-              <div className="flex items-center gap-2 p-4">
-                <button
-                  onClick={() => setKlasseVollbildId(c.id)}
-                  className="flex-1 flex items-center gap-2 min-w-0 text-left"
-                >
-                  <span className="text-lg font-semibold text-stone-900 shrink-0">{c.name}</span>
-                  <span className="flex items-center gap-2 flex-wrap min-w-0">
-                    {cFaecher.map((f) => (
-                      <span key={f.id} className="inline-flex items-center gap-1 text-sm text-stone-500">
-                        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color }} />
-                        {f.subject}
-                      </span>
-                    ))}
-                    {!cFaecher.length && <span className="text-xs text-stone-300">noch keine Fächer</span>}
-                  </span>
-                  <ChevronRight size={16} className="text-stone-300 shrink-0 ml-auto" />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setExpandedClass(offen ? null : c.id); }}
-                  className="w-8 h-8 rounded-full hover:bg-stone-100 text-stone-400 flex items-center justify-center shrink-0"
-                  title={offen ? "Schülerliste zuklappen" : "Schülerliste aufklappen"}
-                >
-                  <ChevronDown size={14} className={`transition-transform ${offen ? "rotate-180" : ""}`} />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setRenameValue(c.name); setRenamingClass(c.id); }}
-                  className="w-8 h-8 rounded-full hover:bg-stone-100 text-stone-400 flex items-center justify-center shrink-0"
-                  title="Klasse verwalten"
-                >
-                  <Settings2 size={16} />
-                </button>
-              </div>
-
-              {/* Aufgeklappt: Fächer einzeln (führen in die Notenübersicht) + Schülerliste */}
-              {offen && (
-                <div className="border-t border-stone-100 p-3 space-y-1.5 bg-stone-50/50">
-                  <button
-                    onClick={() => { setSelectedClass(c.id); setSelectedStudent(null); setShowStudentsModal(true); }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700 press-scale"
-                  >
-                    <Users size={15} className="text-stone-400" /> Schüler:innen
-                    <span className="ml-auto text-stone-400 tnum">{cCount}</span>
-                  </button>
-
-                  <button
-                    onClick={() => { setSitzplanClassId(c.id); setShowSitzplan(true); }}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700 press-scale"
-                  >
-                    <LayoutGrid size={15} className="text-stone-400" /> Sitzplan
-                    {data.sitzplaene?.[c.id] && (
-                      <span className="ml-auto text-[11px] text-stone-400">bearbeiten</span>
-                    )}
-                  </button>
-
-                  <button
-                    onClick={() => setKlassenDashboardId(c.id)}
-                    className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700 press-scale"
-                  >
-                    <BarChart2 size={15} className="text-stone-400" /> Klassen-Dashboard
-                    <ChevronRight size={15} className="text-stone-300 ml-auto" />
-                  </button>
-
-                  <div className="text-[11px] font-medium uppercase tracking-wide text-stone-400 px-1 pt-2">Noten nach Fach</div>
+              {/* Eine Geste, ein Ergebnis: Antippen oeffnet die Klasse.
+                  Frueher fuehrte Aufklappen woandershin als Antippen - man
+                  musste sich merken, welche Geste wohin geht. Alles aus dem
+                  Aufklappen liegt jetzt im Reiter "Ueberblick" der Klasse. */}
+              <button
+                onClick={() => setKlasseVollbildId(c.id)}
+                className="w-full flex items-center gap-2 p-4 text-left press-scale"
+              >
+                <span className="text-lg font-semibold text-stone-900 shrink-0">{c.name}</span>
+                <span className="flex items-center gap-2 flex-wrap min-w-0">
                   {cFaecher.map((f) => (
-                    <button
-                      key={f.id}
-                      onClick={() => onOpenFach?.(f.id)}
-                      className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm text-stone-700 press-scale"
-                    >
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: f.color }} />
+                    <span key={f.id} className="inline-flex items-center gap-1 text-sm text-stone-500">
+                      <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: f.color }} />
                       {f.subject}
-                      <ChevronRight size={15} className="text-stone-300 ml-auto" />
-                    </button>
+                    </span>
                   ))}
-                  {!cFaecher.length && (
-                    <button onClick={() => setSubTab("faecher")} className="w-full text-left px-3 py-2.5 rounded-lg bg-white hover:bg-stone-50 text-sm akzent-text">
-                      + Fach für diese Klasse anlegen
-                    </button>
-                  )}
-                </div>
-              )}
+                  {!cFaecher.length && <span className="text-xs text-stone-300">noch keine Fächer</span>}
+                </span>
+                <span className="ml-auto flex items-center gap-2 shrink-0">
+                  <span className="t-caption tnum">{cCount}</span>
+                  <ChevronRight size={16} className="text-stone-300" />
+                </span>
+              </button>
+
             </Card>
           );
         })}
@@ -13577,6 +13618,30 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
             setSelectedStudent(studentId);
           }}
           onFachActions={(payload) => setFachActions(payload)}
+          onOpenSchueler={(id) => {
+            setKlasseVollbildId(null);
+            setSelectedClass(id);
+            setSelectedStudent(null);
+            setShowStudentsModal(true);
+          }}
+          onOpenSitzplan={(id) => {
+            setKlasseVollbildId(null);
+            setSitzplanClassId(id);
+            setShowSitzplan(true);
+          }}
+          onOpenDashboard={(id) => {
+            setKlasseVollbildId(null);
+            setKlassenDashboardId(id);
+          }}
+          onUmbenennen={(id, name) => {
+            setKlasseVollbildId(null);
+            setRenameValue(name);
+            setRenamingClass(id);
+          }}
+          onOpenFach={(fachId) => {
+            setKlasseVollbildId(null);
+            onOpenFach?.(fachId);
+          }}
         />
       )}
 
