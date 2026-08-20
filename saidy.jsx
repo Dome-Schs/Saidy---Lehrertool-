@@ -12852,6 +12852,18 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
                               })}
                             </ul>
                             <p className="text-[10px] text-stone-400 mt-2">Aktuelle KW ist hervorgehoben. Thema erscheint automatisch bei jeder Stunde dieser Woche.</p>
+
+                            {/* Material, Raum und Gewichtung lagen nur hinter dem
+                                unbeschrifteten ···-Knopf rechts - praktisch
+                                unauffindbar. Hier steht der Weg im Klartext. */}
+                            <div className="mt-3 pt-3 border-t border-stone-200 flex flex-wrap gap-2">
+                              <Button variant="subtle" onClick={() => onFachActions?.({ type: "edit", fach: f })}>
+                                <Settings2 size={14} /> Material, Raum &amp; Gewichtung
+                              </Button>
+                              <Button variant="subtle" onClick={() => onOpenFach?.(f.id)}>
+                                <GraduationCap size={14} /> Noten eintragen
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </li>
@@ -13617,7 +13629,13 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
             setShowStudentsModal(true);
             setSelectedStudent(studentId);
           }}
-          onFachActions={(payload) => setFachActions(payload)}
+          onFachActions={(payload) => {
+            /* "edit" springt direkt in den Fach-Editor - das Zwischenmenue
+               waere hier ein ueberfluessiger Klick, weil die Zeile schon
+               sagt, was passiert. */
+            if (payload?.type === "edit") setEditFachInVollbild(payload.fach);
+            else setFachActions(payload);
+          }}
           onOpenSchueler={(id) => {
             setKlasseVollbildId(null);
             setSelectedClass(id);
