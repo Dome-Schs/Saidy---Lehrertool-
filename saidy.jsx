@@ -5079,10 +5079,13 @@ export default function App() {
           main hat pb-[80px+safe-area], damit Content nicht hinter der Nav
           verschwindet. overflow:visible bleibt fuer den FAB (-mt-5). */}
       <nav
-        className={`md:hidden fixed bottom-0 left-0 right-0 ${fabOpen ? "z-[46]" : "z-40"} shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]`}
+        className={`md:hidden fixed bottom-0 left-0 right-0 ${fabOpen ? "z-[46]" : "z-40"} backdrop-blur-xl shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.12)]`}
         style={{
-          background: "rgba(244,241,232,0.95)",
-          borderTop: "1px solid rgba(79,88,68,0.08)",
+          /* Muss den Seitengrund tragen, nicht eine eigene Farbe: sonst
+             liegt ein andersfarbiger Balken unter der Seite. Leicht
+             durchscheinend plus Blur ergibt die uebliche Milchglas-Leiste. */
+          background: "color-mix(in srgb, var(--creme) 92%, transparent)",
+          borderTop: "1px solid var(--linie-fein)",
           paddingBottom: "env(safe-area-inset-bottom)",
           overflow: "visible",
         }}
@@ -12259,11 +12262,14 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
                             title={anzahl ? `${localDate(iso).toLocaleDateString("de-DE")}: ${anzahl} ${anzahl === 1 ? "Kind" : "Kinder"}${eintrag.unentschuldigt ? ", unentschuldigt dabei" : ""}` : localDate(iso).toLocaleDateString("de-DE")}
                             className="w-4 h-4 rounded-[3px]"
                             style={{
+                              /* Ueber Tokens statt fester Farben, damit die
+                                 Anwesenheits-Heatmap auch im Dunkelmodus
+                                 lesbar bleibt. */
                               backgroundColor: anzahl
                                 ? eintrag.unentschuldigt
-                                  ? `rgba(185,28,28,${staerke})`
-                                  : `rgba(79,88,68,${staerke})`
-                                : "#F0EEE8",
+                                  ? `color-mix(in srgb, var(--s-krit) ${Math.round(staerke * 100)}%, transparent)`
+                                  : `color-mix(in srgb, var(--oliv) ${Math.round(staerke * 100)}%, transparent)`
+                                : "var(--n-100)",
                             }}
                           />
                         );
@@ -12492,7 +12498,7 @@ function NotenLineChart({ muendlich, schriftlich, w = 320, h = 160 }) {
       {/* Y-Grid: Notenlinien 1..6 */}
       {[1, 2, 3, 4, 5, 6].map((v) => (
         <g key={v}>
-          <line x1={paddingLeft} x2={w - paddingRight} y1={yFor(v)} y2={yFor(v)} stroke="#E4DFD2" strokeWidth="0.5" strokeDasharray={v === 4 ? "0" : "2 3"} />
+          <line x1={paddingLeft} x2={w - paddingRight} y1={yFor(v)} y2={yFor(v)} stroke="var(--linie)" strokeWidth="0.5" strokeDasharray={v === 4 ? "0" : "2 3"} />
           <text x={paddingLeft - 6} y={yFor(v) + 3} fontSize="9" fill="#A8A29E" textAnchor="end">{v}</text>
         </g>
       ))}
