@@ -1347,6 +1347,19 @@ function LegalModal({ onClose }) {
 }
 
 /* Einstellungen: Reihenfolge der Dashboard-Karten per Pfeiltasten anpassen */
+/* Die fuenf Unterseiten der Einstellungen. Getrennt nach Sorte statt nach
+   Entstehungsreihenfolge: Stammdaten, Vorlieben, Sicherheit, Daten,
+   Rechtliches. Papierkorb und Sport-Druckvorlagen sind bewusst nicht dabei -
+   das sind Taetigkeiten, keine Einstellungen, und liegen jetzt bei den
+   Klassen. */
+const SEITEN = [
+  { key: "schuljahr",   icon: CalendarDays, titel: "Schuljahr & Schule",  sub: "Halbjahr, Bundesland, Ferien" },
+  { key: "darstellung", icon: LayoutGrid,   titel: "Darstellung",         sub: "Startseite, Profilkarte, Tipps" },
+  { key: "sicherheit",  icon: Lock,         titel: "Sicherheit & Konto",  sub: "App-Sperre, Abmelden" },
+  { key: "daten",       icon: Download,     titel: "Daten & Sicherung",   sub: "Sichern, iCloud, Import, Löschen" },
+  { key: "ueber",       icon: FileText,     titel: "Über Tu-vi",          sub: "Impressum, Datenschutz" },
+];
+
 function SettingsModal({ data, update, halbjahr, setHalbjahr, user, onExport, onShare, onImport, onExportDocuments, onImportDocuments, onReset, onClose, onOpenUntisImport }) {
   const gespeicherteReihenfolge = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
   const order = [
@@ -1374,7 +1387,6 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, user, onExport, on
   const [showPromote, setShowPromote] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
   /* Sport-Druckvorlagen ohne Kind-Kontext (Ersatzkopien fuer die Schublade) */
-  const [druckSportVorlage, setDruckSportVorlage] = useState(null); // "protokoll" | "regelbruch"
 
   function promoteClasses(ids) {
     update((d) => {
@@ -1418,6 +1430,9 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, user, onExport, on
     });
   }
 
+  /* null = Uebersicht der Unterseiten, sonst der Schluessel aus SEITEN. */
+  const [seite, setSeite] = useState(null);
+
   const ferienCount = (data.events || []).filter((e) => e.type === "ferien").length;
 
   function move(index, dir) {
@@ -1434,456 +1449,446 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, user, onExport, on
   return (
     <div className="fixed inset-0 bg-stone-900/40 flex items-end md:items-center md:justify-center md:p-4 z-50" onClick={onClose}>
       <div className="bg-white w-full md:max-w-sm rounded-t-3xl md:rounded-2xl shadow-xl overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-5 py-3.5 flex items-center justify-between z-10">
-          <div className="font-semibold text-stone-800">Einstellungen</div>
-          <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center"><X size={16} /></button>
+
+        {/* Kopf: auf der Uebersicht nur der Titel, auf einer Unterseite ein
+            Zurueck-Pfeil. Ohne den kaeme man aus einer Unterseite nur ueber
+            Schliessen wieder heraus. */}
+        <div className="sticky top-0 bg-white/70 backdrop-blur-xl border-b border-stone-100 px-5 py-3.5 flex items-center gap-2 z-10">
+          {seite && (
+            <button
+              onClick={() => setSeite(null)}
+              className="w-9 h-9 -ml-2 rounded-full hover:bg-stone-100 text-stone-500 flex items-center justify-center shrink-0"
+              aria-label="Zurück zur Übersicht"
+            >
+              <ChevronLeft size={18} />
+            </button>
+          )}
+          <div className="font-semibold text-stone-800 flex-1 min-w-0 truncate">
+            {seite ? SEITEN.find((s) => s.key === seite)?.titel : "Einstellungen"}
+          </div>
+          <button onClick={onClose} className="w-11 h-11 rounded-full bg-stone-100 hover:bg-stone-200 text-stone-500 flex items-center justify-center shrink-0"><X size={16} /></button>
         </div>
 
         <div className="p-5 pb-[max(2rem,env(safe-area-inset-bottom))]">
-        <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Schuljahr</div>
-        <div className="text-xs font-medium text-stone-500 mb-2">Bundesland & Schulferien</div>
-        <select className={`${inputCls} mb-2`} value={currentBundesland} onChange={(e) => setBundesland(e.target.value)}>
-          <option value="">Bundesland wählen …</option>
-          {BUNDESLAENDER.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
-        </select>
-        {currentBundesland && !FERIEN[currentBundesland] && (
-          <p className="text-xs text-amber-700 mb-2">Für dieses Bundesland sind noch keine Ferientermine hinterlegt.</p>
-        )}
-        <div className="flex gap-2 mb-4">
-          {ferienCount > 0 ? (
-            <Button variant="ghost" onClick={removeFerien} className="flex-1 justify-center">Ferien entfernen ({ferienCount})</Button>
-          ) : (
-            <Button variant="subtle" onClick={addFerien} disabled={!FERIEN[currentBundesland]} className="flex-1 justify-center">Schulferien eintragen</Button>
-          )}
-        </div>
 
-        <div className="border-t border-stone-100 pt-3 mt-1" />
-        <div className="text-xs font-medium text-stone-500 mb-2">Halbjahr</div>
-        <div className="flex gap-1.5 mb-4">
-          {[1, 2].map((h) => (
-            <button
-              key={h}
-              onClick={() => setHalbjahr(h)}
-              className={`flex-1 text-sm py-2 rounded-lg border ${
-                halbjahr === h ? "akzent-flaeche akzent-rand" : "border-stone-200 text-stone-500 hover:bg-stone-50"
-              }`}
-            >
-              {h}. Halbjahr
-            </button>
-          ))}
-        </div>
-
-        <div className="border-t border-stone-100 pt-3 mt-1" />
-        <div className="text-xs font-medium text-stone-500 mb-1">Neues Schuljahr</div>
-        <Button variant="subtle" onClick={() => setShowPromote(true)} disabled={!data.classes.length} className="w-full justify-center mb-5 pb-2">
-          <ChevronRight size={15} className="-rotate-90" /> Schuljahreswechsel: Klassen versetzen
-        </Button>
-        <div className="border-b border-stone-100 mb-5" />
-
-        <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Übersicht (Startseite)</div>
-
-        <div className="flex items-center justify-between gap-2 py-2">
-          <span className="text-sm text-stone-700">Ferien-Countdown anzeigen</span>
-          <Toggle checked={!!data.settings?.showFerienCountdown} onChange={(v) => setSetting("showFerienCountdown", v)} />
-        </div>
-        {data.settings?.showFerienCountdown && (
-          <div className="flex items-center justify-between gap-2 py-2 pl-3 mb-2">
-            <span className="text-xs text-stone-500">Nur Schultage zählen (Mo–Fr)</span>
-            <Toggle checked={!!data.settings?.countdownSchooldaysOnly} onChange={(v) => setSetting("countdownSchooldaysOnly", v)} />
+        {/* ── Uebersicht: fuenf Unterseiten ──
+            Vorher standen hier zwoelf ungleichartige Bloecke untereinander -
+            "Unterrichtstipps ein/aus" sah genauso aus wie "Alle Daten
+            loeschen". Jetzt nach Sorte getrennt, gefaehrliches am Ende der
+            Datenseite. */}
+        {!seite && (
+          <div className="space-y-2">
+            <div className="karte rounded-xl divide-y divide-stone-100 overflow-hidden">
+              {SEITEN.map((s) => {
+                const Icon = s.icon;
+                return (
+                  <button
+                    key={s.key}
+                    onClick={() => setSeite(s.key)}
+                    className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-stone-50 active:bg-stone-100 transition-colors"
+                  >
+                    <span className="w-9 h-9 rounded-xl akzent-ton flex items-center justify-center shrink-0">
+                      <Icon size={17} />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-stone-800">{s.titel}</div>
+                      <div className="t-caption truncate">{s.sub}</div>
+                    </div>
+                    <ChevronRight size={15} className="text-stone-300 shrink-0" />
+                  </button>
+                );
+              })}
+            </div>
+            <Button onClick={onClose} className="w-full justify-center mt-3">Schließen</Button>
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-2 py-2 mb-2">
-          <span className="text-xs text-stone-500">Notenfarben anzeigen (grün / gelb / rot)</span>
-          <Toggle checked={data.settings?.notenfarben !== false} onChange={(v) => setSetting("notenfarben", v)} />
-        </div>
+        {/* ── Schuljahr & Schule ── */}
+        {seite === "schuljahr" && (
+          <div>
+            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Schuljahr</div>
+            <div className="text-xs font-medium text-stone-500 mb-2">Bundesland & Schulferien</div>
+            <select className={`${inputCls} mb-2`} value={currentBundesland} onChange={(e) => setBundesland(e.target.value)}>
+              <option value="">Bundesland wählen …</option>
+              {BUNDESLAENDER.map((b) => <option key={b.code} value={b.code}>{b.name}</option>)}
+            </select>
+            {currentBundesland && !FERIEN[currentBundesland] && (
+              <p className="text-xs text-amber-700 mb-2">Für dieses Bundesland sind noch keine Ferientermine hinterlegt.</p>
+            )}
+            <div className="flex gap-2 mb-4">
+              {ferienCount > 0 ? (
+                <Button variant="ghost" onClick={removeFerien} className="flex-1 justify-center">Ferien entfernen ({ferienCount})</Button>
+              ) : (
+                <Button variant="subtle" onClick={addFerien} disabled={!FERIEN[currentBundesland]} className="flex-1 justify-center">Schulferien eintragen</Button>
+              )}
+            </div>
 
-        <div className="text-xs font-medium text-stone-500 mb-2">Reihenfolge der Karten</div>
-        <ul className="space-y-1.5 mb-2">
-          {order.map((key, i) => (
-            <li key={key} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
-              <span className="flex-1 text-sm text-stone-700">{DASHBOARD_SECTIONS[key] || key}</span>
-              <button
-                onClick={() => move(i, -1)}
-                disabled={i === 0}
-                className="w-11 h-11 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-200 disabled:opacity-30 disabled:hover:bg-transparent"
-              >
-                <ChevronLeft size={15} className="rotate-90" />
-              </button>
-              <button
-                onClick={() => move(i, 1)}
-                disabled={i === order.length - 1}
-                className="w-11 h-11 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-200 disabled:opacity-30 disabled:hover:bg-transparent"
-              >
-                <ChevronRight size={15} className="rotate-90" />
-              </button>
-            </li>
-          ))}
-        </ul>
-        <p className="text-xs text-stone-400 mb-4">Legt fest, in welcher Reihenfolge die unteren Karten auf der Übersicht erscheinen. Kennzahlen, Unterricht sowie Termine, Geburtstage und To-dos haben einen festen Platz.</p>
+            <div className="border-t border-stone-100 pt-3 mt-1" />
+            <div className="text-xs font-medium text-stone-500 mb-2">Halbjahr</div>
+            <div className="flex gap-1.5 mb-4">
+              {[1, 2].map((h) => (
+                <button
+                  key={h}
+                  onClick={() => setHalbjahr(h)}
+                  className={`flex-1 text-sm py-2 rounded-lg border ${
+                    halbjahr === h ? "akzent-flaeche akzent-rand" : "border-stone-200 text-stone-500 hover:bg-stone-50"
+                  }`}
+                >
+                  {h}. Halbjahr
+                </button>
+              ))}
+            </div>
 
-        {/* Was in der "Seit deinem letzten Besuch"-Karte im Schuelerprofil erscheint.
-            Default: alle sechs Kategorien an. Setzt der Nutzer eine ab, wird sie nicht mehr
-            aufgelistet - der Besuchszeitpunkt selbst wird unabhaengig davon getrackt. */}
-        <div className="pt-5 border-t border-stone-100">
-          <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">„Was ist neu"-Karte im Schülerprofil</div>
-          <p className="text-xs text-stone-500 mb-3">
-            Waehle aus, was in der Karte „Seit deinem letzten Besuch" oben im Profil erscheint. Alles was du hier abschaltest, wird dort nicht mehr aufgelistet.
-          </p>
-          {[
-            ["noten", "Neue Noten"],
-            ["notizen", "Neue Notizen"],
-            ["gespraeche", "Neue Gespräche (mit Stimmung)"],
-            ["fehlzeiten", "Neue Fehlzeiten"],
-            ["incidents", "Neue Klassenbuch-Einträge"],
-            ["ziele", "Neue oder erledigte Förderziele"],
-          ].map(([key, label]) => {
-            const aktiv = (data.settings?.neuSeitAnzeige || {})[key] !== false;
-            return (
-              <label key={key} className="flex items-center gap-2.5 py-1.5 cursor-pointer">
+            <div className="border-t border-stone-100 pt-3 mt-1" />
+            <div className="text-xs font-medium text-stone-500 mb-1">Neues Schuljahr</div>
+            <Button variant="subtle" onClick={() => setShowPromote(true)} disabled={!data.classes.length} className="w-full justify-center mb-5 pb-2">
+              <ChevronRight size={15} className="-rotate-90" /> Schuljahreswechsel: Klassen versetzen
+            </Button>
+          </div>
+        )}
+
+        {/* ── Darstellung ── */}
+        {seite === "darstellung" && (
+          <div>
+            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Übersicht (Startseite)</div>
+
+            <div className="flex items-center justify-between gap-2 py-2">
+              <span className="text-sm text-stone-700">Ferien-Countdown anzeigen</span>
+              <Toggle checked={!!data.settings?.showFerienCountdown} onChange={(v) => setSetting("showFerienCountdown", v)} />
+            </div>
+            {data.settings?.showFerienCountdown && (
+              <div className="flex items-center justify-between gap-2 py-2 pl-3 mb-2">
+                <span className="text-xs text-stone-500">Nur Schultage zählen (Mo–Fr)</span>
+                <Toggle checked={!!data.settings?.countdownSchooldaysOnly} onChange={(v) => setSetting("countdownSchooldaysOnly", v)} />
+              </div>
+            )}
+
+            <div className="flex items-center justify-between gap-2 py-2 mb-2">
+              <span className="text-xs text-stone-500">Notenfarben anzeigen (grün / gelb / rot)</span>
+              <Toggle checked={data.settings?.notenfarben !== false} onChange={(v) => setSetting("notenfarben", v)} />
+            </div>
+
+            <div className="text-xs font-medium text-stone-500 mb-2">Reihenfolge der Karten</div>
+            <ul className="space-y-1.5 mb-2">
+              {order.map((key, i) => (
+                <li key={key} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
+                  <span className="flex-1 text-sm text-stone-700">{DASHBOARD_SECTIONS[key] || key}</span>
+                  <button
+                    onClick={() => move(i, -1)}
+                    disabled={i === 0}
+                    className="w-11 h-11 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-200 disabled:opacity-30 disabled:hover:bg-transparent"
+                  >
+                    <ChevronLeft size={15} className="rotate-90" />
+                  </button>
+                  <button
+                    onClick={() => move(i, 1)}
+                    disabled={i === order.length - 1}
+                    className="w-11 h-11 flex items-center justify-center rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-200 disabled:opacity-30 disabled:hover:bg-transparent"
+                  >
+                    <ChevronRight size={15} className="rotate-90" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="text-xs text-stone-400 mb-4">Legt fest, in welcher Reihenfolge die unteren Karten auf der Übersicht erscheinen. Kennzahlen, Unterricht sowie Termine, Geburtstage und To-dos haben einen festen Platz.</p>
+            {/* Was in der "Seit deinem letzten Besuch"-Karte im Schuelerprofil erscheint.
+                Default: alle sechs Kategorien an. Setzt der Nutzer eine ab, wird sie nicht mehr
+                aufgelistet - der Besuchszeitpunkt selbst wird unabhaengig davon getrackt. */}
+            <div className="pt-5 border-t border-stone-100">
+              <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">„Was ist neu"-Karte im Schülerprofil</div>
+              <p className="text-xs text-stone-500 mb-3">
+                Waehle aus, was in der Karte „Seit deinem letzten Besuch" oben im Profil erscheint. Alles was du hier abschaltest, wird dort nicht mehr aufgelistet.
+              </p>
+              {[
+                ["noten", "Neue Noten"],
+                ["notizen", "Neue Notizen"],
+                ["gespraeche", "Neue Gespräche (mit Stimmung)"],
+                ["fehlzeiten", "Neue Fehlzeiten"],
+                ["incidents", "Neue Klassenbuch-Einträge"],
+                ["ziele", "Neue oder erledigte Förderziele"],
+              ].map(([key, label]) => {
+                const aktiv = (data.settings?.neuSeitAnzeige || {})[key] !== false;
+                return (
+                  <label key={key} className="flex items-center gap-2.5 py-1.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="w-4 h-4"
+                      style={{ accentColor: "var(--oliv)" }}
+                      checked={aktiv}
+                      onChange={(e) => setSetting("neuSeitAnzeige", { ...(data.settings?.neuSeitAnzeige || {}), [key]: e.target.checked })}
+                    />
+                    <span className="text-sm text-stone-700">{label}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {/* Unterrichtstipp-Kachel abschaltbar. Grundstock im Code, spaeter kommen eigene
+                Karten dazu (Editor/Import); die Auswahl kann jederzeit wieder eingeschaltet werden. */}
+            <div className="pt-5 border-t border-stone-100">
+              <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Unterrichtstipps</div>
+              <p className="text-xs text-stone-500 mb-3">
+                Zeigt ganz unten auf der Übersicht einen Unterrichtstipp des Tages – ein Tipp aus dem Wissenspool. Aktuell {TIPP_KARTEN.length} Karten für den Sekundarstufen-Alltag: Classroom Management, Kommunikation, Diagnostik, Referendariat und Lehrergesundheit.
+              </p>
+              <label className="flex items-center gap-2.5 py-1.5 cursor-pointer">
                 <input
                   type="checkbox"
                   className="w-4 h-4"
                   style={{ accentColor: "var(--oliv)" }}
-                  checked={aktiv}
-                  onChange={(e) => setSetting("neuSeitAnzeige", { ...(data.settings?.neuSeitAnzeige || {}), [key]: e.target.checked })}
+                  checked={data.settings?.tippsAn !== false}
+                  onChange={(e) => setSetting("tippsAn", e.target.checked)}
                 />
-                <span className="text-sm text-stone-700">{label}</span>
+                <span className="text-sm text-stone-700">Tipp des Tages auf der Übersicht anzeigen</span>
               </label>
-            );
-          })}
-        </div>
-
-        {/* Unterrichtstipp-Kachel abschaltbar. Grundstock im Code, spaeter kommen eigene
-            Karten dazu (Editor/Import); die Auswahl kann jederzeit wieder eingeschaltet werden. */}
-        <div className="pt-5 border-t border-stone-100">
-          <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Unterrichtstipps</div>
-          <p className="text-xs text-stone-500 mb-3">
-            Zeigt ganz unten auf der Übersicht einen Unterrichtstipp des Tages – ein Tipp aus dem Wissenspool. Aktuell {TIPP_KARTEN.length} Karten für den Sekundarstufen-Alltag: Classroom Management, Kommunikation, Diagnostik, Referendariat und Lehrergesundheit.
-          </p>
-          <label className="flex items-center gap-2.5 py-1.5 cursor-pointer">
-            <input
-              type="checkbox"
-              className="w-4 h-4"
-              style={{ accentColor: "var(--oliv)" }}
-              checked={data.settings?.tippsAn !== false}
-              onChange={(e) => setSetting("tippsAn", e.target.checked)}
-            />
-            <span className="text-sm text-stone-700">Tipp des Tages auf der Übersicht anzeigen</span>
-          </label>
-        </div>
-
-        <AppSperreEinstellung user={user} />
-
-        <div className="pt-5 border-t border-stone-100">
-          <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Datensicherung</div>
-          <p className="text-xs text-stone-500 mb-3">
-            Deine Daten liegen auf diesem Gerät. Sichere sie regelmäßig als Datei, damit bei Geräteverlust oder App-Neuinstallation nichts verloren geht.
-          </p>
-          <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 mb-3 flex items-start gap-2">
-            <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
-            <p className="text-[11px] text-stone-600 leading-relaxed">
-              <strong>Geteilte Schulcomputer:</strong> Tu-vi speichert Daten im Browser. Wenn mehrere Lehrkräfte dasselbe Browser-Profil nutzen, können alle auf diese Daten zugreifen. Nutze Tu-vi nur in deinem <strong>eigenen, privaten Browser-Profil</strong>.
-            </p>
-          </div>
-          <div className="flex gap-2 mb-2">
-            <Button variant="subtle" onClick={() => setConfirmBackupAction("export")} className="flex-1 justify-center"><Download size={15} /> Sichern</Button>
-            <Button variant="subtle" onClick={() => setConfirmBackupAction("share")} className="flex-1 justify-center"><Upload size={15} /> Teilen</Button>
-          </div>
-          <Button variant="ghost" onClick={() => importInputRef.current?.click()} className="w-full justify-center"><Upload size={15} /> Gesichertes wiederherstellen</Button>
-          <input
-            ref={importInputRef} type="file" accept="application/json,.json" className="hidden"
-            onChange={(e) => { const f = e.target.files?.[0]; if (f) setConfirmImport(f); e.target.value = ""; }}
-          />
-          {importMsg && (
-            <p className={`text-xs mt-2 ${importMsg.ok ? "akzent-text" : "text-red-600"}`}>{importMsg.msg}</p>
-          )}
-          <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
-            <div className="text-[11px] font-semibold text-amber-800 mb-1 flex items-center gap-1.5">
-              <ShieldCheck size={12} className="shrink-0" />
-              Vor dem Sichern kurz lesen
             </div>
-            <ul className="text-[11px] text-stone-700 space-y-0.5 leading-snug">
-              <li>• <strong>Nicht per E-Mail oder Messenger</strong> teilen.</li>
-              <li>• <strong>Nicht in Google Drive, Dropbox oder iCloud</strong> ablegen.</li>
-              <li>• Nur auf dem eigenen Gerät oder Schul-Server aufbewahren.</li>
-            </ul>
           </div>
+        )}
 
-          {/* Dokumente werden getrennt gesichert - sie wuerden die taegliche
-              Sicherung sonst stark aufblaehen und sind besonders heikel. */}
-          <div className="mt-4 pt-3 border-t border-stone-100">
-            <div className="text-xs font-medium text-stone-500 mb-1">Dokumente sichern</div>
-            <p className="text-[11px] text-stone-500 mb-2 leading-relaxed">
-              Abgelegte Dateien (Atteste, Gutachten, Fotos) stecken <strong>nicht</strong> in der normalen Datensicherung –
-              sie brauchen eine eigene Datei. {dokAnzahl ? `Aktuell ${dokAnzahl} ${dokAnzahl === 1 ? "Dokument" : "Dokumente"}.` : "Aktuell sind keine abgelegt."}
-              {speicher && ` Belegt: ${byteText(speicher.belegt)}${speicher.gesamt ? ` von ${byteText(speicher.gesamt)}` : ""}.`}
+        {/* ── Sicherheit & Konto ── */}
+        {seite === "sicherheit" && (
+          <div>
+            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Angemeldet als</div>
+            <p className="text-sm text-stone-700 mb-1 break-all">{user?.email || "unbekannt"}</p>
+            <p className="text-xs text-stone-500 mb-4">
+              Dein Passwort ist der eigentliche Schutz deines Kontos. Die App-Sperre darunter kommt zusätzlich dazu – sie ersetzt es nicht.
             </p>
-            <div className="flex gap-2 mb-2">
-              <Button variant="subtle" onClick={() => onExportDocuments?.((r) => setDokMsg(r))} className="flex-1 justify-center">
-                <Download size={15} /> Dokumente sichern
-              </Button>
-              <Button variant="ghost" onClick={() => dokImportRef.current?.click()} className="flex-1 justify-center">
-                <Upload size={15} /> Einspielen
+            <AppSperreEinstellung user={user} />
+            <div className="pt-5 border-t border-stone-100">
+              <Button variant="ghost" onClick={() => supabase.auth.signOut()} className="w-full justify-center">
+                <LogOut size={15} /> Abmelden
               </Button>
             </div>
-            <input
-              ref={dokImportRef} type="file" accept="application/json,.json" className="hidden"
-              onChange={(e) => { const f = e.target.files?.[0]; if (f) onImportDocuments?.(f, (r) => setDokMsg(r)); e.target.value = ""; }}
-            />
-            {dokMsg && <p className={`text-xs ${dokMsg.ok ? "akzent-text" : "text-red-600"}`}>{dokMsg.msg}</p>}
-            <p className="text-[11px] text-amber-700 mt-1.5 leading-snug">
-              Diese Datei enthält Atteste und Gutachten im Klartext – dieselben Regeln wie oben, nur noch strenger.
-            </p>
           </div>
+        )}
 
-          {/* Empfohlener Weg: auf dem Gerät ablegen statt verschicken */}
-          <div className="mt-3 bg-stone-50 rounded-xl px-3 py-2.5">
-            <div className="text-xs font-medium text-stone-600 mb-1">Am einfachsten: auf dem Gerät ablegen</div>
-            <p className="text-[11px] text-stone-500 leading-relaxed">
-              „Teilen" → <strong>In Dateien sichern</strong> → <strong>Auf meinem iPhone</strong>. Ein Schritt, kein Tippen,
-              und die Daten verlassen dein Gerät nicht. Verschicke Backups nicht per E-Mail oder Messenger –
-              sie enthalten alle Schülerdaten im Klartext.
-            </p>
-          </div>
-
-          {/* Freitags-Erinnerung */}
-          {"Notification" in window && (
-            <div className="mt-4 border-t border-stone-100 pt-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="text-xs font-medium text-stone-500">Freitags-Erinnerung</div>
-                  <div className="text-[11px] text-stone-400 mt-0.5">
-                    Erinnert dich freitags beim Öffnen von Tu-vi, wenn dein letztes Backup älter als 3 Tage ist.
-                  </div>
-                </div>
-                <Toggle
-                  checked={!!data.settings?.backupNotifications}
-                  onChange={async () => {
-                    if (data.settings?.backupNotifications) {
-                      setSetting("backupNotifications", false);
-                      return;
-                    }
-                    try {
-                      const perm = await Notification.requestPermission();
-                      if (perm !== "granted") return;
-                      setSetting("backupNotifications", true);
-                      notify("Tu-vi – Erinnerung aktiv", "Du wirst freitags daran erinnert, dein Backup zu erneuern.");
-                    } catch {
-                      // Manche Browser (u. a. ältere Android-WebViews) werfen hier – Schalter bleibt dann aus
-                    }
-                  }}
-                />
-              </div>
-              {Notification.permission === "denied" && (
-                <p className="text-[11px] text-amber-700 mt-1.5">
-                  Benachrichtigungen sind im Browser blockiert. Du kannst sie in den Browser-Einstellungen für diese Seite wieder erlauben.
+        {/* ── Daten & Sicherung ──
+            Reihenfolge bewusst: erst sichern, dann die Sonderwege, zuletzt
+            das Loeschen. */}
+        {seite === "daten" && (
+          <div>
+            <div className="pt-5 border-t border-stone-100">
+              <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Datensicherung</div>
+              <p className="text-xs text-stone-500 mb-3">
+                Deine Daten liegen auf diesem Gerät. Sichere sie regelmäßig als Datei, damit bei Geräteverlust oder App-Neuinstallation nichts verloren geht.
+              </p>
+              <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 mb-3 flex items-start gap-2">
+                <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-stone-600 leading-relaxed">
+                  <strong>Geteilte Schulcomputer:</strong> Tu-vi speichert Daten im Browser. Wenn mehrere Lehrkräfte dasselbe Browser-Profil nutzen, können alle auf diese Daten zugreifen. Nutze Tu-vi nur in deinem <strong>eigenen, privaten Browser-Profil</strong>.
                 </p>
+              </div>
+              <div className="flex gap-2 mb-2">
+                <Button variant="subtle" onClick={() => setConfirmBackupAction("export")} className="flex-1 justify-center"><Download size={15} /> Sichern</Button>
+                <Button variant="subtle" onClick={() => setConfirmBackupAction("share")} className="flex-1 justify-center"><Upload size={15} /> Teilen</Button>
+              </div>
+              <Button variant="ghost" onClick={() => importInputRef.current?.click()} className="w-full justify-center"><Upload size={15} /> Gesichertes wiederherstellen</Button>
+              <input
+                ref={importInputRef} type="file" accept="application/json,.json" className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) setConfirmImport(f); e.target.value = ""; }}
+              />
+              {importMsg && (
+                <p className={`text-xs mt-2 ${importMsg.ok ? "akzent-text" : "text-red-600"}`}>{importMsg.msg}</p>
+              )}
+              <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+                <div className="text-[11px] font-semibold text-amber-800 mb-1 flex items-center gap-1.5">
+                  <ShieldCheck size={12} className="shrink-0" />
+                  Vor dem Sichern kurz lesen
+                </div>
+                <ul className="text-[11px] text-stone-700 space-y-0.5 leading-snug">
+                  <li>• <strong>Nicht per E-Mail oder Messenger</strong> teilen.</li>
+                  <li>• <strong>Nicht in Google Drive, Dropbox oder iCloud</strong> ablegen.</li>
+                  <li>• Nur auf dem eigenen Gerät oder Schul-Server aufbewahren.</li>
+                </ul>
+              </div>
+
+              {/* Dokumente werden getrennt gesichert - sie wuerden die taegliche
+                  Sicherung sonst stark aufblaehen und sind besonders heikel. */}
+              <div className="mt-4 pt-3 border-t border-stone-100">
+                <div className="text-xs font-medium text-stone-500 mb-1">Dokumente sichern</div>
+                <p className="text-[11px] text-stone-500 mb-2 leading-relaxed">
+                  Abgelegte Dateien (Atteste, Gutachten, Fotos) stecken <strong>nicht</strong> in der normalen Datensicherung –
+                  sie brauchen eine eigene Datei. {dokAnzahl ? `Aktuell ${dokAnzahl} ${dokAnzahl === 1 ? "Dokument" : "Dokumente"}.` : "Aktuell sind keine abgelegt."}
+                  {speicher && ` Belegt: ${byteText(speicher.belegt)}${speicher.gesamt ? ` von ${byteText(speicher.gesamt)}` : ""}.`}
+                </p>
+                <div className="flex gap-2 mb-2">
+                  <Button variant="subtle" onClick={() => onExportDocuments?.((r) => setDokMsg(r))} className="flex-1 justify-center">
+                    <Download size={15} /> Dokumente sichern
+                  </Button>
+                  <Button variant="ghost" onClick={() => dokImportRef.current?.click()} className="flex-1 justify-center">
+                    <Upload size={15} /> Einspielen
+                  </Button>
+                </div>
+                <input
+                  ref={dokImportRef} type="file" accept="application/json,.json" className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) onImportDocuments?.(f, (r) => setDokMsg(r)); e.target.value = ""; }}
+                />
+                {dokMsg && <p className={`text-xs ${dokMsg.ok ? "akzent-text" : "text-red-600"}`}>{dokMsg.msg}</p>}
+                <p className="text-[11px] text-amber-700 mt-1.5 leading-snug">
+                  Diese Datei enthält Atteste und Gutachten im Klartext – dieselben Regeln wie oben, nur noch strenger.
+                </p>
+              </div>
+
+              {/* Empfohlener Weg: auf dem Gerät ablegen statt verschicken */}
+              <div className="mt-3 bg-stone-50 rounded-xl px-3 py-2.5">
+                <div className="text-xs font-medium text-stone-600 mb-1">Am einfachsten: auf dem Gerät ablegen</div>
+                <p className="text-[11px] text-stone-500 leading-relaxed">
+                  „Teilen" → <strong>In Dateien sichern</strong> → <strong>Auf meinem iPhone</strong>. Ein Schritt, kein Tippen,
+                  und die Daten verlassen dein Gerät nicht. Verschicke Backups nicht per E-Mail oder Messenger –
+                  sie enthalten alle Schülerdaten im Klartext.
+                </p>
+              </div>
+
+              {/* Freitags-Erinnerung */}
+              {"Notification" in window && (
+                <div className="mt-4 border-t border-stone-100 pt-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-stone-500">Freitags-Erinnerung</div>
+                      <div className="text-[11px] text-stone-400 mt-0.5">
+                        Erinnert dich freitags beim Öffnen von Tu-vi, wenn dein letztes Backup älter als 3 Tage ist.
+                      </div>
+                    </div>
+                    <Toggle
+                      checked={!!data.settings?.backupNotifications}
+                      onChange={async () => {
+                        if (data.settings?.backupNotifications) {
+                          setSetting("backupNotifications", false);
+                          return;
+                        }
+                        try {
+                          const perm = await Notification.requestPermission();
+                          if (perm !== "granted") return;
+                          setSetting("backupNotifications", true);
+                          notify("Tu-vi – Erinnerung aktiv", "Du wirst freitags daran erinnert, dein Backup zu erneuern.");
+                        } catch {
+                          // Manche Browser (u. a. ältere Android-WebViews) werfen hier – Schalter bleibt dann aus
+                        }
+                      }}
+                    />
+                  </div>
+                  {Notification.permission === "denied" && (
+                    <p className="text-[11px] text-amber-700 mt-1.5">
+                      Benachrichtigungen sind im Browser blockiert. Du kannst sie in den Browser-Einstellungen für diese Seite wieder erlauben.
+                    </p>
+                  )}
+                </div>
               )}
             </div>
-          )}
-        </div>
-
-        <div className="pt-5 border-t border-stone-100">
-          <div className="flex items-center justify-between mb-2">
-            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide">iCloud / Geräteübergreifend</div>
-            <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Nicht DSGVO-konform</span>
-          </div>
-          <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-3">
-            <p className="text-[11px] font-semibold text-amber-800 mb-1">Rechtlicher Hinweis</p>
-            <p className="text-[11px] text-amber-700 leading-relaxed">
-              Die Speicherung von Schülerdaten in privaten Cloud-Diensten (iCloud, Google Drive, Dropbox) entspricht in der Regel nicht den datenschutzrechtlichen Anforderungen an Schulen in Deutschland (DSGVO Art. 32; landesrechtliche Schulgesetze). Die Nutzung dieser Option erfolgt ausschließlich auf eigene Verantwortung der jeweiligen Lehrkraft. Der Anbieter dieser App übernimmt keine Haftung für datenschutzrechtliche Verstöße, die sich aus der Ablage in nicht genehmigten Diensten ergeben.
-            </p>
-          </div>
-          {confirmICloud && (
-            <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setConfirmICloud(false)}>
-              <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
-                <div className="font-semibold text-stone-800 mb-2">Auf eigene Verantwortung?</div>
-                <p className="text-sm text-stone-600 mb-4">
-                  Du bist dir bewusst, dass die Nutzung von iCloud für Schülerdaten in Deutschland <strong>nicht DSGVO-konform</strong> ist und in deiner eigenen Verantwortung liegt?
-                </p>
-                <div className="flex gap-2">
-                  <Button variant="ghost" onClick={() => setConfirmICloud(false)} className="flex-1 justify-center">Abbrechen</Button>
-                  <Button variant="danger" onClick={() => { setShowICloudSteps(true); setConfirmICloud(false); }} className="flex-1 justify-center">Ja, ich übernehme die Verantwortung</Button>
-                </div>
-              </div>
-            </div>
-          )}
-          {!showICloudSteps ? (
-            <button
-              onClick={() => setConfirmICloud(true)}
-              className="w-full text-xs text-stone-400 hover:text-stone-600 border border-dashed border-stone-200 rounded-xl py-2.5 transition-colors"
-            >
-              Trotzdem nutzen – auf eigene Verantwortung
-            </button>
-          ) : (
-            <>
-              <p className="text-xs text-stone-500 mb-2">So nutzt du iCloud Drive zur manuellen Synchronisation:</p>
-              <ol className="text-xs text-stone-500 space-y-1 mb-3 pl-4 list-decimal">
-                <li>„Sichern" → Datei in <strong>iCloud Drive → Tu-vi</strong> ablegen</li>
-                <li>Auf dem anderen Gerät: „Gesichertes wiederherstellen" → Datei aus iCloud Drive wählen</li>
-              </ol>
-              <div className="flex gap-2">
-                <Button variant="subtle" onClick={() => setConfirmBackupAction("export")} className="flex-1 justify-center"><Download size={14} /> Sichern</Button>
-                <Button variant="subtle" onClick={() => importInputRef.current?.click()} className="flex-1 justify-center"><Upload size={14} /> Laden</Button>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="pt-5 border-t border-stone-100">
-          <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">WebUntis / Fehlzeiten</div>
-          <div className="text-xs font-medium text-stone-500 mb-1.5">Erinnerungsintervall für Import</div>
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {IMPORT_INTERVALS.map((iv) => {
-              const active = (data.settings?.fehlzeitenImportInterval ?? 7) === iv.days;
-              return (
-                <button
-                  key={iv.days}
-                  onClick={() => setSetting("fehlzeitenImportInterval", iv.days)}
-                  className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${active ? "akzent-flaeche akzent-rand" : "border-stone-200 text-stone-600 hover:bg-stone-50"}`}
-                >
-                  {iv.label}
-                </button>
-              );
-            })}
-          </div>
-          {data.settings?.fehlzeitenLastImport && (
-            <p className="text-xs text-stone-400 mb-2">
-              Letzter Import: {new Date(data.settings.fehlzeitenLastImport).toLocaleDateString("de-DE")}
-            </p>
-          )}
-          <Button variant="subtle" onClick={() => onOpenUntisImport?.()} className="w-full justify-center">
-            <Upload size={15} /> Fehlzeiten aus WebUntis importieren
-          </Button>
-        </div>
-
-        {(() => {
-          const deletedStudents = (data.students || []).filter((s) => s.deletedAt);
-          const deletedClasses = (data.classes || []).filter((c) => c.deletedAt);
-          const snapshot = data.deletedSnapshot;
-          const snapshotValid = snapshot && (Date.now() - new Date(snapshot.deletedAt).getTime()) < 30 * 86400000;
-          const daysLeftSnapshot = snapshotValid
-            ? Math.max(1, 30 - Math.floor((Date.now() - new Date(snapshot.deletedAt).getTime()) / 86400000))
-            : 0;
-          const total = deletedStudents.length + deletedClasses.length + (snapshotValid ? 1 : 0);
-          if (total === 0) return null;
-          function restoreStudent(id) {
-            update((d) => { const s = d.students.find((s) => s.id === id); if (s) delete s.deletedAt; return d; });
-          }
-          function restoreClass(id) {
-            update((d) => {
-              const c = d.classes.find((c) => c.id === id);
-              if (c) delete c.deletedAt;
-              d.students.filter((s) => s.classId === id && s.deletedAt).forEach((s) => { delete s.deletedAt; });
-              return d;
-            });
-          }
-          function restoreAllData() {
-            update((d) => { const saved = d.deletedSnapshot?.data; return saved ? { ...saved, deletedSnapshot: null } : d; });
-          }
-          return (
             <div className="pt-5 border-t border-stone-100">
-              <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Papierkorb</div>
-              <p className="text-xs text-stone-500 mb-3">Gelöschte Einträge bleiben 30 Tage wiederherstellbar, dann werden sie endgültig entfernt.</p>
-              <ul className="space-y-1.5">
-                {snapshotValid && (
-                  <li className="flex-col gap-1.5 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2.5">
-                    <div className="flex items-center gap-2">
-                      <span className="flex-1 text-sm text-stone-700 truncate">Alle Daten (Reset vom {new Date(snapshot.deletedAt).toLocaleDateString("de-DE")})</span>
-                      <span className="text-[11px] text-stone-400 shrink-0">{daysLeftSnapshot}T</span>
-                      <button onClick={restoreAllData} className="text-xs text-green-700 font-medium hover:underline shrink-0">Wiederherstellen</button>
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide">iCloud / Geräteübergreifend</div>
+                <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Nicht DSGVO-konform</span>
+              </div>
+              <div className="bg-amber-50 border border-amber-100 rounded-xl p-3 mb-3">
+                <p className="text-[11px] font-semibold text-amber-800 mb-1">Rechtlicher Hinweis</p>
+                <p className="text-[11px] text-amber-700 leading-relaxed">
+                  Die Speicherung von Schülerdaten in privaten Cloud-Diensten (iCloud, Google Drive, Dropbox) entspricht in der Regel nicht den datenschutzrechtlichen Anforderungen an Schulen in Deutschland (DSGVO Art. 32; landesrechtliche Schulgesetze). Die Nutzung dieser Option erfolgt ausschließlich auf eigene Verantwortung der jeweiligen Lehrkraft. Der Anbieter dieser App übernimmt keine Haftung für datenschutzrechtliche Verstöße, die sich aus der Ablage in nicht genehmigten Diensten ergeben.
+                </p>
+              </div>
+              {confirmICloud && (
+                <div className="fixed inset-0 bg-stone-900/50 flex items-center justify-center p-4 z-[70]" onClick={() => setConfirmICloud(false)}>
+                  <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
+                    <div className="font-semibold text-stone-800 mb-2">Auf eigene Verantwortung?</div>
+                    <p className="text-sm text-stone-600 mb-4">
+                      Du bist dir bewusst, dass die Nutzung von iCloud für Schülerdaten in Deutschland <strong>nicht DSGVO-konform</strong> ist und in deiner eigenen Verantwortung liegt?
+                    </p>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" onClick={() => setConfirmICloud(false)} className="flex-1 justify-center">Abbrechen</Button>
+                      <Button variant="danger" onClick={() => { setShowICloudSteps(true); setConfirmICloud(false); }} className="flex-1 justify-center">Ja, ich übernehme die Verantwortung</Button>
                     </div>
-                    <button
-                      onClick={() => setConfirmDeleteSnapshot(true)}
-                      className="text-[11px] text-red-500 hover:underline mt-1"
-                    >
-                      Jetzt endgültig löschen (auch Gesundheitsdaten & Fotos)
-                    </button>
-                  </li>
-                )}
-                {deletedClasses.map((c) => (
-                  <li key={c.id} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
-                    <span className="flex-1 text-sm text-stone-600 truncate">Klasse: {c.name}</span>
-                    <button onClick={() => restoreClass(c.id)} className="text-xs text-green-700 font-medium hover:underline shrink-0">Wiederherstellen</button>
-                  </li>
-                ))}
-                {deletedStudents.map((s) => {
-                  const cls = (data.classes || []).find((c) => c.id === s.classId);
+                  </div>
+                </div>
+              )}
+              {!showICloudSteps ? (
+                <button
+                  onClick={() => setConfirmICloud(true)}
+                  className="w-full text-xs text-stone-400 hover:text-stone-600 border border-dashed border-stone-200 rounded-xl py-2.5 transition-colors"
+                >
+                  Trotzdem nutzen – auf eigene Verantwortung
+                </button>
+              ) : (
+                <>
+                  <p className="text-xs text-stone-500 mb-2">So nutzt du iCloud Drive zur manuellen Synchronisation:</p>
+                  <ol className="text-xs text-stone-500 space-y-1 mb-3 pl-4 list-decimal">
+                    <li>„Sichern" → Datei in <strong>iCloud Drive → Tu-vi</strong> ablegen</li>
+                    <li>Auf dem anderen Gerät: „Gesichertes wiederherstellen" → Datei aus iCloud Drive wählen</li>
+                  </ol>
+                  <div className="flex gap-2">
+                    <Button variant="subtle" onClick={() => setConfirmBackupAction("export")} className="flex-1 justify-center"><Download size={14} /> Sichern</Button>
+                    <Button variant="subtle" onClick={() => importInputRef.current?.click()} className="flex-1 justify-center"><Upload size={14} /> Laden</Button>
+                  </div>
+                </>
+              )}
+            </div>
+            <div className="pt-5 border-t border-stone-100">
+              <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">WebUntis / Fehlzeiten</div>
+              <div className="text-xs font-medium text-stone-500 mb-1.5">Erinnerungsintervall für Import</div>
+              <div className="flex flex-wrap gap-1.5 mb-3">
+                {IMPORT_INTERVALS.map((iv) => {
+                  const active = (data.settings?.fehlzeitenImportInterval ?? 7) === iv.days;
                   return (
-                    <li key={s.id} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
-                      <span className="flex-1 text-sm text-stone-600 truncate">{s.name}{cls ? ` (${cls.name})` : ""}</span>
-                      <button onClick={() => restoreStudent(s.id)} className="text-xs text-green-700 font-medium hover:underline shrink-0">Wiederherstellen</button>
-                    </li>
+                    <button
+                      key={iv.days}
+                      onClick={() => setSetting("fehlzeitenImportInterval", iv.days)}
+                      className={`px-3 py-1.5 rounded-lg border text-xs font-medium transition-colors ${active ? "akzent-flaeche akzent-rand" : "border-stone-200 text-stone-600 hover:bg-stone-50"}`}
+                    >
+                      {iv.label}
+                    </button>
                   );
                 })}
-              </ul>
-            </div>
-          );
-        })()}
-
-        <div className="pt-5 border-t border-stone-100">
-          <button
-            onClick={() => setShowAdvanced(!showAdvanced)}
-            className="w-full flex items-center justify-between text-xs font-semibold text-stone-400 uppercase tracking-wide"
-          >
-            <span>Erweiterte Einstellungen</span>
-            <ChevronDown size={14} className={`transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`} />
-          </button>
-          {showAdvanced && (
-            <div className="mt-3 space-y-2">
-              <p className="text-xs text-stone-500">
-                Alle Klassen, Schüler, Noten und Notizen werden gelöscht. Die Daten landen für 30 Tage im Papierkorb und können dort wiederhergestellt werden.
-              </p>
-              <Button variant="danger" onClick={() => { setResetInput(""); setConfirmReset(true); }} className="w-full justify-center">
-                Alle Daten löschen
+              </div>
+              {data.settings?.fehlzeitenLastImport && (
+                <p className="text-xs text-stone-400 mb-2">
+                  Letzter Import: {new Date(data.settings.fehlzeitenLastImport).toLocaleDateString("de-DE")}
+                </p>
+              )}
+              <Button variant="subtle" onClick={() => onOpenUntisImport?.()} className="w-full justify-center">
+                <Upload size={15} /> Fehlzeiten aus WebUntis importieren
               </Button>
             </div>
-          )}
-        </div>
+            <div className="pt-5 border-t border-stone-100">
+              <button
+                onClick={() => setShowAdvanced(!showAdvanced)}
+                className="w-full flex items-center justify-between text-xs font-semibold text-stone-400 uppercase tracking-wide"
+              >
+                <span>Erweiterte Einstellungen</span>
+                <ChevronDown size={14} className={`transition-transform duration-200 ${showAdvanced ? "rotate-180" : ""}`} />
+              </button>
+              {showAdvanced && (
+                <div className="mt-3 space-y-2">
+                  <p className="text-xs text-stone-500">
+                    Alle Klassen, Schüler, Noten und Notizen werden gelöscht. Die Daten landen für 30 Tage im Papierkorb und können dort wiederhergestellt werden.
+                  </p>
+                  <Button variant="danger" onClick={() => { setResetInput(""); setConfirmReset(true); }} className="w-full justify-center">
+                    Alle Daten löschen
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
-        <div className="pt-4 border-t border-stone-100 mt-2 space-y-2">
-          {/* Druckvorlagen fuer Sport-Kolleg:innen: leere Vordrucke fuer die
-              Schublade. Kontextbezogen (Kind vorbelegt) gibt es sie direkt im
-              Stundenabschluss. */}
-          <div className="flex items-center gap-2 text-xs">
-            <span className="text-stone-400">Sport-Vorlagen zum Drucken:</span>
+        {/* ── Ueber Tu-vi ── */}
+        {seite === "ueber" && (
+          <div>
+            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Über Tu-vi</div>
+            <p className="text-xs text-stone-500 mb-4">
+              Tu-vi ist ein privates Werkzeug für Lehrkräfte, kein offiziell geprüftes Schulverwaltungssystem.
+            </p>
             <button
-              onClick={() => setDruckSportVorlage("protokoll")}
-              className="akzent-text hover:underline flex items-center gap-1"
+              onClick={() => setShowLegal(true)}
+              className="w-full flex items-center gap-2.5 px-4 py-3 rounded-xl karte text-sm text-stone-700 hover:bg-stone-50 transition-colors"
             >
-              <Printer size={11} /> Stundenprotokoll
-            </button>
-            <span className="text-stone-300">·</span>
-            <button
-              onClick={() => setDruckSportVorlage("regelbruch")}
-              className="akzent-text hover:underline flex items-center gap-1"
-            >
-              <Printer size={11} /> Regelbruch-Auftrag
+              <FileText size={15} className="text-stone-400 shrink-0" />
+              <span className="flex-1 text-left">Impressum &amp; Datenschutz</span>
+              <ChevronRight size={15} className="text-stone-300 shrink-0" />
             </button>
           </div>
-          <button
-            onClick={() => setShowLegal(true)}
-            className="w-full flex items-center gap-2 text-xs text-stone-400 hover:text-stone-600 py-2 justify-center transition-colors"
-          >
-            <FileText size={13} /> Impressum & Datenschutz
-          </button>
+        )}
+
         </div>
 
-        <Button onClick={onClose} className="w-full justify-center mt-3">Schließen</Button>
-        </div>
 
         {showLegal && <LegalModal onClose={() => setShowLegal(false)} />}
-
-        {druckSportVorlage && (
-          <SportDruckVorlage
-            vorlage={druckSportVorlage}
-            student={null}
-            klasse={null}
-            datum={isoDate(new Date())}
-            onClose={() => setDruckSportVorlage(null)}
-          />
-        )}
 
         {showPromote && (
           <PromoteModal
@@ -2766,18 +2771,21 @@ const HELP_DATA = [
     items: [
       { q: "Wie lege ich eine neue Klasse an?", a: `Tippe auf „Klassen" in der Navigation, dann oben rechts auf „+". Gib den Klassennamen ein und bestätige mit „Anlegen".` },
       { q: "Wie füge ich Schüler:innen hinzu?", a: `Öffne eine Klasse und tippe auf „+ Schüler:in". Namen können einzeln oder als Liste eingegeben werden.` },
-      { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Tu-vi automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr" → „Einstellungen" → Bundesland wählen → „Schulferien eintragen".` },
+      { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Tu-vi automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr" → „Einstellungen" → „Schuljahr & Schule" → Bundesland wählen → „Schulferien eintragen".` },
       { q: "Was passiert beim ersten Start?", a: `Tu-vi führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
       { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus. Der Farb-Modus ist unabhängig von Hell/Dunkel und funktioniert in beiden.` },
-      { q: "Wie sperre ich Tu-vi mit Face ID oder Touch ID?", a: `„Mehr" → „Einstellungen" → Abschnitt „App-Sperre" → Schalter „Mit Face ID / Touch ID sperren" einschalten. Dein Gerät fragt einmal nach der Bestätigung, danach ist die Sperre aktiv. Ab dann verlangt Tu-vi Face ID oder Touch ID, bevor Klassen und Schülerdaten sichtbar werden – beim Öffnen der App und immer dann, wenn sie länger als zwei Minuten im Hintergrund war. Kurzes Wegwischen (eine Nachricht lesen) löst die Sperre nicht aus. Wichtig: Die Sperre gilt nur auf diesem Gerät. Nutzt du Tu-vi zusätzlich auf dem iPad, musst du sie dort separat einschalten. Erscheint der Abschnitt gar nicht oder als Hinweis, kann dein Gerät oder Browser keine Face ID für Webseiten – auf dem iPhone brauchst du dafür Safari und eine https-Verbindung.` },
-      { q: "Was, wenn Face ID beim Entsperren nicht funktioniert?", a: `Auf dem Sperrbildschirm steht unter dem Entsperren-Knopf „Stattdessen mit Passwort anmelden". Das meldet dich ab und du kommst zur normalen Anmeldung mit E-Mail und Passwort – danach bist du wieder drin. Du sperrst dich also nie aus. Die Sperre bleibt dabei eingerichtet; ausschalten kannst du sie in den Einstellungen unter „App-Sperre".` },
+      { q: "Wie sperre ich Tu-vi mit Face ID oder Touch ID?", a: `„Mehr" → „Einstellungen" → „Sicherheit & Konto" → Schalter „Mit Face ID / Touch ID sperren" einschalten. Dein Gerät fragt einmal nach der Bestätigung, danach ist die Sperre aktiv. Ab dann verlangt Tu-vi Face ID oder Touch ID, bevor Klassen und Schülerdaten sichtbar werden – beim Öffnen der App und immer dann, wenn sie länger als zwei Minuten im Hintergrund war. Kurzes Wegwischen (eine Nachricht lesen) löst die Sperre nicht aus. Wichtig: Die Sperre gilt nur auf diesem Gerät. Nutzt du Tu-vi zusätzlich auf dem iPad, musst du sie dort separat einschalten. Erscheint der Abschnitt gar nicht oder als Hinweis, kann dein Gerät oder Browser keine Face ID für Webseiten – auf dem iPhone brauchst du dafür Safari und eine https-Verbindung.` },
+      { q: "Was, wenn Face ID beim Entsperren nicht funktioniert?", a: `Auf dem Sperrbildschirm steht unter dem Entsperren-Knopf „Stattdessen mit Passwort anmelden". Das meldet dich ab und du kommst zur normalen Anmeldung mit E-Mail und Passwort – danach bist du wieder drin. Du sperrst dich also nie aus. Die Sperre bleibt dabei eingerichtet; ausschalten kannst du sie unter „Einstellungen" → „Sicherheit & Konto".` },
       { q: "Ersetzt die App-Sperre mein Passwort?", a: `Nein, und das ist wichtig zu verstehen. Die Sperre ist ein zusätzlicher Riegel vor der App auf diesem einen Gerät. Sie löst den Fall, der im Schulalltag wirklich vorkommt: Das entsperrte iPhone liegt auf dem Pult und jemand tippt Tu-vi an – ohne dein Gesicht sind dann keine Schülerdaten zu sehen. Sie ist aber kein zweiter Anmeldefaktor und verschlüsselt die Daten nicht zusätzlich. Dein Passwort bleibt der eigentliche Schutz deines Kontos: Wähle es sicher und gib es nicht weiter.` },
+      { q: "Wie sind die Einstellungen aufgebaut?", a: `Die Einstellungen führen zu fünf Bereichen statt zu einer langen Liste: „Schuljahr & Schule" (Halbjahr, Bundesland, Schulferien, Klassen versetzen), „Darstellung" (welche Blöcke auf der Übersicht erscheinen und in welcher Reihenfolge, die Karte im Schülerprofil, Unterrichtstipps), „Sicherheit & Konto" (App-Sperre mit Face ID, angemeldete E-Mail, Abmelden), „Daten & Sicherung" (Sichern, Wiederherstellen, Freitags-Erinnerung, iCloud, WebUntis-Import und ganz am Ende das Löschen aller Daten) sowie „Über Tu-vi" (Impressum und Datenschutz). Ein Pfeil oben links führt aus jedem Bereich zurück.` },
+      { q: "Wo finde ich den Papierkorb?", a: `Im Tab „Klassen & Schüler" ganz unten. Gelöschte Klassen und Kinder bleiben dort 30 Tage wiederherstellbar, danach werden sie endgültig entfernt. Solange nichts gelöscht wurde, erscheint der Papierkorb gar nicht. Früher lag er in den Einstellungen – dort sucht ihn niemand, wenn gerade aus Versehen eine Klasse verschwunden ist.` },
+      { q: `Was steht im Reiter „Listen" bei den Klassen?`, a: `Drei Übersichten über alle Klassen hinweg: Entschuldigungen, Förderziele und Geburtstage. Der Unterschied zu den Kacheln auf der Startseite: Die Listen lassen sich auch dann öffnen, wenn gerade nichts offen ist – etwa um im Elterngespräch nachzusehen, wann ein Kind zuletzt eine Entschuldigung abgegeben hat.` },
       { q: "Kann Tu-vi dunkel dargestellt werden?", a: `Ja, automatisch. Tu-vi übernimmt die Darstellung deines Geräts: Steht dein iPhone, iPad oder Computer auf „Dunkel", zeigt sich Tu-vi dunkel, bei „Hell" hell. Auf dem iPhone stellst du das unter Einstellungen → Anzeige & Helligkeit ein, auf dem Mac unter Systemeinstellungen → Erscheinungsbild. In der App selbst gibt es dafür bewusst keinen eigenen Schalter – so passt Tu-vi immer zu deinen übrigen Apps. Ausdrucke (Schülerakte, Berichte, Notenlisten) sind immer hell, damit sie auf Papier lesbar bleiben.` },
       { q: "Wie ist die Heute-Seite aufgebaut?", a: `Von oben nach unten priorisiert – die App zeigt nicht alles auf einmal, sondern das was gerade zählt: (1) Kopf mit Wortmarke, Datum und dem grünen Plus-Knopf. (2) „JETZT" – die große Karte für die laufende Stunde, mit Restzeit, Fach & Klasse, Thema, den zu dieser Stunde gehörenden offenen Punkten (Entschuldigungen, „heute Klassenarbeit"-Warnung) und dem Material aus dem Fach. Ein „Stunde öffnen"-Knopf springt in die Schnellerfassung. (3) „ALS NÄCHSTES" – die nächste Stunde, mit „in X Min." oder „in X Std." und – das ist der eigentliche Trick – den Material-Chips unter „Vorher mitnehmen", damit du in der aktuellen Stunde schon weißt, was du gleich einsammeln musst (z. B. „12 Volleybälle · 6 Hütchen · Leibchen"). (4) Zweispaltig „X Dinge brauchen deine Aufmerksamkeit" (Sheet mit allen Signalen) und „Nicht vergessen" (persönliche Aufgabenliste mit +-Feld zum sofort Ergänzen). (5) „Danach heute" – die restlichen Stunden als kompakte Zeilenliste. (6) Kleine Wochentagsleiste zum Vor- und Zurückblättern. (7) Wochenrückblick von Freitag 12 Uhr bis Sonntag Nacht, falls aktiv. (8) Unterrichtstipp des Tages, falls in den Einstellungen aktiv.` },
       { q: "Was zeigen die Karten JETZT und ALS NÄCHSTES?", a: `Beide Karten führen dich durch den aktuellen Moment. JETZT ist die dominante Karte für die laufende Stunde: Fach·Klasse·Thema groß, darunter die konkret zu dieser Stunde relevanten Punkte – Zahl der offenen Entschuldigungen dieser Klasse, „Heute: [Klassenarbeit-Titel]" wenn eine Prüfung ansteht, verknüpfte Aufgaben, und ganz wichtig: das Material, das du für dieses Fach eingetragen hast (Feld „Immer mitnehmen" im Fach-Editor). Rechts oben läuft die Restzeit. „Stunde öffnen" springt in die Schnellerfassung. Die ALS-NÄCHSTES-Karte ist etwas kleiner: Anfangszeit + „in X Std. Y Min.", Fach·Klasse·Raum, Thema falls hinterlegt, und die Material-Chips als „Vorher mitnehmen". Der Sinn: du bist noch in Mathe, siehst aber schon dass du gleich zwölf Volleybälle brauchst, und kannst sie auf dem Weg mitnehmen.` },
       { q: `Was steht in der Kachel „X Dinge brauchen deine Aufmerksamkeit"?`, a: `Automatisch erkannte Signale für heute – nur solche die tatsächlich anstehen, sonst verschwindet die Kachel. Sie sammelt: (1) noch nachzutragende Stunden, (2) auffällige Klassen aus dem Klassenradar (kritisch/warnend), (3) dringliche Erinnerungen (Kinder mit vielen Fehltagen, Kinder ohne Eintrag seit 14+ Tagen, wiederholte Vorfälle, offene Zeugnisnoten). Ein Tipp öffnet ein Sheet mit der vollständigen Liste; ein Tipp auf einen Eintrag springt direkt in den passenden Bereich (Klassen-Dashboard, Entschuldigungen usw.). Alles lokal berechnet – keine externen Datenübertragungen. „Nicht vergessen" daneben ist bewusst getrennt: dort stehen nur deine manuell erfassten Aufgaben.` },
       { q: "Wie lege ich Material für ein Fach fest, das immer mitzunehmen ist?", a: `Fach bearbeiten (Klassen-Tab → Fach → Zahnrad) → im Editor die Sektion „Immer mitnehmen". Trage ein Ding pro Zeile ein und tippe das +-Symbol oder drücke Enter – z. B. „12 Volleybälle", „6 Hütchen", „Leibchen", „Beamer". Die Einträge erscheinen automatisch auf der Heute-Seite: in der JETZT-Karte beim aktiven Fach, und – wichtiger – in der ALS-NÄCHSTES-Karte als Chip-Reihe „Vorher mitnehmen", damit du sie in der Vorstunde noch einsammeln kannst. Kannst du jederzeit über das × am Chip löschen. Wird pro Fach gespeichert, nicht pro Stunde – Sport hat also für jede Sportstunde dieselben Bälle.` },
-      { q: "Was ist der Unterrichtstipp des Tages?", a: `Ganz unten auf der Übersicht liegt eine kompakte Zeile mit einem Tipp aus dem Wissenspool – Titel plus Merksatz. Der Tipp wechselt automatisch mit jedem Tag (er ist an das Datum gekoppelt, bleibt also bei mehrmaligem Öffnen am selben Tag gleich). Tippe drauf, dann öffnet sich die volle Karte: „Warum?" mit Kurzbegründung, „So setzt du es um" als praktische Punkte, und der Merksatz zum Mitnehmen. Ein „Nächster Tipp"-Knopf springt zufällig zu einer anderen Karte, so kannst du zwischendurch etwas schmökern. In den Einstellungen unter „Übersicht (Startseite)" lässt sich die Kachel abschalten.` },
+      { q: "Was ist der Unterrichtstipp des Tages?", a: `Ganz unten auf der Übersicht liegt eine kompakte Zeile mit einem Tipp aus dem Wissenspool – Titel plus Merksatz. Der Tipp wechselt automatisch mit jedem Tag (er ist an das Datum gekoppelt, bleibt also bei mehrmaligem Öffnen am selben Tag gleich). Tippe drauf, dann öffnet sich die volle Karte: „Warum?" mit Kurzbegründung, „So setzt du es um" als praktische Punkte, und der Merksatz zum Mitnehmen. Ein „Nächster Tipp"-Knopf springt zufällig zu einer anderen Karte, so kannst du zwischendurch etwas schmökern. Unter „Einstellungen" → „Darstellung" lässt sich die Kachel abschalten.` },
       { q: "Was ist der Wochenrückblick auf der Übersicht?", a: `Eine Karte, die von Freitag 12 Uhr bis Sonntag Nacht ganz oben auf der Übersicht erscheint (ab Montag ist sie automatisch weg). Sie zeigt drei Dinge: die Zahlen der Woche (gehaltene Stunden, vergebene Noten, geführte Gespräche, neue Notizen), was aufgefallen ist (Klassen mit Signalen aus dem Klassenradar, Kinder ohne Eintrag in dieser Woche) und einen Ausblick auf die nächste Woche (Klassenarbeiten, Termine). Ein × blendet die Karte für den Rest dieser Woche aus – am nächsten Freitag kommt sie wieder.` },
       { q: "Was macht der grüne Plus-Knopf in der Mitte?", a: `Er ist der Schnellzugriff zum Erfassen und funktioniert aus jedem Bereich heraus. Ein Tipp öffnet fünf Einträge: „Stunde erfassen" springt direkt in die Schnellerfassung – Tu-vi wählt dabei selbst die passende Stunde, zuerst eine noch nicht erfasste, sonst die zuletzt gehaltene von heute. „Gespräch notieren" und „Notiz zu einem Kind" fragen zuerst nach dem Kind (einfach den Namen tippen) und dann nach dem Text; beim Gespräch kommen Art (Schüler, Eltern, Förder) und Stimmung dazu. „Aufgabe" und „Termin" legen einen To-do beziehungsweise einen Kalendereintrag an. Bist du gerade in einem Bereich mit eigener Aktion – etwa im Klassen-Tab – steht diese zusätzlich ganz oben in der Liste. Auf Tablet und Desktop heißt der Knopf „Schnell erfassen" und sitzt in der linken Seitenleiste, ganz oben; das aufklappende Menü enthält dieselben Aktionen.` },
       { q: "Wo finde ich die Aufgaben in der unteren Leiste?", a: `Die Leiste zeigt Übersicht, Klassen, den Plus-Knopf, Noten und „Mehr". Die Aufgaben sind unter „Mehr" zu finden – zusammen mit Stundenplan, Kalender, Suche, Einstellungen und Hilfe. Eine neue Aufgabe legst du schneller über den grünen Plus-Knopf an.` },
@@ -2813,7 +2821,7 @@ const HELP_DATA = [
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Tu-vi bildet den gewichteten Durchschnitt aus mündlichen und schriftlichen Noten. Voreingestellt ist 50 zu 50 Prozent – änderbar unter „Klassen & Schüler" → Reiter „Fächer" → Zahnrad beim Fach → „Gewichtung der Noten". Einzelne Noten lassen sich zusätzlich stärker gewichten (Faktor beim Bearbeiten der Note). Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `In der Klassen-Ansicht auf ein Kind tippen, dann „Notenübersicht" antippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
       { q: "Was ist der Stunden-Abschluss (30 Sekunden)?", a: `Das Klemmbrett-Symbol neben einer Stunde öffnet den 30-Sekunden-Abschluss – die neue Standard-Erfassung nach einer Stunde. Kein Formular mit leerem Notenfeld, sondern eine Liste aller Kinder mit vier One-Tap-Aktionen pro Zeile: + (positive Mitarbeit) · − (zurückhaltend) · ⚠︎ (Sportzeug bzw. Hausaufgabe vergessen) · Notiz (kurzes Textfeld). Ein Tipp pro Kind, alles wird am Ende auf einmal gespeichert. + und − werden als Beobachtungs-Notiz gespeichert (nicht als automatische Note, damit der Durchschnitt nicht verwässert wird); das Vergessen als Vorfall (bei Sport als „Sportzeug", sonst als „Hausaufgabe"). Wer eine echte Note vergeben will, wechselt unten über „Auch Noten vergeben →" in die ausführliche Schnellerfassung. Bei Sport-Stunden erscheint zusätzlich ein Drucker-Symbol pro Kind – dahinter liegen zwei druckbare Vorlagen: „Stundenprotokoll" (für Kinder die z.B. Sportzeug vergessen haben und mitschreiben statt teilnehmen) und „Regelbruch-Arbeitsauftrag" (Regeln abschreiben, Verhaltensplan, Elternunterschrift). Kindnamen und Klasse werden automatisch eingetragen.` },
-      { q: "Wo finde ich die Sport-Druckvorlagen ohne Kind-Kontext?", a: `„Mehr" → „Einstellungen" → ganz unten „Sport-Vorlagen zum Drucken": „Stundenprotokoll" und „Regelbruch-Auftrag". Das öffnet eine leere Vorlage zum Ausdrucken – nützlich für die Ersatzkopien in der Schublade oder wenn du sie spontan brauchst.` },
+      { q: "Wo finde ich die Sport-Druckvorlagen ohne Kind-Kontext?", a: `Im Tab „Klassen & Schüler" ganz unten unter „Vorlagen zum Drucken": „Stundenprotokoll" und „Regelbruch-Auftrag". Das öffnet eine leere Vorlage zum Ausdrucken – nützlich für die Ersatzkopien in der Schublade oder wenn du sie spontan brauchst.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Die ausführliche Erfassung wird aus dem Stunden-Abschluss über den Link „Auch Noten vergeben" erreicht. Dort kannst du für alle Schüler:innen einer Klasse Noten (mündlich / schriftlich), ausführliche Notizen und Gespräche eintragen. Eine Doppelstunde wird einmal erfasst, nicht zweimal. Die Notenbuttons sind immer sichtbar. Neben dem Namen liegt das ⚠︎-Symbol für „Vergessen"; Notiz und Gespräch öffnen sich über das ···-Symbol.` },
       { q: "Was ist der Stunden-Timer bis zur Klassenarbeit?", a: `Ist für ein Fach ein Termin für die nächste Klassenarbeit hinterlegt, zeigt Tu-vi an, wie viele Unterrichtsstunden bis dahin noch bleiben. Gezählt wird in Unterrichtseinheiten: ein Tag mit diesem Fach ist eine Einheit – eine Doppelstunde aus zwei 45-Minuten-Blöcken zählt also einmal, genau wie eine einzelne Stunde. Ferien und schulfreie Tage werden abgezogen, der Prüfungstag selbst zählt nicht als Übungsstunde. Angezeigt wird der Hinweis erst, wenn es eng wird: amber ab drei verbleibenden Stunden, rot ab einer. Den Termin eintragen: „Klassen & Schüler" → Reiter „Fächer" → Zahnrad-Symbol beim Fach → „Nächste Klassenarbeit / Test". Wichtig: Das Fach muss im Stundenplan stehen, sonst kann Tu-vi die Stunden nicht zählen und zeigt stattdessen nur das Datum.` },
       { q: "Wo sehe ich auf der Heute-Seite, wie viel Zeit bis zur Klassenarbeit bleibt?", a: `Am Prüfungstag selbst zeigt die JETZT-Karte deutlich rot „Heute: [Titel der Arbeit]" – nicht zu übersehen. Naht der Termin (letzte drei Übungsstunden), landet der Countdown zusätzlich in der Kachel „X Dinge brauchen deine Aufmerksamkeit" als dringliches Signal. Die volle Restzeit-Rechnung („noch 5 Stunden bis zur Arbeit, Ferien abgezogen") siehst du in der Schnellerfassung oder in der Notenübersicht des Fachs. Voraussetzung ist jeweils, dass für das Fach ein Termin unter „Klassen & Schüler" → Fach-Zahnrad → „Nächste Klassenarbeit / Test" eingetragen ist und das Fach im Stundenplan steht.` },
@@ -2843,15 +2851,15 @@ const HELP_DATA = [
   {
     category: "Backup & Daten",
     items: [
-      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung". Dort erscheint zuerst ein kurzer Datenschutz-Hinweis, den du bestätigst. Danach: „Sichern" legt die Datei im Download-Ordner ab, „Teilen" öffnet die Teilen-Ansicht (z. B. für „In Dateien sichern" oder AirDrop). Wichtig: abgelegte Dokumente sind darin nicht enthalten – die brauchen eine eigene Sicherung, direkt darunter unter „Dokumente sichern".` },
+      { q: "Wie erstelle ich ein Backup?", a: `Gehe zu „Mehr" → „Einstellungen" → „Daten & Sicherung". Dort erscheint zuerst ein kurzer Datenschutz-Hinweis, den du bestätigst. Danach: „Sichern" legt die Datei im Download-Ordner ab, „Teilen" öffnet die Teilen-Ansicht (z. B. für „In Dateien sichern" oder AirDrop). Wichtig: abgelegte Dokumente sind darin nicht enthalten – die brauchen eine eigene Sicherung, direkt darunter unter „Dokumente sichern".` },
       { q: "Wie lege ich ein Dokument bei einem Kind ab?", a: `Öffne die Klasse, tippe das Kind an und wechsle auf den Reiter „Mehr". Ganz unten steht „Dokumente" mit zwei Knöpfen: „Foto" öffnet direkt die Kamera – ideal, um eine Entschuldigung abzufotografieren. „Datei" öffnet die Dateien-App, dort wählst du ein PDF oder ein vorhandenes Bild. Fotos werden automatisch verkleinert, damit sie wenig Platz brauchen. Ein Tipp auf einen Eintrag öffnet ihn, das Papierkorb-Symbol löscht ihn.` },
       { q: "Kann ich Dokumente auch bei einer Klasse, einem Fach oder ganz allgemein ablegen?", a: `Ja. Im Klassen-Dashboard (Klasse aufklappen → „Klassen-Dashboard") liegt ganz unten die Ablage für die ganze Klasse – etwa Sitzplan oder Elternbrief. In der Notenübersicht eines Fachs (Noten → Klasse → Fach) findest du dieselbe Ablage für Arbeitsblätter oder Lösungen. Für alles ohne festen Bezug – Konferenzprotokolle, Formulare, Schulordnung – gibt es unter „Mehr" → „Dokumente" einen eigenen allgemeinen Bereich. Dort steht auch eine durchsuchbare Liste aller abgelegten Dokumente, egal wo sie hängen.` },
-      { q: "Wo werden meine Dokumente gespeichert?", a: `Auf deinem Gerät, genau wie alles andere in Tu-vi – nichts wird ins Internet übertragen. Dokumente liegen allerdings in einem eigenen Speicherbereich, weil sie für die normale Ablage zu groß wären. Deshalb sind sie auch nicht in der normalen Datensicherung enthalten, sondern brauchen unter „Einstellungen" → „Datensicherung" den eigenen Knopf „Dokumente sichern".` },
-      { q: "Warum sind meine Dokumente nach dem Wiederherstellen weg?", a: `Die normale Datensicherung enthält nur die Liste der Dokumente (Name, Datum, zu welchem Kind), nicht die Dateien selbst. Nach dem Wiederherstellen siehst du deshalb die Einträge, aber beim Öffnen kommt der Hinweis, dass die Datei fehlt. Spiel dann zusätzlich deine Dokument-Sicherung ein: „Einstellungen" → „Datensicherung" → „Einspielen" im Abschnitt „Dokumente sichern".` },
+      { q: "Wo werden meine Dokumente gespeichert?", a: `Auf deinem Gerät, genau wie alles andere in Tu-vi – nichts wird ins Internet übertragen. Dokumente liegen allerdings in einem eigenen Speicherbereich, weil sie für die normale Ablage zu groß wären. Deshalb sind sie auch nicht in der normalen Datensicherung enthalten, sondern brauchen unter „Einstellungen" → „Daten & Sicherung" den eigenen Knopf „Dokumente sichern".` },
+      { q: "Warum sind meine Dokumente nach dem Wiederherstellen weg?", a: `Die normale Datensicherung enthält nur die Liste der Dokumente (Name, Datum, zu welchem Kind), nicht die Dateien selbst. Nach dem Wiederherstellen siehst du deshalb die Einträge, aber beim Öffnen kommt der Hinweis, dass die Datei fehlt. Spiel dann zusätzlich deine Dokument-Sicherung ein: „Einstellungen" → „Daten & Sicherung" → „Einspielen" im Abschnitt „Dokumente sichern".` },
       { q: "Kann ich mir Dokumente direkt an Tu-vi schicken lassen?", a: `Nein. Tu-vi hat bewusst keinen Server und kann deshalb weder E-Mails abrufen noch Nachrichten empfangen. Auf dem iPhone lässt Apple Web-Apps auch nicht als Ziel im Teilen-Menü zu. Der Weg ist deshalb: Datei zuerst in „Dateien" sichern (bei einer E-Mail: Anhang antippen → Teilen → „In Dateien sichern"), danach in Tu-vi beim Kind auf „Datei" tippen und sie dort auswählen. Für Papier-Entschuldigungen ist „Foto" der schnellere Weg.` },
       { q: "Wie sichere ich am einfachsten auf dem iPhone oder iPad?", a: `Einstellungen → „Datensicherung" → „Teilen" antippen. In der Teilen-Ansicht dann „In Dateien sichern" wählen und „Auf meinem iPhone" (oder iPad) als Ort. Ein Schritt, kein Tippen – und die Daten verlassen dein Gerät nicht. Verschicke Backups nicht per E-Mail oder Messenger: Die Datei enthält alle Schülerdaten im Klartext, und der Versand über einen privaten Mailanbieter ist für Schülerdaten in der Regel nicht zulässig.` },
-      { q: "Wie aktiviere ich die Freitags-Erinnerung?", a: `In den Einstellungen unter „Datensicherung" → „Freitags-Erinnerung" den Schalter aktivieren. Beim ersten Mal fragt der Browser nach der Erlaubnis für Benachrichtigungen. Wichtig zu wissen: Die Erinnerung erscheint, wenn du Tu-vi an einem Freitag öffnest und dein letztes Backup mindestens 3 Tage her ist. Tu-vi läuft nicht im Hintergrund – öffnest du die App freitags nicht, kommt auch keine Erinnerung. Verlass dich also nicht allein darauf.` },
-      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr" → „Einstellungen" → „Datensicherung" → „Gesichertes wiederherstellen" und wähle deine Backup-Datei. Achtung: Die aktuell gespeicherten Daten werden dabei ersetzt – am besten vorher einmal „Sichern". Sollten sich die Daten beim Start einmal nicht lesen lassen, zeigt Tu-vi direkt einen Wiederherstellen-Knopf und überschreibt nichts.` },
+      { q: "Wie aktiviere ich die Freitags-Erinnerung?", a: `In den Einstellungen unter „Daten & Sicherung" → „Freitags-Erinnerung" den Schalter aktivieren. Beim ersten Mal fragt der Browser nach der Erlaubnis für Benachrichtigungen. Wichtig zu wissen: Die Erinnerung erscheint, wenn du Tu-vi an einem Freitag öffnest und dein letztes Backup mindestens 3 Tage her ist. Tu-vi läuft nicht im Hintergrund – öffnest du die App freitags nicht, kommt auch keine Erinnerung. Verlass dich also nicht allein darauf.` },
+      { q: "Wie stelle ich ein Backup wieder her?", a: `Gehe zu „Mehr" → „Einstellungen" → „Daten & Sicherung" → „Gesichertes wiederherstellen" und wähle deine Backup-Datei. Achtung: Die aktuell gespeicherten Daten werden dabei ersetzt – am besten vorher einmal „Sichern". Sollten sich die Daten beim Start einmal nicht lesen lassen, zeigt Tu-vi direkt einen Wiederherstellen-Knopf und überschreibt nichts.` },
       { q: "Wo werden meine Daten gespeichert?", a: `Alle Daten bleiben ausschließlich auf deinem Gerät (lokaler Browser-Speicher). Es werden keine Daten an Server übertragen.` },
       { q: "Warum bekomme ich eine Backup-Erinnerung?", a: `Tu-vi erinnert automatisch wenn seit 7 Tagen kein Backup erstellt wurde oder wenn seit dem letzten Backup 10 oder mehr neue Einträge (Noten, Notizen, Fehlzeiten) hinzugekommen sind. Das Morgen-Briefing zeigt ebenfalls einen Hinweis, wenn Backup fällig ist.` },
     ],
@@ -2859,14 +2867,14 @@ const HELP_DATA = [
   {
     category: "Import",
     items: [
-      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: `Öffne den „Klassen"-Tab und tippe oben rechts auf „Fehlzeiten". Alternativ: „Mehr" → „Einstellungen" → „WebUntis-Import". Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Tu-vi übernimmt sie automatisch in die passenden Klassen.` },
+      { q: "Wie importiere ich Fehlzeiten aus WebUntis?", a: `Öffne den „Klassen"-Tab und tippe oben rechts auf „Fehlzeiten". Alternativ: „Mehr" → „Einstellungen" → „Daten & Sicherung" → „WebUntis / Fehlzeiten". Exportiere in WebUntis die Fehlzeiten als CSV und lade sie hier hoch. Tu-vi übernimmt sie automatisch in die passenden Klassen.` },
     ],
   },
   {
     category: "Datenschutz & Rechtliches",
     items: [
       { q: "Wer ist verantwortlich für die Schülerdaten?", a: `Du als Lehrkraft bist gemäß Art. 4 Nr. 7 DSGVO selbst datenschutzrechtlich Verantwortliche:r für die eingegebenen Daten. Der Entwickler von Tu-vi hat keinen Zugriff auf deine Daten.` },
-      { q: "Wo finde ich das Impressum und die Datenschutzerklärung?", a: `Tippe auf „Mehr" → „Einstellungen" und scrolle ganz nach unten. Dort findest du den Link „Impressum & Datenschutz".` },
+      { q: "Wo finde ich das Impressum und die Datenschutzerklärung?", a: `Tippe auf „Mehr" → „Einstellungen" → „Über Tu-vi". Dort findest du „Impressum & Datenschutz".` },
       { q: "Werden meine Daten irgendwohin übertragen?", a: `Nein. Alle Daten bleiben ausschließlich auf deinem Gerät (Browser-localStorage). Es werden keine Daten an den Entwickler oder Dritte übermittelt. Beim Aufrufen der App werden lediglich technische Zugriffsdaten (IP-Adresse, Zeitstempel) durch den Hosting-Anbieter GitHub Pages verarbeitet.` },
     ],
   },
@@ -4975,7 +4983,7 @@ export default function App() {
             </div>
           )}
           {tab === "dashboard" && <Dashboard data={activeData} update={update} onNavigate={goTo} onOpenFach={goToFach} onOpenKlassenDashboard={(classId) => { setFocusKlassenDashboardId(classId); goTo("klassen"); }} onOpenUntisImport={() => setShowUntisImport(true)} onOpenSettings={() => setShowSettings(true)} onOpenGeburtstage={() => setShowGeburtstage(true)} onOpenFoerderziele={() => setShowFoerderziele(true)} onOpenEntschuldigungen={() => setShowEntschuldigungen(true)} onOpenNachtragen={() => setShowNachtragen(true)} halbjahr={halbjahr} setCaptureLesson={setCaptureLesson} setAbschluss={setAbschluss} pendingLessons={pendingLessons} now={now} />}
-          {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} focusKlassenDashboardId={focusKlassenDashboardId} onFocusKlassenDashboardConsumed={() => setFocusKlassenDashboardId(null)} onRegisterFab={setFabActions} showToast={showToast} onOpenListe={(welche) => {
+          {tab === "klassen" && <KlassenTab data={activeData} update={update} halbjahr={halbjahr} subTab={klassenSubTab} setSubTab={setKlassenSubTab} onOpenFach={goToFach} onOpenUntisImport={() => setShowUntisImport(true)} focusStudentId={focusStudentId} onFocusConsumed={() => setFocusStudentId(null)} focusKlassenDashboardId={focusKlassenDashboardId} onFocusKlassenDashboardConsumed={() => setFocusKlassenDashboardId(null)} onRegisterFab={setFabActions} showToast={showToast} rohdaten={data} onOpenListe={(welche) => {
             if (welche === "entschuldigungen") setShowEntschuldigungen(true);
             else if (welche === "foerderziele") setShowFoerderziele(true);
             else if (welche === "geburtstage") setShowGeburtstage(true);
@@ -12851,6 +12859,111 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
    ueberhaupt nicht erreichbar: die Oeffnen-Funktion wurde an die Heute-Seite
    uebergeben und dort nie aufgerufen.
    Die Kacheln auf der Heute-Seite bleiben als Abkuerzung bestehen. */
+/* Papierkorb und Druckvorlagen lagen bisher in den Einstellungen. Beides
+   sind Taetigkeiten, keine Einstellungen: Wer versehentlich eine Klasse
+   geloescht hat, sucht sie bei den Klassen - nicht an neunter Stelle in
+   einer Einstellungsliste. Der Papierkorb blendet sich selbst aus, solange
+   nichts geloescht wurde. */
+/* rohdaten statt data: KlassenTab bekommt activeData, in dem geloeschte
+   Eintraege bereits herausgefiltert sind - der Papierkorb faende dort
+   grundsaetzlich nichts. */
+function KlassenFusszeile({ rohdaten: data, update }) {
+  const [druckSportVorlage, setDruckSportVorlage] = useState(null); // "protokoll" | "regelbruch"
+
+  return (
+    <>
+      {(() => {
+        const deletedStudents = (data.students || []).filter((s) => s.deletedAt);
+        const deletedClasses = (data.classes || []).filter((c) => c.deletedAt);
+        const snapshot = data.deletedSnapshot;
+        const snapshotValid = snapshot && (Date.now() - new Date(snapshot.deletedAt).getTime()) < 30 * 86400000;
+        const daysLeftSnapshot = snapshotValid
+          ? Math.max(1, 30 - Math.floor((Date.now() - new Date(snapshot.deletedAt).getTime()) / 86400000))
+          : 0;
+        const total = deletedStudents.length + deletedClasses.length + (snapshotValid ? 1 : 0);
+        if (total === 0) return null;
+        function restoreStudent(id) {
+          update((d) => { const s = d.students.find((s) => s.id === id); if (s) delete s.deletedAt; return d; });
+        }
+        function restoreClass(id) {
+          update((d) => {
+            const c = d.classes.find((c) => c.id === id);
+            if (c) delete c.deletedAt;
+            d.students.filter((s) => s.classId === id && s.deletedAt).forEach((s) => { delete s.deletedAt; });
+            return d;
+          });
+        }
+        function restoreAllData() {
+          update((d) => { const saved = d.deletedSnapshot?.data; return saved ? { ...saved, deletedSnapshot: null } : d; });
+        }
+        return (
+          <div className="pt-5 border-t border-stone-100">
+            <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-1">Papierkorb</div>
+            <p className="text-xs text-stone-500 mb-3">Gelöschte Einträge bleiben 30 Tage wiederherstellbar, dann werden sie endgültig entfernt.</p>
+            <ul className="space-y-1.5">
+              {snapshotValid && (
+                <li className="flex-col gap-1.5 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2.5">
+                  <div className="flex items-center gap-2">
+                    <span className="flex-1 text-sm text-stone-700 truncate">Alle Daten (Reset vom {new Date(snapshot.deletedAt).toLocaleDateString("de-DE")})</span>
+                    <span className="text-[11px] text-stone-400 shrink-0">{daysLeftSnapshot}T</span>
+                    <button onClick={restoreAllData} className="text-xs text-green-700 font-medium hover:underline shrink-0">Wiederherstellen</button>
+                  </div>
+                  <button
+                    onClick={() => setConfirmDeleteSnapshot(true)}
+                    className="text-[11px] text-red-500 hover:underline mt-1"
+                  >
+                    Jetzt endgültig löschen (auch Gesundheitsdaten & Fotos)
+                  </button>
+                </li>
+              )}
+              {deletedClasses.map((c) => (
+                <li key={c.id} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
+                  <span className="flex-1 text-sm text-stone-600 truncate">Klasse: {c.name}</span>
+                  <button onClick={() => restoreClass(c.id)} className="text-xs text-green-700 font-medium hover:underline shrink-0">Wiederherstellen</button>
+                </li>
+              ))}
+              {deletedStudents.map((s) => {
+                const cls = (data.classes || []).find((c) => c.id === s.classId);
+                return (
+                  <li key={s.id} className="flex items-center gap-2 bg-stone-50 rounded-lg px-3 py-2">
+                    <span className="flex-1 text-sm text-stone-600 truncate">{s.name}{cls ? ` (${cls.name})` : ""}</span>
+                    <button onClick={() => restoreStudent(s.id)} className="text-xs text-green-700 font-medium hover:underline shrink-0">Wiederherstellen</button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        );
+      })()}
+
+      <div className="pt-5 border-t border-stone-100">
+        <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Vorlagen zum Drucken</div>
+        <p className="text-xs text-stone-500 mb-3">
+          Leere Vordrucke für die Schublade. Mit bereits eingetragenem Kind gibt es sie direkt im Stundenabschluss.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="subtle" onClick={() => setDruckSportVorlage("protokoll")}>
+            <Printer size={14} /> Stundenprotokoll
+          </Button>
+          <Button variant="subtle" onClick={() => setDruckSportVorlage("regelbruch")}>
+            <Printer size={14} /> Regelbruch-Auftrag
+          </Button>
+        </div>
+      </div>
+
+      {druckSportVorlage && (
+        <SportDruckVorlage
+          vorlage={druckSportVorlage}
+          student={null}
+          klasse={null}
+          datum={isoDate(new Date())}
+          onClose={() => setDruckSportVorlage(null)}
+        />
+      )}
+    </>
+  );
+}
+
 function ListenUebersicht({ data, onOeffnen }) {
   const heute = new Date(); heute.setHours(0, 0, 0, 0);
 
@@ -12942,7 +13055,7 @@ function ListenUebersicht({ data, onOeffnen }) {
   );
 }
 
-function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed, focusKlassenDashboardId, onFocusKlassenDashboardConsumed, onRegisterFab, showToast, onOpenListe }) {
+function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onOpenUntisImport, focusStudentId, onFocusConsumed, focusKlassenDashboardId, onFocusKlassenDashboardConsumed, onRegisterFab, showToast, onOpenListe, rohdaten }) {
   const [selectedClass, setSelectedClass] = useState(data.classes[0]?.id ?? null);
   const [showNewClassModal, setShowNewClassModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -13325,6 +13438,8 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
         )}
 
         <Button onClick={() => setShowNewClassModal(true)} className="w-full justify-center"><Plus size={15} /> Neue Klasse</Button>
+
+        <KlassenFusszeile rohdaten={rohdaten} update={update} />
       </div>
       )}
 
