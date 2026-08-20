@@ -13,7 +13,7 @@ import {
   Clock, StickyNote, ClipboardCheck, Copy, CheckCircle2, AlertCircle, AlertTriangle,
   ListChecks, Inbox, FolderCheck, Sparkles, ShoppingBag, Zap, Briefcase,
   FileText, AlarmClock, Bookmark, MessageSquare, Smile, Image as ImageIcon,
-  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target, Mic,
+  Calculator, PartyPopper, Bell, ShoppingCart, ThumbsDown, Phone, Printer, TrendingUp, TrendingDown, Download, Upload, ShieldCheck, Lock, MoreHorizontal, BarChart2, RefreshCw, Search, GripVertical, Target, Mic,
   Lightbulb, BookOpen, Paperclip, Camera, FolderOpen, Folder, Star, User, LogOut,
 } from "lucide-react";
 
@@ -1347,7 +1347,7 @@ function LegalModal({ onClose }) {
 }
 
 /* Einstellungen: Reihenfolge der Dashboard-Karten per Pfeiltasten anpassen */
-function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare, onImport, onExportDocuments, onImportDocuments, onReset, onClose, onOpenUntisImport }) {
+function SettingsModal({ data, update, halbjahr, setHalbjahr, user, onExport, onShare, onImport, onExportDocuments, onImportDocuments, onReset, onClose, onOpenUntisImport }) {
   const gespeicherteReihenfolge = data.settings?.dashboardOrder || Object.keys(DASHBOARD_SECTIONS);
   const order = [
     ...gespeicherteReihenfolge.filter((k) => DASHBOARD_SECTIONS[k]),
@@ -1572,6 +1572,8 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, onExport, onShare,
             <span className="text-sm text-stone-700">Tipp des Tages auf der Übersicht anzeigen</span>
           </label>
         </div>
+
+        <AppSperreEinstellung user={user} />
 
         <div className="pt-5 border-t border-stone-100">
           <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">Datensicherung</div>
@@ -2767,6 +2769,9 @@ const HELP_DATA = [
       { q: "Wie stelle ich mein Bundesland ein?", a: `Beim ersten Start fragt Tuvi automatisch nach deinem Bundesland und trägt die Schulferien ein. Nachträglich: „Mehr" → „Einstellungen" → Bundesland wählen → „Schulferien eintragen".` },
       { q: "Was passiert beim ersten Start?", a: `Tuvi führt dich in zwei Schritten durch die Einrichtung: zuerst Bundesland und Schulferien, dann kannst du direkt deine erste Klasse anlegen. Beides lässt sich auch später in den Einstellungen anpassen.` },
       { q: "Wie schalte ich den Farb-Modus ein?", a: `Tippe auf der Startseite oben rechts auf das Sternchen-Symbol (✦). Im Standard-Modus ist die App schlicht und einfarbig – ein Tipp bringt Farbe in alle Ansichten: bunte Aufgaben-Kreise, farbige Fach-Markierungen, farbige Noten-Trends. Erneutes Tippen schaltet zurück zum ruhigen Mono-Modus. Der Farb-Modus ist unabhängig von Hell/Dunkel und funktioniert in beiden.` },
+      { q: "Wie sperre ich Tuvi mit Face ID oder Touch ID?", a: `„Mehr" → „Einstellungen" → Abschnitt „App-Sperre" → Schalter „Mit Face ID / Touch ID sperren" einschalten. Dein Gerät fragt einmal nach der Bestätigung, danach ist die Sperre aktiv. Ab dann verlangt Tuvi Face ID oder Touch ID, bevor Klassen und Schülerdaten sichtbar werden – beim Öffnen der App und immer dann, wenn sie länger als zwei Minuten im Hintergrund war. Kurzes Wegwischen (eine Nachricht lesen) löst die Sperre nicht aus. Wichtig: Die Sperre gilt nur auf diesem Gerät. Nutzt du Tuvi zusätzlich auf dem iPad, musst du sie dort separat einschalten. Erscheint der Abschnitt gar nicht oder als Hinweis, kann dein Gerät oder Browser keine Face ID für Webseiten – auf dem iPhone brauchst du dafür Safari und eine https-Verbindung.` },
+      { q: "Was, wenn Face ID beim Entsperren nicht funktioniert?", a: `Auf dem Sperrbildschirm steht unter dem Entsperren-Knopf „Stattdessen mit Passwort anmelden". Das meldet dich ab und du kommst zur normalen Anmeldung mit E-Mail und Passwort – danach bist du wieder drin. Du sperrst dich also nie aus. Die Sperre bleibt dabei eingerichtet; ausschalten kannst du sie in den Einstellungen unter „App-Sperre".` },
+      { q: "Ersetzt die App-Sperre mein Passwort?", a: `Nein, und das ist wichtig zu verstehen. Die Sperre ist ein zusätzlicher Riegel vor der App auf diesem einen Gerät. Sie löst den Fall, der im Schulalltag wirklich vorkommt: Das entsperrte iPhone liegt auf dem Pult und jemand tippt Tuvi an – ohne dein Gesicht sind dann keine Schülerdaten zu sehen. Sie ist aber kein zweiter Anmeldefaktor und verschlüsselt die Daten nicht zusätzlich. Dein Passwort bleibt der eigentliche Schutz deines Kontos: Wähle es sicher und gib es nicht weiter.` },
       { q: "Kann Tuvi dunkel dargestellt werden?", a: `Ja, automatisch. Tuvi übernimmt die Darstellung deines Geräts: Steht dein iPhone, iPad oder Computer auf „Dunkel", zeigt sich Tuvi dunkel, bei „Hell" hell. Auf dem iPhone stellst du das unter Einstellungen → Anzeige & Helligkeit ein, auf dem Mac unter Systemeinstellungen → Erscheinungsbild. In der App selbst gibt es dafür bewusst keinen eigenen Schalter – so passt Tuvi immer zu deinen übrigen Apps. Ausdrucke (Schülerakte, Berichte, Notenlisten) sind immer hell, damit sie auf Papier lesbar bleiben.` },
       { q: "Wie ist die Heute-Seite aufgebaut?", a: `Von oben nach unten priorisiert – die App zeigt nicht alles auf einmal, sondern das was gerade zählt: (1) Kopf mit Wortmarke, Datum und dem grünen Plus-Knopf. (2) „JETZT" – die große Karte für die laufende Stunde, mit Restzeit, Fach & Klasse, Thema, den zu dieser Stunde gehörenden offenen Punkten (Entschuldigungen, „heute Klassenarbeit"-Warnung) und dem Material aus dem Fach. Ein „Stunde öffnen"-Knopf springt in die Schnellerfassung. (3) „ALS NÄCHSTES" – die nächste Stunde, mit „in X Min." oder „in X Std." und – das ist der eigentliche Trick – den Material-Chips unter „Vorher mitnehmen", damit du in der aktuellen Stunde schon weißt, was du gleich einsammeln musst (z. B. „12 Volleybälle · 6 Hütchen · Leibchen"). (4) Zweispaltig „X Dinge brauchen deine Aufmerksamkeit" (Sheet mit allen Signalen) und „Nicht vergessen" (persönliche Aufgabenliste mit +-Feld zum sofort Ergänzen). (5) „Danach heute" – die restlichen Stunden als kompakte Zeilenliste. (6) Kleine Wochentagsleiste zum Vor- und Zurückblättern. (7) Wochenrückblick von Freitag 12 Uhr bis Sonntag Nacht, falls aktiv. (8) Unterrichtstipp des Tages, falls in den Einstellungen aktiv.` },
       { q: "Was zeigen die Karten JETZT und ALS NÄCHSTES?", a: `Beide Karten führen dich durch den aktuellen Moment. JETZT ist die dominante Karte für die laufende Stunde: Fach·Klasse·Thema groß, darunter die konkret zu dieser Stunde relevanten Punkte – Zahl der offenen Entschuldigungen dieser Klasse, „Heute: [Klassenarbeit-Titel]" wenn eine Prüfung ansteht, verknüpfte Aufgaben, und ganz wichtig: das Material, das du für dieses Fach eingetragen hast (Feld „Immer mitnehmen" im Fach-Editor). Rechts oben läuft die Restzeit. „Stunde öffnen" springt in die Schnellerfassung. Die ALS-NÄCHSTES-Karte ist etwas kleiner: Anfangszeit + „in X Std. Y Min.", Fach·Klasse·Raum, Thema falls hinterlegt, und die Material-Chips als „Vorher mitnehmen". Der Sinn: du bist noch in Mathe, siehst aber schon dass du gleich zwölf Volleybälle brauchst, und kannst sie auf dem Weg mitnehmen.` },
@@ -3583,6 +3588,226 @@ function GlobalSearchModal({ data, onSelectStudent, onClose }) {
   );
 }
 
+/* ---------- App-Sperre (Face ID / Touch ID) ----------
+   Ein WebAuthn-Platform-Credential legt sich als Sperre vor die App.
+
+   Wichtig zur Einordnung: das ist KEIN zweiter Anmeldefaktor und kein
+   Ersatz fuer das Passwort. Die Supabase-Sitzung liegt weiterhin im
+   Browser-Speicher. Was die Sperre loest, ist der Fall der im Schulalltag
+   tatsaechlich vorkommt: das entsperrte Geraet liegt auf dem Pult und
+   jemand tippt Tuvi an. Ohne Gesichts- oder Fingerabdruck-Pruefung sind
+   dann keine Schuelerdaten sichtbar.
+
+   Der Zustand liegt bewusst in localStorage und nicht in data.settings:
+   die Sperre muss greifen, bevor irgendwelche Daten geladen werden, und
+   sie gilt pro Geraet - ein zweites Geraet derselben Lehrkraft hat einen
+   eigenen Fingerabdruck oder gar keinen. */
+const APPLOCK_KEY = "tuvi_applock";
+/* Kurz weggewischt und zurueck soll nicht jedes Mal nach Face ID fragen -
+   erst nach dieser Pause wird wieder gesperrt. */
+const APPLOCK_PAUSE_MS = 2 * 60 * 1000;
+
+function b64urlZuBytes(s) {
+  const pad = "=".repeat((4 - (s.length % 4)) % 4);
+  const bin = atob((s + pad).replace(/-/g, "+").replace(/_/g, "/"));
+  return Uint8Array.from(bin, (c) => c.charCodeAt(0));
+}
+
+function bytesZuB64url(buf) {
+  let bin = "";
+  new Uint8Array(buf).forEach((b) => { bin += String.fromCharCode(b); });
+  return btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function appLockLesen() {
+  try { return JSON.parse(localStorage.getItem(APPLOCK_KEY) || "null"); } catch { return null; }
+}
+
+function appLockAktiv() {
+  return !!appLockLesen()?.credentialId;
+}
+
+function appLockEntfernen() {
+  localStorage.removeItem(APPLOCK_KEY);
+}
+
+/* Faellt bei fehlendem HTTPS, in aelteren Browsern und auf Geraeten ohne
+   Face ID / Touch ID / Windows Hello sauber auf false zurueck. */
+async function biometrieVerfuegbar() {
+  if (!window.isSecureContext || !window.PublicKeyCredential) return false;
+  try {
+    return await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+  } catch {
+    return false;
+  }
+}
+
+async function appLockEinrichten(user) {
+  const cred = await navigator.credentials.create({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      rp: { id: location.hostname, name: "Tuvi" },
+      user: {
+        id: crypto.getRandomValues(new Uint8Array(16)),
+        name: user?.email || "Tuvi",
+        displayName: user?.email || "Tuvi",
+      },
+      pubKeyCredParams: [{ type: "public-key", alg: -7 }, { type: "public-key", alg: -257 }],
+      authenticatorSelection: {
+        authenticatorAttachment: "platform",   // nur Face ID / Touch ID, kein USB-Stick
+        userVerification: "required",
+        residentKey: "preferred",
+      },
+      timeout: 60000,
+      attestation: "none",
+    },
+  });
+  if (!cred) throw new Error("Einrichtung abgebrochen.");
+  localStorage.setItem(APPLOCK_KEY, JSON.stringify({ credentialId: bytesZuB64url(cred.rawId) }));
+}
+
+async function appLockPruefen() {
+  const gespeichert = appLockLesen();
+  if (!gespeichert?.credentialId) return false;
+  const assertion = await navigator.credentials.get({
+    publicKey: {
+      challenge: crypto.getRandomValues(new Uint8Array(32)),
+      allowCredentials: [{ type: "public-key", id: b64urlZuBytes(gespeichert.credentialId) }],
+      userVerification: "required",
+      timeout: 60000,
+    },
+  });
+  return !!assertion;
+}
+
+/* Sperrbildschirm. Der Entsperr-Versuch laeuft bewusst NICHT automatisch
+   beim Anzeigen: iOS Safari verlangt fuer WebAuthn eine Nutzeraktion und
+   wuerde einen Auto-Versuch sofort mit NotAllowedError abweisen. */
+function LockScreen({ onEntsperrt, onAbmelden }) {
+  const [fehler, setFehler] = useState(null);
+  const [laeuft, setLaeuft] = useState(false);
+
+  const entsperren = async () => {
+    setFehler(null);
+    setLaeuft(true);
+    try {
+      if (await appLockPruefen()) onEntsperrt();
+      else setFehler("Entsperren hat nicht geklappt. Versuch es noch einmal.");
+    } catch (e) {
+      setFehler(
+        e?.name === "NotAllowedError"
+          ? "Abgebrochen oder nicht erkannt. Tippe erneut auf „Entsperren“."
+          : e?.message || "Entsperren hat nicht geklappt."
+      );
+    } finally {
+      setLaeuft(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen app-bg flex items-center justify-center p-6">
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-16 h-16 rounded-2xl akzent-flaeche flex items-center justify-center font-serif text-4xl font-bold mb-3" style={{ fontFamily: "Georgia, serif" }}>T</div>
+          <h1 className="text-2xl font-semibold text-stone-800">Tuvi</h1>
+        </div>
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-stone-200 text-center">
+          <Lock size={26} className="mx-auto mb-3 text-stone-400" />
+          <h2 className="text-base font-semibold text-stone-800 mb-1">Tuvi ist gesperrt</h2>
+          <p className="text-sm text-stone-500 mb-5">
+            Entsperre mit Face ID oder Touch ID, um deine Klassen zu sehen.
+          </p>
+          <button
+            onClick={entsperren}
+            disabled={laeuft}
+            className="w-full akzent-flaeche rounded-xl py-2.5 text-sm font-medium disabled:opacity-40 active:scale-[0.98] transition-transform"
+          >
+            {laeuft ? "Warte auf Bestätigung …" : "Entsperren"}
+          </button>
+          {fehler && <p className="text-xs text-red-600 mt-3">{fehler}</p>}
+          <button
+            onClick={onAbmelden}
+            className="mt-4 text-xs text-stone-500 hover:text-stone-700 underline"
+          >
+            Stattdessen mit Passwort anmelden
+          </button>
+        </div>
+        <p className="text-[11px] text-stone-400 text-center mt-4 leading-relaxed">
+          Die Sperre gilt nur auf diesem Gerät. Sie schützt davor, dass jemand
+          das entsperrte Gerät in die Hand nimmt – dein Passwort ersetzt sie nicht.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* Einstellungs-Abschnitt zum Ein- und Ausschalten der App-Sperre.
+   Haelt seinen Zustand selbst aus localStorage, nicht aus data.settings -
+   die Sperre gilt pro Geraet, nicht pro Konto. */
+function AppSperreEinstellung({ user }) {
+  const [moeglich, setMoeglich] = useState(null);   // null = wird noch geprueft
+  const [an, setAn] = useState(appLockAktiv);
+  const [fehler, setFehler] = useState(null);
+  const [laeuft, setLaeuft] = useState(false);
+
+  useEffect(() => { biometrieVerfuegbar().then(setMoeglich); }, []);
+
+  const umschalten = async (gewuenscht) => {
+    setFehler(null);
+    if (!gewuenscht) { appLockEntfernen(); setAn(false); return; }
+    setLaeuft(true);
+    try {
+      await appLockEinrichten(user);
+      setAn(true);
+    } catch (e) {
+      setFehler(
+        e?.name === "NotAllowedError"
+          ? "Abgebrochen oder nicht bestätigt. Versuch es noch einmal."
+          : e?.message || "Einrichten hat nicht geklappt."
+      );
+    } finally {
+      setLaeuft(false);
+    }
+  };
+
+  return (
+    <div className="pt-5 border-t border-stone-100">
+      <div className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-2">App-Sperre</div>
+      <p className="text-xs text-stone-500 mb-3">
+        Verlangt Face ID oder Touch ID, bevor Tuvi Klassen und Schülerdaten zeigt –
+        beim Öffnen und wenn die App länger als zwei Minuten im Hintergrund war.
+        Gilt nur auf diesem Gerät.
+      </p>
+
+      {moeglich === false ? (
+        <div className="bg-stone-50 border border-stone-200 rounded-xl p-3 flex items-start gap-2">
+          <AlertTriangle size={13} className="text-amber-500 shrink-0 mt-0.5" />
+          <p className="text-[11px] text-stone-600 leading-relaxed">
+            Dieses Gerät bietet keine Face ID / Touch ID für Webseiten an – oder die Seite
+            läuft nicht über eine gesicherte Verbindung (https). Die Sperre lässt sich
+            deshalb hier nicht einrichten.
+          </p>
+        </div>
+      ) : (
+        <>
+          <div className="flex items-center justify-between gap-2 py-2">
+            <span className="text-sm text-stone-700">
+              {laeuft ? "Warte auf Bestätigung …" : "Mit Face ID / Touch ID sperren"}
+            </span>
+            <Toggle checked={an} onChange={umschalten} />
+          </div>
+          {fehler && <p className="text-xs text-red-600 mt-1">{fehler}</p>}
+          <p className="text-[11px] text-stone-400 mt-2 leading-relaxed">
+            Die Sperre schützt davor, dass jemand das entsperrte Gerät in die Hand nimmt.
+            Sie ersetzt dein Passwort nicht und verschlüsselt die Daten nicht zusätzlich.
+            Klappt Face ID einmal nicht, kommst du über „Stattdessen mit Passwort anmelden“ weiter.
+          </p>
+        </>
+      )}
+    </div>
+  );
+}
+
 function LoginScreen() {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -3797,11 +4022,34 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [showPasswordReset, setShowPasswordReset] = useState(isRecoveryUrl);
+  /* Beim Start sofort gesperrt, wenn auf diesem Geraet eine Sperre
+     eingerichtet ist - noch bevor Daten geladen werden. */
+  const [gesperrt, setGesperrt] = useState(appLockAktiv);
+  const versteckSeit = useRef(null);
   const userRef = useRef(null);
+
+  /* Wieder sperren, wenn die App laenger als APPLOCK_PAUSE_MS im
+     Hintergrund war. Kurzes Wegwischen (Nachricht lesen, Stundenplan
+     im anderen Tab) soll nicht jedes Mal Face ID ausloesen. */
+  useEffect(() => {
+    const onSichtbarkeit = () => {
+      if (!appLockAktiv()) return;
+      if (document.visibilityState === "hidden") {
+        versteckSeit.current = Date.now();
+      } else if (versteckSeit.current && Date.now() - versteckSeit.current > APPLOCK_PAUSE_MS) {
+        setGesperrt(true);
+      }
+    };
+    document.addEventListener("visibilitychange", onSichtbarkeit);
+    return () => document.removeEventListener("visibilitychange", onSichtbarkeit);
+  }, []);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null;
+      /* Frische Anmeldung mit Passwort: dann nicht zusaetzlich sperren -
+         die Lehrkraft hat sich gerade eben ausgewiesen. */
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") setGesperrt(false);
       setUser(u);
       userRef.current = u;
       setAuthChecked(true);
@@ -3927,6 +4175,9 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return;
+    /* Solange die App-Sperre greift, werden gar keine Schuelerdaten
+       geholt - nicht nur nicht angezeigt. */
+    if (gesperrt) return;
     (async () => {
       try {
         const { data: row } = await supabase
@@ -4057,7 +4308,7 @@ export default function App() {
       }
       setLoaded(true);
     })();
-  }, [user]);
+  }, [user, gesperrt]);
 
   useEffect(() => {
     if (!loaded || loadFailed) return;
@@ -4492,6 +4743,11 @@ export default function App() {
   if (!user) {
     return <LoginScreen />;
   }
+  /* Sperre liegt vor den Daten: solange sie greift, wird nichts aus der
+     Schuelerakte gerendert und auch nichts nachgeladen. */
+  if (gesperrt) {
+    return <LockScreen onEntsperrt={() => setGesperrt(false)} onAbmelden={() => supabase.auth.signOut()} />;
+  }
 
   if (!loaded) {
     return (
@@ -4722,6 +4978,7 @@ export default function App() {
               update={update}
               halbjahr={halbjahr}
               setHalbjahr={setHalbjahr}
+              user={user}
               onExport={exportBackup}
               onShare={shareBackup}
               onImport={importBackup}
