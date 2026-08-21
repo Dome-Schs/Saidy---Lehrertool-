@@ -2786,6 +2786,7 @@ const HELP_DATA = [
       { q: "Wie ist die Heute-Seite aufgebaut?", a: `Von oben nach unten priorisiert – die App zeigt nicht alles auf einmal, sondern das was gerade zählt: (1) Kopf mit Wortmarke, Datum und dem grünen Plus-Knopf. (2) „JETZT" – die große Karte für die laufende Stunde, mit Restzeit, Fach & Klasse, Thema, den zu dieser Stunde gehörenden offenen Punkten (Entschuldigungen, „heute Klassenarbeit"-Warnung) und dem Material aus dem Fach. Ein „Stunde öffnen"-Knopf springt in die Schnellerfassung. (3) „ALS NÄCHSTES" – die nächste Stunde, mit „in X Min." oder „in X Std." und – das ist der eigentliche Trick – den Material-Chips unter „Vorher mitnehmen", damit du in der aktuellen Stunde schon weißt, was du gleich einsammeln musst (z. B. „12 Volleybälle · 6 Hütchen · Leibchen"). (4) Zweispaltig „X Dinge brauchen deine Aufmerksamkeit" (Sheet mit allen Signalen) und „Nicht vergessen" (persönliche Aufgabenliste mit +-Feld zum sofort Ergänzen). (5) „Danach heute" – die restlichen Stunden als kompakte Zeilenliste. (6) Kleine Wochentagsleiste zum Vor- und Zurückblättern. (7) Wochenrückblick von Freitag 12 Uhr bis Sonntag Nacht, falls aktiv. (8) Unterrichtstipp des Tages, falls in den Einstellungen aktiv.` },
       { q: "Was zeigen die Karten JETZT und ALS NÄCHSTES?", a: `Beide Karten führen dich durch den aktuellen Moment. JETZT ist die dominante Karte für die laufende Stunde: Fach·Klasse·Thema groß, darunter die konkret zu dieser Stunde relevanten Punkte – Zahl der offenen Entschuldigungen dieser Klasse, „Heute: [Klassenarbeit-Titel]" wenn eine Prüfung ansteht, verknüpfte Aufgaben, und ganz wichtig: das Material, das du für dieses Fach eingetragen hast (Feld „Immer mitnehmen" im Fach-Editor). Rechts oben läuft die Restzeit. „Stunde öffnen" springt in die Schnellerfassung. Die ALS-NÄCHSTES-Karte ist etwas kleiner: Anfangszeit + „in X Std. Y Min.", Fach·Klasse·Raum, Thema falls hinterlegt, und die Material-Chips als „Vorher mitnehmen". Der Sinn: du bist noch in Mathe, siehst aber schon dass du gleich zwölf Volleybälle brauchst, und kannst sie auf dem Weg mitnehmen.` },
       { q: `Was steht in der Kachel „X Dinge brauchen deine Aufmerksamkeit"?`, a: `Automatisch erkannte Signale für heute – nur solche die tatsächlich anstehen, sonst verschwindet die Kachel. Sie sammelt: (1) noch nachzutragende Stunden, (2) auffällige Klassen aus dem Klassenradar (kritisch/warnend), (3) dringliche Erinnerungen (Kinder mit vielen Fehltagen, Kinder ohne Eintrag seit 14+ Tagen, wiederholte Vorfälle, offene Zeugnisnoten). Ein Tipp öffnet ein Sheet mit der vollständigen Liste; ein Tipp auf einen Eintrag springt direkt in den passenden Bereich (Klassen-Dashboard, Entschuldigungen usw.). Alles lokal berechnet – keine externen Datenübertragungen. „Nicht vergessen" daneben ist bewusst getrennt: dort stehen nur deine manuell erfassten Aufgaben.` },
+      { q: `Warum zeigt „Nicht vergessen" nicht alle Aufgaben?`, a: `Damit die Startseite nicht zur Endlosliste wird. Die Kachel zeigt höchstens drei Aufgaben, und zwar die dringendsten: zuerst überfällige (rot markiert), dann heute fällige (gelb), dann solche ohne Datum, zuletzt spätere. Oben rechts steht, wie viele heute anstehen. Ein Tipp auf die Kachel oder auf „+N weitere" öffnet die vollständige Liste – dort kannst du auch direkt abhaken. Ganz unten führt ein Link zu „Aufgaben" mit allen Listen. Erledigte Aufgaben verschwinden aus der Kachel.` },
       { q: "Wie lege ich Material für ein Fach fest, das immer mitzunehmen ist?", a: `Fach bearbeiten (Klassen-Tab → Fach → Zahnrad) → im Editor die Sektion „Immer mitnehmen". Trage ein Ding pro Zeile ein und tippe das +-Symbol oder drücke Enter – z. B. „12 Volleybälle", „6 Hütchen", „Leibchen", „Beamer". Die Einträge erscheinen automatisch auf der Heute-Seite: in der JETZT-Karte beim aktiven Fach, und – wichtiger – in der ALS-NÄCHSTES-Karte als Chip-Reihe „Vorher mitnehmen", damit du sie in der Vorstunde noch einsammeln kannst. Kannst du jederzeit über das × am Chip löschen. Wird pro Fach gespeichert, nicht pro Stunde – Sport hat also für jede Sportstunde dieselben Bälle.` },
       { q: "Was ist der Unterrichtstipp des Tages?", a: `Ganz unten auf der Übersicht liegt eine kompakte Zeile mit einem Tipp aus dem Wissenspool – Titel plus Merksatz. Der Tipp wechselt automatisch mit jedem Tag (er ist an das Datum gekoppelt, bleibt also bei mehrmaligem Öffnen am selben Tag gleich). Tippe drauf, dann öffnet sich die volle Karte: „Warum?" mit Kurzbegründung, „So setzt du es um" als praktische Punkte, und der Merksatz zum Mitnehmen. Ein „Nächster Tipp"-Knopf springt zufällig zu einer anderen Karte, so kannst du zwischendurch etwas schmökern. Unter „Einstellungen" → „Darstellung" lässt sich die Kachel abschalten.` },
       { q: "Was ist der Wochenrückblick auf der Übersicht?", a: `Eine Karte, die von Freitag 12 Uhr bis Sonntag Nacht ganz oben auf der Übersicht erscheint (ab Montag ist sie automatisch weg). Sie zeigt drei Dinge: die Zahlen der Woche (gehaltene Stunden, vergebene Noten, geführte Gespräche, neue Notizen), was aufgefallen ist (Klassen mit Signalen aus dem Klassenradar, Kinder ohne Eintrag in dieser Woche) und einen Ausblick auf die nächste Woche (Klassenarbeiten, Termine). Ein × blendet die Karte für den Rest dieser Woche aus – am nächsten Freitag kommt sie wieder.` },
@@ -7308,7 +7309,25 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
     return items;
   })();
 
-  const nichtVergessenItems = (data.tasks || []).filter((t) => !t.done).slice(0, 5);
+  /* Fuer die Heute-Seite zaehlt, was heute dran ist. Ueberfaellige zuerst,
+     dann heute faellige, dann undatierte, zuletzt spaetere - sonst haengt
+     eine Aufgabe von naechster Woche ueber einer, die heute faellig war.
+     Undatierte stehen bewusst vor "spaeter": sie wurden per Schnellerfassung
+     angelegt und sind meistens fuer bald gemeint. */
+  const offeneAufgaben = (data.tasks || []).filter((t) => !t.done);
+  const aufgabenRang = (t) => {
+    const heute = isoDate(new Date());
+    if (t.dueDate && t.dueDate < heute) return 0;
+    if (t.dueDate === heute) return 1;
+    if (!t.dueDate) return 2;
+    return 3;
+  };
+  const aufgabenSortiert = [...offeneAufgaben].sort(
+    (x, y) => aufgabenRang(x) - aufgabenRang(y) || (x.dueDate || "9999").localeCompare(y.dueDate || "9999")
+  );
+  const nichtVergessenItems = aufgabenSortiert.slice(0, 3);
+  const nichtVergessenRest = aufgabenSortiert.length - nichtVergessenItems.length;
+  const aufgabenDringend = offeneAufgaben.filter((t) => aufgabenRang(t) <= 1).length;
 
   const [showAttentionSheet, setShowAttentionSheet] = useState(false);
   const [showNichtVergessen, setShowNichtVergessen] = useState(false);
@@ -7868,30 +7887,61 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           )}
         </button>
 
-        {/* Nicht vergessen */}
+        {/* Nicht vergessen — dieselbe Form wie die Kachel daneben:
+            Kopf mit Zahl, hoechstens drei Zeilen Vorschau, der Rest hinter
+            einem Tipp. Vorher stand die volle Liste da und die Kachel war
+            der schwerste Block der Seite. Das Eingabefeld bleibt: es ist
+            der schnellste Weg, etwas zwischen zwei Stunden festzuhalten. */}
         <Card className="px-4 py-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Check size={14} className="text-stone-500" />
+          <button
+            onClick={() => offeneAufgaben.length && setShowNichtVergessen(true)}
+            disabled={!offeneAufgaben.length}
+            className="w-full flex items-center gap-2 mb-2 text-left disabled:cursor-default"
+          >
+            <Check size={14} className={aufgabenDringend ? "text-amber-600" : "text-stone-500"} />
             <span className="text-sm font-semibold text-stone-800">Nicht vergessen</span>
-          </div>
+            {!!offeneAufgaben.length && (
+              <span className="t-caption tnum ml-auto">
+                {aufgabenDringend ? `${aufgabenDringend} heute` : `${offeneAufgaben.length} offen`}
+              </span>
+            )}
+            {!!offeneAufgaben.length && <ChevronRight size={14} className="text-stone-400 shrink-0" />}
+          </button>
+
           {nichtVergessenItems.length ? (
             <ul className="space-y-1.5">
-              {nichtVergessenItems.map((t) => (
-                <li key={t.id} className="flex items-center gap-2">
+              {nichtVergessenItems.map((t) => {
+                const rang = aufgabenRang(t);
+                return (
+                  <li key={t.id} className="flex items-center gap-2">
+                    <button
+                      onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
+                      className="w-6 h-6 shrink-0 flex items-center justify-center press-scale"
+                      aria-label={`„${t.title}" als erledigt markieren`}
+                    >
+                      <span className="w-4 h-4 rounded border border-stone-300 block" />
+                    </button>
+                    <span className="text-sm text-stone-700 leading-tight flex-1 truncate">{t.title}</span>
+                    {rang === 0 && <span className="chip chip-krit shrink-0">überfällig</span>}
+                    {rang === 1 && <span className="chip chip-warn shrink-0">heute</span>}
+                  </li>
+                );
+              })}
+              {nichtVergessenRest > 0 && (
+                <li>
                   <button
-                    onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
-                    className="w-6 h-6 shrink-0 flex items-center justify-center press-scale"
-                    aria-label={`„${t.title}" als erledigt markieren`}
+                    onClick={() => setShowNichtVergessen(true)}
+                    className="text-[11px] text-stone-400 hover:text-stone-600 pl-8 py-0.5 transition-colors"
                   >
-                    <span className="w-4 h-4 rounded border border-stone-300 block" />
+                    +{nichtVergessenRest} weitere
                   </button>
-                  <span className="text-sm text-stone-700 leading-tight flex-1 truncate">{t.title}</span>
                 </li>
-              ))}
+              )}
             </ul>
           ) : (
             <p className="text-xs text-stone-400 mb-1">Nichts offen</p>
           )}
+
           <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-stone-100">
             <input
               value={neueAufgabe}
@@ -7913,6 +7963,52 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
           </div>
         </Card>
       </div>
+
+      {/* Alle offenen Aufgaben – volle Liste beim Klick auf die Kachel.
+          Abhaken geht direkt hier, damit man zum Aufraeumen nicht erst in
+          den Aufgaben-Bereich wechseln muss. */}
+      {showNichtVergessen && (
+        <div className="fixed inset-0 bg-stone-900/40 z-50 flex items-end md:items-center justify-center" onClick={() => setShowNichtVergessen(false)}>
+          <div className="bg-white w-full md:max-w-md rounded-t-2xl md:rounded-2xl shadow-xl p-4 pb-[max(2rem,env(safe-area-inset-bottom))] max-h-[85vh] overflow-y-auto sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="font-semibold text-stone-800">Nicht vergessen</div>
+              <button onClick={() => setShowNichtVergessen(false)} className="w-9 h-9 flex items-center justify-center text-stone-400"><X size={18} /></button>
+            </div>
+            {aufgabenSortiert.length ? (
+              <ul className="divide-y divide-stone-100">
+                {aufgabenSortiert.map((t) => {
+                  const rang = aufgabenRang(t);
+                  return (
+                    <li key={t.id} className="flex items-center gap-2 py-2.5">
+                      <button
+                        onClick={() => update((d) => { const task = d.tasks.find((x) => x.id === t.id); if (task) task.done = !task.done; return d; })}
+                        className="w-7 h-7 shrink-0 flex items-center justify-center press-scale"
+                        aria-label={`„${t.title}" als erledigt markieren`}
+                      >
+                        <span className="w-4 h-4 rounded border border-stone-300 block" />
+                      </button>
+                      <span className="text-sm text-stone-700 leading-tight flex-1">{t.title}</span>
+                      {rang === 0 && <span className="chip chip-krit shrink-0">überfällig</span>}
+                      {rang === 1 && <span className="chip chip-warn shrink-0">heute</span>}
+                      {rang === 3 && t.dueDate && (
+                        <span className="t-caption tnum shrink-0">{localDate(t.dueDate).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</span>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : (
+              <p className="text-sm text-stone-400 py-4">Nichts offen.</p>
+            )}
+            <button
+              onClick={() => { setShowNichtVergessen(false); onNavigate?.("aufgaben"); }}
+              className="w-full flex items-center justify-center gap-1.5 mt-3 pt-3 border-t border-stone-100 text-sm akzent-text"
+            >
+              Alle Aufgaben und Listen <ChevronRight size={14} />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Aufmerksamkeit-Sheet – volle Liste beim Klick auf die Kachel */}
       {showAttentionSheet && (
