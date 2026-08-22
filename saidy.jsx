@@ -1855,7 +1855,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, user, onExport, on
               {showAdvanced && (
                 <div className="mt-3 space-y-2">
                   <p className="text-xs text-stone-500">
-                    Alle Klassen, Schüler, Noten und Notizen werden gelöscht. Die Daten landen für 30 Tage im Papierkorb und können dort wiederhergestellt werden.
+                    Alle Klassen, Schüler, Noten und Notizen werden gelöscht. Die Daten landen für 30 Tage im Papierkorb („Klassen & Schüler", ganz unten) und können dort wiederhergestellt werden.
                   </p>
                   <Button variant="danger" onClick={() => { setResetInput(""); setConfirmReset(true); }} className="w-full justify-center">
                     Alle Daten löschen
@@ -1943,7 +1943,7 @@ function SettingsModal({ data, update, halbjahr, setHalbjahr, user, onExport, on
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-xs p-5" onClick={(e) => e.stopPropagation()}>
               <div className="font-semibold text-stone-800 mb-2">Alle Daten löschen?</div>
               <p className="text-sm text-stone-600 mb-3">
-                Alle Daten werden für <strong>30 Tage in den Papierkorb</strong> verschoben und können dort wiederhergestellt werden. Danach ist die Löschung endgültig.
+                Alle Daten werden für <strong>30 Tage in den Papierkorb</strong> verschoben und können unter „Klassen & Schüler" ganz unten wiederhergestellt werden. Danach ist die Löschung endgültig.
                 Abgelegte <strong>Dokumente werden sofort und endgültig gelöscht</strong> – sichere sie vorher, falls du sie noch brauchst.
               </p>
               <p className="text-xs text-stone-400 mb-1.5">Tippe <strong>LÖSCHEN</strong> zur Bestätigung:</p>
@@ -2806,7 +2806,7 @@ const HELP_DATA = [
       { q: `Wie trage ich eine Note im Bereich „Noten & Berichte" ein?`, a: `Gehe zu „Noten & Berichte", wähle Klasse und Fach. Tippe auf eine:n Schüler:in – in der Karte „Neue Note" Kategorie und Note wählen und auf „+" tippen. Oder tippe direkt in der Notenübersicht auf die Mündl.-Spalte eines Kindes – ein Popover öffnet sich mit den fünf Schnellbewertungen ++, +, o, –, – –. Ein Tipp, fertig.` },
       { q: "Wie berechnet sich die Zeugnisnote?", a: `Tu-vi bildet den gewichteten Durchschnitt aus mündlichen und schriftlichen Noten. Voreingestellt ist 50 zu 50 Prozent – änderbar über Klasse antippen → Reiter „Unterricht" → Fach antippen → „Material, Raum & Gewichtung". Einzelne Noten lassen sich zusätzlich stärker gewichten (Faktor beim Bearbeiten der Note). Die berechnete Note erscheint in der Notenübersicht.` },
       { q: "Wie sehe ich alle Noten eines Kindes auf einen Blick?", a: `Kind-Profil öffnen und oben rechts auf das Balken-Symbol „Notenübersicht" tippen. Dort siehst du den aktuellen Schnitt in jedem Fach sowie die Zeugnisnote, falls schon eingetragen.` },
-      { q: "Was ist der Stunden-Abschluss (30 Sekunden)?", a: `Das Klemmbrett-Symbol neben einer Stunde öffnet den 30-Sekunden-Abschluss – die neue Standard-Erfassung nach einer Stunde. Kein Formular mit leerem Notenfeld, sondern eine Liste aller Kinder mit vier One-Tap-Aktionen pro Zeile: + (positive Mitarbeit) · − (zurückhaltend) · ⚠︎ (Sportzeug bzw. Hausaufgabe vergessen) · Notiz (kurzes Textfeld). Ein Tipp pro Kind, alles wird am Ende auf einmal gespeichert. + und − werden als Beobachtungs-Notiz gespeichert (nicht als automatische Note, damit der Durchschnitt nicht verwässert wird); das Vergessen als Vorfall (bei Sport als „Sportzeug", sonst als „Hausaufgabe"). Wer eine echte Note vergeben will, wechselt unten über „Auch Noten vergeben →" in die ausführliche Schnellerfassung. Bei Sport-Stunden erscheint zusätzlich ein Drucker-Symbol pro Kind – dahinter liegen zwei druckbare Vorlagen: „Stundenprotokoll" (für Kinder die z.B. Sportzeug vergessen haben und mitschreiben statt teilnehmen) und „Regelbruch-Arbeitsauftrag" (Regeln abschreiben, Verhaltensplan, Elternunterschrift). Kindnamen und Klasse werden automatisch eingetragen.` },
+      { q: "Was ist der Stunden-Abschluss (30 Sekunden)?", a: `Sind heute Stunden noch nicht erfasst, sitzt oben rechts auf der Übersicht ein Klemmbrett-Symbol mit gelbem Punkt. Ein Tipp öffnet „Noch nicht erfasst", daneben steht pro Stunde „Erfassen" – und damit der 30-Sekunden-Abschluss, die Standard-Erfassung nach einer Stunde. Kein Formular mit leerem Notenfeld, sondern eine Liste aller Kinder mit vier One-Tap-Aktionen pro Zeile: + (positive Mitarbeit) · − (zurückhaltend) · ⚠︎ (Sportzeug bzw. Hausaufgabe vergessen) · Notiz (kurzes Textfeld). Ein Tipp pro Kind, alles wird am Ende auf einmal gespeichert. + und − werden als Beobachtungs-Notiz gespeichert (nicht als automatische Note, damit der Durchschnitt nicht verwässert wird); das Vergessen als Vorfall (bei Sport als „Sportzeug", sonst als „Hausaufgabe"). Wer eine echte Note vergeben will, wechselt unten über „Auch Noten vergeben →" in die ausführliche Schnellerfassung. Bei Sport-Stunden erscheint zusätzlich ein Drucker-Symbol pro Kind – dahinter liegen zwei druckbare Vorlagen: „Stundenprotokoll" (für Kinder die z.B. Sportzeug vergessen haben und mitschreiben statt teilnehmen) und „Regelbruch-Arbeitsauftrag" (Regeln abschreiben, Verhaltensplan, Elternunterschrift). Kindnamen und Klasse werden automatisch eingetragen.` },
       { q: "Wie ändere ich Material, Raum oder Gewichtung eines Fachs?", a: `Klasse antippen → Reiter „Unterricht" → Fach antippen, damit es aufklappt. Unter der Reihenplanung stehen zwei Knöpfe: „Material, Raum & Gewichtung" öffnet den Fach-Editor (dort auch der Termin der nächsten Klassenarbeit), „Noten eintragen" springt in die Notenübersicht dieses Fachs. Dieselben zwei Wege liegen auch hinter dem ···-Symbol rechts in der Fach-Zeile.` },
       { q: "Wo finde ich die Sport-Druckvorlagen ohne Kind-Kontext?", a: `Im Tab „Klassen & Schüler", Reiter „Klassen", ganz unten unter „Vorlagen zum Drucken": „Stundenprotokoll" und „Regelbruch-Auftrag". Das öffnet eine leere Vorlage zum Ausdrucken – nützlich für die Ersatzkopien in der Schublade oder wenn du sie spontan brauchst.` },
       { q: "Was ist der Schnellerfassungs-Modus?", a: `Die ausführliche Erfassung wird aus dem Stunden-Abschluss über den Link „Auch Noten vergeben" erreicht. Dort kannst du für alle Schüler:innen einer Klasse Noten (mündlich / schriftlich), ausführliche Notizen und Gespräche eintragen. Eine Doppelstunde wird einmal erfasst, nicht zweimal. Die Notenbuttons sind immer sichtbar. Neben dem Namen liegt das ⚠︎-Symbol für „Vergessen"; Notiz und Gespräch öffnen sich über das ···-Symbol.` },
@@ -4552,7 +4552,7 @@ export default function App() {
     });
     // Sichtbare Bestaetigung - der Rueckgang auf leere Uebersicht wirkt sonst
     // wie ein Fehler; der Toast verweist auch auf die 30-Tage-Wiederherstellung.
-    showToast("Alle Daten gelöscht. Wiederherstellung 30 Tage möglich in Einstellungen.");
+    showToast(`Alle Daten gelöscht. 30 Tage wiederherstellbar unter „Klassen & Schüler" ganz unten.`);
   }
 
   function importBackup(file, onResult) {
@@ -4818,7 +4818,7 @@ export default function App() {
               className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl akzent-flaeche text-white text-sm font-semibold press-scale"
               aria-expanded={fabOpen}
             >
-              <Plus size={16} className="text-white" strokeWidth={2.4} />
+              <Plus size={16} strokeWidth={2.4} />
               Schnell erfassen
             </button>
             {fabOpen && (
@@ -4836,7 +4836,7 @@ export default function App() {
                         className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-sm text-stone-700 hover:bg-stone-50 text-left ${i === 0 ? "font-semibold" : ""}`}
                       >
                         <span className="w-6 h-6 rounded-full akzent-flaeche flex items-center justify-center flex-shrink-0">
-                          <Icon size={12} className="text-white" />
+                          <Icon size={12} />
                         </span>
                         {label}
                       </button>
@@ -5124,14 +5124,14 @@ export default function App() {
           <div className="flex-1 flex justify-center">
             <button
               onClick={() => { setFabOpen((o) => !o); setShowMore(false); }}
-              className="w-14 h-14 -mt-5 rounded-full akzent-flaeche text-white flex items-center justify-center press-scale shrink-0"
+              className="w-14 h-14 -mt-5 rounded-full akzent-flaeche flex items-center justify-center press-scale shrink-0"
               style={{ boxShadow: "0 6px 20px rgba(79,88,68,0.45)" }}
               aria-label="Neu erfassen"
               aria-expanded={fabOpen}
             >
               <Plus
                 size={26}
-                className="text-white"
+               
                 style={{ transform: fabOpen ? "rotate(45deg)" : "rotate(0deg)", transition: "transform 0.2s ease" }}
               />
             </button>
@@ -5303,7 +5303,7 @@ export default function App() {
                 style={{ animationDelay: `${i * 35}ms`, animationFillMode: "both" }}
               >
                 <span className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${i === 0 ? "bg-white/20" : "akzent-flaeche"}`}>
-                  <Icon size={13} className="text-white" />
+                  <Icon size={13} />
                 </span>
                 {label}
               </button>
@@ -5321,7 +5321,7 @@ export default function App() {
 
       {/* Toast-Meldung */}
       {toast && (
-        <div className={`fixed bottom-[calc(env(safe-area-inset-bottom)+76px)] md:bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-stone-800 text-white text-sm px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-3 max-w-[90vw] ${typeof toast === "object" && toast?.action ? "" : "pointer-events-none"}`}>
+        <div className={`fixed bottom-[calc(env(safe-area-inset-bottom)+76px)] md:bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-[color:var(--n-800)] text-[color:var(--n-0)] text-sm px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-3 max-w-[90vw] ${typeof toast === "object" && toast?.action ? "" : "pointer-events-none"}`}>
           <span className="truncate">{typeof toast === "string" ? toast : toast?.text}</span>
           {typeof toast === "object" && toast?.action && (
             <button
@@ -6519,7 +6519,7 @@ function QuickCaptureModal({ data, update, fach, cls, students, date: initialDat
                       aria-label={`„${a.text}" ${a.done ? "als offen markieren" : "abhaken"}`}
                     >
                       <span className={`w-4 h-4 rounded border-2 flex items-center justify-center ${a.done ? "akzent-flaeche border-transparent" : "border-stone-300"}`}>
-                        {a.done && <Check size={11} strokeWidth={3} className="text-white" />}
+                        {a.done && <Check size={11} strokeWidth={3} />}
                       </span>
                     </button>
                     <span className={`flex-1 text-sm ${a.done ? "text-stone-400 line-through" : "text-stone-700"}`}>{a.text}</span>
@@ -7067,7 +7067,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       value: offeneEntschuldigungen,
       sub: offeneEntschuldigungen ? "offen" : "keine offen",
       warn: offeneEntschuldigungen > 0,
-      onClick: () => offeneEntschuldigungen ? onOpenEntschuldigungen?.() : onNavigate?.("klassen"),
+      onClick: () => offeneEntschuldigungen ? onOpenEntschuldigungen?.() : onNavigate?.("klassen", "listen"),
     },
     {
       icon: Target,
@@ -7075,7 +7075,7 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
       value: offeneZiele.length,
       sub: offeneZiele.length ? (zielKinder ? `bei ${zielKinder} ${zielKinder === 1 ? "Kind" : "Kindern"}` : "aktiv") : "keine aktiv",
       warn: false,
-      onClick: () => offeneZiele.length ? onOpenFoerderziele?.() : onNavigate?.("klassen"),
+      onClick: () => offeneZiele.length ? onOpenFoerderziele?.() : onNavigate?.("klassen", "listen"),
     },
   ];
 
@@ -7310,7 +7310,9 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
   );
   const nichtVergessenItems = aufgabenSortiert.slice(0, 3);
   const nichtVergessenRest = aufgabenSortiert.length - nichtVergessenItems.length;
-  const aufgabenDringend = offeneAufgaben.filter((t) => aufgabenRang(t) <= 1).length;
+  const aufgabenUeberfaellig = offeneAufgaben.filter((t) => aufgabenRang(t) === 0).length;
+  const aufgabenHeute = offeneAufgaben.filter((t) => aufgabenRang(t) === 1).length;
+  const aufgabenDringend = aufgabenUeberfaellig + aufgabenHeute;
 
   const [showAttentionSheet, setShowAttentionSheet] = useState(false);
   const [showNichtVergessen, setShowNichtVergessen] = useState(false);
@@ -7885,7 +7887,11 @@ function Dashboard({ data, update, onNavigate, onOpenFach, onOpenKlassenDashboar
             <span className="text-sm font-semibold text-stone-800">Nicht vergessen</span>
             {!!offeneAufgaben.length && (
               <span className="t-caption tnum ml-auto">
-                {aufgabenDringend ? `${aufgabenDringend} heute` : `${offeneAufgaben.length} offen`}
+                {aufgabenUeberfaellig
+                  ? `${aufgabenUeberfaellig} überfällig`
+                  : aufgabenHeute
+                    ? `${aufgabenHeute} heute`
+                    : `${offeneAufgaben.length} offen`}
               </span>
             )}
             {!!offeneAufgaben.length && <ChevronRight size={14} className="text-stone-400 shrink-0" />}
@@ -9322,7 +9328,7 @@ function GeburtstageUebersicht({ data, onOpenStudent, onClose }) {
   const ohneDatum = data.students.filter((s) => !s.deletedAt && !s.birthday).length;
 
   return (
-    <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
+    <div className="fixed inset-0 z-[56] app-bg flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
       <div className="bg-white border-b border-stone-100 shrink-0">
         <div className="flex items-center gap-3 px-4 pb-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale">
@@ -9399,7 +9405,7 @@ function FoerderzieleUebersicht({ data, onOpenStudent, onClose }) {
     .sort((a, b) => a.student.name.localeCompare(b.student.name, "de"));
 
   return (
-    <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
+    <div className="fixed inset-0 z-[56] app-bg flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
       <div className="bg-white border-b border-stone-100 shrink-0">
         <div className="flex items-center gap-3 px-4 pb-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale">
@@ -9467,7 +9473,7 @@ function OffeneEntschuldigungenUebersicht({ data, onOpenStudent, onClose }) {
     .filter((x) => !q || x.student.name.toLowerCase().includes(q));
 
   return (
-    <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
+    <div className="fixed inset-0 z-[56] app-bg flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
       <div className="bg-white border-b border-stone-100 shrink-0">
         <div className="flex items-center gap-3 px-4 pb-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale">
@@ -9618,7 +9624,7 @@ function DokumenteAllgemein({ data, update, onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
+    <div className="fixed inset-0 z-[56] app-bg flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
       <div className="bg-white border-b border-stone-100 shrink-0">
         <div className="flex items-center gap-3 px-4 pb-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale">
@@ -10149,7 +10155,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
       const signals = computeSignals();
 
       return (
-      <div className="fixed inset-0 z-[55] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
+      <div className="fixed inset-0 z-[55] app-bg flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
           {/* Minimaler Kopf: Navigation + Tabs */}
           <div className="bg-white border-b border-stone-100 shrink-0">
             <div className="flex items-center gap-2 px-4 pb-2" style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top))" }}>
@@ -10449,7 +10455,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
                   <div className="rounded-2xl p-4 border border-stone-200/60" style={{ background: "var(--creme)" }}>
                     <div className="flex items-center gap-2 mb-2.5">
                       <div className="w-6 h-6 rounded-lg akzent-flaeche flex items-center justify-center shrink-0">
-                        <Sparkles size={12} className="text-white" />
+                        <Sparkles size={12} />
                       </div>
                       <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">Zusammenfassung</span>
                     </div>
@@ -10994,7 +11000,7 @@ function StudentsModal({ cls, students, notes, grades, faecher, foerderZiele, ab
     <ConfirmDialog
       open={!!confirmDeleteId}
       title="Kind wirklich löschen?"
-      message="Das Kind wird in den Papierkorb verschoben und kann dort 30 Tage wiederhergestellt werden (Einstellungen → Papierkorb). Alle zugehörigen Noten und Notizen kommen mit."
+      message="Das Kind wird in den Papierkorb verschoben und kann dort 30 Tage wiederhergestellt werden – im Tab Klassen & Schüler ganz unten. Alle zugehörigen Noten und Notizen kommen mit."
       confirmLabel="Löschen"
       onConfirm={() => { onDeleteStudent(confirmDeleteId); setConfirmDeleteId(null); }}
       onCancel={() => setConfirmDeleteId(null)}
@@ -12272,7 +12278,7 @@ function KlassenDashboard({ cls, students, notes, grades, faecher, foerderZiele,
     .map((n) => ({ ...n, student: students.find((s) => s.id === n.studentId) }));
 
   return (
-    <div className="fixed inset-0 z-[56] bg-stone-100 flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
+    <div className="fixed inset-0 z-[56] app-bg flex flex-col anim-slide-right" style={{ maxHeight: "100dvh" }}>
       <div className="bg-white border-b border-stone-100 shrink-0">
         <div className="flex items-center gap-3 px-4 pb-4" style={{ paddingTop: "max(1rem, env(safe-area-inset-top))" }}>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center shrink-0 press-scale">
@@ -12651,7 +12657,7 @@ function KlasseVollbildSheet({ data, update, klasseId, halbjahr, initialTab, onC
     const monat = new Date().getMonth();
     // 1. Halbjahr: 1.8. - 31.1., 2. Halbjahr: 1.2. - 31.7.
     const inH1 = monat >= 7 || monat < 1;
-    if (halbjahr === "1" || (halbjahr == null && inH1)) {
+    if (halbjahr === 1 || halbjahr === "1" || (halbjahr == null && inH1)) {
       return isoDate(new Date(monat < 1 ? j - 1 : j, 7, 1));
     }
     return isoDate(new Date(j, 1, 1));
@@ -13549,7 +13555,7 @@ function KlassenTab({ data, update, halbjahr, subTab, setSubTab, onOpenFach, onO
                 setRenamingClass(null);
                 setConfirmState({
                   title: `Klasse ${name} löschen?`,
-                  message: "Die Klasse wird in den Papierkorb verschoben und kann dort 30 Tage wiederhergestellt werden (Einstellungen → Papierkorb). Alle Schüler:innen, Noten und Notizen kommen mit.",
+                  message: "Die Klasse wird in den Papierkorb verschoben und kann dort 30 Tage wiederhergestellt werden – im Tab Klassen & Schüler ganz unten. Alle Schüler:innen, Noten und Notizen kommen mit.",
                   onConfirm: () => { deleteClass(id); setConfirmState(null); },
                 });
               }}
@@ -14210,7 +14216,7 @@ function KalenderTab({ data, update, autoOpenForm, onAutoFormConsumed }) {
                   key={i}
                   onClick={() => { setFilterDate(active ? null : ds); setDate(ds); }}
                   className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 text-sm ${
-                    active ? "bg-stone-900 text-white" : inMonth ? "hover:bg-stone-50 text-stone-700" : "text-stone-300"
+                    active ? "akzent-flaeche" : inMonth ? "hover:bg-stone-50 text-stone-700" : "text-stone-300"
                   }`}
                 >
                   <span className={isToday && !active ? "text-red-500 font-medium" : ""}>{d.getDate()}</span>
@@ -14365,7 +14371,7 @@ function KalenderTab({ data, update, autoOpenForm, onAutoFormConsumed }) {
             {done.map((e) => (
               <li key={e.id} className="flex items-center gap-3 text-sm text-stone-400 line-through">
                 <button onClick={() => toggleDone(e.id)} className="w-5 h-5 rounded-full akzent-flaeche flex items-center justify-center shrink-0">
-                  <Check size={12} className="text-white" />
+                  <Check size={12} />
                 </button>
                 <span className="flex-1">{e.title}</span>
                 <button onClick={() => remove(e.id)} className="text-stone-300 hover:text-red-500 no-underline"><Trash2 size={14} /></button>
@@ -15871,7 +15877,7 @@ function NotenUebersicht({ students, data, update, fach, halbjahr, selectedStude
                 {showZeugnis && (
                   <td className="text-center rounded-r-xl">
                     {finalGrade ? (
-                      <span className="inline-flex items-center justify-center min-w-7 h-7 px-1 rounded-md bg-stone-900 text-white text-sm font-semibold tnum">{gradeLabel(finalGrade.value)}</span>
+                      <span className="inline-flex items-center justify-center min-w-7 h-7 px-1 rounded-md akzent-flaeche text-sm font-semibold tnum">{gradeLabel(finalGrade.value)}</span>
                     ) : (
                       <span className="text-stone-300">—</span>
                     )}

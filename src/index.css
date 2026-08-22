@@ -39,8 +39,8 @@ html, body {
   --n-100:#F1F1F4;
   --n-200:#E2E2E7;
   --n-300:#C9C9CF;
-  --n-400:#8E8E93;   /* Sekundärtext  */
-  --n-500:#6E6E73;
+  --n-400:#6E6E73;   /* Sekundärtext - 5,1:1 auf Weiss, WCAG AA */
+  --n-500:#5A5A60;
   --n-600:#48484A;
   --n-700:#333336;
   --n-800:#1C1C1E;   /* Primärtext    */
@@ -88,7 +88,7 @@ html, body {
     --ink: #F2F2F7;
 
     --n-0:  #1C1C1E;
-    --n-50: #1C1C1E;
+    --n-50: #242426;   /* eine Stufe ueber --n-0 - sonst zeigt kein Hover Wirkung */
     --n-100:#2C2C2E;
     --n-200:#38383A;
     --n-300:#48484A;
@@ -154,6 +154,15 @@ html, body {
 .hover\:bg-stone-100:hover { background-color: var(--n-100) !important; }
 .hover\:border-stone-200:hover { border-color: var(--n-200) !important; }
 .placeholder-stone-400::placeholder { color: var(--n-400) !important; }
+/* Die Bruecke deckte nur hover: ab. Ohne diese Varianten blitzen Listenzeilen
+   beim Antippen fast weiss auf und der Text verschwindet fuer die Dauer der
+   Beruehrung; focus:bg-white machte das Themenfeld der Reihenplanung beim
+   Hineintippen unlesbar. */
+.active\:bg-stone-100:active { background-color: var(--n-100) !important; }
+.hover\:bg-stone-200:hover   { background-color: var(--n-200) !important; }
+.hover\:bg-white:hover,
+.focus\:bg-white:focus       { background-color: var(--n-0)   !important; }
+.group:hover .group-hover\:bg-stone-50 { background-color: var(--n-50) !important; }
 
 .border-stone-100 { border-color: var(--n-100) !important; }
 .border-stone-200 { border-color: var(--n-200) !important; }
@@ -181,7 +190,9 @@ html, body {
 @media (prefers-color-scheme: dark) {
   .bg-amber-50,   .bg-amber-100                 { background-color: rgba(245,158,11,0.16) !important; }
   .bg-red-50,     .bg-red-100                   { background-color: rgba(239,68,68,0.18) !important; }
-  .bg-green-50,   .bg-emerald-100               { background-color: rgba(34,197,94,0.16) !important; }
+  .bg-green-50,   .bg-emerald-50,
+  .bg-emerald-100                               { background-color: rgba(34,197,94,0.16) !important; }
+  .bg-emerald-200                               { background-color: rgba(34,197,94,0.28) !important; }
 
   .border-amber-100, .border-amber-200          { border-color: rgba(251,191,36,0.30) !important; }
   .border-red-200,   .border-red-500            { border-color: rgba(252,165,165,0.32) !important; }
